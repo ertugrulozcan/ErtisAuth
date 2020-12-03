@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ErtisAuth.Dto\ErtisAuth.Dto.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Ertis.Data" Version="1.0.0" />
+      <PackageReference Include="Ertis.MongoDB" Version="1.0.0" />
+    </ItemGroup>
+
+</Project>
