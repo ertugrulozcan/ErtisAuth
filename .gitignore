@@ -10,6 +10,10 @@
 *.userosscache
 *.sln.docstates
 
+# JetBrains
+.idea
+.idea*/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
