@@ -1,9 +1,9 @@
-using Ertis.Data.Repository;
+using Ertis.MongoDB.Repository;
 using ErtisAuth.Dto.Models;
 
 namespace ErtisAuth.Dao.Repositories.Interfaces
 {
-	public interface ITestRepository : IRepository<TestModelDto, string>
+	public interface ITestRepository : IMongoRepository<TestModelDto>
 	{
 		
 	}

@@ -1,6 +1,6 @@
 using System;
 using System.Net;
-using Ertis.Extensions.AspNetCore.Exceptions;
+using Ertis.Core.Exceptions;
 using ErtisAuth.WebAPI.Constants;
 
 namespace ErtisAuth.WebAPI.Exceptions
