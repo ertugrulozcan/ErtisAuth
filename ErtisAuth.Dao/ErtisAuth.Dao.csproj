@@ -10,7 +10,7 @@
 
     <ItemGroup>
       <PackageReference Include="Ertis.Data" Version="1.0.4" />
-      <PackageReference Include="Ertis.MongoDB" Version="1.0.4" />
+      <PackageReference Include="Ertis.MongoDB" Version="1.0.5" />
     </ItemGroup>
 
 </Project>
