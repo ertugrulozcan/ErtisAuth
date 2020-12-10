@@ -5,12 +5,13 @@ using Ertis.Core.Models.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Sentry;
 
 namespace ErtisAuth.WebAPI.Extensions
 {
 	public static class ErrorHandlingExtensions
 	{
-		public static void ConfigureGlobalExceptionHandler(this IApplicationBuilder app)
+		public static void ConfigureGlobalExceptionHandler(this IApplicationBuilder app, IHub sentryHub)
 		{
 			app.UseExceptionHandler(appError =>
 			{
@@ -62,6 +63,8 @@ namespace ErtisAuth.WebAPI.Extensions
 								};
 								break;
 						}
+
+						sentryHub?.CaptureException(contextFeature.Error);
 
 						var json = Newtonsoft.Json.JsonConvert.SerializeObject(errorModel);
 						await context.Response.WriteAsync(json);

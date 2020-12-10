@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Sentry;
 
 namespace ErtisAuth.WebAPI
 {
@@ -87,11 +88,13 @@ namespace ErtisAuth.WebAPI
 				app.UseDeveloperExceptionPage();
 			}
 
+			var sentryHub = app.ApplicationServices.GetRequiredService<IHub>();
+
 			app.UseCors(CORS_POLICY_KEY);
 			app.UseHttpsRedirection();
 			app.UseRouting();
 			app.UseAuthorization();
-			app.ConfigureGlobalExceptionHandler();
+			app.ConfigureGlobalExceptionHandler(sentryHub);
 
 			app.UseEndpoints(endpoints =>
 			{
