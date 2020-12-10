@@ -1,4 +1,5 @@
 using System;
+using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
@@ -12,15 +13,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpGet("healthcheck")]
 		public IActionResult HealthCheck()
 		{
-			try
-			{
-				return this.Ok();
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine(ex);
-				return this.StatusCode(500, ex);
-			}
+			return this.Ok();
 		}
 
 		[HttpGet("ping")]

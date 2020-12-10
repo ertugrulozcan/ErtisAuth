@@ -34,7 +34,7 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
 		{
-			return await this.testService.GetAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			return await this.testService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 		}
 
 		#endregion

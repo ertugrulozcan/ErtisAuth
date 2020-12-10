@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
+using ErtisAuth.Core.Models.Users;
 
 namespace ErtisAuth.Abstractions.Services.Interfaces
 {
-	public interface ITestService
+	public interface IUserService : IMembershipBoundedCrudService<User>
 	{
 		Task<IPaginationCollection<dynamic>> QueryAsync(
 			string query, 

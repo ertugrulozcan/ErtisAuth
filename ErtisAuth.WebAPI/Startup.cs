@@ -3,6 +3,7 @@ using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Services;
+using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using MongoDB.Bson.Serialization.Serializers;
 
 namespace ErtisAuth.WebAPI
 {
@@ -47,9 +47,14 @@ namespace ErtisAuth.WebAPI
 		{
 			services.Configure<DatabaseSettings>(Configuration.GetSection("Database"));
 			services.AddSingleton<IDatabaseSettings>(serviceProvider => serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value);
+			
 			services.AddSingleton<ITestRepository, TestRepository>();
+			services.AddSingleton<IMembershipRepository, MembershipRepository>();
+			services.AddSingleton<IUserRepository, UserRepository>();
 			
 			services.AddSingleton<ITestService, TestService>();
+			services.AddSingleton<IMembershipService, MembershipService>();
+			services.AddSingleton<IUserService, UserService>();
 			
 			services.AddCors(options =>
 			{
@@ -86,6 +91,7 @@ namespace ErtisAuth.WebAPI
 			app.UseHttpsRedirection();
 			app.UseRouting();
 			app.UseAuthorization();
+			app.ConfigureGlobalExceptionHandler();
 
 			app.UseEndpoints(endpoints =>
 			{
