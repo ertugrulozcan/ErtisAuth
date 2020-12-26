@@ -11,7 +11,7 @@ using ErtisAuth.Infrastructure.Mapping;
 namespace ErtisAuth.Infrastructure.Services
 {
 	public abstract class MembershipBoundedCrudService<TModel, TDto> : IMembershipBoundedCrudService<TModel> 
-		where TModel : Core.Models.IHasMembership
+		where TModel : Core.Models.IHasMembership, Core.Models.IHasIdentifier
 		where TDto : IEntity<string>, Dto.Models.IHasMembership
 	{
 		#region Services
@@ -42,9 +42,9 @@ namespace ErtisAuth.Infrastructure.Services
 
 		protected abstract void Overwrite(TModel destination, TModel source);
 
-		protected abstract bool IsAlreadyExist(TModel model, string membershipId);
+		protected abstract bool IsAlreadyExist(TModel model, string membershipId, TModel exclude = default);
 		
-		protected abstract Task<bool> IsAlreadyExistAsync(TModel model, string membershipId);
+		protected abstract Task<bool> IsAlreadyExistAsync(TModel model, string membershipId, TModel exclude = default);
 		
 		protected abstract ErtisAuthException GetAlreadyExistError(TModel model);
 		
@@ -221,6 +221,10 @@ namespace ErtisAuth.Infrastructure.Services
 				model.MembershipId = membershipId;	
 			}
 
+			// Overwrite
+			var current = this.Get(membershipId, model.Id);
+			this.Overwrite(model, current);
+
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
 			{
@@ -228,7 +232,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Check existing
-			if (this.IsAlreadyExist(model, membershipId))
+			if (this.IsAlreadyExist(model, membershipId, current))
 			{
 				throw this.GetAlreadyExistError(model);
 			}
@@ -252,6 +256,10 @@ namespace ErtisAuth.Infrastructure.Services
 				model.MembershipId = membershipId;	
 			}
 			
+			// Overwrite
+			var current = await this.GetAsync(membershipId, model.Id);
+			this.Overwrite(model, current);
+			
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
 			{
@@ -259,7 +267,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Check existing
-			if (await this.IsAlreadyExistAsync(model, membershipId))
+			if (await this.IsAlreadyExistAsync(model, membershipId, current))
 			{
 				throw this.GetAlreadyExistError(model);
 			}

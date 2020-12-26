@@ -2,12 +2,12 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models
 {
-	public abstract class ResourceBase : IHasIdentifier
+	public interface IHasIdentifier
 	{
 		#region Properties
 
 		[JsonProperty("_id")]
-		public string Id { get; set; }
+		string Id { get; set; }
 
 		#endregion
 	}

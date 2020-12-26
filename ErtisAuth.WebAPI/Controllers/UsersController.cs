@@ -43,7 +43,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Create Methods
 		
 		[HttpPost]
-		public async Task<IActionResult> Post([FromRoute] string membershipId, [FromBody] CreateUserFormModel model)
+		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateUserFormModel model)
 		{
 			var membership = await this.membershipService.GetAsync(membershipId);
 			if (membership == null)
@@ -103,13 +103,38 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		#region Update Methods
 
-		
+		[HttpPut("{id}")]
+		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateUserFormModel model)
+		{
+			var userModel = new User
+			{
+				Id = id,
+				FirstName = model.FirstName,
+				LastName = model.LastName,
+				Role = model.Role,
+				MembershipId = membershipId
+			};
+			
+			var user = await this.userService.UpdateAsync(membershipId, userModel);
+			return this.Ok(user);
+		}
 
 		#endregion
 		
 		#region Delete Methods
 
-		
+		[HttpDelete("{id}")]
+		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id)
+		{
+			if (await this.userService.DeleteAsync(membershipId, id))
+			{
+				return this.NoContent();
+			}
+			else
+			{
+				return this.RoleNotFound(id);
+			}
+		}
 
 		#endregion
 	}

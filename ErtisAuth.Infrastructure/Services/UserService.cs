@@ -114,14 +114,44 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		protected override bool IsAlreadyExist(User model, string membershipId)
+		protected override bool IsAlreadyExist(User model, string membershipId, User exclude = default)
 		{
-			return this.GetUserWithPassword(model.Username, model.EmailAddress, membershipId) != null;
+			if (exclude == null)
+			{
+				return this.GetUserWithPassword(model.Username, model.EmailAddress, membershipId) != null;	
+			}
+			else
+			{
+				var current = this.GetUserWithPassword(model.Username, model.EmailAddress, membershipId);
+				if (current != null)
+				{
+					return current.Username != exclude.Username && current.EmailAddress != exclude.EmailAddress;	
+				}
+				else
+				{
+					return false;
+				}
+			}
 		}
 
-		protected override async Task<bool> IsAlreadyExistAsync(User model, string membershipId)
+		protected override async Task<bool> IsAlreadyExistAsync(User model, string membershipId, User exclude = default)
 		{
-			return await this.GetUserWithPasswordAsync(model.Username, model.EmailAddress, membershipId) != null;
+			if (exclude == null)
+			{
+				return await this.GetUserWithPasswordAsync(model.Username, model.EmailAddress, membershipId) != null;	
+			}
+			else
+			{
+				var current = await this.GetUserWithPasswordAsync(model.Username, model.EmailAddress, membershipId);
+				if (current != null)
+				{
+					return current.Username != exclude.Username && current.EmailAddress != exclude.EmailAddress;	
+				}
+				else
+				{
+					return false;
+				}
+			}
 		}
 		
 		protected override ErtisAuthException GetAlreadyExistError(User model)

@@ -36,7 +36,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Create Methods
 
 		[HttpPost]
-		public async Task<IActionResult> Post([FromRoute] string membershipId, [FromBody] Role model)
+		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] Role model)
 		{
 			var role = await this.roleService.CreateAsync(membershipId, model);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{role.Id}", role);
@@ -80,7 +80,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Update Methods
 
 		[HttpPut("{id}")]
-		public async Task<IActionResult> Put([FromRoute] string membershipId, [FromRoute] string id, [FromBody] Role model)
+		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] Role model)
 		{
 			model.Id = id;
 			var role = await this.roleService.UpdateAsync(membershipId, model);

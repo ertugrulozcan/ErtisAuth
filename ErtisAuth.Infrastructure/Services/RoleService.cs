@@ -159,14 +159,44 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		protected override bool IsAlreadyExist(Role model, string membershipId)
+		protected override bool IsAlreadyExist(Role model, string membershipId, Role exclude = default)
 		{
-			return this.GetByName(model.Name, membershipId) != null;
+			if (exclude == null)
+			{
+				return this.GetByName(model.Name, membershipId) != null;	
+			}
+			else
+			{
+				var current = this.GetByName(model.Name, membershipId);
+				if (current != null)
+				{
+					return current.Name != exclude.Name;	
+				}
+				else
+				{
+					return false;
+				}
+			}
 		}
 
-		protected override async Task<bool> IsAlreadyExistAsync(Role model, string membershipId)
+		protected override async Task<bool> IsAlreadyExistAsync(Role model, string membershipId, Role exclude = default)
 		{
-			return await this.GetByNameAsync(model.Name, membershipId) != null;
+			if (exclude == null)
+			{
+				return await this.GetByNameAsync(model.Name, membershipId) != null;	
+			}
+			else
+			{
+				var current = await this.GetByNameAsync(model.Name, membershipId);
+				if (current != null)
+				{
+					return current.Name != exclude.Name;	
+				}
+				else
+				{
+					return false;
+				}
+			}
 		}
 		
 		protected override ErtisAuthException GetAlreadyExistError(Role model)
