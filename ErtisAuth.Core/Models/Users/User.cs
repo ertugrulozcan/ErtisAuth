@@ -1,8 +1,9 @@
+using Ertis.Core.Models.Resources;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Users
 {
-	public class User : MembershipBoundedResource
+	public class User : MembershipBoundedResource, IHasSysInfo
 	{
 		#region Properties
 
@@ -17,7 +18,16 @@ namespace ErtisAuth.Core.Models.Users
 		
 		[JsonProperty("email_address")]
 		public string EmailAddress { get; set; }
-
+		
+		[JsonProperty("role")]
+		public string Role { get; set; }
+		
+		[JsonProperty("password_hash")]
+		public string PasswordHash { get; set; }
+		
+		[JsonProperty("sys")]
+		public SysModel Sys { get; set; }
+		
 		#endregion
 	}
 }

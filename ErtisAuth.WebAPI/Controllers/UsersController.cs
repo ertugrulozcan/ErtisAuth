@@ -33,8 +33,19 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		#endregion
 		
-		#region Methods
-
+		#region Create Methods
+		
+		[HttpPost]
+		public async Task<IActionResult> Post([FromRoute] string membershipId, [FromBody] User model)
+		{
+			var user = await this.userService.CreateAsync(membershipId, model);
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user.Id}", user);
+		}
+		
+		#endregion
+		
+		#region Read Methods
+		
 		[HttpGet("{id}")]
 		public async Task<ActionResult<User>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
@@ -58,18 +69,23 @@ namespace ErtisAuth.WebAPI.Controllers
 			var users = await this.userService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection);
 			return this.Ok(users);
 		}
-
-		[HttpPost]
-		public async Task<IActionResult> Post([FromRoute] string membershipId, [FromBody] User model)
-		{
-			var user = await this.userService.CreateAsync(membershipId, model);
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user.Id}", user);
-		}
 		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
 		{
 			return await this.userService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 		}
+		
+		#endregion
+		
+		#region Update Methods
+
+		
+
+		#endregion
+		
+		#region Delete Methods
+
+		
 
 		#endregion
 	}

@@ -1,3 +1,4 @@
+using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Dao.Repositories.Interfaces;
@@ -13,7 +14,8 @@ namespace ErtisAuth.Dao.Repositories
 		/// Constructor
 		/// </summary>
 		/// <param name="settings"></param>
-		public UserRepository(IDatabaseSettings settings) : base(settings, "users")
+		/// <param name="actionBinder"></param>
+		public UserRepository(IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(settings, "users", actionBinder)
 		{
 			
 		}
