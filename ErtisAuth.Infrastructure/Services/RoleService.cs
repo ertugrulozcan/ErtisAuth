@@ -107,10 +107,12 @@ namespace ErtisAuth.Infrastructure.Services
 				errorList.Add("name is a required field");
 			}
 			
+			/*
 			if (string.IsNullOrEmpty(model.Slug))
 			{
 				errorList.Add("slug is a required field");
 			}
+			*/
 			
 			if (string.IsNullOrEmpty(model.MembershipId))
 			{
@@ -140,7 +142,6 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			destination.Id = source.Id;
 			destination.MembershipId = source.MembershipId;
-			destination.Slug = Ertis.Core.Helpers.Slugifier.Slugify(source.Name);
 			destination.Sys = source.Sys;
 			
 			if (string.IsNullOrEmpty(destination.Name))
@@ -156,6 +157,11 @@ namespace ErtisAuth.Infrastructure.Services
 			if (destination.Permissions == null)
 			{
 				destination.Permissions = source.Permissions;
+			}
+
+			if (string.IsNullOrEmpty(destination.Slug))
+			{
+				destination.Slug = Ertis.Core.Helpers.Slugifier.Slugify(destination.Name);
 			}
 		}
 
@@ -202,6 +208,11 @@ namespace ErtisAuth.Infrastructure.Services
 		protected override ErtisAuthException GetAlreadyExistError(Role model)
 		{
 			return ErtisAuthException.RoleWithSameNameAlreadyExists(model.Name);
+		}
+		
+		protected override ErtisAuthException GetNotFoundError(string id)
+		{
+			return ErtisAuthException.RoleNotFound(id);
 		}
 		
 		public Role GetByName(string name, string membershipId)

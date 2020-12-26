@@ -6,6 +6,7 @@ using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.WebAPI.Models.Request.Roles;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
@@ -17,6 +18,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Services
 
 		private readonly IRoleService roleService;
+		private readonly IMembershipService membershipService;
 
 		#endregion
 
@@ -26,9 +28,11 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// Constructor
 		/// </summary>
 		/// <param name="roleService"></param>
-		public RolesController(IRoleService roleService)
+		/// <param name="membershipService"></param>
+		public RolesController(IRoleService roleService, IMembershipService membershipService)
 		{
 			this.roleService = roleService;
+			this.membershipService = membershipService;
 		}
 
 		#endregion
@@ -36,9 +40,24 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Create Methods
 
 		[HttpPost]
-		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] Role model)
+		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateRoleFormModel model)
 		{
-			var role = await this.roleService.CreateAsync(membershipId, model);
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				return this.MembershipNotFound(membershipId);
+			}
+			
+			var roleModel = new Role
+			{
+				Name = model.Name,
+				Description = model.Description,
+				Permissions = model.Permissions,
+				Slug = Ertis.Core.Helpers.Slugifier.Slugify(model.Name),
+				MembershipId = membershipId
+			};
+			
+			var role = await this.roleService.CreateAsync(membershipId, roleModel);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{role.Id}", role);
 		}
 
@@ -80,10 +99,19 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Update Methods
 
 		[HttpPut("{id}")]
-		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] Role model)
+		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateRoleFormModel model)
 		{
-			model.Id = id;
-			var role = await this.roleService.UpdateAsync(membershipId, model);
+			var roleModel = new Role
+			{
+				Id = id,
+				Name = model.Name,
+				Description = model.Description,
+				Permissions = model.Permissions,
+				Slug = Ertis.Core.Helpers.Slugifier.Slugify(model.Name),
+				MembershipId = membershipId
+			};
+			
+			var role = await this.roleService.UpdateAsync(membershipId, roleModel);
 			return this.Ok(role);
 		}
 

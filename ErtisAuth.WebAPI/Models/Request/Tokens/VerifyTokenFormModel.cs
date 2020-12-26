@@ -1,8 +1,8 @@
 using Newtonsoft.Json;
 
-namespace ErtisAuth.WebAPI.Models.Request
+namespace ErtisAuth.WebAPI.Models.Request.Tokens
 {
-	public class RefreshTokenFormModel
+	public class VerifyTokenFormModel
 	{
 		#region Properties
 

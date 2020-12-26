@@ -159,6 +159,11 @@ namespace ErtisAuth.Infrastructure.Services
 			return ErtisAuthException.UserWithSameUsernameAlreadyExists($"'{model.Username}', '{model.EmailAddress}'");
 		}
 		
+		protected override ErtisAuthException GetNotFoundError(string id)
+		{
+			return ErtisAuthException.UserNotFound(id, "_id");
+		}
+		
 		public UserWithPassword GetUserWithPassword(string username, string email, string membershipId)
 		{
 			var dto = this.repository.FindOne(x =>

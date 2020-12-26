@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace ErtisAuth.WebAPI.Models.Request
+namespace ErtisAuth.WebAPI.Models.Request.Users
 {
 	public class UpdateUserFormModel
 	{

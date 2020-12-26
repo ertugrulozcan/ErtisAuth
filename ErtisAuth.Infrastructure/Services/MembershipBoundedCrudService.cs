@@ -47,6 +47,8 @@ namespace ErtisAuth.Infrastructure.Services
 		protected abstract Task<bool> IsAlreadyExistAsync(TModel model, string membershipId, TModel exclude = default);
 		
 		protected abstract ErtisAuthException GetAlreadyExistError(TModel model);
+
+		protected abstract ErtisAuthException GetNotFoundError(string id);
 		
 		#endregion
 		
@@ -223,6 +225,11 @@ namespace ErtisAuth.Infrastructure.Services
 
 			// Overwrite
 			var current = this.Get(membershipId, model.Id);
+			if (current == null)
+			{
+				throw this.GetNotFoundError(model.Id);
+			}
+			
 			this.Overwrite(model, current);
 
 			// Model validation
@@ -258,6 +265,11 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			// Overwrite
 			var current = await this.GetAsync(membershipId, model.Id);
+			if (current == null)
+			{
+				throw this.GetNotFoundError(model.Id);
+			}
+			
 			this.Overwrite(model, current);
 			
 			// Model validation
