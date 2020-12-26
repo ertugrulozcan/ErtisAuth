@@ -1,11 +1,8 @@
-using ErtisAuth.Core.Models.Memberships;
-using ErtisAuth.Core.Models.Users;
-using ErtisAuth.Dto.Models.Memberships;
-using ErtisAuth.Dto.Models.Users;
-
+using System;
+using System.Collections.Generic;
 namespace ErtisAuth.Infrastructure.Mapping.Impls
 {
-	public class AutoMapperImpl : IMapper
+	internal class AutoMapperImpl : MapperBase, IMapper
 	{
 		#region Properties
 
@@ -18,9 +15,10 @@ namespace ErtisAuth.Infrastructure.Mapping.Impls
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		public AutoMapperImpl()
+		public AutoMapperImpl(IDictionary<Type, Type> typeMap) : base(typeMap)
 		{
-			var mapperConfiguration = new AutoMapper.MapperConfiguration(cfg => cfg.AddProfile<AutoMapperProfile>());
+			var profile = new AutoMapperProfile(typeMap);
+			var mapperConfiguration = new AutoMapper.MapperConfiguration(cfg => cfg.AddProfile(profile));
 			this.Mapper = mapperConfiguration.CreateMapper();
 		}
 
@@ -34,17 +32,22 @@ namespace ErtisAuth.Infrastructure.Mapping.Impls
 		}
 
 		#endregion
-		
+
+		#region Profiles
+
 		public class AutoMapperProfile : AutoMapper.Profile
 		{
-			public AutoMapperProfile()
+			public AutoMapperProfile(IDictionary<Type, Type> typeMap)
 			{
-				CreateMap<MembershipDto, Membership>();
-				CreateMap<Membership, MembershipDto>();
-				
-				CreateMap<UserDto, User>();
-				CreateMap<User, UserDto>();
+				foreach (var typePair in typeMap)
+				{
+					var sourceType = typePair.Key;
+					var destinationType = typePair.Value;
+					this.CreateMap(sourceType, destinationType);	
+				}
 			}
 		}
+
+		#endregion
 	}
 }

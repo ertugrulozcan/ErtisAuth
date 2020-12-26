@@ -1,23 +1,25 @@
-using ErtisAuth.Core.Models.Memberships;
-using ErtisAuth.Core.Models.Users;
-using ErtisAuth.Dto.Models.Memberships;
-using ErtisAuth.Dto.Models.Users;
-using MongoDB.Bson;
+using System;
+using System.Collections.Generic;
 using Nelibur.ObjectMapper;
 
 namespace ErtisAuth.Infrastructure.Mapping.Impls
 {
-	public class TinyMapperImpl : IMapper
+	internal class TinyMapperImpl : MapperBase, IMapper
 	{
 		#region Constructors
 
-		public TinyMapperImpl()
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="typeMap"></param>
+		public TinyMapperImpl(IDictionary<Type, Type> typeMap) : base(typeMap)
 		{
-			TinyMapper.Bind<MembershipDto, Membership>();
-			TinyMapper.Bind<Membership, MembershipDto>();
-			
-			TinyMapper.Bind<UserDto, User>();
-			TinyMapper.Bind<User, UserDto>();
+			foreach (var typePair in typeMap)
+			{
+				var sourceType = typePair.Key;
+				var destinationType = typePair.Value;
+				TinyMapper.Bind(sourceType, destinationType);	
+			}
 		}
 
 		#endregion
