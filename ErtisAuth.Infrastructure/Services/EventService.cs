@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Infrastructure.Services
 {
-	public class EventService : IEventService
+	public class EventService : MembershipBoundedService<ErtisAuthEvent, EventDto>, IEventService
 	{
 		#region Services
 
@@ -22,8 +22,9 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <summary>
 		/// Constructor
 		/// </summary>
+		/// <param name="membershipService"></param>
 		/// <param name="repository"></param>
-		public EventService(IEventRepository repository)
+		public EventService(IMembershipService membershipService, IEventRepository repository) : base(membershipService, repository)
 		{
 			this.eventRepository = repository;
 		}

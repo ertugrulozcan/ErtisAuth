@@ -31,6 +31,29 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		#region Methods
 
+		[HttpGet]
+		[Route("me")]
+		public async Task<IActionResult> Me()
+		{
+			return await this.WhoAmI();
+		}
+		
+		[HttpGet]
+		[Route("whoami")]
+		public async Task<IActionResult> WhoAmI()
+		{
+			var token = this.GetTokenFromHeader(out _);
+			var user = await this.tokenService.WhoAmIAsync(token);
+			if (user != null)
+			{
+				return this.Ok(user);
+			}
+			else
+			{
+				return this.InvalidToken();
+			}
+		}
+		
 		[HttpPost]
 		[Route("generate-token")]
 		public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenFormModel model)

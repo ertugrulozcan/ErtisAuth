@@ -4,19 +4,20 @@ using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Models.Events;
 using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
 {
 	[ApiController]
-	[Route("api/v{v:apiVersion}/[controller]")]
-	public class MembershipsController : QueryControllerBase
+	[Route("api/v{v:apiVersion}/memberships/{membershipId}/[controller]")]
+	public class EventsController : QueryControllerBase
 	{
 		#region Services
 
-		private readonly IMembershipService membershipService;
-
+		private readonly IEventService eventService;
+		
 		#endregion
 
 		#region Constructors
@@ -24,45 +25,45 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="membershipService"></param>
-		public MembershipsController(IMembershipService membershipService)
+		/// <param name="eventService"></param>
+		public EventsController(IEventService eventService)
 		{
-			this.membershipService = membershipService;
+			this.eventService = eventService;
 		}
 
 		#endregion
 		
 		#region Read Methods
-
+		
 		[HttpGet("{id}")]
-		public async Task<IActionResult> Get([FromRoute] string id)
+		public async Task<ActionResult<ErtisAuthEvent>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			var membership = await this.membershipService.GetAsync(id);
-			if (membership != null)
+			var ertisAuthEvent = await this.eventService.GetAsync(membershipId, id);
+			if (ertisAuthEvent != null)
 			{
-				return this.Ok(membership);
+				return this.Ok(ertisAuthEvent);
 			}
 			else
 			{
-				return this.MembershipNotFound(id);
+				return this.EventNotFound(id);
 			}
 		}
 		
 		[HttpGet]
-		public async Task<IActionResult> Get()
+		public async Task<IActionResult> Get([FromRoute] string membershipId)
 		{
 			this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
 			this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
 				
-			var memberships = await this.membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection);
-			return this.Ok(memberships);
+			var events = await this.eventService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection);
+			return this.Ok(events);
 		}
 		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
 		{
-			return await this.membershipService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			return await this.eventService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 		}
-
+		
 		#endregion
 	}
 }

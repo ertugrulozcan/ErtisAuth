@@ -60,6 +60,49 @@ namespace ErtisAuth.Infrastructure.Services
 		}
 
 		#endregion
+
+		#region WhoAmI
+
+		public async Task<User> WhoAmIAsync(string token)
+		{
+			return await this.GetTokenOwnerAsync(token);
+		}
+
+		private async Task<User> GetTokenOwnerAsync(string token)
+		{
+			if (this.jwtService.TryDecodeToken(token, out var securityToken))
+			{
+				return await this.GetTokenOwnerAsync(securityToken);
+			}
+			else
+			{
+				return null;
+			}
+		}
+		
+		private async Task<User> GetTokenOwnerAsync(JwtSecurityToken securityToken)
+		{
+			if (this.TryExtractClaimValue(securityToken, JwtRegisteredClaimNames.Prn, out var membershipId) && !string.IsNullOrEmpty(membershipId))
+			{
+				var userId = securityToken.Subject;
+				if (!string.IsNullOrEmpty(userId))
+				{
+					return await this.userService.GetAsync(membershipId, userId);
+				}
+				else
+				{
+					// UserId could not found in token claims!
+					throw ErtisAuthException.InvalidToken();
+				}
+			}
+			else
+			{
+				// MembershipId could not found in token claims!
+				throw ErtisAuthException.InvalidToken();
+			}
+		}
+		
+		#endregion
 		
 		#region Generate Token
 
@@ -170,37 +213,21 @@ namespace ErtisAuth.Infrastructure.Services
 				var expireTime = securityToken.ValidTo.ToLocalTime();
 				if (DateTime.Now <= expireTime)
 				{
-					if (this.TryExtractClaimValue(securityToken, JwtRegisteredClaimNames.Prn, out var membershipId) && !string.IsNullOrEmpty(membershipId))
+					var user = await this.GetTokenOwnerAsync(securityToken);
+					if (user != null)
 					{
-						var userId = securityToken.Subject;
-						if (!string.IsNullOrEmpty(userId))
+						if (fireEvent)
 						{
-							var user = await this.userService.GetAsync(membershipId, userId);
-							if (user != null)
-							{
-								if (fireEvent)
-								{
-									await this.eventService.FireEventAsync(new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }));	
-								}
+							await this.eventService.FireEventAsync(new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }));	
+						}
 				
-								return new TokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
-							}
-							else
-							{
-								// User not found!
-								throw ErtisAuthException.UserNotFound(userId, "_id");
-							}
-						}
-						else
-						{
-							// UserId could not found in token claims!
-							throw ErtisAuthException.InvalidToken();
-						}
+						return new TokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
 					}
 					else
 					{
-						// MembershipId could not found in token claims!
-						throw ErtisAuthException.InvalidToken();
+						// User not found!
+						var userId = securityToken.Subject;
+						throw ErtisAuthException.UserNotFound(userId, "_id");
 					}
 				}
 				else

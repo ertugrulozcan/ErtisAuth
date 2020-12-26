@@ -104,9 +104,24 @@ namespace ErtisAuth.WebAPI.Extensions
 			});
 		}
 		
+		public static NotFoundObjectResult EventNotFound(this ControllerBase controller, string eventId)
+		{
+			return controller.NotFound(new ErrorModel
+			{
+				StatusCode = (int) HttpStatusCode.NotFound,
+				Message = $"Event not found in db by given _id: <{eventId}>",
+				ErrorCode = "EventNotFound"
+			});
+		}
+
 		public static UnauthorizedObjectResult Unauthorized(this ControllerBase controller, string username, string password)
 		{
 			return controller.Unauthorized(ErtisAuthException.UsernameOrPasswordIsWrong(username, password).Error);
+		}
+		
+		public static UnauthorizedObjectResult InvalidToken(this ControllerBase controller)
+		{
+			return controller.Unauthorized(ErtisAuthException.InvalidToken().Error);
 		}
 
 		#endregion

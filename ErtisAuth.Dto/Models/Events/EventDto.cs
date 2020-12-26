@@ -4,7 +4,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Events
 {
-	public class EventDto : EntityBase
+	public class EventDto : EntityBase, IHasMembership
 	{
 		#region Properties
 

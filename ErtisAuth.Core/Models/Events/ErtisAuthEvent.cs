@@ -5,7 +5,7 @@ using Newtonsoft.Json.Converters;
 
 namespace ErtisAuth.Core.Models.Events
 {
-	public class ErtisAuthEvent : ResourceBase
+	public class ErtisAuthEvent : ResourceBase, IHasMembership
 	{
 		#region Properties
 
