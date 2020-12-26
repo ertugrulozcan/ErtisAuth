@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace ErtisAuth.Infrastructure.Mapping
 {
 	public abstract class MapperBase
@@ -11,7 +8,7 @@ namespace ErtisAuth.Infrastructure.Mapping
 		/// Constructor
 		/// </summary>
 		/// <param name="typeMap"></param>
-		protected MapperBase(IDictionary<Type, Type> typeMap)
+		protected MapperBase(MappingCollection typeMap)
 		{
 			
 		}

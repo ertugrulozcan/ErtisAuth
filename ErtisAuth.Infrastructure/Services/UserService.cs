@@ -12,16 +12,23 @@ namespace ErtisAuth.Infrastructure.Services
 {
 	public class UserService : MembershipBoundedCrudService<User, UserDto>, IUserService
 	{
+		#region Services
+
+		private readonly IRoleService roleService;
+
+		#endregion
+		
 		#region Constructors
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="membershipService"></param>
+		/// <param name="roleService"></param>
 		/// <param name="userRepository"></param>
-		public UserService(IMembershipService membershipService, IUserRepository userRepository) : base(membershipService, userRepository)
+		public UserService(IMembershipService membershipService, IRoleService roleService, IUserRepository userRepository) : base(membershipService, userRepository)
 		{
-			
+			this.roleService = roleService;
 		}
 
 		#endregion
@@ -33,17 +40,42 @@ namespace ErtisAuth.Infrastructure.Services
 			var errorList = new List<string>();
 			if (string.IsNullOrEmpty(model.Username))
 			{
-				errorList.Add("'username' is a required field");
+				errorList.Add("username is a required field");
 			}
 			
 			if (string.IsNullOrEmpty(model.EmailAddress))
 			{
-				errorList.Add("'email_address' is a required field");
+				errorList.Add("email_address is a required field");
 			}
-			
+			else if (!this.IsValidEmail(model.EmailAddress))
+			{
+				errorList.Add("Email address is not valid");
+			}
+
 			if (string.IsNullOrEmpty(model.MembershipId))
 			{
-				errorList.Add("'membership_id' is a required field");
+				errorList.Add("membership_id is a required field");
+			}
+			
+			if (string.IsNullOrEmpty(model.Role))
+			{
+				errorList.Add("role is a required field");
+			}
+			else
+			{
+				var role = this.roleService.GetByName(model.Role, model.MembershipId);
+				if (role == null)
+				{
+					errorList.Add($"Role is invalid. There is no role named '{model.Role}'");
+				}
+			}
+
+			if (model is UserWithPassword userWithPassword)
+			{
+				if (string.IsNullOrEmpty(userWithPassword.PasswordHash))
+				{
+					errorList.Add("password is a required field");
+				}
 			}
 
 			errors = errorList;
@@ -55,7 +87,6 @@ namespace ErtisAuth.Infrastructure.Services
 			destination.Id = source.Id;
 			destination.Username = source.Username;
 			destination.EmailAddress = source.EmailAddress;
-			destination.PasswordHash = source.PasswordHash;
 			destination.MembershipId = source.MembershipId;
 			destination.Sys = source.Sys;
 			
@@ -73,16 +104,24 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				destination.Role = source.Role;
 			}
+			
+			if (destination is UserWithPassword destinationWithPassword)
+			{
+				if (source is UserWithPassword sourceWithPassword)
+				{
+					destinationWithPassword.PasswordHash = sourceWithPassword.PasswordHash;
+				}	
+			}
 		}
 
 		protected override bool IsAlreadyExist(User model, string membershipId)
 		{
-			return this.GetByUsernameOrEmail(model.Username, model.EmailAddress, membershipId) != null;
+			return this.GetUserWithPassword(model.Username, model.EmailAddress, membershipId) != null;
 		}
 
 		protected override async Task<bool> IsAlreadyExistAsync(User model, string membershipId)
 		{
-			return await this.GetByUsernameOrEmailAsync(model.Username, model.EmailAddress, membershipId) != null;
+			return await this.GetUserWithPasswordAsync(model.Username, model.EmailAddress, membershipId) != null;
 		}
 		
 		protected override ErtisAuthException GetAlreadyExistError(User model)
@@ -90,7 +129,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return ErtisAuthException.UserWithSameUsernameAlreadyExists($"'{model.Username}', '{model.EmailAddress}'");
 		}
 		
-		public User GetByUsernameOrEmail(string username, string email, string membershipId)
+		public UserWithPassword GetUserWithPassword(string username, string email, string membershipId)
 		{
 			var dto = this.repository.FindOne(x =>
 				(x.Username == username || 
@@ -103,10 +142,10 @@ namespace ErtisAuth.Infrastructure.Services
 				return null;
 			}
 			
-			return Mapper.Current.Map<UserDto, User>(dto);
+			return Mapper.Current.Map<UserDto, UserWithPassword>(dto);
 		}
 		
-		public async Task<User> GetByUsernameOrEmailAsync(string username, string email, string membershipId)
+		public async Task<UserWithPassword> GetUserWithPasswordAsync(string username, string email, string membershipId)
 		{
 			var dto = await this.repository.FindOneAsync(x =>
 				(x.Username == username || 
@@ -119,7 +158,20 @@ namespace ErtisAuth.Infrastructure.Services
 				return null;
 			}
 			
-			return Mapper.Current.Map<UserDto, User>(dto);
+			return Mapper.Current.Map<UserDto, UserWithPassword>(dto);
+		}
+		
+		private bool IsValidEmail(string email)
+		{
+			try 
+			{
+				var addr = new System.Net.Mail.MailAddress(email);
+				return addr.Address == email;
+			}
+			catch 
+			{
+				return false;
+			}
 		}
 
 		#endregion

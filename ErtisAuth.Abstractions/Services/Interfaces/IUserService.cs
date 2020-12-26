@@ -5,8 +5,8 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface IUserService : IMembershipBoundedCrudService<User>
 	{
-		User GetByUsernameOrEmail(string username, string email, string membershipId);
+		UserWithPassword GetUserWithPassword(string username, string email, string membershipId);
 		
-		Task<User> GetByUsernameOrEmailAsync(string username, string email, string membershipId);
+		Task<UserWithPassword> GetUserWithPasswordAsync(string username, string email, string membershipId);
 	}
 }

@@ -104,17 +104,17 @@ namespace ErtisAuth.Infrastructure.Services
 			var errorList = new List<string>();
 			if (string.IsNullOrEmpty(model.Name))
 			{
-				errorList.Add("'name' is a required field");
+				errorList.Add("name is a required field");
 			}
 			
 			if (string.IsNullOrEmpty(model.Slug))
 			{
-				errorList.Add("'slug' is a required field");
+				errorList.Add("slug is a required field");
 			}
 			
 			if (string.IsNullOrEmpty(model.MembershipId))
 			{
-				errorList.Add("'membership_id' is a required field");
+				errorList.Add("membership_id is a required field");
 			}
 
 			try

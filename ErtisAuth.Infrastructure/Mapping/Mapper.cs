@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Events;
@@ -48,23 +47,24 @@ namespace ErtisAuth.Infrastructure.Mapping
 		/// </summary>
 		private Mapper()
 		{
-			var typeMap = new Dictionary<Type, Type>
-			{
-				{ typeof(SysModelDto), typeof(SysModel) },
-				{ typeof(SysModel), typeof(SysModelDto) },
-				{ typeof(MembershipDto), typeof(Membership) },
-				{ typeof(Membership), typeof(MembershipDto) },
-				{ typeof(UserDto), typeof(User) },
-				{ typeof(User), typeof(UserDto) },
-				{ typeof(RoleDto), typeof(Role) },
-				{ typeof(Role), typeof(RoleDto) },
-				{ typeof(RevokedTokenDto), typeof(RevokedToken) },
-				{ typeof(RevokedToken), typeof(RevokedTokenDto) },
-				{ typeof(EventDto), typeof(ErtisAuthEvent) },
-				{ typeof(ErtisAuthEvent), typeof(EventDto) },
-			};
+			var mappings = new MappingCollection();
 			
-			this.Implementation = new TinyMapperImpl(typeMap);
+			mappings.Add<SysModelDto, SysModel>();
+			mappings.Add<SysModel, SysModelDto>();
+			mappings.Add<MembershipDto, Membership>();
+			mappings.Add<Membership, MembershipDto>();
+			mappings.Add<UserDto, User>();
+			mappings.Add<User, UserDto>();
+			mappings.Add<UserDto, UserWithPassword>();
+			mappings.Add<UserWithPassword, UserDto>();
+			mappings.Add<RoleDto, Role>();
+			mappings.Add<Role, RoleDto>();
+			mappings.Add<RevokedTokenDto, RevokedToken>();
+			mappings.Add<RevokedToken, RevokedTokenDto>();
+			mappings.Add<EventDto, ErtisAuthEvent>();
+			mappings.Add<ErtisAuthEvent, EventDto>();
+			
+			this.Implementation = new TinyMapperImpl(mappings);
 		}
 
 		#endregion

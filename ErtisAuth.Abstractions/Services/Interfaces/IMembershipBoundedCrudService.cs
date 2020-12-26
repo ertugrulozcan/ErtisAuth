@@ -19,6 +19,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		T Get(string membershipId, string id);
 		
 		Task<T> GetAsync(string membershipId, string id);
+		
 		IPaginationCollection<T> Get(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
 
 		Task<IPaginationCollection<T>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);

@@ -55,27 +55,27 @@ namespace ErtisAuth.Infrastructure.Extensions
 			var errorList = new List<string>();
 			if (membership.ExpiresIn <= 0)
 			{
-				errorList.Add("'expires_in' is not set");
+				errorList.Add("expires_in is not set");
 			}
 			
 			if (membership.RefreshTokenExpiresIn <= 0)
 			{
-				errorList.Add("'refresh_token_expires_in' is not set");
+				errorList.Add("refresh_token_expires_in is not set");
 			}
 			
 			if (string.IsNullOrEmpty(membership.SecretKey))
 			{
-				errorList.Add("'secret_key' is not set");
+				errorList.Add("secret_key is not set");
 			}
 			
 			if (string.IsNullOrEmpty(membership.HashAlgorithm))
 			{
-				errorList.Add("'hash_algorithm' is not set");
+				errorList.Add("hash_algorithm is not set");
 			}
 			
 			if (string.IsNullOrEmpty(membership.DefaultEncoding))
 			{
-				errorList.Add("'encoding' is not set");
+				errorList.Add("encoding is not set");
 			}
 
 			errors = errorList;

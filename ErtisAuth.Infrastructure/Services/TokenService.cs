@@ -78,7 +78,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 
 			// Check user
-			var user = await this.userService.GetByUsernameOrEmailAsync(username, username, membership.Id);
+			var user = await this.userService.GetUserWithPasswordAsync(username, username, membership.Id);
 			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(username, "username or email");
@@ -103,8 +103,13 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		private string CalculatePasswordHash(Membership membership, string password)
+		public string CalculatePasswordHash(Membership membership, string password)
 		{
+			if (string.IsNullOrEmpty(password))
+			{
+				return password;
+			}
+			
 			var hashProvider = new HashProvider();
 			var algorithm = membership.GetHashAlgorithm();
 			var encoding = membership.GetEncoding();

@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Nelibur.ObjectMapper;
 
 namespace ErtisAuth.Infrastructure.Mapping.Impls
@@ -12,9 +10,9 @@ namespace ErtisAuth.Infrastructure.Mapping.Impls
 		/// Constructor
 		/// </summary>
 		/// <param name="typeMap"></param>
-		public TinyMapperImpl(IDictionary<Type, Type> typeMap) : base(typeMap)
+		public TinyMapperImpl(MappingCollection typeMap) : base(typeMap)
 		{
-			foreach (var typePair in typeMap)
+			foreach (var typePair in typeMap.Mappings)
 			{
 				var sourceType = typePair.Key;
 				var destinationType = typePair.Value;

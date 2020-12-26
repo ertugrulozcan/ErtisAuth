@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 namespace ErtisAuth.Infrastructure.Mapping.Impls
 {
 	internal class AutoMapperImpl : MapperBase, IMapper
@@ -15,7 +13,7 @@ namespace ErtisAuth.Infrastructure.Mapping.Impls
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		public AutoMapperImpl(IDictionary<Type, Type> typeMap) : base(typeMap)
+		public AutoMapperImpl(MappingCollection typeMap) : base(typeMap)
 		{
 			var profile = new AutoMapperProfile(typeMap);
 			var mapperConfiguration = new AutoMapper.MapperConfiguration(cfg => cfg.AddProfile(profile));
@@ -37,9 +35,9 @@ namespace ErtisAuth.Infrastructure.Mapping.Impls
 
 		public class AutoMapperProfile : AutoMapper.Profile
 		{
-			public AutoMapperProfile(IDictionary<Type, Type> typeMap)
+			public AutoMapperProfile(MappingCollection typeMap)
 			{
-				foreach (var typePair in typeMap)
+				foreach (var typePair in typeMap.Mappings)
 				{
 					var sourceType = typePair.Key;
 					var destinationType = typePair.Value;

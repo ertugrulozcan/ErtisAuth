@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Mapster;
 
 namespace ErtisAuth.Infrastructure.Mapping.Impls
@@ -12,7 +10,7 @@ namespace ErtisAuth.Infrastructure.Mapping.Impls
 		/// Constructor
 		/// </summary>
 		/// <param name="typeMap"></param>
-		public MapsterImpl(IDictionary<Type, Type> typeMap) : base(typeMap)
+		public MapsterImpl(MappingCollection typeMap) : base(typeMap)
 		{
 			
 		}

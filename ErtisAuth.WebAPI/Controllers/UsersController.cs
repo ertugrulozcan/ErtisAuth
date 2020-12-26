@@ -6,6 +6,7 @@ using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.WebAPI.Models.Request;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
@@ -17,7 +18,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Services
 
 		private readonly IUserService userService;
-
+		private readonly IMembershipService membershipService;
+		private readonly ITokenService tokenService;
+		
 		#endregion
 
 		#region Constructors
@@ -26,9 +29,13 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// Constructor
 		/// </summary>
 		/// <param name="userService"></param>
-		public UsersController(IUserService userService)
+		/// <param name="membershipService"></param>
+		/// <param name="tokenService"></param>
+		public UsersController(IUserService userService, IMembershipService membershipService, ITokenService tokenService)
 		{
 			this.userService = userService;
+			this.membershipService = membershipService;
+			this.tokenService = tokenService;
 		}
 
 		#endregion
@@ -36,9 +43,26 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Create Methods
 		
 		[HttpPost]
-		public async Task<IActionResult> Post([FromRoute] string membershipId, [FromBody] User model)
+		public async Task<IActionResult> Post([FromRoute] string membershipId, [FromBody] CreateUserFormModel model)
 		{
-			var user = await this.userService.CreateAsync(membershipId, model);
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				return this.MembershipNotFound(membershipId);
+			}
+			
+			var userModel = new UserWithPassword
+			{
+				Username = model.Username,
+				EmailAddress = model.EmailAddress,
+				FirstName = model.FirstName,
+				LastName = model.LastName,
+				Role = model.Role,
+				MembershipId = membershipId,
+				PasswordHash = this.tokenService.CalculatePasswordHash(membership, model.Password)
+			};
+			
+			var user = await this.userService.CreateAsync(membershipId, userModel);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user.Id}", user);
 		}
 		
