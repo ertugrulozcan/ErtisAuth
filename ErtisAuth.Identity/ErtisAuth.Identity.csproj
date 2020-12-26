@@ -5,8 +5,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Data" Version="1.0.10" />
-      <PackageReference Include="MongoDB.Driver" Version="2.11.4" />
+      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Jwt" />
     </ItemGroup>
 
     <ItemGroup>
