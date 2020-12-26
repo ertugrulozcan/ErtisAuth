@@ -1,9 +1,14 @@
+using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using ErtisAuth.Identity.Jwt.Services;
+using ErtisAuth.Identity.Jwt.Services.Interfaces;
+using ErtisAuth.Infrastructure.Adapters;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.WebAPI.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -49,13 +54,23 @@ namespace ErtisAuth.WebAPI
 			services.Configure<DatabaseSettings>(Configuration.GetSection("Database"));
 			services.AddSingleton<IDatabaseSettings>(serviceProvider => serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value);
 			
-			services.AddSingleton<ITestRepository, TestRepository>();
 			services.AddSingleton<IMembershipRepository, MembershipRepository>();
 			services.AddSingleton<IUserRepository, UserRepository>();
+			services.AddSingleton<IRoleRepository, RoleRepository>();
+			services.AddSingleton<IRevokedTokensRepository, RevokedTokensRepository>();
+			services.AddSingleton<IEventRepository, EventRepository>();
+			services.AddSingleton<IRepositoryActionBinder, SysUpserter>();
 			
-			services.AddSingleton<ITestService, TestService>();
+			services.AddSingleton<IJwtService, JwtService>();
+			services.AddSingleton<ITokenService, TokenService>();
 			services.AddSingleton<IMembershipService, MembershipService>();
 			services.AddSingleton<IUserService, UserService>();
+			services.AddSingleton<IRoleService, RoleService>();
+			services.AddSingleton<IEventService, EventService>();
+			
+			services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
+			
+			services.AddHttpContextAccessor();
 			
 			services.AddCors(options =>
 			{
