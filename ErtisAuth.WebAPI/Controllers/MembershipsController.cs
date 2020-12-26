@@ -1,10 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
@@ -44,7 +44,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			}
 			else
 			{
-				return this.NotFound();
+				return this.MembershipNotFound(id);
 			}
 		}
 		
@@ -55,14 +55,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
 				
 			var memberships = await this.membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection);
-			if (memberships != null)
-			{
-				return this.Ok(memberships);
-			}
-			else
-			{
-				return this.NotFound();
-			}
+			return this.Ok(memberships);
 		}
 		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
