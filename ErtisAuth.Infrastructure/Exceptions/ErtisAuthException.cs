@@ -109,7 +109,15 @@ namespace ErtisAuth.Infrastructure.Exceptions
 		
 		#region Application Exceptions
 		
-		
+		public static ErtisAuthException ApplicationNotFound(string id)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"Application not found in db by given id: <{id}>", "ApplicationNotFound");
+		}
+
+		public static ErtisAuthException ApplicationWithSameNameAlreadyExists(string name)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"The application with same name is already exists ({name})", "ApplicationWithSameNameAlreadyExists");
+		}
 		
 		#endregion
 		

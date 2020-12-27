@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using Ertis.Core.Models.Resources;
+using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
+using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Dto.Models.Events;
 using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Dto.Models.Memberships;
@@ -57,6 +59,8 @@ namespace ErtisAuth.Infrastructure.Mapping
 			mappings.Add<User, UserDto>();
 			mappings.Add<UserDto, UserWithPassword>();
 			mappings.Add<UserWithPassword, UserDto>();
+			mappings.Add<ApplicationDto, Application>();
+			mappings.Add<Application, ApplicationDto>();
 			mappings.Add<RoleDto, Role>();
 			mappings.Add<Role, RoleDto>();
 			mappings.Add<RevokedTokenDto, RevokedToken>();

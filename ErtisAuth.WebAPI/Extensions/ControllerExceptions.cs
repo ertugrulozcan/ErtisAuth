@@ -84,6 +84,16 @@ namespace ErtisAuth.WebAPI.Extensions
 			});
 		}
 		
+		public static NotFoundObjectResult ApplicationNotFound(this ControllerBase controller, string applicationId)
+		{
+			return controller.NotFound(new ErrorModel
+			{
+				StatusCode = (int) HttpStatusCode.NotFound,
+				Message = $"Application not found in db by given _id: <{applicationId}>",
+				ErrorCode = "ApplicationNotFound"
+			});
+		}
+		
 		public static NotFoundObjectResult MembershipNotFound(this ControllerBase controller, string membershipId)
 		{
 			return controller.NotFound(new ErrorModel
