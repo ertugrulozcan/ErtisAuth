@@ -106,6 +106,20 @@ namespace ErtisAuth.Infrastructure.Exceptions
 		}
 		
 		#endregion
+
+		#region UserType Exceptions
+		
+		public static ErtisAuthException UserTypeNotFound(string id)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"User type not found in db by given _id: <{id}>", "UserTypeNotFound");
+		}
+		
+		public static ErtisAuthException UserTypeWithSameNameAlreadyExists(string name)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"The user type with same name is already exists ({name})", "UserTypeWithSameNameAlreadyExists");
+		}
+		
+		#endregion
 		
 		#region Application Exceptions
 		

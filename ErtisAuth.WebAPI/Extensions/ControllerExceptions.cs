@@ -84,6 +84,16 @@ namespace ErtisAuth.WebAPI.Extensions
 			});
 		}
 		
+		public static NotFoundObjectResult UserTypeNotFound(this ControllerBase controller, string userTypeId)
+		{
+			return controller.NotFound(new ErrorModel
+			{
+				StatusCode = (int) HttpStatusCode.NotFound,
+				Message = $"User type not found in db by given _id: <{userTypeId}>",
+				ErrorCode = "UserTypeNotFound"
+			});
+		}
+		
 		public static NotFoundObjectResult ApplicationNotFound(this ControllerBase controller, string applicationId)
 		{
 			return controller.NotFound(new ErrorModel

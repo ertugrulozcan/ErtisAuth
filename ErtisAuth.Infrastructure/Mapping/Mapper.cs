@@ -6,6 +6,7 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
+using ErtisAuth.Core.Models.UserTypes;
 using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Dto.Models.Events;
 using ErtisAuth.Dto.Models.Identity;
@@ -13,6 +14,7 @@ using ErtisAuth.Dto.Models.Memberships;
 using ErtisAuth.Dto.Models.Resources;
 using ErtisAuth.Dto.Models.Roles;
 using ErtisAuth.Dto.Models.Users;
+using ErtisAuth.Dto.Models.UserTypes;
 using ErtisAuth.Infrastructure.Mapping.Impls;
 
 namespace ErtisAuth.Infrastructure.Mapping
@@ -61,6 +63,10 @@ namespace ErtisAuth.Infrastructure.Mapping
 			mappings.Add<UserWithPassword, UserDto>();
 			mappings.Add<User, UserWithPassword>();
 			mappings.Add<UserWithPassword, User>();
+			mappings.Add<SchemaPropertyDto, SchemaProperty>();
+			mappings.Add<SchemaProperty, SchemaPropertyDto>();
+			mappings.Add<UserTypeDto, UserType>();
+			mappings.Add<UserType, UserTypeDto>();
 			mappings.Add<ApplicationDto, Application>();
 			mappings.Add<Application, ApplicationDto>();
 			mappings.Add<RoleDto, Role>();

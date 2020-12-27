@@ -139,7 +139,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			}
 			else
 			{
-				return this.RoleNotFound(id);
+				return this.UserNotFound(id);
 			}
 		}
 
