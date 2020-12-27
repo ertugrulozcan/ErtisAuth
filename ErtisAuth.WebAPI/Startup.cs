@@ -56,7 +56,6 @@ namespace ErtisAuth.WebAPI
 			
 			services.AddSingleton<IMembershipRepository, MembershipRepository>();
 			services.AddSingleton<IUserRepository, UserRepository>();
-			services.AddSingleton<IUserTypeRepository, UserTypeRepository>();
 			services.AddSingleton<IApplicationRepository, ApplicationRepository>();
 			services.AddSingleton<IRoleRepository, RoleRepository>();
 			services.AddSingleton<IRevokedTokensRepository, RevokedTokensRepository>();
@@ -68,7 +67,6 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<ITokenService, TokenService>();
 			services.AddSingleton<IMembershipService, MembershipService>();
 			services.AddSingleton<IUserService, UserService>();
-			services.AddSingleton<IUserTypeService, UserTypeService>();
 			services.AddSingleton<IApplicationService, ApplicationService>();
 			services.AddSingleton<IRoleService, RoleService>();
 			services.AddSingleton<IEventService, EventService>();

@@ -30,7 +30,7 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="cryptographyService"></param>
 		/// <param name="userRepository"></param>
 		public UserService(
-			IMembershipService membershipService, 
+			IMembershipService membershipService,
 			IRoleService roleService, 
 			ICryptographyService cryptographyService, 
 			IUserRepository userRepository) : 
