@@ -12,5 +12,17 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		IPaginationCollection<T> Get(int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
 		
 		Task<IPaginationCollection<T>> GetAsync(int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
+		
+		T Create(T model);
+		
+		Task<T> CreateAsync(T model);
+
+		T Update(T model);
+		
+		Task<T> UpdateAsync(T model);
+
+		bool Delete(string id);
+
+		Task<bool> DeleteAsync(string id);
 	}
 }

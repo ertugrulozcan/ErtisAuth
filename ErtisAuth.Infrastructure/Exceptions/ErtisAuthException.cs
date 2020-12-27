@@ -81,6 +81,11 @@ namespace ErtisAuth.Infrastructure.Exceptions
 			};
 		}
 		
+		public static ErtisAuthException MembershipAlreadyExists(string membershipId)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"Membership is already exists ({membershipId})", "MembershipAlreadyExists");
+		}
+		
 		#endregion
 		
 		#region User Exceptions
