@@ -8,5 +8,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		UserWithPassword GetUserWithPassword(string username, string email, string membershipId);
 		
 		Task<UserWithPassword> GetUserWithPasswordAsync(string username, string email, string membershipId);
+		
+		Task<User> ChangePasswordAsync(string membershipId, string userId, string newPassword);
 	}
 }

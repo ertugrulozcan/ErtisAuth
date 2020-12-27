@@ -19,7 +19,7 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		private readonly IUserService userService;
 		private readonly IMembershipService membershipService;
-		private readonly ITokenService tokenService;
+		private readonly ICryptographyService cryptographyService;
 		
 		#endregion
 
@@ -30,12 +30,12 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// </summary>
 		/// <param name="userService"></param>
 		/// <param name="membershipService"></param>
-		/// <param name="tokenService"></param>
-		public UsersController(IUserService userService, IMembershipService membershipService, ITokenService tokenService)
+		/// <param name="cryptographyService"></param>
+		public UsersController(IUserService userService, IMembershipService membershipService, ICryptographyService cryptographyService)
 		{
 			this.userService = userService;
 			this.membershipService = membershipService;
-			this.tokenService = tokenService;
+			this.cryptographyService = cryptographyService;
 		}
 
 		#endregion
@@ -59,7 +59,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				LastName = model.LastName,
 				Role = model.Role,
 				MembershipId = membershipId,
-				PasswordHash = this.tokenService.CalculatePasswordHash(membership, model.Password)
+				PasswordHash = this.cryptographyService.CalculatePasswordHash(membership, model.Password)
 			};
 			
 			var user = await this.userService.CreateAsync(membershipId, userModel);
@@ -117,6 +117,13 @@ namespace ErtisAuth.WebAPI.Controllers
 			
 			var user = await this.userService.UpdateAsync(membershipId, userModel);
 			return this.Ok(user);
+		}
+		
+		[HttpPut("{id}/change-password")]
+		public async Task<IActionResult> ChangePassword([FromRoute] string membershipId, [FromRoute] string id, [FromBody] ChangePasswordFormModel model)
+		{
+			await this.userService.ChangePasswordAsync(membershipId, id, model.Password);
+			return this.Ok();
 		}
 
 		#endregion

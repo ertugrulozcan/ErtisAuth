@@ -14,7 +14,9 @@ namespace ErtisAuth.Infrastructure.Services
 	{
 		#region Services
 
+		private readonly IMembershipService membershipService;
 		private readonly IRoleService roleService;
+		private readonly ICryptographyService cryptographyService;
 
 		#endregion
 		
@@ -25,10 +27,18 @@ namespace ErtisAuth.Infrastructure.Services
 		/// </summary>
 		/// <param name="membershipService"></param>
 		/// <param name="roleService"></param>
+		/// <param name="cryptographyService"></param>
 		/// <param name="userRepository"></param>
-		public UserService(IMembershipService membershipService, IRoleService roleService, IUserRepository userRepository) : base(membershipService, userRepository)
+		public UserService(
+			IMembershipService membershipService, 
+			IRoleService roleService, 
+			ICryptographyService cryptographyService, 
+			IUserRepository userRepository) : 
+			base(membershipService, userRepository)
 		{
+			this.membershipService = membershipService;
 			this.roleService = roleService;
+			this.cryptographyService = cryptographyService;
 		}
 
 		#endregion
@@ -207,6 +217,39 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				return false;
 			}
+		}
+
+		#endregion
+
+		#region Change Password
+
+		public async Task<User> ChangePasswordAsync(string membershipId, string userId, string newPassword)
+		{
+			if (string.IsNullOrEmpty(newPassword))
+			{
+				throw ErtisAuthException.ValidationError(new []
+				{
+					"Password can not be null or empty!"
+				});
+			}
+			
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+
+			var user = await this.GetAsync(membershipId, userId);
+			if (user == null)
+			{
+				throw ErtisAuthException.UserNotFound(userId, "_id");
+			}
+
+			var userWithPassword = Mapper.Current.Map<User, UserWithPassword>(user);
+			var passwordHash = this.cryptographyService.CalculatePasswordHash(membership, newPassword);
+			userWithPassword.PasswordHash = passwordHash;
+
+			return await this.UpdateAsync(membershipId, userWithPassword);
 		}
 
 		#endregion

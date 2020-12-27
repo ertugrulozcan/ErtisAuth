@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
-using Ertis.Security.Cryptography;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
@@ -30,6 +29,7 @@ namespace ErtisAuth.Infrastructure.Services
 		private readonly IMembershipService membershipService;
 		private readonly IUserService userService;
 		private readonly IJwtService jwtService;
+		private readonly ICryptographyService cryptographyService;
 		private readonly IEventService eventService;
 		private readonly IRevokedTokensRepository revokedTokensRepository;
 		
@@ -43,18 +43,21 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="membershipService"></param>
 		/// <param name="userService"></param>
 		/// <param name="jwtService"></param>
+		/// <param name="cryptographyService"></param>
 		/// <param name="eventService"></param>
 		/// <param name="revokedTokensRepository"></param>
 		public TokenService(
 			IMembershipService membershipService, 
 			IUserService userService, 
 			IJwtService jwtService,
+			ICryptographyService cryptographyService,
 			IEventService eventService,
 			IRevokedTokensRepository revokedTokensRepository)
 		{
 			this.membershipService = membershipService;
 			this.userService = userService;
 			this.jwtService = jwtService;
+			this.cryptographyService = cryptographyService;
 			this.eventService = eventService;
 			this.revokedTokensRepository = revokedTokensRepository;
 		}
@@ -128,7 +131,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Check password
-			var passwordHash = this.CalculatePasswordHash(membership, password);
+			var passwordHash = this.cryptographyService.CalculatePasswordHash(membership, password);
 			if (passwordHash != user.PasswordHash)
 			{
 				throw ErtisAuthException.UsernameOrPasswordIsWrong(username, password);
@@ -145,21 +148,7 @@ namespace ErtisAuth.Infrastructure.Services
 				return token;
 			}
 		}
-
-		public string CalculatePasswordHash(Membership membership, string password)
-		{
-			if (string.IsNullOrEmpty(password))
-			{
-				return password;
-			}
-			
-			var hashProvider = new HashProvider();
-			var algorithm = membership.GetHashAlgorithm();
-			var encoding = membership.GetEncoding();
-			var passwordHash = hashProvider.Hash(password, algorithm, encoding);
-			return passwordHash;
-		}
-
+		
 		private BearerToken GenerateBearerToken(User user, Membership membership)
 		{
 			string tokenId = Guid.NewGuid().ToString();
