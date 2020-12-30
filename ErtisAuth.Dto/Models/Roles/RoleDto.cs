@@ -23,6 +23,9 @@ namespace ErtisAuth.Dto.Models.Roles
 		[BsonElement("permissions")]
 		public IEnumerable<string> Permissions { get; set; }
 		
+		[BsonElement("forbidden")]
+		public IEnumerable<string> Forbidden { get; set; }
+		
 		[BsonElement("sys")]
 		public SysModelDto Sys { get; set; }
 		

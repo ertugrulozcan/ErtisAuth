@@ -70,15 +70,16 @@ namespace ErtisAuth.Infrastructure.Services
 			string[] reservedResources = {
 				"users",
 				"applications",
-				"roles"
+				"roles",
+				"events"
 			};
 
 			RbacSegment[] adminPrivilages =
 			{
-				Rbac.CrudActions.Create,
-				Rbac.CrudActions.Read,
-				Rbac.CrudActions.Update,
-				Rbac.CrudActions.Delete
+				Rbac.CrudActionSegments.Create,
+				Rbac.CrudActionSegments.Read,
+				Rbac.CrudActionSegments.Update,
+				Rbac.CrudActionSegments.Delete
 			};
 
 			var permissions = new List<string>();
@@ -121,12 +122,36 @@ namespace ErtisAuth.Infrastructure.Services
 
 			try
 			{
+				var permissionList = new List<Rbac>();
 				if (model.Permissions != null)
 				{
 					foreach (var permission in model.Permissions)
 					{
-						Rbac.Parse(permission);
+						var rbac = Rbac.Parse(permission);
+						permissionList.Add(rbac);
 					}
+				}
+				
+				var forbiddenList = new List<Rbac>();
+				if (model.Forbidden != null)
+				{
+					foreach (var forbidden in model.Forbidden)
+					{
+						var rbac = Rbac.Parse(forbidden);
+						forbiddenList.Add(rbac);
+					}
+				}
+				
+				// Is there any conflict?
+				foreach (var permissionRbac in permissionList)
+				{
+					foreach (var forbiddenRbac in forbiddenList)
+					{
+						if (permissionRbac == forbiddenRbac)
+						{
+							errorList.Add($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{permissionRbac}')");
+						}
+					}	
 				}
 			}
 			catch (Exception ex)
@@ -157,6 +182,11 @@ namespace ErtisAuth.Infrastructure.Services
 			if (destination.Permissions == null)
 			{
 				destination.Permissions = source.Permissions;
+			}
+			
+			if (destination.Forbidden == null)
+			{
+				destination.Forbidden = source.Forbidden;
 			}
 
 			if (string.IsNullOrEmpty(destination.Slug))

@@ -1,5 +1,3 @@
-using System.Net;
-using Ertis.Core.Models.Response;
 using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.WebAPI.Constants;
@@ -44,16 +42,6 @@ namespace ErtisAuth.WebAPI.Extensions
 			return TokenHelper.ExtractToken(authorizationHeader, out tokenType);
 		}
 		
-		public static BadRequestObjectResult AuthorizationHeaderMissing(this ControllerBase controller)
-		{
-			return controller.BadRequest(new ErrorModel
-			{
-				StatusCode = (int) HttpStatusCode.BadRequest,
-				Message = $"Authorization header missing or empty",
-				ErrorCode = "AuthorizationHeaderMissing"
-			});
-		}
-		
 		public static string GetXErtisAlias(this ControllerBase controller)
 		{
 			if (controller.Request.Headers.ContainsKey(Headers.X_ERTIS_ALIAS))
@@ -64,77 +52,42 @@ namespace ErtisAuth.WebAPI.Extensions
 			return null;
 		}
 		
+		public static BadRequestObjectResult AuthorizationHeaderMissing(this ControllerBase controller)
+		{
+			return controller.BadRequest(ErtisAuthException.AuthorizationHeaderMissing().Error);
+		}
+		
 		public static BadRequestObjectResult XErtisAliasMissing(this ControllerBase controller)
 		{
-			return controller.BadRequest(new ErrorModel
-			{
-				StatusCode = (int) HttpStatusCode.BadRequest,
-				Message = $"Membership id should be added in headers with '{Headers.X_ERTIS_ALIAS}' key.",
-				ErrorCode = "XErtisAliasRequired"
-			});
+			return controller.BadRequest(ErtisAuthException.XErtisAliasMissing(Headers.X_ERTIS_ALIAS).Error);
 		}
 
 		public static NotFoundObjectResult UserNotFound(this ControllerBase controller, string userId)
 		{
-			return controller.NotFound(new ErrorModel
-			{
-				StatusCode = (int) HttpStatusCode.NotFound,
-				Message = $"User not found in db by given _id: <{userId}>",
-				ErrorCode = "UserNotFound"
-			});
-		}
-		
-		public static NotFoundObjectResult UserTypeNotFound(this ControllerBase controller, string userTypeId)
-		{
-			return controller.NotFound(new ErrorModel
-			{
-				StatusCode = (int) HttpStatusCode.NotFound,
-				Message = $"User type not found in db by given _id: <{userTypeId}>",
-				ErrorCode = "UserTypeNotFound"
-			});
+			return controller.NotFound(ErtisAuthException.UserNotFound(userId, "_id").Error);
 		}
 		
 		public static NotFoundObjectResult ApplicationNotFound(this ControllerBase controller, string applicationId)
 		{
-			return controller.NotFound(new ErrorModel
-			{
-				StatusCode = (int) HttpStatusCode.NotFound,
-				Message = $"Application not found in db by given _id: <{applicationId}>",
-				ErrorCode = "ApplicationNotFound"
-			});
+			return controller.NotFound(ErtisAuthException.ApplicationNotFound(applicationId));
 		}
 		
 		public static NotFoundObjectResult MembershipNotFound(this ControllerBase controller, string membershipId)
 		{
-			return controller.NotFound(new ErrorModel
-			{
-				StatusCode = (int) HttpStatusCode.NotFound,
-				Message = $"Membership not found in db by given _id: <{membershipId}>",
-				ErrorCode = "MembershipNotFound"
-			});
+			return controller.NotFound(ErtisAuthException.MembershipNotFound(membershipId));
 		}
 		
 		public static NotFoundObjectResult RoleNotFound(this ControllerBase controller, string roleId)
 		{
-			return controller.NotFound(new ErrorModel
-			{
-				StatusCode = (int) HttpStatusCode.NotFound,
-				Message = $"Role not found in db by given _id: <{roleId}>",
-				ErrorCode = "RoleNotFound"
-			});
+			return controller.NotFound(ErtisAuthException.RoleNotFound(roleId));
 		}
 		
 		public static NotFoundObjectResult EventNotFound(this ControllerBase controller, string eventId)
 		{
-			return controller.NotFound(new ErrorModel
-			{
-				StatusCode = (int) HttpStatusCode.NotFound,
-				Message = $"Event not found in db by given _id: <{eventId}>",
-				ErrorCode = "EventNotFound"
-			});
+			return controller.NotFound(ErtisAuthException.EventNotFound(eventId));
 		}
 
-		public static UnauthorizedObjectResult Unauthorized(this ControllerBase controller, string username, string password)
+		public static UnauthorizedObjectResult UsernameOrPasswordIsWrong(this ControllerBase controller, string username, string password)
 		{
 			return controller.Unauthorized(ErtisAuthException.UsernameOrPasswordIsWrong(username, password).Error);
 		}

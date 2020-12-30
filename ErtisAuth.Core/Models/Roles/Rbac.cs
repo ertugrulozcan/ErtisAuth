@@ -64,6 +64,20 @@ namespace ErtisAuth.Core.Models.Roles
 				Object = segments.Length > 3 ? (RbacSegment) segments[3] : RbacSegment.All
 			};
 		}
+
+		public static bool TryParse(string path, out Rbac rbac)
+		{
+			try
+			{
+				rbac = Parse(path);
+				return true;
+			}
+			catch (Exception e)
+			{
+				rbac = null;
+				return false;
+			}
+		}
 		
 		public override string ToString()
 		{
@@ -79,7 +93,24 @@ namespace ErtisAuth.Core.Models.Roles
 			public const string Administrator = "admin";
 		}
 
-		public static class CrudActions
+		public static RbacSegment GetSegment(CrudActions action)
+		{
+			switch (action)
+			{
+				case CrudActions.Create:
+					return CrudActionSegments.Create;
+				case CrudActions.Read:
+					return CrudActionSegments.Read;
+				case CrudActions.Update:
+					return CrudActionSegments.Update;
+				case CrudActions.Delete:
+					return CrudActionSegments.Delete;
+				default:
+					return new RbacSegment(action.ToString());
+			}
+		}
+
+		public static class CrudActionSegments
 		{
 			public static readonly RbacSegment Create = new RbacSegment("create");
 			
@@ -88,6 +119,14 @@ namespace ErtisAuth.Core.Models.Roles
 			public static readonly RbacSegment Update = new RbacSegment("update");
 			
 			public static readonly RbacSegment Delete = new RbacSegment("delete");
+		}
+		
+		public enum CrudActions
+		{
+			Create,
+			Read,
+			Update,
+			Delete
 		}
 
 		#endregion

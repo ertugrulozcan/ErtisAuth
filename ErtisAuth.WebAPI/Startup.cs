@@ -7,8 +7,10 @@ using ErtisAuth.Identity.Jwt.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Adapters;
 using ErtisAuth.Infrastructure.Services;
+using ErtisAuth.WebAPI.Constants;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -72,6 +74,7 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IEventService, EventService>();
 			
 			services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
+			services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
 			
 			services.AddHttpContextAccessor();
 			
@@ -87,6 +90,11 @@ namespace ErtisAuth.WebAPI
 					});
 			});
 
+			services.AddAuthorization(options =>
+			{
+				options.AddPolicy(Policies.ErtisAuthAuthorizationPolicyName, policy => policy.AddRequirements(new ErtisAuthAuthorizationRequirement()));
+			});
+			
 			// Api versioning
 			services.AddApiVersioning(o => {
 				o.ReportApiVersions = true;
@@ -111,6 +119,7 @@ namespace ErtisAuth.WebAPI
 			app.UseCors(CORS_POLICY_KEY);
 			app.UseHttpsRedirection();
 			app.UseRouting();
+			app.UseAuthentication();
 			app.UseAuthorization();
 			app.ConfigureGlobalExceptionHandler(sentryHub);
 

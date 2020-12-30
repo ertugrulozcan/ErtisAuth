@@ -78,6 +78,11 @@ namespace ErtisAuth.Core.Models.Roles
 		
 		#region Methods
 
+		public bool IsAll()
+		{
+			return this.Equals(All);
+		}
+		
 		public override string ToString()
 		{
 			return this.Value;

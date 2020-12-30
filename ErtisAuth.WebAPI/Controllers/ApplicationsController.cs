@@ -5,6 +5,8 @@ using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Applications;
+using ErtisAuth.Core.Models.Roles;
+using ErtisAuth.WebAPI.Annotations;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Applications;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +14,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers
 {
 	[ApiController]
+	[Authorized]
+	[RbacResource("applications")]
 	[Route("api/v{v:apiVersion}/memberships/{membershipId}/[controller]")]
 	public class ApplicationsController : QueryControllerBase
 	{
@@ -40,6 +44,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Create Methods
 		
 		[HttpPost]
+		[RbacAction(Rbac.CrudActions.Create)]
 		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateApplicationFormModel model)
 		{
 			var membership = await this.membershipService.GetAsync(membershipId);
@@ -65,6 +70,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Read Methods
 		
 		[HttpGet("{id}")]
+		[RbacObject("id")]
+		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<ActionResult<Application>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
 			var app = await this.applicationService.GetAsync(membershipId, id);
@@ -79,6 +86,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		}
 		
 		[HttpGet]
+		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<IActionResult> Get([FromRoute] string membershipId)
 		{
 			this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
@@ -98,6 +106,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Update Methods
 
 		[HttpPut("{id}")]
+		[RbacObject("id")]
+		[RbacAction(Rbac.CrudActions.Update)]
 		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateApplicationFormModel model)
 		{
 			var applicationModel = new Application
@@ -118,6 +128,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Delete Methods
 
 		[HttpDelete("{id}")]
+		[RbacObject("id")]
+		[RbacAction(Rbac.CrudActions.Delete)]
 		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id)
 		{
 			if (await this.applicationService.DeleteAsync(membershipId, id))

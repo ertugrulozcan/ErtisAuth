@@ -4,7 +4,9 @@ using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
+using ErtisAuth.WebAPI.Annotations;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Users;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +14,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers
 {
 	[ApiController]
+	[Authorized]
+	[RbacResource("users")]
 	[Route("api/v{v:apiVersion}/memberships/{membershipId}/[controller]")]
 	public class UsersController : QueryControllerBase
 	{
@@ -43,6 +47,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Create Methods
 		
 		[HttpPost]
+		[RbacAction(Rbac.CrudActions.Create)]
 		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateUserFormModel model)
 		{
 			var membership = await this.membershipService.GetAsync(membershipId);
@@ -72,6 +77,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Read Methods
 		
 		[HttpGet("{id}")]
+		[RbacObject("id")]
+		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<ActionResult<User>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
 			var user = await this.userService.GetAsync(membershipId, id);
@@ -86,6 +93,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		}
 		
 		[HttpGet]
+		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<IActionResult> Get([FromRoute] string membershipId)
 		{
 			this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
@@ -105,6 +113,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Update Methods
 
 		[HttpPut("{id}")]
+		[RbacObject("id")]
+		[RbacAction(Rbac.CrudActions.Update)]
 		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateUserFormModel model)
 		{
 			var userModel = new User
@@ -122,6 +132,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		}
 		
 		[HttpPut("{id}/change-password")]
+		[RbacObject("id")]
+		[RbacAction(Rbac.CrudActions.Update)]
 		public async Task<IActionResult> ChangePassword([FromRoute] string membershipId, [FromRoute] string id, [FromBody] ChangePasswordFormModel model)
 		{
 			await this.userService.ChangePasswordAsync(membershipId, id, model.Password);
@@ -133,6 +145,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Delete Methods
 
 		[HttpDelete("{id}")]
+		[RbacObject("id")]
+		[RbacAction(Rbac.CrudActions.Delete)]
 		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id)
 		{
 			if (await this.userService.DeleteAsync(membershipId, id))

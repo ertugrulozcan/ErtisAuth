@@ -16,6 +16,9 @@ namespace ErtisAuth.WebAPI.Models.Request.Roles
 		[JsonProperty("permissions")]
 		public IEnumerable<string> Permissions { get; set; }
 		
+		[JsonProperty("forbidden")]
+		public IEnumerable<string> Forbidden { get; set; }
+		
 		#endregion
 	}
 }

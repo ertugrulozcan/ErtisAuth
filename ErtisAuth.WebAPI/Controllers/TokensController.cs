@@ -74,7 +74,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			}
 			else
 			{
-				return this.Unauthorized(username, password);
+				return this.UsernameOrPasswordIsWrong(username, password);
 			}
 		}
 		

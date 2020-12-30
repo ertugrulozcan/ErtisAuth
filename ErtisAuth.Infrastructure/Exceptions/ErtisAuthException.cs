@@ -29,6 +29,16 @@ namespace ErtisAuth.Infrastructure.Exceptions
 		
 		#region Token Exceptions
 		
+		public static ErtisAuthException AuthorizationHeaderMissing()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "Authorization header missing or empty", "AuthorizationHeaderMissing");
+		}
+		
+		public static ErtisAuthException XErtisAliasMissing(string aliasName)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"Membership id should be added in headers with '{aliasName}' key.", "XErtisAliasMissing");
+		}
+		
 		public static ErtisAuthException InvalidToken()
 		{
 			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Provided token is invalid", "InvalidToken");
@@ -64,6 +74,11 @@ namespace ErtisAuth.Infrastructure.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Provided token is not refreshable", "TokenIsNotRefreshable");
 		}
 		
+		public static ErtisAuthException AccessDenied(string message)
+		{
+			return new ErtisAuthException(HttpStatusCode.Forbidden, message, "AccessDenied");
+		}
+
 		#endregion
 		
 		#region Membership Exceptions
@@ -107,20 +122,6 @@ namespace ErtisAuth.Infrastructure.Exceptions
 		
 		#endregion
 
-		#region UserType Exceptions
-		
-		public static ErtisAuthException UserTypeNotFound(string id)
-		{
-			return new ErtisAuthException(HttpStatusCode.NotFound, $"User type not found in db by given _id: <{id}>", "UserTypeNotFound");
-		}
-		
-		public static ErtisAuthException UserTypeWithSameNameAlreadyExists(string name)
-		{
-			return new ErtisAuthException(HttpStatusCode.Conflict, $"The user type with same name is already exists ({name})", "UserTypeWithSameNameAlreadyExists");
-		}
-		
-		#endregion
-		
 		#region Application Exceptions
 		
 		public static ErtisAuthException ApplicationNotFound(string id)
@@ -147,6 +148,15 @@ namespace ErtisAuth.Infrastructure.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The role with same name is already exists ({name})", "RoleWithSameNameAlreadyExists");
 		}
 		
+		#endregion
+
+		#region Event Exceptions
+
+		public static ErtisAuthException EventNotFound(string eventId)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"Event not found in db by given _id: <{eventId}>", "EventNotFound");
+		}
+
 		#endregion
 	}
 }

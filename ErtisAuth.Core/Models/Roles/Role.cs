@@ -20,6 +20,9 @@ namespace ErtisAuth.Core.Models.Roles
 		[JsonProperty("permissions")]
 		public IEnumerable<string> Permissions { get; set; }
 		
+		[JsonProperty("forbidden")]
+		public IEnumerable<string> Forbidden { get; set; }
+		
 		[JsonProperty("sys")]
 		public SysModel Sys { get; set; }
 		
