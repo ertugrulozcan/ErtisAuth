@@ -22,9 +22,6 @@ namespace ErtisAuth.Core.Models.Users
 		[JsonProperty("role")]
 		public string Role { get; set; }
 		
-		[JsonProperty("properties", NullValueHandling = NullValueHandling.Ignore)]
-		public dynamic Properties { get; set; }
-		
 		[JsonProperty("sys")]
 		public SysModel Sys { get; set; }
 		

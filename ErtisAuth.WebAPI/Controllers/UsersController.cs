@@ -64,7 +64,6 @@ namespace ErtisAuth.WebAPI.Controllers
 				LastName = model.LastName,
 				Role = model.Role,
 				MembershipId = membershipId,
-				Properties = model.Properties,
 				PasswordHash = this.cryptographyService.CalculatePasswordHash(membership, model.Password)
 			};
 			
@@ -123,7 +122,6 @@ namespace ErtisAuth.WebAPI.Controllers
 				FirstName = model.FirstName,
 				LastName = model.LastName,
 				Role = model.Role,
-				Properties = model.Properties,
 				MembershipId = membershipId
 			};
 			
