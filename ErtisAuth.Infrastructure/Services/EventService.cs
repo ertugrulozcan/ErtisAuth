@@ -56,7 +56,7 @@ namespace ErtisAuth.Infrastructure.Services
 				await this.eventRepository.InsertAsync(new EventDto
 				{
 					EventType = ertisAuthEvent.EventType.ToString(),
-					UserId = ertisAuthEvent.UserId,
+					UtilizerId = ertisAuthEvent.UtilizerId,
 					MembershipId = ertisAuthEvent.MembershipId,
 					Document = documentBson,
 					Prior = priorBson,

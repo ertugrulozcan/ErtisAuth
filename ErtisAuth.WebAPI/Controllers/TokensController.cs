@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Tokens;
 using Microsoft.AspNetCore.Mvc;
@@ -82,20 +83,40 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("verify-token")]
 		public async Task<IActionResult> VerifyToken()
 		{
-			string token = this.GetTokenFromHeader(out string _);
+			string token = this.GetTokenFromHeader(out string tokenType);
 			if (string.IsNullOrEmpty(token))
 			{
 				return this.AuthorizationHeaderMissing();
 			}
-			
-			var validationResult = await this.tokenService.VerifyTokenAsync(token);
-			if (validationResult.IsValidated)
+
+			switch (tokenType)
 			{
-				return this.Ok(validationResult);
-			}
-			else
-			{
-				return this.Unauthorized(validationResult);
+				case "Bearer":
+				{
+					var validationResult = await this.tokenService.VerifyBearerTokenAsync(token);
+					if (validationResult.IsValidated)
+					{
+						return this.Ok(validationResult);
+					}
+					else
+					{
+						return this.Unauthorized(validationResult);
+					}
+				}
+				case "Basic":
+				{
+					var validationResult = await this.tokenService.VerifyBasicTokenAsync(token);
+					if (validationResult.IsValidated)
+					{
+						return this.Ok(validationResult);
+					}
+					else
+					{
+						return this.Unauthorized(validationResult);
+					}
+				}
+				default:
+					return this.BadRequest(ErtisAuthException.UnsupportedTokenType().Error);
 			}
 		}
 		
@@ -103,20 +124,45 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("verify-token")]
 		public async Task<IActionResult> VerifyToken([FromBody] VerifyTokenFormModel model)
 		{
-			string token = this.GetTokenFromHeader(out string _);
+			string token = this.GetTokenFromHeader(out string tokenType);
 			if (string.IsNullOrEmpty(token))
 			{
 				token = model.Token;
 			}
 
-			var validationResult = await this.tokenService.VerifyTokenAsync(token);
-			if (validationResult.IsValidated)
+			if (string.IsNullOrEmpty(token))
 			{
-				return this.Ok(validationResult);
+				return this.AuthorizationHeaderMissing();
 			}
-			else
+
+			switch (tokenType)
 			{
-				return this.Unauthorized(validationResult);
+				case "Bearer":
+				{
+					var validationResult = await this.tokenService.VerifyBearerTokenAsync(token);
+					if (validationResult.IsValidated)
+					{
+						return this.Ok(validationResult);
+					}
+					else
+					{
+						return this.Unauthorized(validationResult);
+					}
+				}
+				case "Basic":
+				{
+					var validationResult = await this.tokenService.VerifyBasicTokenAsync(token);
+					if (validationResult.IsValidated)
+					{
+						return this.Ok(validationResult);
+					}
+					else
+					{
+						return this.Unauthorized(validationResult);
+					}
+				}
+				default:
+					return this.BadRequest(ErtisAuthException.UnsupportedTokenType().Error);
 			}
 		}
 		

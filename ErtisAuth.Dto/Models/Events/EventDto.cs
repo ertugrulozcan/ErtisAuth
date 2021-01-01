@@ -11,8 +11,8 @@ namespace ErtisAuth.Dto.Models.Events
 		[BsonElement("event_type")]
 		public string EventType { get; set; }
 		
-		[BsonElement("user_id")]
-		public string UserId { get; set; }
+		[BsonElement("utilizer_id")]
+		public string UtilizerId { get; set; }
 		
 		[BsonElement("membership_id")]
 		public string MembershipId { get; set; }

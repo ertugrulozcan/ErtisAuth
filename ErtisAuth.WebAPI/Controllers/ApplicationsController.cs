@@ -56,7 +56,6 @@ namespace ErtisAuth.WebAPI.Controllers
 			var applicationModel = new Application
 			{
 				Name = model.Name,
-				Secret = model.Secret,
 				Role = model.Role,
 				MembershipId = membershipId
 			};

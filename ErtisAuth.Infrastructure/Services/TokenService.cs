@@ -28,6 +28,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		private readonly IMembershipService membershipService;
 		private readonly IUserService userService;
+		private readonly IApplicationService applicationService;
 		private readonly IJwtService jwtService;
 		private readonly ICryptographyService cryptographyService;
 		private readonly IEventService eventService;
@@ -42,6 +43,7 @@ namespace ErtisAuth.Infrastructure.Services
 		/// </summary>
 		/// <param name="membershipService"></param>
 		/// <param name="userService"></param>
+		/// <param name="applicationService"></param>
 		/// <param name="jwtService"></param>
 		/// <param name="cryptographyService"></param>
 		/// <param name="eventService"></param>
@@ -49,6 +51,7 @@ namespace ErtisAuth.Infrastructure.Services
 		public TokenService(
 			IMembershipService membershipService, 
 			IUserService userService, 
+			IApplicationService applicationService,
 			IJwtService jwtService,
 			ICryptographyService cryptographyService,
 			IEventService eventService,
@@ -56,6 +59,7 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			this.membershipService = membershipService;
 			this.userService = userService;
+			this.applicationService = applicationService;
 			this.jwtService = jwtService;
 			this.cryptographyService = cryptographyService;
 			this.eventService = eventService;
@@ -189,7 +193,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Verify Token
 
-		public async Task<TokenValidationResult> VerifyTokenAsync(string token, bool fireEvent = true)
+		public async Task<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true)
 		{
 			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token == token);
 			if (revokedToken != null)
@@ -210,7 +214,7 @@ namespace ErtisAuth.Infrastructure.Services
 							await this.eventService.FireEventAsync(new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }));	
 						}
 				
-						return new TokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
+						return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
 					}
 					else
 					{
@@ -230,6 +234,41 @@ namespace ErtisAuth.Infrastructure.Services
 				// Token could not decoded!
 				throw ErtisAuthException.InvalidToken();
 			}
+		}
+		
+		public async Task<BasicTokenValidationResult> VerifyBasicTokenAsync(string token, bool fireEvent = true)
+		{
+			if (string.IsNullOrEmpty(token))
+			{
+				throw ErtisAuthException.InvalidToken();
+			}
+
+			var parts = token.Split(':');
+			if (parts.Length != 2)
+			{
+				throw ErtisAuthException.InvalidToken();
+			}
+
+			var applicationId = parts[0];
+			var secretKey = parts[1];
+
+			var application = await this.applicationService.GetByIdAsync(applicationId);
+			if (application == null)
+			{
+				throw ErtisAuthException.ApplicationNotFound(applicationId);
+			}
+
+			if (application.Secret != token)
+			{
+				throw ErtisAuthException.ApplicationSecretMismatch();
+			}
+
+			if (fireEvent)
+			{
+				await this.eventService.FireEventAsync(new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, application, new { token }));	
+			}
+			
+			return new BasicTokenValidationResult(true, token, application);
 		}
 
 		#endregion
@@ -325,7 +364,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public async Task<bool> RevokeTokenAsync(string token, bool fireEvent = true)
 		{
-			var validationResult = await this.VerifyTokenAsync(token, false);
+			var validationResult = await this.VerifyBearerTokenAsync(token, false);
 			if (!validationResult.IsValidated)
 			{
 				throw ErtisAuthException.InvalidToken();

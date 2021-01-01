@@ -9,9 +9,6 @@ namespace ErtisAuth.WebAPI.Models.Request.Applications
 		[JsonProperty("name")]
 		public string Name { get; set; }
 
-		[JsonProperty("secret")]
-		public string Secret { get; set; }
-		
 		[JsonProperty("role")]
 		public string Role { get; set; }
 		

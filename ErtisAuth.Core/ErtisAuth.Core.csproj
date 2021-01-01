@@ -2,6 +2,20 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
+
+        <PackageId>ErtisAuth.Core</PackageId>
+        <PackageVersion>1.0.0</PackageVersion>
+        <Authors>Ertuğrul Özcan</Authors>
+        <Description>ErtisAuth.Core</Description>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <Copyright>Ertuğrul Özcan | Copyright 2020 (c)</Copyright>
+        <PackageReleaseNotes>Initial package</PackageReleaseNotes>
+        <PackageTags>ErtisAuth.Core</PackageTags>
+        <Title>ErtisAuth.Core</Title>
+        <PackageProjectUrl>https://github.com/ertugrulozcan</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/ertugrulozcan</RepositoryUrl>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <FileVersion>1.0.0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>

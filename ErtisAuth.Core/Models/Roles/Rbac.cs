@@ -72,7 +72,7 @@ namespace ErtisAuth.Core.Models.Roles
 				rbac = Parse(path);
 				return true;
 			}
-			catch (Exception e)
+			catch
 			{
 				rbac = null;
 				return false;

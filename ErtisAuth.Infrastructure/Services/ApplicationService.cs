@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Ertis.Core.Helpers;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Dao.Repositories.Interfaces;
@@ -14,6 +15,7 @@ namespace ErtisAuth.Infrastructure.Services
 	{
 		#region Services
 
+		private readonly IMembershipService membershipService;
 		private readonly IRoleService roleService;
 
 		#endregion
@@ -28,13 +30,54 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="applicationRepository"></param>
 		public ApplicationService(IMembershipService membershipService, IRoleService roleService, IApplicationRepository applicationRepository) : base(membershipService, applicationRepository)
 		{
+			this.membershipService = membershipService;
 			this.roleService = roleService;
 		}
 
 		#endregion
 		
 		#region Methods
+
+		public override Application Create(string membershipId, Application model)
+		{
+			var membership = this.membershipService.Get(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+			
+			model.Slug = Slugifier.Slugify(model.Name);
+
+			var application = base.Create(membershipId, model);
+			if (application != null)
+			{
+				application.Secret = $"{application.Id}:{membership.SecretKey}";
+				application = this.Update(membershipId, application);
+			}
+			
+			return application;
+		}
 		
+		public override async Task<Application> CreateAsync(string membershipId, Application model)
+		{
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+			
+			model.Slug = Slugifier.Slugify(model.Name);
+			
+			var application = await base.CreateAsync(membershipId, model);
+			if (application != null)
+			{
+				application.Secret = $"{application.Id}:{membership.SecretKey}";	
+				application = await this.UpdateAsync(membershipId, application);
+			}
+
+			return application;
+		}
+
 		protected override bool ValidateModel(Application model, out IEnumerable<string> errors)
 		{
 			var errorList = new List<string>();
@@ -48,10 +91,12 @@ namespace ErtisAuth.Infrastructure.Services
 				errorList.Add("slug is a required field");
 			}
 			
+			/*
 			if (string.IsNullOrEmpty(model.Secret))
 			{
 				errorList.Add("secret is a required field");
 			}
+			*/
 
 			if (string.IsNullOrEmpty(model.MembershipId))
 			{
@@ -152,6 +197,18 @@ namespace ErtisAuth.Infrastructure.Services
 			return ErtisAuthException.ApplicationNotFound(id);
 		}
 
+		public Application GetById(string id)
+		{
+			var dto = this.repository.FindOne(x => x.Id == id);
+			return Mapper.Current.Map<ApplicationDto, Application>(dto);
+		}
+
+		public async Task<Application> GetByIdAsync(string id)
+		{
+			var dto = await this.repository.FindOneAsync(x => x.Id == id);
+			return Mapper.Current.Map<ApplicationDto, Application>(dto);
+		}
+		
 		private Application GetApplicationByName(string name, string membershipId)
 		{
 			var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);

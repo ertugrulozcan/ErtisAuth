@@ -1,4 +1,5 @@
 using System;
+using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -13,8 +14,8 @@ namespace ErtisAuth.Core.Models.Events
 		[JsonConverter(typeof(StringEnumConverter))]
 		public ErtisAuthEventType EventType { get; set; }
 		
-		[JsonProperty("user_id")]
-		public string UserId { get; set; }
+		[JsonProperty("utilizer_id")]
+		public string UtilizerId { get; set; }
 		
 		[JsonProperty("membership_id")]
 		public string MembershipId { get; set; }
@@ -50,8 +51,24 @@ namespace ErtisAuth.Core.Models.Events
 		public ErtisAuthEvent(ErtisAuthEventType type, User user, dynamic document = null, dynamic prior = null)
 		{
 			this.EventType = type;
-			this.UserId = user.Id;
+			this.UtilizerId = user.Id;
 			this.MembershipId = user.MembershipId;
+			this.Document = document;
+			this.Prior = prior;
+		}
+		
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="type"></param>
+		/// <param name="application"></param>
+		/// <param name="document"></param>
+		/// <param name="prior"></param>
+		public ErtisAuthEvent(ErtisAuthEventType type, Application application, dynamic document = null, dynamic prior = null)
+		{
+			this.EventType = type;
+			this.UtilizerId = application.Id;
+			this.MembershipId = application.MembershipId;
 			this.Document = document;
 			this.Prior = prior;
 		}

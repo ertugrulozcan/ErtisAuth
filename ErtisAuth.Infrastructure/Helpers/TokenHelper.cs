@@ -26,7 +26,7 @@ namespace ErtisAuth.Infrastructure.Helpers
 				var supportedTokenTypes = Enum.GetValues(typeof(SupportedTokenTypes)).Cast<SupportedTokenTypes>().Select(x => x.ToString());
 				if (!supportedTokenTypes.Contains(parts[0]))
 				{
-					throw ErtisAuthException.TokenTypeNotSupported();
+					throw ErtisAuthException.UnsupportedTokenType();
 				}
 
 				tokenType = parts[0];

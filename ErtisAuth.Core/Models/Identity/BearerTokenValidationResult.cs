@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Identity
 {
-	public readonly struct TokenValidationResult
+	public readonly struct BearerTokenValidationResult
 	{
 		#region Properties
 
@@ -58,7 +58,7 @@ namespace ErtisAuth.Core.Models.Identity
 		/// <param name="user"></param>
 		/// <param name="remainingTime"></param>
 		/// <param name="isRefreshToken"></param>
-		public TokenValidationResult(bool isVerified, string token, User user, TimeSpan remainingTime, bool isRefreshToken = false)
+		public BearerTokenValidationResult(bool isVerified, string token, User user, TimeSpan remainingTime, bool isRefreshToken = false)
 		{
 			this.IsValidated = isVerified;
 			this.Token = token;

@@ -44,7 +44,7 @@ namespace ErtisAuth.Infrastructure.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Provided token is invalid", "InvalidToken");
 		}
 		
-		public static ErtisAuthException TokenTypeNotSupported()
+		public static ErtisAuthException UnsupportedTokenType()
 		{
 			return new ErtisAuthException(HttpStatusCode.BadRequest, "Token type not supported. Token type must be one of Bearer or Basic", "TokenTypeNotSupported");
 		}
@@ -134,6 +134,11 @@ namespace ErtisAuth.Infrastructure.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The application with same name is already exists ({name})", "ApplicationWithSameNameAlreadyExists");
 		}
 		
+		public static ErtisAuthException ApplicationSecretMismatch()
+		{
+			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Application secret mismatch", "ApplicationSecretMismatch");
+		}
+
 		#endregion
 		
 		#region Role Exceptions
