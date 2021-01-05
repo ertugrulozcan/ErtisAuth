@@ -1,8 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Ertis.Data.Models;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Infrastructure.Events;
 using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
 
@@ -36,6 +39,16 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#endregion
 
+		#region Events
+
+		protected event EventHandler<CreateResourceEventArgs<TModel>> OnCreated;
+		
+		protected event EventHandler<UpdateResourceEventArgs<TModel>> OnUpdated;
+		
+		protected event EventHandler<DeleteResourceEventArgs<TModel>> OnDeleted;
+
+		#endregion
+
 		#region Abstract Methods
 
 		protected abstract bool ValidateModel(TModel model, out IEnumerable<string> errors);
@@ -54,7 +67,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Insert Methods
 
-		public virtual TModel Create(string membershipId, TModel model)
+		public virtual TModel Create(Utilizer utilizer, string membershipId, TModel model)
 		{
 			// Check membership
 			var membership = this.membershipService.Get(membershipId);
@@ -81,11 +94,15 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			// Insert to database
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var inserted = this.repository.Insert(dto);
-			return Mapper.Current.Map<TDto, TModel>(inserted);
+			var insertedDto = this.repository.Insert(dto);
+			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
+
+			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(utilizer, inserted));
+
+			return inserted;
 		}
 		
-		public virtual async Task<TModel> CreateAsync(string membershipId, TModel model)
+		public virtual async Task<TModel> CreateAsync(Utilizer utilizer, string membershipId, TModel model)
 		{
 			// Check membership
 			var membership = await this.membershipService.GetAsync(membershipId);
@@ -112,15 +129,19 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			// Insert to database
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var inserted = await this.repository.InsertAsync(dto);
-			return Mapper.Current.Map<TDto, TModel>(inserted);
+			var insertedDto = await this.repository.InsertAsync(dto);
+			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
+			
+			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(utilizer, inserted));
+
+			return inserted;
 		}
 		
 		#endregion
 
 		#region Update Methods
 
-		public virtual TModel Update(string membershipId, TModel model)
+		public virtual TModel Update(Utilizer utilizer, string membershipId, TModel model)
 		{
 			// Check membership
 			var membership = this.membershipService.Get(membershipId);
@@ -156,11 +177,15 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			model.MembershipId = membershipId;
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var updated = this.repository.Update(dto);
-			return Mapper.Current.Map<TDto, TModel>(updated);
+			var updatedDto = this.repository.Update(dto);
+			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
+			
+			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated));
+
+			return updated;
 		}
 		
-		public virtual async Task<TModel> UpdateAsync(string membershipId, TModel model)
+		public virtual async Task<TModel> UpdateAsync(Utilizer utilizer, string membershipId, TModel model)
 		{
 			// Check membership
 			var membership = await this.membershipService.GetAsync(membershipId);
@@ -196,19 +221,24 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			model.MembershipId = membershipId;
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var updated = await this.repository.UpdateAsync(dto);
-			return Mapper.Current.Map<TDto, TModel>(updated);
+			var updatedDto = await this.repository.UpdateAsync(dto);
+			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
+			
+			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated));
+
+			return updated;
 		}
 		
 		#endregion
 		
 		#region Delete Methods
 
-		public virtual bool Delete(string membershipId, string id)
+		public virtual bool Delete(Utilizer utilizer, string membershipId, string id)
 		{
 			var current = this.Get(membershipId, id);
 			if (current != null)
 			{
+				this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));
 				return this.repository.Delete(id);
 			}
 			else
@@ -217,11 +247,12 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public virtual async Task<bool> DeleteAsync(string membershipId, string id)
+		public virtual async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
 		{
 			var current = await this.GetAsync(membershipId, id);
 			if (current != null)
 			{
+				this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));
 				return await this.repository.DeleteAsync(id);
 			}
 			else

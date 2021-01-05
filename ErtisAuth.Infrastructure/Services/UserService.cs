@@ -2,9 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Models.Events;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Users;
+using ErtisAuth.Infrastructure.Events;
 using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
 
@@ -16,6 +19,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		private readonly IMembershipService membershipService;
 		private readonly IRoleService roleService;
+		private readonly IEventService eventService;
 		private readonly ICryptographyService cryptographyService;
 
 		#endregion
@@ -27,24 +31,87 @@ namespace ErtisAuth.Infrastructure.Services
 		/// </summary>
 		/// <param name="membershipService"></param>
 		/// <param name="roleService"></param>
+		/// <param name="eventService"></param>
 		/// <param name="cryptographyService"></param>
 		/// <param name="userRepository"></param>
 		public UserService(
 			IMembershipService membershipService,
 			IRoleService roleService, 
+			IEventService eventService,
 			ICryptographyService cryptographyService, 
 			IUserRepository userRepository) : 
 			base(membershipService, userRepository)
 		{
 			this.membershipService = membershipService;
 			this.roleService = roleService;
+			this.eventService = eventService;
 			this.cryptographyService = cryptographyService;
+			
+			this.OnCreated += this.UserCreatedEventHandler;
+			this.OnUpdated += this.UserUpdatedEventHandler;
+			this.OnDeleted += this.UserDeletedEventHandler;
+		}
+
+		#endregion
+
+		#region Event Handlers
+
+		private void UserCreatedEventHandler(object sender, CreateResourceEventArgs<User> eventArgs)
+		{
+			this.eventService.FireEventAsync(new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.UserCreated,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Resource,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
+		}
+		
+		private void UserUpdatedEventHandler(object sender, UpdateResourceEventArgs<User> eventArgs)
+		{
+			this.eventService.FireEventAsync(new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.UserUpdated,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Updated,
+				Prior = eventArgs.Prior,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
+		}
+		
+		private void UserDeletedEventHandler(object sender, DeleteResourceEventArgs<User> eventArgs)
+		{
+			this.eventService.FireEventAsync(new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.UserDeleted,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Resource,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
 		}
 
 		#endregion
 		
 		#region Methods
-		
+
+		public override User Update(Utilizer utilizer, string membershipId, User model)
+		{
+			var currentUser = this.GetUserWithPassword(model.Id, membershipId);
+			var updatedUser = base.Update(utilizer, membershipId, model);
+			base.Update(utilizer, membershipId, new UserWithPassword(updatedUser) { PasswordHash = currentUser.PasswordHash });
+
+			return updatedUser;
+		}
+
+		public override async Task<User> UpdateAsync(Utilizer utilizer, string membershipId, User model)
+		{
+			var currentUser = await this.GetUserWithPasswordAsync(model.Id, membershipId);
+			var updatedUser = await base.UpdateAsync(utilizer, membershipId, model);
+			await base.UpdateAsync(utilizer, membershipId, new UserWithPassword(updatedUser) { PasswordHash = currentUser.PasswordHash });
+
+			return updatedUser;
+		}
+
 		protected override bool ValidateModel(User model, out IEnumerable<string> errors)
 		{
 			var errorList = new List<string>();
@@ -173,6 +240,28 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			return ErtisAuthException.UserNotFound(id, "_id");
 		}
+
+		public UserWithPassword GetUserWithPassword(string id, string membershipId)
+		{
+			var dto = this.repository.FindOne(x => x.Id == id && x.MembershipId == membershipId);
+			if (dto == null)
+			{
+				return null;
+			}
+			
+			return Mapper.Current.Map<UserDto, UserWithPassword>(dto);
+		}
+
+		public async Task<UserWithPassword> GetUserWithPasswordAsync(string id, string membershipId)
+		{
+			var dto = await this.repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId);
+			if (dto == null)
+			{
+				return null;
+			}
+			
+			return Mapper.Current.Map<UserDto, UserWithPassword>(dto);
+		}
 		
 		public UserWithPassword GetUserWithPassword(string username, string email, string membershipId)
 		{
@@ -223,7 +312,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Change Password
 
-		public async Task<User> ChangePasswordAsync(string membershipId, string userId, string newPassword)
+		public async Task<User> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword)
 		{
 			if (string.IsNullOrEmpty(newPassword))
 			{
@@ -249,7 +338,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var passwordHash = this.cryptographyService.CalculatePasswordHash(membership, newPassword);
 			userWithPassword.PasswordHash = passwordHash;
 
-			return await this.UpdateAsync(membershipId, userWithPassword);
+			return await this.UpdateAsync(utilizer, membershipId, userWithPassword);
 		}
 
 		#endregion

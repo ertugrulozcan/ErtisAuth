@@ -44,7 +44,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<ActionResult<ErtisAuthEvent>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			var ertisAuthEvent = await this.eventService.GetAsync(membershipId, id);
+			var ertisAuthEvent = await this.eventService.GetDynamicAsync(membershipId, id);
 			if (ertisAuthEvent != null)
 			{
 				return this.Ok(ertisAuthEvent);
@@ -62,10 +62,17 @@ namespace ErtisAuth.WebAPI.Controllers
 			this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
 			this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
 				
-			var events = await this.eventService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection);
+			var events = await this.eventService.GetDynamicAsync(membershipId, skip, limit, withCount, orderBy, sortDirection);
 			return this.Ok(events);
 		}
-		
+
+		[HttpPost("_query")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public override async Task<IActionResult> Query()
+		{
+			return await base.Query();
+		}
+
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
 		{
 			return await this.eventService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);

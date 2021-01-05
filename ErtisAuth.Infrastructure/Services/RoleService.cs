@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Models.Events;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Roles;
+using ErtisAuth.Infrastructure.Events;
 using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
 
@@ -16,6 +19,7 @@ namespace ErtisAuth.Infrastructure.Services
 		#region Services
 
 		private readonly IMembershipService membershipService;
+		private readonly IEventService eventService;
 
 		#endregion
 		
@@ -25,12 +29,18 @@ namespace ErtisAuth.Infrastructure.Services
 		/// Constructor
 		/// </summary>
 		/// <param name="membershipService"></param>
+		/// <param name="eventService"></param>
 		/// <param name="roleRepository"></param>
-		public RoleService(IMembershipService membershipService, IRoleRepository roleRepository) : base(membershipService, roleRepository)
+		public RoleService(IMembershipService membershipService, IEventService eventService, IRoleRepository roleRepository) : base(membershipService, roleRepository)
 		{
 			this.membershipService = membershipService;
+			this.eventService = eventService;
 
 			this.Initialize();
+			
+			this.OnCreated += this.RoleCreatedEventHandler;
+			this.OnUpdated += this.RoleUpdatedEventHandler;
+			this.OnDeleted += this.RoleDeletedEventHandler;
 		}
 
 		#endregion
@@ -49,10 +59,17 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				foreach (var membership in memberships.Items)
 				{
+					var utilizer = new Utilizer
+					{
+						Role = "admin",
+						Type = "system",
+						MembershipId = membership.Id
+					};
+					
 					var role = await this.GetByNameAsync(Rbac.ReservedRoles.Administrator, membership.Id);
 					if (role == null)
 					{
-						await this.CreateAsync(membership.Id, new Role
+						await this.CreateAsync(utilizer, membership.Id, new Role
 						{
 							Name = Rbac.ReservedRoles.Administrator,
 							Description = "Administrator",
@@ -96,6 +113,44 @@ namespace ErtisAuth.Infrastructure.Services
 			return permissions;
 		}
 		
+		#endregion
+		
+		#region Event Handlers
+
+		private void RoleCreatedEventHandler(object sender, CreateResourceEventArgs<Role> eventArgs)
+		{
+			this.eventService.FireEventAsync(new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.RoleCreated,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Resource,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
+		}
+		
+		private void RoleUpdatedEventHandler(object sender, UpdateResourceEventArgs<Role> eventArgs)
+		{
+			this.eventService.FireEventAsync(new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.RoleUpdated,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Updated,
+				Prior = eventArgs.Prior,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
+		}
+		
+		private void RoleDeletedEventHandler(object sender, DeleteResourceEventArgs<Role> eventArgs)
+		{
+			this.eventService.FireEventAsync(new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.RoleDeleted,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Resource,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
+		}
+
 		#endregion
 
 		#region Methods

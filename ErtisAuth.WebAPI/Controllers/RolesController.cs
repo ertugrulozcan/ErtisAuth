@@ -62,7 +62,8 @@ namespace ErtisAuth.WebAPI.Controllers
 				MembershipId = membershipId
 			};
 			
-			var role = await this.roleService.CreateAsync(membershipId, roleModel);
+			var utilizer = this.GetUtilizer();
+			var role = await this.roleService.CreateAsync(utilizer, membershipId, roleModel);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{role.Id}", role);
 		}
 
@@ -96,6 +97,13 @@ namespace ErtisAuth.WebAPI.Controllers
 			var roles = await this.roleService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection);
 			return this.Ok(roles);
 		}
+		
+		[HttpPost("_query")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public override async Task<IActionResult> Query()
+		{
+			return await base.Query();
+		}
 
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
 		{
@@ -122,7 +130,8 @@ namespace ErtisAuth.WebAPI.Controllers
 				MembershipId = membershipId
 			};
 			
-			var role = await this.roleService.UpdateAsync(membershipId, roleModel);
+			var utilizer = this.GetUtilizer();
+			var role = await this.roleService.UpdateAsync(utilizer, membershipId, roleModel);
 			return this.Ok(role);
 		}
 
@@ -135,7 +144,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		[RbacAction(Rbac.CrudActions.Delete)]
 		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			if (await this.roleService.DeleteAsync(membershipId, id))
+			var utilizer = this.GetUtilizer();
+			if (await this.roleService.DeleteAsync(utilizer, membershipId, id))
 			{
 				return this.NoContent();
 			}

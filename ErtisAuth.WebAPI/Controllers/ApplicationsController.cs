@@ -60,7 +60,8 @@ namespace ErtisAuth.WebAPI.Controllers
 				MembershipId = membershipId
 			};
 			
-			var app = await this.applicationService.CreateAsync(membershipId, applicationModel);
+			var utilizer = this.GetUtilizer();
+			var app = await this.applicationService.CreateAsync(utilizer, membershipId, applicationModel);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{app.Id}", app);
 		}
 		
@@ -95,6 +96,13 @@ namespace ErtisAuth.WebAPI.Controllers
 			return this.Ok(apps);
 		}
 		
+		[HttpPost("_query")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public override async Task<IActionResult> Query()
+		{
+			return await base.Query();
+		}
+		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
 		{
 			return await this.applicationService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
@@ -118,7 +126,8 @@ namespace ErtisAuth.WebAPI.Controllers
 				MembershipId = membershipId
 			};
 			
-			var app = await this.applicationService.UpdateAsync(membershipId, applicationModel);
+			var utilizer = this.GetUtilizer();
+			var app = await this.applicationService.UpdateAsync(utilizer, membershipId, applicationModel);
 			return this.Ok(app);
 		}
 
@@ -131,7 +140,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		[RbacAction(Rbac.CrudActions.Delete)]
 		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			if (await this.applicationService.DeleteAsync(membershipId, id))
+			var utilizer = this.GetUtilizer();
+			if (await this.applicationService.DeleteAsync(utilizer, membershipId, id))
 			{
 				return this.NoContent();
 			}

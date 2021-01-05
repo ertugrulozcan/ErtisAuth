@@ -4,8 +4,11 @@ using System.Threading.Tasks;
 using Ertis.Core.Helpers;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Applications;
+using ErtisAuth.Core.Models.Events;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Applications;
+using ErtisAuth.Infrastructure.Events;
 using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
 
@@ -17,6 +20,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		private readonly IMembershipService membershipService;
 		private readonly IRoleService roleService;
+		private readonly IEventService eventService;
 
 		#endregion
 		
@@ -27,18 +31,66 @@ namespace ErtisAuth.Infrastructure.Services
 		/// </summary>
 		/// <param name="membershipService"></param>
 		/// <param name="roleService"></param>
+		/// <param name="eventService"></param>
 		/// <param name="applicationRepository"></param>
-		public ApplicationService(IMembershipService membershipService, IRoleService roleService, IApplicationRepository applicationRepository) : base(membershipService, applicationRepository)
+		public ApplicationService(
+			IMembershipService membershipService, 
+			IRoleService roleService, 
+			IEventService eventService,
+			IApplicationRepository applicationRepository) : base(membershipService, applicationRepository)
 		{
 			this.membershipService = membershipService;
 			this.roleService = roleService;
+			this.eventService = eventService;
+			
+			this.OnCreated += this.ApplicationCreatedEventHandler;
+			this.OnUpdated += this.ApplicationUpdatedEventHandler;
+			this.OnDeleted += this.ApplicationDeletedEventHandler;
+		}
+
+		#endregion
+		
+		#region Event Handlers
+
+		private void ApplicationCreatedEventHandler(object sender, CreateResourceEventArgs<Application> eventArgs)
+		{
+			this.eventService.FireEventAsync(new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.ApplicationCreated,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Resource,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
+		}
+		
+		private void ApplicationUpdatedEventHandler(object sender, UpdateResourceEventArgs<Application> eventArgs)
+		{
+			this.eventService.FireEventAsync(new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.ApplicationUpdated,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Updated,
+				Prior = eventArgs.Prior,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
+		}
+		
+		private void ApplicationDeletedEventHandler(object sender, DeleteResourceEventArgs<Application> eventArgs)
+		{
+			this.eventService.FireEventAsync(new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.ApplicationDeleted,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Resource,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
 		}
 
 		#endregion
 		
 		#region Methods
 
-		public override Application Create(string membershipId, Application model)
+		public override Application Create(Utilizer utilizer, string membershipId, Application model)
 		{
 			var membership = this.membershipService.Get(membershipId);
 			if (membership == null)
@@ -48,17 +100,17 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			model.Slug = Slugifier.Slugify(model.Name);
 
-			var application = base.Create(membershipId, model);
+			var application = base.Create(utilizer, membershipId, model);
 			if (application != null)
 			{
 				application.Secret = $"{application.Id}:{membership.SecretKey}";
-				application = this.Update(membershipId, application);
+				application = this.Update(utilizer, membershipId, application);
 			}
 			
 			return application;
 		}
 		
-		public override async Task<Application> CreateAsync(string membershipId, Application model)
+		public override async Task<Application> CreateAsync(Utilizer utilizer, string membershipId, Application model)
 		{
 			var membership = await this.membershipService.GetAsync(membershipId);
 			if (membership == null)
@@ -68,11 +120,11 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			model.Slug = Slugifier.Slugify(model.Name);
 			
-			var application = await base.CreateAsync(membershipId, model);
+			var application = await base.CreateAsync(utilizer, membershipId, model);
 			if (application != null)
 			{
 				application.Secret = $"{application.Id}:{membership.SecretKey}";	
-				application = await this.UpdateAsync(membershipId, application);
+				application = await this.UpdateAsync(utilizer, membershipId, application);
 			}
 
 			return application;

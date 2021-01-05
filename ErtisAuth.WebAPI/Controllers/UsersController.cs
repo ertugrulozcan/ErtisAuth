@@ -67,7 +67,8 @@ namespace ErtisAuth.WebAPI.Controllers
 				PasswordHash = this.cryptographyService.CalculatePasswordHash(membership, model.Password)
 			};
 			
-			var user = await this.userService.CreateAsync(membershipId, userModel);
+			var utilizer = this.GetUtilizer();
+			var user = await this.userService.CreateAsync(utilizer, membershipId, userModel);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user.Id}", user);
 		}
 		
@@ -102,6 +103,13 @@ namespace ErtisAuth.WebAPI.Controllers
 			return this.Ok(users);
 		}
 		
+		[HttpPost("_query")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public override async Task<IActionResult> Query()
+		{
+			return await base.Query();
+		}
+		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
 		{
 			return await this.userService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
@@ -125,7 +133,8 @@ namespace ErtisAuth.WebAPI.Controllers
 				MembershipId = membershipId
 			};
 			
-			var user = await this.userService.UpdateAsync(membershipId, userModel);
+			var utilizer = this.GetUtilizer();
+			var user = await this.userService.UpdateAsync(utilizer, membershipId, userModel);
 			return this.Ok(user);
 		}
 		
@@ -134,7 +143,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		[RbacAction(Rbac.CrudActions.Update)]
 		public async Task<IActionResult> ChangePassword([FromRoute] string membershipId, [FromRoute] string id, [FromBody] ChangePasswordFormModel model)
 		{
-			await this.userService.ChangePasswordAsync(membershipId, id, model.Password);
+			var utilizer = this.GetUtilizer();
+			await this.userService.ChangePasswordAsync(utilizer, membershipId, id, model.Password);
 			return this.Ok();
 		}
 
@@ -147,7 +157,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		[RbacAction(Rbac.CrudActions.Delete)]
 		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			if (await this.userService.DeleteAsync(membershipId, id))
+			var utilizer = this.GetUtilizer();
+			if (await this.userService.DeleteAsync(utilizer, membershipId, id))
 			{
 				return this.NoContent();
 			}

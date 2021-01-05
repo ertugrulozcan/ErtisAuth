@@ -1,9 +1,12 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Ertis.Core.Collections;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Events;
+using ErtisAuth.Infrastructure.Exceptions;
 using MongoDB.Bson;
 using Newtonsoft.Json;
 
@@ -13,6 +16,7 @@ namespace ErtisAuth.Infrastructure.Services
 	{
 		#region Services
 
+		private readonly IMembershipService membershipService;
 		private readonly IEventRepository eventRepository;
 
 		#endregion
@@ -26,6 +30,7 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="repository"></param>
 		public EventService(IMembershipService membershipService, IEventRepository repository) : base(membershipService, repository)
 		{
+			this.membershipService = membershipService;
 			this.eventRepository = repository;
 		}
 
@@ -70,6 +75,66 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		#endregion	
+		#endregion
+
+		#region Dynamics
+
+		public dynamic GetDynamic(string membershipId, string id)
+		{
+			var membership = this.membershipService.Get(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+			
+			var result = this.eventRepository.Query(x => x.Id == id && x.MembershipId == membershipId, 0, 1);
+			if (result?.Items != null && result.Items.Any())
+			{
+				return result.Items.FirstOrDefault();
+			}
+
+			return null;
+		}
+
+		public async Task<dynamic> GetDynamicAsync(string membershipId, string id)
+		{
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+			
+			var result = await this.eventRepository.QueryAsync(x => x.Id == id && x.MembershipId == membershipId, 0, 1);
+			if (result?.Items != null && result.Items.Any())
+			{
+				return result.Items.FirstOrDefault();
+			}
+
+			return null;
+		}
+
+		public IPaginationCollection<dynamic> GetDynamic(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
+		{
+			var membership = this.membershipService.Get(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+			
+			return this.eventRepository.Query(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
+		}
+
+		public async Task<IPaginationCollection<dynamic>> GetDynamicAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
+		{
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+			
+			return await this.eventRepository.QueryAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
+		}
+
+		#endregion
 	}
 }

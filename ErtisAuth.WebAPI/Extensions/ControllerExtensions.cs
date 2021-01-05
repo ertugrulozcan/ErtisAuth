@@ -1,3 +1,5 @@
+using System.Linq;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.WebAPI.Constants;
@@ -6,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Extensions
 {
-	public static class ControllerExceptions
+	public static class ControllerExtensions
 	{
 		#region Methods
 
@@ -50,6 +52,29 @@ namespace ErtisAuth.WebAPI.Extensions
 			}
 
 			return null;
+		}
+
+		public static Utilizer GetUtilizer(this ControllerBase controller)
+		{
+			var claimUser = controller.User;
+			var utilizerIdentity = claimUser.Identities.FirstOrDefault(x => x.NameClaimType == "Utilizer");
+			if (utilizerIdentity != null)
+			{
+				var idClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerIdClaimName);
+				var typeClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerTypeClaimName);
+				var roleClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerRoleClaimName);
+				var membershipIdClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.MembershipIdClaimName);
+
+				return new Utilizer
+				{
+					Id = idClaim?.Value,
+					Type = typeClaim?.Value,
+					Role = roleClaim?.Value,
+					MembershipId = membershipIdClaim?.Value
+				};
+			}
+
+			return new Utilizer();
 		}
 		
 		public static BadRequestObjectResult AuthorizationHeaderMissing(this ControllerBase controller)

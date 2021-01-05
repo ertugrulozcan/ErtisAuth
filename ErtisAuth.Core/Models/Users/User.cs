@@ -36,5 +36,32 @@ namespace ErtisAuth.Core.Models.Users
 		public string PasswordHash { get; set; }
 
 		#endregion
+
+		#region Constructors
+
+		/// <summary>
+		/// Default Constructor
+		/// </summary>
+		public UserWithPassword()
+		{
+			
+		}
+		
+		/// <summary>
+		/// Constructor with user
+		/// </summary>
+		public UserWithPassword(User user)
+		{
+			this.Id = user.Id;
+			this.FirstName = user.FirstName;
+			this.LastName = user.LastName;
+			this.Username = user.Username;
+			this.EmailAddress = user.EmailAddress;
+			this.Role = user.Role;
+			this.Sys = user.Sys;
+			this.MembershipId = user.MembershipId;
+		}
+
+		#endregion
 	}
 }

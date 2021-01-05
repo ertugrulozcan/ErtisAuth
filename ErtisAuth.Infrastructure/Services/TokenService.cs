@@ -250,7 +250,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 
 			var applicationId = parts[0];
-			var secretKey = parts[1];
+			//var secretKey = parts[1];
 
 			var application = await this.applicationService.GetByIdAsync(applicationId);
 			if (application == null)

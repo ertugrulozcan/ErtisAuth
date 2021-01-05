@@ -8,7 +8,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Core" Version="1.0.6" />
+      <PackageReference Include="Ertis.Core" Version="1.0.8" />
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
     </ItemGroup>
 </Project>

@@ -31,7 +31,9 @@ namespace ErtisAuth.Tests
 			IMembershipRepository membershipRepository = new MembershipRepository(databaseSettings, null);
 			IRoleRepository roleRepository = new RoleRepository(databaseSettings, null);
 			IMembershipService membershipService = new MembershipService(membershipRepository);
-			this.roleService = new RoleService(membershipService, roleRepository);
+			IEventRepository eventRepository = new EventRepository(databaseSettings, null);
+			IEventService eventService = new EventService(membershipService, eventRepository);
+			this.roleService = new RoleService(membershipService, eventService, roleRepository);
 		}
 
 		#endregion

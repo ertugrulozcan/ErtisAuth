@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Extensions;
@@ -53,7 +55,22 @@ namespace ErtisAuth.WebAPI.Services
 			
 			try
 			{
-				await this.CheckAuthorizationAsync(httpContext);
+				var utilizer = await this.CheckAuthorizationAsync(httpContext);
+				
+				var identity = new ClaimsIdentity(
+					new []
+					{
+						new Claim(Utilizer.UtilizerIdClaimName, utilizer.Id),
+						new Claim(Utilizer.UtilizerTypeClaimName, utilizer.Type),
+						new Claim(Utilizer.UtilizerRoleClaimName, utilizer.Role),
+						new Claim(Utilizer.MembershipIdClaimName, utilizer.MembershipId)
+					}, 
+					null, 
+					"Utilizer", 
+					utilizer.Role);
+					
+				context.User.AddIdentity(identity);
+				
 				context.Succeed(requirement);
 			}
 			catch (ErtisAuthException ex)
@@ -73,7 +90,7 @@ namespace ErtisAuth.WebAPI.Services
 			}
 		}
 
-		private async Task CheckAuthorizationAsync(HttpContext httpContext)
+		private async Task<Utilizer> CheckAuthorizationAsync(HttpContext httpContext)
 		{
 			var token = httpContext.Request.GetTokenFromHeader(out var tokenType);
 			if (string.IsNullOrEmpty(token))
@@ -85,7 +102,7 @@ namespace ErtisAuth.WebAPI.Services
 			{
 				throw ErtisAuthException.UnsupportedTokenType();
 			}
-			
+
 			switch (tokenType)
 			{
 				case "Bearer":
@@ -105,8 +122,9 @@ namespace ErtisAuth.WebAPI.Services
 	                        this.VerifyRolePermissions(role, user.Id, httpContext);
                         }
                     }
+
+                    return user;
 				}
-				break;
 				
 				case "Basic":
 				{
@@ -125,8 +143,9 @@ namespace ErtisAuth.WebAPI.Services
 							this.VerifyRolePermissions(role, application.Id, httpContext);
 						}
 					}
+					
+					return application;
 				}
-				break;
 				
 				default:
 					throw ErtisAuthException.UnsupportedTokenType();
