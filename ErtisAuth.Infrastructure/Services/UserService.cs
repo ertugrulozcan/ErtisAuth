@@ -97,19 +97,13 @@ namespace ErtisAuth.Infrastructure.Services
 		public override User Update(Utilizer utilizer, string membershipId, User model)
 		{
 			var currentUser = this.GetUserWithPassword(model.Id, membershipId);
-			var updatedUser = base.Update(utilizer, membershipId, model);
-			base.Update(utilizer, membershipId, new UserWithPassword(updatedUser) { PasswordHash = currentUser.PasswordHash });
-
-			return updatedUser;
+			return base.Update(utilizer, membershipId, new UserWithPassword(model) { PasswordHash = currentUser.PasswordHash });
 		}
 
 		public override async Task<User> UpdateAsync(Utilizer utilizer, string membershipId, User model)
 		{
 			var currentUser = await this.GetUserWithPasswordAsync(model.Id, membershipId);
-			var updatedUser = await base.UpdateAsync(utilizer, membershipId, model);
-			await base.UpdateAsync(utilizer, membershipId, new UserWithPassword(updatedUser) { PasswordHash = currentUser.PasswordHash });
-
-			return updatedUser;
+			return await base.UpdateAsync(utilizer, membershipId, new UserWithPassword(model) { PasswordHash = currentUser.PasswordHash });
 		}
 
 		protected override bool ValidateModel(User model, out IEnumerable<string> errors)
