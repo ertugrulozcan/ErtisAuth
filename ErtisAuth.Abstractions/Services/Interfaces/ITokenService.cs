@@ -6,10 +6,12 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface ITokenService
 	{
-		Task<User> WhoAmIAsync(string token);
+		Task<User> WhoAmIAsync(string token, string tokenType);
 		
 		Task<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, bool fireEvent = true);
 
+		Task<ITokenValidationResult> VerifyTokenAsync(string token, string tokenType, bool fireEvent = true);
+		
 		Task<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true);
 		
 		Task<BasicTokenValidationResult> VerifyBasicTokenAsync(string token, bool fireEvent = true);

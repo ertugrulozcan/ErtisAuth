@@ -70,8 +70,20 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region WhoAmI
 
-		public async Task<User> WhoAmIAsync(string token)
+		public async Task<User> WhoAmIAsync(string token, string tokenType)
 		{
+			switch (tokenType)
+			{
+				case "Bearer":
+					await this.VerifyBearerTokenAsync(token, false);
+					break;
+				case "Basic":
+					await this.VerifyBasicTokenAsync(token, false);
+					break;
+				default:
+					throw ErtisAuthException.UnsupportedTokenType();
+			}
+			
 			return await this.GetTokenOwnerAsync(token);
 		}
 
@@ -193,6 +205,19 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Verify Token
 
+		public async Task<ITokenValidationResult> VerifyTokenAsync(string token, string tokenType, bool fireEvent = true)
+		{
+			switch (tokenType)
+			{
+				case "Bearer":
+					return await this.VerifyBearerTokenAsync(token, fireEvent);
+				case "Basic":
+					return await this.VerifyBasicTokenAsync(token, fireEvent);
+				default:
+					throw ErtisAuthException.UnsupportedTokenType();
+			}
+		}
+		
 		public async Task<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true)
 		{
 			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token == token);

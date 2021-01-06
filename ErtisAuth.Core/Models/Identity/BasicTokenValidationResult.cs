@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Identity
 {
-	public readonly struct BasicTokenValidationResult
+	public readonly struct BasicTokenValidationResult : ITokenValidationResult
 	{
 		#region Properties
 
