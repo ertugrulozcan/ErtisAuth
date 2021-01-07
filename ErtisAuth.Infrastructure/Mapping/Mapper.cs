@@ -7,6 +7,7 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
+using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Dto.Models.Events;
 using ErtisAuth.Dto.Models.Identity;
@@ -15,6 +16,7 @@ using ErtisAuth.Dto.Models.Providers;
 using ErtisAuth.Dto.Models.Resources;
 using ErtisAuth.Dto.Models.Roles;
 using ErtisAuth.Dto.Models.Users;
+using ErtisAuth.Dto.Models.Webhooks;
 using ErtisAuth.Infrastructure.Mapping.Impls;
 
 namespace ErtisAuth.Infrastructure.Mapping
@@ -73,7 +75,11 @@ namespace ErtisAuth.Infrastructure.Mapping
 			mappings.Add<RevokedToken, RevokedTokenDto>();
 			mappings.Add<EventDto, ErtisAuthEvent>();
 			mappings.Add<ErtisAuthEvent, EventDto>();
-			
+			mappings.Add<WebhookDto, Webhook>();
+			mappings.Add<Webhook, WebhookDto>();
+			mappings.Add<WebhookRequestDto, WebhookRequest>();
+			mappings.Add<WebhookRequest, WebhookRequestDto>();
+
 			this.Implementation = new TinyMapperImpl(mappings);
 		}
 
