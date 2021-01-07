@@ -109,6 +109,12 @@ namespace ErtisAuth.WebAPI
 				o.AssumeDefaultVersionWhenUnspecified = true;
 				o.DefaultApiVersion = new ApiVersion(major, minor);
 			});
+			
+			// Swagger
+			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
+			{
+				services.AddSwaggerGen();
+			}
 
 			services
 				.AddControllers()
@@ -131,6 +137,18 @@ namespace ErtisAuth.WebAPI
 			app.UseAuthorization();
 			app.ConfigureGlobalExceptionHandler(sentryHub);
 
+			// Swagger
+			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
+			{
+				app.UseSwagger();
+
+				int majorVersion = this.Configuration.GetSection("ApiVersion").GetValue<int>("Major");
+				app.UseSwaggerUI(c =>
+				{
+					c.SwaggerEndpoint($"/swagger/v{majorVersion}/swagger.json", $"ErtisAuth V{majorVersion}");
+				});
+			}
+			
 			app.UseEndpoints(endpoints =>
 			{
 				endpoints.MapControllers();
