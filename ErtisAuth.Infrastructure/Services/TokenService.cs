@@ -159,7 +159,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 				if (fireEvent)
 				{
-					await this.eventService.FireEventAsync(new ErtisAuthEvent(ErtisAuthEventType.TokenGenerated, user, token));	
+					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenGenerated, user, token));	
 				}
 				
 				return token;
@@ -263,7 +263,7 @@ namespace ErtisAuth.Infrastructure.Services
 						
 						if (fireEvent)
 						{
-							await this.eventService.FireEventAsync(new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }));	
+							await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }));	
 						}
 				
 						return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
@@ -317,7 +317,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 			if (fireEvent)
 			{
-				await this.eventService.FireEventAsync(new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, application, new { token }));	
+				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, application, new { token }));	
 			}
 			
 			return new BasicTokenValidationResult(true, token, application);
@@ -362,7 +362,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 										if (fireEvent)
 										{
-											await this.eventService.FireEventAsync(new ErtisAuthEvent(ErtisAuthEventType.TokenRefreshed, user, token, new { refreshToken }));	
+											await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRefreshed, user, token, new { refreshToken }));	
 										}
 				
 										return token;
@@ -447,7 +447,7 @@ namespace ErtisAuth.Infrastructure.Services
 				}	
 			}
 
-			await this.eventService.FireEventAsync(new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, validationResult.User, new { token }));
+			await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, validationResult.User, new { token }));
 			
 			return true;
 		}

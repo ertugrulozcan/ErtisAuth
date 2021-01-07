@@ -118,7 +118,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		private void RoleCreatedEventHandler(object sender, CreateResourceEventArgs<Role> eventArgs)
 		{
-			this.eventService.FireEventAsync(new ErtisAuthEvent
+			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.RoleCreated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -129,7 +129,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private void RoleUpdatedEventHandler(object sender, UpdateResourceEventArgs<Role> eventArgs)
 		{
-			this.eventService.FireEventAsync(new ErtisAuthEvent
+			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.RoleUpdated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -141,7 +141,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private void RoleDeletedEventHandler(object sender, DeleteResourceEventArgs<Role> eventArgs)
 		{
-			this.eventService.FireEventAsync(new ErtisAuthEvent
+			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.RoleDeleted,
 				UtilizerId = eventArgs.Utilizer.Id,

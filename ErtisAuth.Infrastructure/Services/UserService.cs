@@ -67,7 +67,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		private void UserCreatedEventHandler(object sender, CreateResourceEventArgs<User> eventArgs)
 		{
-			this.eventService.FireEventAsync(new ErtisAuthEvent
+			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.UserCreated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -78,7 +78,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private void UserUpdatedEventHandler(object sender, UpdateResourceEventArgs<User> eventArgs)
 		{
-			this.eventService.FireEventAsync(new ErtisAuthEvent
+			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.UserUpdated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -90,7 +90,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private void UserDeletedEventHandler(object sender, DeleteResourceEventArgs<User> eventArgs)
 		{
-			this.eventService.FireEventAsync(new ErtisAuthEvent
+			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.UserDeleted,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -368,9 +368,9 @@ namespace ErtisAuth.Infrastructure.Services
 
 			var updatedUser = this.Update(utilizer, membershipId, userWithPassword);
 			
-			this.eventService.FireEventAsync(new ErtisAuthEvent
+			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
-				EventType = ErtisAuthEventType.PasswordChanged,
+				EventType = ErtisAuthEventType.UserPasswordChanged,
 				UtilizerId = user.Id,
 				Document = updatedUser,
 				Prior = userWithPassword,
@@ -408,9 +408,9 @@ namespace ErtisAuth.Infrastructure.Services
 
 			var updatedUser = await this.UpdateAsync(utilizer, membershipId, userWithPassword);
 			
-			await this.eventService.FireEventAsync(new ErtisAuthEvent
+			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
-				EventType = ErtisAuthEventType.PasswordChanged,
+				EventType = ErtisAuthEventType.UserPasswordChanged,
 				UtilizerId = user.Id,
 				Document = updatedUser,
 				Prior = userWithPassword,
@@ -458,9 +458,9 @@ namespace ErtisAuth.Infrastructure.Services
 				var resetToken = this.jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
 				var resetPasswordToken = new ResetPasswordToken(resetToken, TimeSpan.FromHours(1));
 				
-				await this.eventService.FireEventAsync(new ErtisAuthEvent
+				await this.eventService.FireEventAsync(this, new ErtisAuthEvent
 				{
-					EventType = ErtisAuthEventType.PasswordReset,
+					EventType = ErtisAuthEventType.UserPasswordReset,
 					UtilizerId = user.Id,
 					Document = resetPasswordToken,
 					MembershipId = membershipId

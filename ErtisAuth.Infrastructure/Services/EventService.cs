@@ -35,10 +35,16 @@ namespace ErtisAuth.Infrastructure.Services
 		}
 
 		#endregion
+
+		#region Events
+
+		public event EventHandler<ErtisAuthEvent> EventFired;
+
+		#endregion
 		
 		#region Methods
 
-		public async Task FireEventAsync(ErtisAuthEvent ertisAuthEvent)
+		public async Task FireEventAsync(object sender, ErtisAuthEvent ertisAuthEvent)
 		{
 			try
 			{
@@ -67,6 +73,8 @@ namespace ErtisAuth.Infrastructure.Services
 					Prior = priorBson,
 					EventTime = ertisAuthEvent.EventTime
 				});
+
+				this.EventFired?.Invoke(sender, ertisAuthEvent);
 			}
 			catch (Exception ex)
 			{

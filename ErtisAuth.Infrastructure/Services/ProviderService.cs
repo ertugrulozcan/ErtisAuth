@@ -43,7 +43,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		private void ProviderCreatedEventHandler(object sender, CreateResourceEventArgs<OAuthProvider> eventArgs)
 		{
-			this.eventService.FireEventAsync(new ErtisAuthEvent
+			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.ProviderCreated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -54,7 +54,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private void ProviderUpdatedEventHandler(object sender, UpdateResourceEventArgs<OAuthProvider> eventArgs)
 		{
-			this.eventService.FireEventAsync(new ErtisAuthEvent
+			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.ProviderUpdated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -66,7 +66,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private void ProviderDeletedEventHandler(object sender, DeleteResourceEventArgs<OAuthProvider> eventArgs)
 		{
-			this.eventService.FireEventAsync(new ErtisAuthEvent
+			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.ProviderDeleted,
 				UtilizerId = eventArgs.Utilizer.Id,

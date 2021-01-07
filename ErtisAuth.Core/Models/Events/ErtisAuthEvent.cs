@@ -72,6 +72,23 @@ namespace ErtisAuth.Core.Models.Events
 			this.Document = document;
 			this.Prior = prior;
 		}
+		
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="type"></param>
+		/// <param name="utilizerId"></param>
+		/// <param name="membershipId"></param>
+		/// <param name="document"></param>
+		/// <param name="prior"></param>
+		public ErtisAuthEvent(ErtisAuthEventType type, string utilizerId, string membershipId, dynamic document = null, dynamic prior = null)
+		{
+			this.EventType = type;
+			this.UtilizerId = utilizerId;
+			this.MembershipId = membershipId;
+			this.Document = document;
+			this.Prior = prior;
+		}
 
 		#endregion
 	}
