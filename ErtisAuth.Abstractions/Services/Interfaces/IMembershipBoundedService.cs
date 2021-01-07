@@ -5,9 +5,9 @@ using ErtisAuth.Core.Models;
 
 namespace ErtisAuth.Abstractions.Services.Interfaces
 {
-	public interface IMembershipBoundedService<T> where T : IHasMembership
+	public interface IMembershipBoundedService<TModel> where TModel : IHasMembership
 	{
-		Task<IPaginationCollection<dynamic>> QueryAsync(
+		IPaginationCollection<dynamic> Query(
 			string query, 
 			int? skip = null, 
 			int? limit = null,
@@ -16,12 +16,21 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 			SortDirection? sortDirection = null,
 			IDictionary<string, bool> selectFields = null);
 		
-		T Get(string membershipId, string id);
-		
-		Task<T> GetAsync(string membershipId, string id);
-		
-		IPaginationCollection<T> Get(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
+		Task<IPaginationCollection<dynamic>> QueryAsync(
+			string query, 
+			int? skip = null, 
+			int? limit = null,
+			bool? withCount = null, 
+			string sortField = null, 
+			SortDirection? sortDirection = null,
+			IDictionary<string, bool> selectFields = null);
 
-		Task<IPaginationCollection<T>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
+		TModel Get(string membershipId, string id);
+		
+		Task<TModel> GetAsync(string membershipId, string id);
+		
+		IPaginationCollection<TModel> Get(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
+
+		Task<IPaginationCollection<TModel>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
 	}
 }

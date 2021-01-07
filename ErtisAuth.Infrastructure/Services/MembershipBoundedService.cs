@@ -38,6 +38,18 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Query Methods
 
+		public IPaginationCollection<dynamic> Query(
+			string query, 
+			int? skip = null, 
+			int? limit = null, 
+			bool? withCount = null, 
+			string sortField = null,
+			SortDirection? sortDirection = null, 
+			IDictionary<string, bool> selectFields = null)
+		{
+			return this.repository.Query(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+		}
+		
 		public async Task<IPaginationCollection<dynamic>> QueryAsync(
 			string query, 
 			int? skip = null, 
@@ -49,7 +61,7 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			return await this.repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 		}
-
+		
 		#endregion
 		
 		#region Get Methods
