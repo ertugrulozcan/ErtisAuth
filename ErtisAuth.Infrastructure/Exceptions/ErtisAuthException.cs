@@ -174,9 +174,9 @@ namespace ErtisAuth.Infrastructure.Exceptions
 			return new ErtisAuthException(HttpStatusCode.NotFound, $"Provider not found in db by given _id: <{providerId}>", "ProviderNotFound");
 		}
 		
-		public static ErtisAuthException ProviderWithSameSlugAlreadyExists(string slug)
+		public static ErtisAuthException ProviderWithSameNameAlreadyExists(string name)
 		{
-			return new ErtisAuthException(HttpStatusCode.Conflict, $"The provider with same slug is already exists ({slug})", "ProviderWithSameSlugAlreadyExists");
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"The provider with same name is already exists ({name})", "ProviderWithSameNameAlreadyExists");
 		}
 		
 		#endregion

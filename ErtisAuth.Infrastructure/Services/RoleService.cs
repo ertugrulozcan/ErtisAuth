@@ -73,7 +73,6 @@ namespace ErtisAuth.Infrastructure.Services
 						{
 							Name = Rbac.ReservedRoles.Administrator,
 							Description = "Administrator",
-							Slug = Rbac.ReservedRoles.Administrator,
 							MembershipId = membership.Id,
 							Permissions = this.AssertAdminPermissionsForReservedResources()
 						});
@@ -163,13 +162,6 @@ namespace ErtisAuth.Infrastructure.Services
 				errorList.Add("name is a required field");
 			}
 			
-			/*
-			if (string.IsNullOrEmpty(model.Slug))
-			{
-				errorList.Add("slug is a required field");
-			}
-			*/
-			
 			if (string.IsNullOrEmpty(model.MembershipId))
 			{
 				errorList.Add("membership_id is a required field");
@@ -247,11 +239,6 @@ namespace ErtisAuth.Infrastructure.Services
 			if (destination.Forbidden == null)
 			{
 				destination.Forbidden = source.Forbidden;
-			}
-
-			if (string.IsNullOrEmpty(destination.Slug))
-			{
-				destination.Slug = Ertis.Core.Helpers.Slugifier.Slugify(destination.Name);
 			}
 		}
 

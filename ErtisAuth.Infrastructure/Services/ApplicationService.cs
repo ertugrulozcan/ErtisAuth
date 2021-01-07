@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Ertis.Core.Helpers;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
@@ -97,8 +96,6 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
-			
-			model.Slug = Slugifier.Slugify(model.Name);
 
 			var application = base.Create(utilizer, membershipId, model);
 			if (application != null)
@@ -117,9 +114,7 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
-			
-			model.Slug = Slugifier.Slugify(model.Name);
-			
+
 			var application = await base.CreateAsync(utilizer, membershipId, model);
 			if (application != null)
 			{
@@ -137,18 +132,6 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				errorList.Add("name is a required field");
 			}
-			
-			if (string.IsNullOrEmpty(model.Slug))
-			{
-				errorList.Add("slug is a required field");
-			}
-			
-			/*
-			if (string.IsNullOrEmpty(model.Secret))
-			{
-				errorList.Add("secret is a required field");
-			}
-			*/
 
 			if (string.IsNullOrEmpty(model.MembershipId))
 			{
@@ -196,11 +179,6 @@ namespace ErtisAuth.Infrastructure.Services
 			if (string.IsNullOrEmpty(destination.Secret))
 			{
 				destination.Secret = source.Secret;
-			}
-			
-			if (string.IsNullOrEmpty(destination.Slug))
-			{
-				destination.Slug = source.Slug;
 			}
 		}
 

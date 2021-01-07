@@ -58,7 +58,6 @@ namespace ErtisAuth.WebAPI.Controllers
 				Description = model.Description,
 				Permissions = model.Permissions,
 				Forbidden = model.Forbidden,
-				Slug = Ertis.Core.Helpers.Slugifier.Slugify(model.Name),
 				MembershipId = membershipId
 			};
 			
@@ -126,7 +125,6 @@ namespace ErtisAuth.WebAPI.Controllers
 				Description = model.Description,
 				Permissions = model.Permissions,
 				Forbidden = model.Forbidden,
-				Slug = Ertis.Core.Helpers.Slugifier.Slugify(model.Name),
 				MembershipId = membershipId
 			};
 			

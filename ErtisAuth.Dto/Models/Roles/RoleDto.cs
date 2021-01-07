@@ -14,9 +14,6 @@ namespace ErtisAuth.Dto.Models.Roles
 		[BsonElement("description")]
 		public string Description { get; set; }
 		
-		[BsonElement("slug")]
-		public string Slug { get; set; }
-		
 		[BsonElement("membership_id")]
 		public string MembershipId { get; set; }
 		

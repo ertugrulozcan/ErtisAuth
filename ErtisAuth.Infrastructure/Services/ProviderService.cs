@@ -123,11 +123,11 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			if (exclude == null)
 			{
-				return this.GetBySlug(model.Name, membershipId) != null;	
+				return this.GetByName(model.Name, membershipId) != null;	
 			}
 			else
 			{
-				var current = this.GetBySlug(model.Name, membershipId);
+				var current = this.GetByName(model.Name, membershipId);
 				if (current != null)
 				{
 					return current.Name != exclude.Name;	
@@ -143,11 +143,11 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			if (exclude == null)
 			{
-				return await this.GetBySlugAsync(model.Name, membershipId) != null;	
+				return await this.GetByNameAsync(model.Name, membershipId) != null;	
 			}
 			else
 			{
-				var current = await this.GetBySlugAsync(model.Name, membershipId);
+				var current = await this.GetByNameAsync(model.Name, membershipId);
 				if (current != null)
 				{
 					return current.Name != exclude.Name;	
@@ -161,7 +161,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		protected override ErtisAuthException GetAlreadyExistError(OAuthProvider model)
 		{
-			return ErtisAuthException.ProviderWithSameSlugAlreadyExists(model.Name);
+			return ErtisAuthException.ProviderWithSameNameAlreadyExists(model.Name);
 		}
 		
 		protected override ErtisAuthException GetNotFoundError(string id)
@@ -169,7 +169,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return ErtisAuthException.ProviderNotFound(id);
 		}
 		
-		private OAuthProvider GetBySlug(string name, string membershipId)
+		private OAuthProvider GetByName(string name, string membershipId)
 		{
 			var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
 			if (dto == null)
@@ -180,7 +180,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<OAuthProviderDto, OAuthProvider>(dto);
 		}
 		
-		private async Task<OAuthProvider> GetBySlugAsync(string name, string membershipId)
+		private async Task<OAuthProvider> GetByNameAsync(string name, string membershipId)
 		{
 			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
 			if (dto == null)

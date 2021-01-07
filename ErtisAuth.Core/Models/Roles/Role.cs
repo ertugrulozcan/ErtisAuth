@@ -13,10 +13,7 @@ namespace ErtisAuth.Core.Models.Roles
 		
 		[JsonProperty("description")]
 		public string Description { get; set; }
-		
-		[JsonProperty("slug")]
-		public string Slug { get; set; }
-		
+
 		[JsonProperty("permissions")]
 		public IEnumerable<string> Permissions { get; set; }
 		

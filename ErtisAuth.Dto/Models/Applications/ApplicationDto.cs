@@ -10,9 +10,6 @@ namespace ErtisAuth.Dto.Models.Applications
 		[BsonElement("name")]
 		public string Name { get; set; }
 
-		[BsonElement("slug")]
-		public string Slug { get; set; }
-		
 		[BsonElement("secret")]
 		public string Secret { get; set; }
 		

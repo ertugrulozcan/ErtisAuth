@@ -10,9 +10,6 @@ namespace ErtisAuth.Core.Models.Applications
 		[JsonProperty("name")]
 		public string Name { get; set; }
 
-		[JsonProperty("slug")]
-		public string Slug { get; set; }
-		
 		[JsonProperty("secret")]
 		public string Secret { get; set; }
 		
