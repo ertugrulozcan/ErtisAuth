@@ -73,9 +73,9 @@ namespace ErtisAuth.Core.Models.Identity
 		
 		public TokenClaims RemoveClaim(string name)
 		{
-			if (this.OtherClaims.ContainsKey("name"))
+			if (this.OtherClaims.ContainsKey(name))
 			{
-				this.OtherClaims.Remove("name");
+				this.OtherClaims.Remove(name);
 			}
 			
 			return this;

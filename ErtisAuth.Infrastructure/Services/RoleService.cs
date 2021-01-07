@@ -61,7 +61,7 @@ namespace ErtisAuth.Infrastructure.Services
 				{
 					var utilizer = new Utilizer
 					{
-						Role = "admin",
+						Role = Rbac.ReservedRoles.Administrator,
 						Type = "system",
 						MembershipId = membership.Id
 					};
@@ -223,6 +223,11 @@ namespace ErtisAuth.Infrastructure.Services
 			destination.Id = source.Id;
 			destination.MembershipId = source.MembershipId;
 			destination.Sys = source.Sys;
+			
+			if (this.IsIdentical(destination, source))
+			{
+				throw ErtisAuthException.IdenticalDocument();
+			}
 			
 			if (string.IsNullOrEmpty(destination.Name))
 			{

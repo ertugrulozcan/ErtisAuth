@@ -25,6 +25,11 @@ namespace ErtisAuth.Infrastructure.Exceptions
 			};
 		}
 		
+		public static ValidationException IdenticalDocument()
+		{
+			return new ValidationException(HttpStatusCode.Conflict, "There is no any difference between provided and existing document.", "IdenticalDocumentError");
+		}
+
 		#endregion
 		
 		#region Token Exceptions
@@ -39,9 +44,16 @@ namespace ErtisAuth.Infrastructure.Exceptions
 			return new ErtisAuthException(HttpStatusCode.BadRequest, $"Membership id should be added in headers with '{aliasName}' key.", "XErtisAliasMissing");
 		}
 		
-		public static ErtisAuthException InvalidToken()
+		public static ErtisAuthException InvalidToken(string message = null)
 		{
-			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Provided token is invalid", "InvalidToken");
+			if (string.IsNullOrEmpty(message))
+			{
+				return new ErtisAuthException(HttpStatusCode.Unauthorized, "Provided token is invalid", "InvalidToken");
+			}
+			else
+			{
+				return new ErtisAuthException(HttpStatusCode.Unauthorized, message, "InvalidToken");	
+			}
 		}
 		
 		public static ErtisAuthException UnsupportedTokenType()
@@ -151,6 +163,20 @@ namespace ErtisAuth.Infrastructure.Exceptions
 		public static ErtisAuthException RoleWithSameNameAlreadyExists(string name)
 		{
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The role with same name is already exists ({name})", "RoleWithSameNameAlreadyExists");
+		}
+		
+		#endregion
+		
+		#region Provider Exceptions
+		
+		public static ErtisAuthException ProviderNotFound(string providerId)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"Provider not found in db by given _id: <{providerId}>", "ProviderNotFound");
+		}
+		
+		public static ErtisAuthException ProviderWithSameSlugAlreadyExists(string slug)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"The provider with same slug is already exists ({slug})", "ProviderWithSameSlugAlreadyExists");
 		}
 		
 		#endregion

@@ -13,6 +13,7 @@ using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Extensions;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ErtisAuth.Infrastructure.Services
 {
@@ -70,14 +71,14 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region WhoAmI
 
-		public async Task<User> WhoAmIAsync(string token, string tokenType)
+		public async Task<User> WhoAmIAsync(string token, SupportedTokenTypes tokenType)
 		{
 			switch (tokenType)
 			{
-				case "Bearer":
+				case SupportedTokenTypes.Bearer:
 					await this.VerifyBearerTokenAsync(token, false);
 					break;
-				case "Basic":
+				case SupportedTokenTypes.Basic:
 					await this.VerifyBasicTokenAsync(token, false);
 					break;
 				default:
@@ -205,13 +206,13 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Verify Token
 
-		public async Task<ITokenValidationResult> VerifyTokenAsync(string token, string tokenType, bool fireEvent = true)
+		public async Task<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true)
 		{
 			switch (tokenType)
 			{
-				case "Bearer":
+				case SupportedTokenTypes.Bearer:
 					return await this.VerifyBearerTokenAsync(token, fireEvent);
-				case "Basic":
+				case SupportedTokenTypes.Basic:
 					return await this.VerifyBasicTokenAsync(token, fireEvent);
 				default:
 					throw ErtisAuthException.UnsupportedTokenType();
@@ -234,6 +235,32 @@ namespace ErtisAuth.Infrastructure.Services
 					var user = await this.GetTokenOwnerAsync(securityToken);
 					if (user != null)
 					{
+						if (this.TryExtractClaimValue(securityToken, JwtRegisteredClaimNames.Prn, out var membershipId) && !string.IsNullOrEmpty(membershipId))
+						{
+							var membership = await this.membershipService.GetAsync(membershipId);
+							if (membership != null)
+							{
+								var encoding = membership.GetEncoding();
+								var secretSecurityKey = new SymmetricSecurityKey(encoding.GetBytes(membership.SecretKey));
+								var tokenClaims = new TokenClaims(null, user, membership);
+								if (!this.jwtService.ValidateToken(token, tokenClaims, secretSecurityKey, out _))
+								{
+									// Token signature not verified!
+									throw ErtisAuthException.InvalidToken("Token signature could not verified!");
+								}
+							}
+							else
+							{
+								// Membership not found!
+								throw ErtisAuthException.MembershipNotFound(membershipId);
+							}	
+						}
+						else
+						{
+							// MembershipId could not found in token claims!
+							throw ErtisAuthException.InvalidToken();
+						}
+						
 						if (fireEvent)
 						{
 							await this.eventService.FireEventAsync(new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }));	

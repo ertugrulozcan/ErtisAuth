@@ -127,6 +127,8 @@ namespace ErtisAuth.WebAPI.Controllers
 			var userModel = new User
 			{
 				Id = id,
+				Username = model.Username,
+				EmailAddress = model.EmailAddress,
 				FirstName = model.FirstName,
 				LastName = model.LastName,
 				Role = model.Role,
@@ -138,18 +140,8 @@ namespace ErtisAuth.WebAPI.Controllers
 			return this.Ok(user);
 		}
 		
-		[HttpPut("{id}/change-password")]
-		[RbacObject("id")]
-		[RbacAction(Rbac.CrudActions.Update)]
-		public async Task<IActionResult> ChangePassword([FromRoute] string membershipId, [FromRoute] string id, [FromBody] ChangePasswordFormModel model)
-		{
-			var utilizer = this.GetUtilizer();
-			await this.userService.ChangePasswordAsync(utilizer, membershipId, id, model.Password);
-			return this.Ok();
-		}
-
 		#endregion
-		
+
 		#region Delete Methods
 
 		[HttpDelete("{id}")]
@@ -166,6 +158,42 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				return this.UserNotFound(id);
 			}
+		}
+
+		#endregion
+		
+		#region Change Password
+
+		[HttpPut("{id}/change-password")]
+		[RbacObject("id")]
+		[RbacAction(Rbac.CrudActions.Update)]
+		public async Task<IActionResult> ChangePassword([FromRoute] string membershipId, [FromRoute] string id, [FromBody] ChangePasswordFormModel model)
+		{
+			var utilizer = this.GetUtilizer();
+			await this.userService.ChangePasswordAsync(utilizer, membershipId, id, model.Password);
+			return this.Ok();
+		}
+
+		#endregion
+		
+		#region Forgot Password
+
+		[HttpPost("reset-password", Order = 1)]
+		[RbacAction(Rbac.CrudActions.Update)]
+		public async Task<IActionResult> ResetPassword([FromRoute] string membershipId, [FromBody] ResetPasswordFormModel model)
+		{
+			var utilizer = this.GetUtilizer();
+			var resetPasswordToken = await this.userService.ResetPasswordAsync(utilizer, membershipId, model.UsernameOrEmailAddress);
+			return this.Ok(resetPasswordToken);
+		}
+		
+		[HttpPost("set-password", Order = 2)]
+		[RbacAction(Rbac.CrudActions.Update)]
+		public async Task<IActionResult> SetPassword([FromRoute] string membershipId, [FromBody] SetPasswordFormModel model)
+		{
+			var utilizer = this.GetUtilizer();
+			await this.userService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password);
+			return this.Ok();
 		}
 
 		#endregion

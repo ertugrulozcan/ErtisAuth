@@ -178,6 +178,11 @@ namespace ErtisAuth.Infrastructure.Services
 			destination.MembershipId = source.MembershipId;
 			destination.Sys = source.Sys;
 			
+			if (this.IsIdentical(destination, source))
+			{
+				throw ErtisAuthException.IdenticalDocument();
+			}
+			
 			if (string.IsNullOrEmpty(destination.Name))
 			{
 				destination.Name = source.Name;

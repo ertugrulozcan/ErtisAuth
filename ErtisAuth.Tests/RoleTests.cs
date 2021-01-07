@@ -1,3 +1,4 @@
+using System;
 using Ertis.MongoDB.Configuration;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
@@ -40,6 +41,58 @@ namespace ErtisAuth.Tests
 		
 		#region Methods
 
+		[Test]
+		public void RbacEqualityTest()
+		{
+			var rbac_test1 = new Rbac(new RbacSegment("subject"), new RbacSegment("resource"), new RbacSegment("action"), new RbacSegment("object"));
+			var rbac_test2 = new Rbac(new RbacSegment("subject"), new RbacSegment("resource"), new RbacSegment("action"), new RbacSegment("object"));
+			var rbac_test3 = new Rbac(new RbacSegment("subject"), new RbacSegment("resource"), new RbacSegment("action"), new RbacSegment("anan"));
+			
+			if (rbac_test1 == rbac_test2)
+			{
+				Assert.Pass();
+			}
+			else
+			{
+				Assert.Fail();
+			}
+			
+			if (rbac_test1 == rbac_test3)
+			{
+				Assert.Fail();
+			}
+			else
+			{
+				Assert.Pass();
+			}
+		}
+		
+		[Test]
+		public void RbacSegmentEqualityTest()
+		{
+			var segment1 = new RbacSegment("ismet");
+			var segment2 = new RbacSegment("ismet");
+			var segment3 = new RbacSegment("ertuğrul");
+
+			if (segment1 == segment2)
+			{
+				Assert.Pass();
+			}
+			else
+			{
+				Assert.Fail();
+			}
+			
+			if (segment1 == segment3)
+			{
+				Assert.Fail();
+			}
+			else
+			{
+				Assert.Pass();
+			}
+		}
+		
 		[Test]
 		public void RbacParseTest()
 		{

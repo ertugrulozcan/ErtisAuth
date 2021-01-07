@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using Ertis.Data.Models;
 using Ertis.MongoDB.Repository;
@@ -58,7 +59,7 @@ namespace ErtisAuth.Infrastructure.Services
 		protected abstract bool IsAlreadyExist(TModel model, string membershipId, TModel exclude = default);
 		
 		protected abstract Task<bool> IsAlreadyExistAsync(TModel model, string membershipId, TModel exclude = default);
-		
+
 		protected abstract ErtisAuthException GetAlreadyExistError(TModel model);
 
 		protected abstract ErtisAuthException GetNotFoundError(string id);
@@ -227,6 +228,25 @@ namespace ErtisAuth.Infrastructure.Services
 			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated));
 
 			return updated;
+		}
+		
+		protected bool IsIdentical(TModel model1, TModel model2)
+		{
+			if (model1 == null || model2 == null)
+			{
+				return false;
+			}
+			
+			var properties = typeof(TModel).GetProperties(BindingFlags.Default);
+			foreach (var propertyInfo in properties)
+			{
+				if (propertyInfo.GetValue(model1) != propertyInfo.GetValue(model2))
+				{
+					return false;
+				}
+			}
+
+			return true;
 		}
 		
 		#endregion

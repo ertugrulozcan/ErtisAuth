@@ -1,12 +1,17 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using Ertis.Security.Cryptography;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Users;
+using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Events;
 using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
@@ -20,6 +25,7 @@ namespace ErtisAuth.Infrastructure.Services
 		private readonly IMembershipService membershipService;
 		private readonly IRoleService roleService;
 		private readonly IEventService eventService;
+		private readonly IJwtService jwtService;
 		private readonly ICryptographyService cryptographyService;
 
 		#endregion
@@ -32,12 +38,14 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="membershipService"></param>
 		/// <param name="roleService"></param>
 		/// <param name="eventService"></param>
+		/// <param name="jwtService"></param>
 		/// <param name="cryptographyService"></param>
 		/// <param name="userRepository"></param>
 		public UserService(
 			IMembershipService membershipService,
 			IRoleService roleService, 
 			IEventService eventService,
+			IJwtService jwtService,
 			ICryptographyService cryptographyService, 
 			IUserRepository userRepository) : 
 			base(membershipService, userRepository)
@@ -45,6 +53,7 @@ namespace ErtisAuth.Infrastructure.Services
 			this.membershipService = membershipService;
 			this.roleService = roleService;
 			this.eventService = eventService;
+			this.jwtService = jwtService;
 			this.cryptographyService = cryptographyService;
 			
 			this.OnCreated += this.UserCreatedEventHandler;
@@ -97,13 +106,25 @@ namespace ErtisAuth.Infrastructure.Services
 		public override User Update(Utilizer utilizer, string membershipId, User model)
 		{
 			var currentUser = this.GetUserWithPassword(model.Id, membershipId);
-			return base.Update(utilizer, membershipId, new UserWithPassword(model) { PasswordHash = currentUser.PasswordHash });
+			var passwordHash = currentUser.PasswordHash;
+			if (model is UserWithPassword userWithPassword && !string.IsNullOrEmpty(userWithPassword.PasswordHash) && userWithPassword.PasswordHash != passwordHash)
+			{
+				passwordHash = userWithPassword.PasswordHash;
+			}
+			
+			return base.Update(utilizer, membershipId, new UserWithPassword(model) { PasswordHash = passwordHash });
 		}
 
 		public override async Task<User> UpdateAsync(Utilizer utilizer, string membershipId, User model)
 		{
 			var currentUser = await this.GetUserWithPasswordAsync(model.Id, membershipId);
-			return await base.UpdateAsync(utilizer, membershipId, new UserWithPassword(model) { PasswordHash = currentUser.PasswordHash });
+			var passwordHash = currentUser.PasswordHash;
+			if (model is UserWithPassword userWithPassword && !string.IsNullOrEmpty(userWithPassword.PasswordHash) && userWithPassword.PasswordHash != passwordHash)
+			{
+				passwordHash = userWithPassword.PasswordHash;
+			}
+			
+			return await base.UpdateAsync(utilizer, membershipId, new UserWithPassword(model) { PasswordHash = passwordHash });
 		}
 
 		protected override bool ValidateModel(User model, out IEnumerable<string> errors)
@@ -156,10 +177,23 @@ namespace ErtisAuth.Infrastructure.Services
 		protected override void Overwrite(User destination, User source)
 		{
 			destination.Id = source.Id;
-			destination.Username = source.Username;
-			destination.EmailAddress = source.EmailAddress;
 			destination.MembershipId = source.MembershipId;
 			destination.Sys = source.Sys;
+			
+			if (this.IsIdentical(destination, source))
+			{
+				throw ErtisAuthException.IdenticalDocument();
+			}
+			
+			if (string.IsNullOrEmpty(destination.Username))
+			{
+				destination.Username = source.Username;
+			}
+			
+			if (string.IsNullOrEmpty(destination.EmailAddress))
+			{
+				destination.EmailAddress = source.EmailAddress;
+			}
 			
 			if (string.IsNullOrEmpty(destination.FirstName))
 			{
@@ -184,7 +218,7 @@ namespace ErtisAuth.Infrastructure.Services
 				}	
 			}
 		}
-
+		
 		protected override bool IsAlreadyExist(User model, string membershipId, User exclude = default)
 		{
 			if (exclude == null)
@@ -306,6 +340,46 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Change Password
 
+		public User ChangePassword(Utilizer utilizer, string membershipId, string userId, string newPassword)
+		{
+			if (string.IsNullOrEmpty(newPassword))
+			{
+				throw ErtisAuthException.ValidationError(new []
+				{
+					"Password can not be null or empty!"
+				});
+			}
+			
+			var membership = this.membershipService.Get(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+
+			var user = this.Get(membershipId, userId);
+			if (user == null)
+			{
+				throw ErtisAuthException.UserNotFound(userId, "_id");
+			}
+
+			var userWithPassword = Mapper.Current.Map<User, UserWithPassword>(user);
+			var passwordHash = this.cryptographyService.CalculatePasswordHash(membership, newPassword);
+			userWithPassword.PasswordHash = passwordHash;
+
+			var updatedUser = this.Update(utilizer, membershipId, userWithPassword);
+			
+			this.eventService.FireEventAsync(new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.PasswordChanged,
+				UtilizerId = user.Id,
+				Document = updatedUser,
+				Prior = userWithPassword,
+				MembershipId = membershipId
+			});
+
+			return updatedUser;
+		}
+		
 		public async Task<User> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword)
 		{
 			if (string.IsNullOrEmpty(newPassword))
@@ -332,7 +406,124 @@ namespace ErtisAuth.Infrastructure.Services
 			var passwordHash = this.cryptographyService.CalculatePasswordHash(membership, newPassword);
 			userWithPassword.PasswordHash = passwordHash;
 
-			return await this.UpdateAsync(utilizer, membershipId, userWithPassword);
+			var updatedUser = await this.UpdateAsync(utilizer, membershipId, userWithPassword);
+			
+			await this.eventService.FireEventAsync(new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.PasswordChanged,
+				UtilizerId = user.Id,
+				Document = updatedUser,
+				Prior = userWithPassword,
+				MembershipId = membershipId
+			});
+
+			return updatedUser;
+		}
+
+		#endregion
+
+		#region Forgot Password
+
+		public ResetPasswordToken ResetPassword(Utilizer utilizer, string membershipId, string usernameOrEmailAddress)
+		{
+			return this.ResetPasswordAsync(utilizer, membershipId, usernameOrEmailAddress).ConfigureAwait(false).GetAwaiter().GetResult();
+		}
+
+		public async Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string usernameOrEmailAddress)
+		{
+			if (string.IsNullOrEmpty(usernameOrEmailAddress))
+			{
+				throw ErtisAuthException.ValidationError(new []
+				{
+					"Username or email required!"
+				});
+			}
+			
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+
+			var user = await this.GetUserWithPasswordAsync(usernameOrEmailAddress, usernameOrEmailAddress, membershipId);
+			if (user == null)
+			{
+				throw ErtisAuthException.UserNotFound(usernameOrEmailAddress, "username or email_address");
+			}
+
+			if (utilizer.Role == Rbac.ReservedRoles.Administrator || utilizer.Id == user.Id)
+			{
+				var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership);
+				tokenClaims.AddClaim("token_type", "reset_token");
+				var resetToken = this.jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
+				var resetPasswordToken = new ResetPasswordToken(resetToken, TimeSpan.FromHours(1));
+				
+				await this.eventService.FireEventAsync(new ErtisAuthEvent
+				{
+					EventType = ErtisAuthEventType.PasswordReset,
+					UtilizerId = user.Id,
+					Document = resetPasswordToken,
+					MembershipId = membershipId
+				});
+
+				return resetPasswordToken;
+			}
+			else
+			{
+				throw ErtisAuthException.AccessDenied("Unauthorized access");
+			}
+		}
+
+		public void SetPassword(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password)
+		{
+			this.SetPasswordAsync(utilizer, membershipId, resetToken, usernameOrEmailAddress, password).ConfigureAwait(false).GetAwaiter().GetResult();
+		}
+
+		public async Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password)
+		{
+			if (string.IsNullOrEmpty(usernameOrEmailAddress))
+			{
+				throw ErtisAuthException.ValidationError(new []
+				{
+					"Username or email required!"
+				});
+			}
+			
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+
+			var user = await this.GetUserWithPasswordAsync(usernameOrEmailAddress, usernameOrEmailAddress, membershipId);
+			if (user == null)
+			{
+				throw ErtisAuthException.UserNotFound(usernameOrEmailAddress, "username or email_address");
+			}
+
+			if (utilizer.Role == Rbac.ReservedRoles.Administrator || utilizer.Id == user.Id)
+			{
+				if (this.jwtService.TryDecodeToken(resetToken, out var securityToken))
+				{
+					var expireTime = securityToken.ValidTo.ToLocalTime();
+					if (DateTime.Now > expireTime)
+					{
+						// Token was expired!
+						throw ErtisAuthException.TokenWasExpired();	
+					}
+
+					await this.ChangePasswordAsync(utilizer, membershipId, user.Id, password);
+				}
+				else
+				{
+					// Reset token could not decoded!
+					throw ErtisAuthException.InvalidToken();
+				}
+			}
+			else
+			{
+				throw ErtisAuthException.AccessDenied("Unauthorized access");
+			}
 		}
 
 		#endregion

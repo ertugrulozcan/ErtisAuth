@@ -1,5 +1,7 @@
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Tokens;
 using Microsoft.AspNetCore.Mvc;
@@ -42,10 +44,15 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("whoami")]
 		public async Task<IActionResult> WhoAmI()
 		{
-			string token = this.GetTokenFromHeader(out string tokenType);
+			string token = this.GetTokenFromHeader(out string tokenTypeStr);
 			if (string.IsNullOrEmpty(token))
 			{
 				return this.AuthorizationHeaderMissing();
+			}
+
+			if (!TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
+			{
+				throw ErtisAuthException.UnsupportedTokenType();	
 			}
 
 			var user = await this.tokenService.WhoAmIAsync(token, tokenType);
@@ -87,10 +94,15 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("verify-token")]
 		public async Task<IActionResult> VerifyToken()
 		{
-			string token = this.GetTokenFromHeader(out string tokenType);
+			string token = this.GetTokenFromHeader(out string tokenTypeStr);
 			if (string.IsNullOrEmpty(token))
 			{
 				return this.AuthorizationHeaderMissing();
+			}
+			
+			if (!TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
+			{
+				throw ErtisAuthException.UnsupportedTokenType();	
 			}
 
 			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType);
@@ -108,10 +120,15 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("verify-token")]
 		public async Task<IActionResult> VerifyToken([FromBody] VerifyTokenFormModel model)
 		{
-			string token = this.GetTokenFromHeader(out string tokenType);
+			string token = this.GetTokenFromHeader(out string tokenTypeStr);
 			if (string.IsNullOrEmpty(token))
 			{
 				token = model.Token;
+			}
+			
+			if (!TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
+			{
+				throw ErtisAuthException.UnsupportedTokenType();	
 			}
 
 			if (string.IsNullOrEmpty(token))
