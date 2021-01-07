@@ -1,5 +1,6 @@
 using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
+using Ertis.Net.Rest;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
@@ -64,6 +65,7 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IUserRepository, UserRepository>();
 			services.AddSingleton<IApplicationRepository, ApplicationRepository>();
 			services.AddSingleton<IRoleRepository, RoleRepository>();
+			services.AddSingleton<IWebhookRepository, WebhookRepository>();
 			services.AddSingleton<IProviderRepository, ProviderRepository>();
 			services.AddSingleton<IRevokedTokensRepository, RevokedTokensRepository>();
 			services.AddSingleton<IEventRepository, EventRepository>();
@@ -77,8 +79,10 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IApplicationService, ApplicationService>();
 			services.AddSingleton<IRoleService, RoleService>();
 			services.AddSingleton<IProviderService, ProviderService>();
+			services.AddSingleton<IWebhookService, WebhookService>();
 			services.AddSingleton<IEventService, EventService>();
 			
+			services.AddSingleton<IRestHandler, SystemRestHandler>();
 			services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
 			services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
 			

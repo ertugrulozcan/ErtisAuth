@@ -10,6 +10,8 @@ namespace ErtisAuth.Core.Models.Events
 		UserCreated = 200,
 		UserUpdated = 201,
 		UserDeleted = 202,
+		UserPasswordReset = 210,
+		UserPasswordChanged = 211,
 		
 		ApplicationCreated = 300,
 		ApplicationUpdated = 301,
@@ -23,7 +25,10 @@ namespace ErtisAuth.Core.Models.Events
 		ProviderUpdated = 501,
 		ProviderDeleted = 502,
 		
-		PasswordReset = 600,
-		PasswordChanged = 601,
+		WebhookCreated = 600,
+		WebhookUpdated = 601,
+		WebhookDeleted = 602,
+		WebhookRequestSent = 610,
+		WebhookRequestFailed = 611,
 	}
 }

@@ -181,6 +181,20 @@ namespace ErtisAuth.Infrastructure.Exceptions
 		
 		#endregion
 
+		#region Webhook Exceptions
+
+		public static ErtisAuthException WebhookNotFound(string webhookId)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"Webhook not found in db by given _id: <{webhookId}>", "WebhookNotFound");
+		}
+		
+		public static ErtisAuthException WebhookWithSameNameAlreadyExists(string name)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"The webhook with same name is already exists ({name})", "WebhookWithSameNameAlreadyExists");
+		}
+
+		#endregion
+		
 		#region Event Exceptions
 
 		public static ErtisAuthException EventNotFound(string eventId)
