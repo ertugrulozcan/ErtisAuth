@@ -9,6 +9,7 @@ using ErtisAuth.Infrastructure.Adapters;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.WebAPI.Constants;
 using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.WebAPI.Models;
 using ErtisAuth.WebAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -29,7 +30,7 @@ namespace ErtisAuth.WebAPI
 		private const string CORS_POLICY_KEY = "cors-policy";
 
 		#endregion
-		
+
 		#region Properties
 
 		public IConfiguration Configuration { get; }
@@ -53,13 +54,17 @@ namespace ErtisAuth.WebAPI
 
 		public void ConfigureServices(IServiceCollection services)
 		{
-			services.Configure<DatabaseSettings>(Configuration.GetSection("Database"));
+			services.Configure<DatabaseSettings>(this.Configuration.GetSection("Database"));
 			services.AddSingleton<IDatabaseSettings>(serviceProvider => serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value);
+			
+			services.Configure<ApiVersionOptions>(this.Configuration.GetSection("ApiVersion"));
+			services.AddSingleton<IApiVersionOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<ApiVersionOptions>>().Value);
 			
 			services.AddSingleton<IMembershipRepository, MembershipRepository>();
 			services.AddSingleton<IUserRepository, UserRepository>();
 			services.AddSingleton<IApplicationRepository, ApplicationRepository>();
 			services.AddSingleton<IRoleRepository, RoleRepository>();
+			services.AddSingleton<IProviderRepository, ProviderRepository>();
 			services.AddSingleton<IRevokedTokensRepository, RevokedTokensRepository>();
 			services.AddSingleton<IEventRepository, EventRepository>();
 			services.AddSingleton<IRepositoryActionBinder, SysUpserter>();
@@ -71,6 +76,7 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IUserService, UserService>();
 			services.AddSingleton<IApplicationService, ApplicationService>();
 			services.AddSingleton<IRoleService, RoleService>();
+			services.AddSingleton<IProviderService, ProviderService>();
 			services.AddSingleton<IEventService, EventService>();
 			
 			services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
@@ -96,12 +102,14 @@ namespace ErtisAuth.WebAPI
 			});
 			
 			// Api versioning
+			int major = this.Configuration.GetSection("ApiVersion").GetValue<int>("Major");
+			int minor = this.Configuration.GetSection("ApiVersion").GetValue<int>("Minor");
 			services.AddApiVersioning(o => {
 				o.ReportApiVersions = true;
 				o.AssumeDefaultVersionWhenUnspecified = true;
-				o.DefaultApiVersion = new ApiVersion(1, 0);
+				o.DefaultApiVersion = new ApiVersion(major, minor);
 			});
-			
+
 			services
 				.AddControllers()
 				.AddNewtonsoftJson();

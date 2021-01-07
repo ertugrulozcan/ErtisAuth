@@ -107,6 +107,11 @@ namespace ErtisAuth.WebAPI.Extensions
 			return controller.NotFound(ErtisAuthException.RoleNotFound(roleId));
 		}
 		
+		public static NotFoundObjectResult ProviderNotFound(this ControllerBase controller, string providerId)
+		{
+			return controller.NotFound(ErtisAuthException.ProviderNotFound(providerId));
+		}
+		
 		public static NotFoundObjectResult EventNotFound(this ControllerBase controller, string eventId)
 		{
 			return controller.NotFound(ErtisAuthException.EventNotFound(eventId));

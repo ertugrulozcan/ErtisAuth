@@ -18,5 +18,12 @@ namespace ErtisAuth.Core.Models.Events
 		RoleCreated = 400,
 		RoleUpdated = 401,
 		RoleDeleted = 402,
+		
+		ProviderCreated = 500,
+		ProviderUpdated = 501,
+		ProviderDeleted = 502,
+		
+		PasswordReset = 600,
+		PasswordChanged = 601,
 	}
 }
