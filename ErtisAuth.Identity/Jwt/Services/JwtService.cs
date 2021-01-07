@@ -138,6 +138,34 @@ namespace ErtisAuth.Identity.Jwt.Services
             var token = new JwtSecurityToken(issuer, audience, claims, notBefore: null, expires: expireTime, signingCredentials: credentials);
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+        
+        public bool ValidateToken(string token, TokenClaims claims, SymmetricSecurityKey secretKey, out SecurityToken validatedToken)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            
+            try
+            {
+                var result = tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidIssuer = claims.Issuer,
+                    ValidAudience = claims.Audience,
+                    IssuerSigningKey = secretKey,
+                    RequireExpirationTime = true,
+                    RequireSignedTokens = true,
+                    
+                }, out validatedToken);
+                
+                return result != null;
+            }
+            catch
+            {
+                validatedToken = null;
+                return false;
+            }
+        }
 
         public JwtSecurityToken DecodeToken(string token)
         {

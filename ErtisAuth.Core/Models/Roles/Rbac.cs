@@ -1,8 +1,9 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ErtisAuth.Core.Models.Roles
 {
-	public class Rbac
+	public class Rbac : IEquatable<Rbac>
 	{
 		#region Properties
 
@@ -77,6 +78,45 @@ namespace ErtisAuth.Core.Models.Roles
 				rbac = null;
 				return false;
 			}
+		}
+		
+		public static bool operator ==(Rbac rbac1, Rbac rbac2)
+		{
+			return AreEquals(rbac1, rbac2);
+		}
+
+		public static bool operator !=(Rbac rbac1, Rbac rbac2)
+		{
+			return !(rbac1 == rbac2);
+		}
+
+		public override bool Equals(object other)
+		{
+			if (other is Rbac rbac)
+			{
+				return AreEquals(this, rbac);	
+			}
+
+			return false;
+		}
+
+		[SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
+		public override int GetHashCode()
+		{
+			return HashCode.Combine(Subject, Resource, Action, Object);
+		}
+
+		public bool Equals(Rbac other)
+		{
+			return AreEquals(this, other);
+		}
+
+		private static bool AreEquals(Rbac rbac1, Rbac rbac2)
+		{
+			if (rbac1 is null || rbac2 is null)
+				return false;
+			
+			return rbac1.GetHashCode() == rbac2.GetHashCode();
 		}
 		
 		public override string ToString()

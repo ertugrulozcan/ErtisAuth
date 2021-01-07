@@ -6,6 +6,12 @@ namespace ErtisAuth.WebAPI.Models.Request.Users
 	{
 		#region Properties
 
+		[JsonProperty("username")]
+		public string Username { get; set; }
+		
+		[JsonProperty("email_address")]
+		public string EmailAddress { get; set; }
+		
 		[JsonProperty("firstname")]
 		public string FirstName { get; set; }
 		
