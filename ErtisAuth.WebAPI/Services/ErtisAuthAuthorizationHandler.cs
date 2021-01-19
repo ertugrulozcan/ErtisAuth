@@ -61,7 +61,7 @@ namespace ErtisAuth.WebAPI.Services
 					new []
 					{
 						new Claim(Utilizer.UtilizerIdClaimName, utilizer.Id),
-						new Claim(Utilizer.UtilizerTypeClaimName, utilizer.Type),
+						new Claim(Utilizer.UtilizerTypeClaimName, utilizer.Type.ToString().ToLower()),
 						new Claim(Utilizer.UtilizerRoleClaimName, utilizer.Role),
 						new Claim(Utilizer.MembershipIdClaimName, utilizer.MembershipId)
 					}, 

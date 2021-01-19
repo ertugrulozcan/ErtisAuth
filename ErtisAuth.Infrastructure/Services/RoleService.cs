@@ -62,7 +62,7 @@ namespace ErtisAuth.Infrastructure.Services
 					var utilizer = new Utilizer
 					{
 						Role = Rbac.ReservedRoles.Administrator,
-						Type = "system",
+						Type = Utilizer.UtilizerType.System,
 						MembershipId = membership.Id
 					};
 					
@@ -89,8 +89,8 @@ namespace ErtisAuth.Infrastructure.Services
 				"roles",
 				"events"
 			};
-
-			RbacSegment[] adminPrivilages =
+			
+			RbacSegment[] adminPrivileges =
 			{
 				Rbac.CrudActionSegments.Create,
 				Rbac.CrudActionSegments.Read,
@@ -102,9 +102,9 @@ namespace ErtisAuth.Infrastructure.Services
 			foreach (var resource in reservedResources)
 			{
 				var resourceSegment = new RbacSegment(resource);
-				foreach (var privilage in adminPrivilages)
+				foreach (var privilege in adminPrivileges)
 				{
-					var rbac = new Rbac(RbacSegment.All, resourceSegment, privilage, RbacSegment.All);
+					var rbac = new Rbac(RbacSegment.All, resourceSegment, privilege, RbacSegment.All);
 					permissions.Add(rbac.ToString());	
 				}
 			}

@@ -68,7 +68,7 @@ namespace ErtisAuth.WebAPI.Extensions
 				return new Utilizer
 				{
 					Id = idClaim?.Value,
-					Type = typeClaim?.Value,
+					Type = Utilizer.ParseType(typeClaim?.Value),
 					Role = roleClaim?.Value,
 					MembershipId = membershipIdClaim?.Value
 				};

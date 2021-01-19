@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
 
@@ -18,7 +20,7 @@ namespace ErtisAuth.Core.Models.Identity
 
 		public string Id { get; set; }
 		
-		public string Type { get; set; }
+		public UtilizerType Type { get; set; }
 		
 		public string MembershipId { get; set; }
 		
@@ -31,7 +33,7 @@ namespace ErtisAuth.Core.Models.Identity
 		public static implicit operator Utilizer(User user) => new Utilizer
 		{
 			Id = user.Id,
-			Type = "user",
+			Type = UtilizerType.User,
 			MembershipId = user.MembershipId,
 			Role = user.Role
 		};
@@ -39,10 +41,44 @@ namespace ErtisAuth.Core.Models.Identity
 		public static implicit operator Utilizer(Application application) => new Utilizer
 		{
 			Id = application.Id,
-			Type = "application",
+			Type = UtilizerType.Application,
 			MembershipId = application.MembershipId,
 			Role = application.Role
 		};
+
+		#endregion
+
+		#region Methods
+
+		public static UtilizerType ParseType(string type)
+		{
+			if (string.IsNullOrEmpty(type) || string.IsNullOrWhiteSpace(type))
+			{
+				return UtilizerType.None;
+			}
+			
+			type = type.ToLower();
+			type = char.ToUpper(type[0]) + type.Substring(1);
+			
+			if (Enum.GetNames(typeof(UtilizerType)).Any(x => x == type))
+			{
+				return (UtilizerType) Enum.Parse(typeof(UtilizerType), type);
+			}
+
+			return UtilizerType.None;
+		}
+
+		#endregion
+
+		#region Enums
+
+		public enum UtilizerType
+		{
+			None,
+			System,
+			User,
+			Application
+		}
 
 		#endregion
 	}
