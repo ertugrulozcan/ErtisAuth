@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
+using Ertis.Core.Models.Response;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
+using ErtisAuth.Infrastructure.Extensions;
 using ErtisAuth.WebAPI.Annotations;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Roles;
@@ -150,6 +152,98 @@ namespace ErtisAuth.WebAPI.Controllers
 			else
 			{
 				return this.RoleNotFound(id);
+			}
+		}
+
+		#endregion
+
+		#region Region
+
+		[HttpGet("{id}/check-permission")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public async Task<IActionResult> CheckPermissionByRole([FromRoute] string membershipId, [FromRoute] string id)
+		{
+			var role = await this.roleService.GetAsync(membershipId, id);
+			if (role != null)
+			{
+				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
+				{
+					return this.Ok(new
+					{
+						is_permitted = role.HasPermission(rbac)
+					});
+				}
+				else
+				{
+					return this.BadRequest(errorModel);
+				}
+			}
+			else
+			{
+				return this.RoleNotFound(id);
+			}
+		}
+		
+		[HttpGet("check-permission")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public async Task<IActionResult> CheckPermissionByToken([FromRoute] string membershipId)
+		{
+			var utilizer = this.GetUtilizer();
+			var role = await this.roleService.GetByNameAsync(utilizer.Role, membershipId);
+			if (role != null)
+			{
+				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
+				{
+					return this.Ok(new
+					{
+						is_permitted = role.HasPermission(rbac)
+					});
+				}
+				else
+				{
+					return this.BadRequest(errorModel);
+				}
+			}
+			else
+			{
+				return this.RoleNotFound(utilizer.Role);
+			}
+		}
+
+		private bool TryExtractPermissionParameter(out Rbac rbac, out ErrorModel errorModel)
+		{
+			if (this.Request.Query.ContainsKey("permission"))
+			{
+				var rbacString = this.Request.Query["permission"];
+				if (Rbac.TryParse(rbacString, out rbac))
+				{
+					errorModel = null;
+					return true;	
+				}
+				else
+				{
+					rbac = null;
+					errorModel = new ErrorModel
+					{
+						Message = "The permission value is not valid as a rbac array.",
+						ErrorCode = "InvalidRbac",
+						StatusCode = 400
+					};
+				
+					return false;
+				}
+			}
+			else
+			{
+				rbac = null;
+				errorModel = new ErrorModel
+				{
+					Message = "The permission parameter must be post in query string",
+					ErrorCode = "PermissionParameterRequired",
+					StatusCode = 400
+				};
+				
+				return false;
 			}
 		}
 
