@@ -203,5 +203,14 @@ namespace ErtisAuth.Infrastructure.Exceptions
 		}
 
 		#endregion
+
+		#region Migration Exceptions
+
+		public static ErtisAuthException MigrationRejected(string message)
+		{
+			return new ErtisAuthException(HttpStatusCode.Unauthorized, message, "MigrationRejected");
+		}
+
+		#endregion
 	}
 }

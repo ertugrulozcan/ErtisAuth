@@ -1,3 +1,4 @@
+using System;
 using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
 using Ertis.Net.Rest;
@@ -56,8 +57,14 @@ namespace ErtisAuth.WebAPI
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.Configure<DatabaseSettings>(this.Configuration.GetSection("Database"));
-			services.AddSingleton<IDatabaseSettings>(serviceProvider => serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value);
-			
+			services.AddSingleton<IDatabaseSettings>(serviceProvider =>
+			{
+				var databaseSettings = serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value;
+				var connectionString = Ertis.MongoDB.Helpers.ConnectionStringHelper.GenerateConnectionString(databaseSettings);
+				Console.WriteLine($"ConnectionString: '{connectionString}'");
+				return databaseSettings;
+			});
+
 			services.Configure<ApiVersionOptions>(this.Configuration.GetSection("ApiVersion"));
 			services.AddSingleton<IApiVersionOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<ApiVersionOptions>>().Value);
 			
@@ -81,6 +88,7 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IProviderService, ProviderService>();
 			services.AddSingleton<IWebhookService, WebhookService>();
 			services.AddSingleton<IEventService, EventService>();
+			services.AddSingleton<IMigrationService, MigrationService>();
 			
 			services.AddSingleton<IRestHandler, SystemRestHandler>();
 			services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();

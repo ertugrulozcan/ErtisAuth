@@ -10,6 +10,7 @@ using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Roles;
 using ErtisAuth.Infrastructure.Events;
 using ErtisAuth.Infrastructure.Exceptions;
+using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services
@@ -74,44 +75,13 @@ namespace ErtisAuth.Infrastructure.Services
 							Name = Rbac.ReservedRoles.Administrator,
 							Description = "Administrator",
 							MembershipId = membership.Id,
-							Permissions = this.AssertAdminPermissionsForReservedResources()
+							Permissions = RoleHelper.AssertAdminPermissionsForReservedResources()
 						});
 					}
 				}	
 			}
 		}
 
-		private IEnumerable<string> AssertAdminPermissionsForReservedResources()
-		{
-			string[] reservedResources = {
-				"users",
-				"applications",
-				"roles",
-				"events"
-			};
-			
-			RbacSegment[] adminPrivileges =
-			{
-				Rbac.CrudActionSegments.Create,
-				Rbac.CrudActionSegments.Read,
-				Rbac.CrudActionSegments.Update,
-				Rbac.CrudActionSegments.Delete
-			};
-
-			var permissions = new List<string>();
-			foreach (var resource in reservedResources)
-			{
-				var resourceSegment = new RbacSegment(resource);
-				foreach (var privilege in adminPrivileges)
-				{
-					var rbac = new Rbac(RbacSegment.All, resourceSegment, privilege, RbacSegment.All);
-					permissions.Add(rbac.ToString());	
-				}
-			}
-
-			return permissions;
-		}
-		
 		#endregion
 		
 		#region Event Handlers

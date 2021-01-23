@@ -30,7 +30,7 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		#endregion
 		
-		#region Method
+		#region Methods
 
 		[HttpGet]
 		public IActionResult Get()
@@ -99,11 +99,10 @@ namespace ErtisAuth.WebAPI.Controllers
 			}
 			else
 			{
-				var stringList = apiMapDictionary.Select(x => $"{x.Key}#[{string.Join(", ", x.Value)}]");
+				var stringList = apiMapDictionary.Select(x => $"{x.Key}#[{string.Join(", ", x.Value)}]").ToList();
 				int maxLength = stringList.Max(x => x.Length);
-				stringList = stringList.Select(x => x.Replace("#", GenerateBlankString(maxLength - x.Length + 10)));
 
-				return this.Ok(stringList);
+				return this.Ok(stringList.Select(x => x.Replace("#", GenerateBlankString(maxLength - x.Length + 10))));
 			}
 		}
 

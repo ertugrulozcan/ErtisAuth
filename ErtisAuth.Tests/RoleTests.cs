@@ -26,7 +26,7 @@ namespace ErtisAuth.Tests
 			{
 				Host = "172.17.0.2",
 				Port = 27017,
-				DatabaseName = "ertisauth"
+				DefaultAuthDatabase = "ertisauth"
 			};
 			
 			IMembershipRepository membershipRepository = new MembershipRepository(databaseSettings, null);
