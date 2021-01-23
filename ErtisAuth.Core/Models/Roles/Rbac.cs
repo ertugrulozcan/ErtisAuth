@@ -50,20 +50,45 @@ namespace ErtisAuth.Core.Models.Roles
 			{
 				throw new ArgumentException("Role permission path is empty!");
 			}
-
+			
 			var segments = path.Split(RbacSegment.SEPERATOR);
-			if (segments.Length < 3)
+			switch (segments.Length)
 			{
-				throw new ArgumentOutOfRangeException(nameof(path), "The permission path should be contains subject, resource and action segments! (The object segment is optionally, if blank it's mean is all objects are permitted)");
+				case 1:
+					return new Rbac
+					{
+						Subject = RbacSegment.All,
+						Resource = (RbacSegment) segments[0],
+						Action = RbacSegment.All,
+						Object = RbacSegment.All
+					};
+				case 2:
+					return new Rbac
+					{
+						Subject = RbacSegment.All,
+						Resource = (RbacSegment) segments[0],
+						Action = (RbacSegment) segments[1],
+						Object = RbacSegment.All
+					};
+				case 3:
+					return new Rbac
+					{
+						Subject = RbacSegment.All,
+						Resource = (RbacSegment) segments[0],
+						Action = (RbacSegment) segments[1],
+						Object = (RbacSegment) segments[2]
+					};
+				case 4:
+					return new Rbac
+					{
+						Subject = (RbacSegment) segments[0],
+						Resource = (RbacSegment) segments[1],
+						Action = (RbacSegment) segments[2],
+						Object = (RbacSegment) segments[3]
+					};
+				default:
+					throw new ArgumentOutOfRangeException(nameof(path), "The permission path is not valid. ([subject].[resource].[action].[object])");
 			}
-
-			return new Rbac
-			{
-				Subject = (RbacSegment) segments[0],
-				Resource = (RbacSegment) segments[1],
-				Action = (RbacSegment) segments[2],
-				Object = segments.Length > 3 ? (RbacSegment) segments[3] : RbacSegment.All
-			};
 		}
 
 		public static bool TryParse(string path, out Rbac rbac)

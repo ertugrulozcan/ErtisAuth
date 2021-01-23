@@ -1,4 +1,3 @@
-using System;
 using Ertis.MongoDB.Configuration;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
