@@ -83,6 +83,8 @@ namespace ErtisAuth.WebAPI.Controllers
 				};	
 			}
 
+			this.Request.HttpContext.Items.Add("SysUtilizer", "migration");
+			
 			var migrationResult = await this.migrationService.MigrateAsync(connectionString, membership, user, application);
 			
 			return this.Ok(migrationResult);

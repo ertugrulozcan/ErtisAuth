@@ -51,6 +51,11 @@ namespace ErtisAuth.WebAPI.Services
 				}
 			}
 
+			if (this.httpContextAccessor.HttpContext.Items.ContainsKey("SysUtilizer"))
+			{
+				return this.httpContextAccessor.HttpContext.Items["SysUtilizer"].ToString();
+			}
+			
 			return null;
 		}
 		
