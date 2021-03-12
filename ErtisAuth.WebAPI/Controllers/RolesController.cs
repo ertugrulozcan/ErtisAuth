@@ -168,10 +168,14 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
 				{
-					return this.Ok(new
+					if (role.HasPermission(rbac))
 					{
-						is_permitted = role.HasPermission(rbac)
-					});
+						return this.Ok();
+					}
+					else
+					{
+						return this.Unauthorized();
+					}
 				}
 				else
 				{
@@ -194,10 +198,14 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
 				{
-					return this.Ok(new
+					if (role.HasPermission(rbac))
 					{
-						is_permitted = role.HasPermission(rbac)
-					});
+						return this.Ok();
+					}
+					else
+					{
+						return this.Unauthorized();
+					}
 				}
 				else
 				{

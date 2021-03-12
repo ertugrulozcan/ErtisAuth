@@ -121,7 +121,6 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				Id = id,
 				Name = model.Name,
-				Secret = model.Secret,
 				Role = model.Role,
 				MembershipId = membershipId
 			};
