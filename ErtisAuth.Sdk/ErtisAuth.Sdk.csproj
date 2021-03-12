@@ -19,7 +19,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Core" Version="1.0.8" />
+      <PackageReference Include="Ertis.Core" Version="1.0.9" />
       <PackageReference Include="Ertis.Net" Version="1.0.6" />
     </ItemGroup>
 
