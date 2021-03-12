@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
-using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Applications;
@@ -17,7 +16,6 @@ namespace ErtisAuth.Infrastructure.Services
 	{
 		#region Services
 
-		private readonly IMembershipService membershipService;
 		private readonly IRoleService roleService;
 		private readonly IEventService eventService;
 
@@ -38,7 +36,6 @@ namespace ErtisAuth.Infrastructure.Services
 			IEventService eventService,
 			IApplicationRepository applicationRepository) : base(membershipService, applicationRepository)
 		{
-			this.membershipService = membershipService;
 			this.roleService = roleService;
 			this.eventService = eventService;
 			
@@ -88,40 +85,6 @@ namespace ErtisAuth.Infrastructure.Services
 		#endregion
 		
 		#region Methods
-
-		public override Application Create(Utilizer utilizer, string membershipId, Application model)
-		{
-			var membership = this.membershipService.Get(membershipId);
-			if (membership == null)
-			{
-				throw ErtisAuthException.MembershipNotFound(membershipId);
-			}
-
-			var application = base.Create(utilizer, membershipId, model);
-			if (application != null)
-			{
-				application = this.Update(utilizer, membershipId, application);
-			}
-			
-			return application;
-		}
-		
-		public override async Task<Application> CreateAsync(Utilizer utilizer, string membershipId, Application model)
-		{
-			var membership = await this.membershipService.GetAsync(membershipId);
-			if (membership == null)
-			{
-				throw ErtisAuthException.MembershipNotFound(membershipId);
-			}
-
-			var application = await base.CreateAsync(utilizer, membershipId, model);
-			if (application != null)
-			{	
-				application = await this.UpdateAsync(utilizer, membershipId, application);
-			}
-
-			return application;
-		}
 
 		protected override bool ValidateModel(Application model, out IEnumerable<string> errors)
 		{
