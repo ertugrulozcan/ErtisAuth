@@ -1,6 +1,7 @@
 using System;
 using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
+using Ertis.MongoDB.Database;
 using Ertis.Net.Rest;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Dao.Repositories;
@@ -68,6 +69,7 @@ namespace ErtisAuth.WebAPI
 			services.Configure<ApiVersionOptions>(this.Configuration.GetSection("ApiVersion"));
 			services.AddSingleton<IApiVersionOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<ApiVersionOptions>>().Value);
 			
+			services.AddSingleton<IMongoDatabase, MongoDatabase>();
 			services.AddSingleton<IMembershipRepository, MembershipRepository>();
 			services.AddSingleton<IUserRepository, UserRepository>();
 			services.AddSingleton<IApplicationRepository, ApplicationRepository>();
