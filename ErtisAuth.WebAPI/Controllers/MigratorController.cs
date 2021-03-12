@@ -3,6 +3,7 @@ using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.WebAPI.Models.Request.Migration;
 using Microsoft.AspNetCore.Mvc;
 
@@ -72,7 +73,17 @@ namespace ErtisAuth.WebAPI.Controllers
 				PasswordHash = model.User.Password
 			};
 
-			var migrationResult = await this.migrationService.MigrateAsync(connectionString, membership, user);
+			Application application = null;
+			if (model.Application != null)
+			{
+				application = new Application
+				{
+					Name = model.Application.Name,
+					Role = model.Application.Role
+				};	
+			}
+
+			var migrationResult = await this.migrationService.MigrateAsync(connectionString, membership, user, application);
 			
 			return this.Ok(migrationResult);
 		}

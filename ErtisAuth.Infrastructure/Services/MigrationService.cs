@@ -8,6 +8,7 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Infrastructure.Helpers;
 
 namespace ErtisAuth.Infrastructure.Services
@@ -20,6 +21,7 @@ namespace ErtisAuth.Infrastructure.Services
 		private readonly IMembershipService membershipService;
 		private readonly IRoleService roleService;
 		private readonly IUserService userService;
+		private readonly IApplicationService applicationService;
 		private readonly ICryptographyService cryptographyService;
 
 		#endregion
@@ -33,18 +35,21 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="membershipService"></param>
 		/// <param name="roleService"></param>
 		/// <param name="userService"></param>
+		/// <param name="applicationService"></param>
 		/// <param name="cryptographyService"></param>
 		public MigrationService(
 			IDatabaseSettings databaseSettings,
 			IMembershipService membershipService,
 			IRoleService roleService,
 			IUserService userService,
+			IApplicationService applicationService,
 			ICryptographyService cryptographyService)
 		{
 			this.databaseSettings = databaseSettings;
 			this.membershipService = membershipService;
 			this.roleService = roleService;
 			this.userService = userService;
+			this.applicationService = applicationService;
 			this.cryptographyService = cryptographyService;
 		}
 
@@ -52,7 +57,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Methods
 
-		public async Task<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPassword _user)
+		public async Task<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPassword _user, Application _application)
 		{
 			// Validation
 			var databaseInformation = Ertis.MongoDB.Helpers.ConnectionStringHelper.ParseConnectionString(connectionString);
@@ -103,7 +108,26 @@ namespace ErtisAuth.Infrastructure.Services
 				MembershipId = membership.Id,
 				PasswordHash = this.cryptographyService.CalculatePasswordHash(membership, _user.PasswordHash)
 			});
+			
+			// 4. Application
+			if (_application != null)
+			{
+				var application = await this.applicationService.CreateAsync(utilizer, membership.Id, new Application
+				{
+					Name = _application.Name,
+					Role = _application.Role,
+					MembershipId = membership.Id
+				});
 
+				return new
+				{
+					membership,
+					user = adminUser,
+					role = adminRole,
+					application
+				};	
+			}
+			
 			return new
 			{
 				membership,
