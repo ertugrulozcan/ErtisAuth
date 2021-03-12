@@ -6,8 +6,8 @@ using Ertis.Data.Models;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Infrastructure.Events;
-using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services

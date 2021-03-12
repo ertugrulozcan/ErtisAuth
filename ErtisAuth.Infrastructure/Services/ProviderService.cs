@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Providers;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Providers;
 using ErtisAuth.Infrastructure.Events;
-using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services

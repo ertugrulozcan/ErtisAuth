@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Helpers;
-using ErtisAuth.Infrastructure.Exceptions;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Sdk.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;

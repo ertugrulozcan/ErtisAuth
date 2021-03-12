@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Net;
 using Ertis.Core.Exceptions;
 
-namespace ErtisAuth.Infrastructure.Exceptions
+namespace ErtisAuth.Core.Exceptions
 {
 	public class ErtisAuthException : ErtisException
 	{

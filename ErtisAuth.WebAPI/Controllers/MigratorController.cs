@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
-using ErtisAuth.Infrastructure.Exceptions;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.WebAPI.Models.Request.Migration;
 using Microsoft.AspNetCore.Mvc;
 

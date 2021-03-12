@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Infrastructure.Exceptions;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Infrastructure.Extensions;
 using ErtisAuth.WebAPI.Annotations;
 using ErtisAuth.WebAPI.Extensions;

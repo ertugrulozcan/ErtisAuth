@@ -8,10 +8,10 @@ using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
-using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Extensions;
 using Microsoft.IdentityModel.Tokens;
 

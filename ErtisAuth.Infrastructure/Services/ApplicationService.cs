@@ -5,10 +5,10 @@ using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Infrastructure.Events;
-using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services

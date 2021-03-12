@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Memberships;
-using ErtisAuth.Infrastructure.Exceptions;
 
 namespace ErtisAuth.Infrastructure.Services
 {

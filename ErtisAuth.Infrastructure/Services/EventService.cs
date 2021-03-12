@@ -2,11 +2,11 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Events;
-using ErtisAuth.Infrastructure.Exceptions;
 using MongoDB.Bson;
 using Newtonsoft.Json;
 

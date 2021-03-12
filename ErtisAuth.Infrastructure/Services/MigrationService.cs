@@ -7,7 +7,7 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
-using ErtisAuth.Infrastructure.Exceptions;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Infrastructure.Helpers;
 
 namespace ErtisAuth.Infrastructure.Services

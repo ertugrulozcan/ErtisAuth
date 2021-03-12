@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Data.Models;
 using Ertis.MongoDB.Repository;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services.Interfaces;
-using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services

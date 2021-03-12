@@ -2,20 +2,6 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
-
-        <PackageId>ErtisAuth.Infrastructure</PackageId>
-        <PackageVersion>3.0.0</PackageVersion>
-        <Authors>Ertuğrul Özcan</Authors>
-        <Description>ErtisAuth.Infrastructure</Description>
-        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <Copyright>Ertuğrul Özcan | Copyright 2021 (c)</Copyright>
-        <PackageReleaseNotes>Initial package</PackageReleaseNotes>
-        <PackageTags>ErtisAuth.Infrastructure</PackageTags>
-        <Title>ErtisAuth.Infrastructure</Title>
-        <PackageProjectUrl>https://github.com/ertugrulozcan</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/ertugrulozcan</RepositoryUrl>
-        <AssemblyVersion>3.0.0</AssemblyVersion>
-        <FileVersion>3.0.0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>

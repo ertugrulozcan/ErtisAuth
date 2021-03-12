@@ -10,10 +10,10 @@ using Ertis.Net.Rest;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Webhooks;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Webhooks;
 using ErtisAuth.Infrastructure.Events;
-using ErtisAuth.Infrastructure.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
 using Newtonsoft.Json;
 
@@ -230,7 +230,7 @@ namespace ErtisAuth.Infrastructure.Services
 						errorList.Add("url is a required field for the webhook request");
 					}
 					
-					var httpMethodList = typeof(HttpMethod).GetProperties().Where(x => x.PropertyType == typeof(HttpMethod)).Select(x => x.Name);
+					var httpMethodList = typeof(HttpMethod).GetProperties().Where(x => x.PropertyType == typeof(HttpMethod)).Select(x => x.Name).ToList();
 					if (string.IsNullOrEmpty(webhookRequest.Method))
 					{
 						errorList.Add("method is a required field for the webhook request");

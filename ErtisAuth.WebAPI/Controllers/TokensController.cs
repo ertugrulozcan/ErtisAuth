@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
-using ErtisAuth.Infrastructure.Exceptions;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Tokens;
 using Microsoft.AspNetCore.Mvc;

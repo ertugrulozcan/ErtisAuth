@@ -1,8 +1,7 @@
 using System.Linq;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.AspNetCore.Constants;
-using ErtisAuth.Infrastructure.Exceptions;
-using ErtisAuth.Infrastructure.Helpers;
+using ErtisAuth.Core.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,13 +34,13 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 		public static string GetTokenFromHeader(this HttpRequest request, out string tokenType)
 		{
 			var authorizationHeader = request.GetAuthorizationHeader();
-			return TokenHelper.ExtractToken(authorizationHeader, out tokenType);
+			return TokenBase.ExtractToken(authorizationHeader, out tokenType);
 		}
 		
 		public static string GetTokenFromHeader(this ControllerBase controller, out string tokenType)
 		{
 			var authorizationHeader = controller.GetAuthorizationHeader();
-			return TokenHelper.ExtractToken(authorizationHeader, out tokenType);
+			return TokenBase.ExtractToken(authorizationHeader, out tokenType);
 		}
 
 		public static Utilizer GetUtilizer(this ControllerBase controller)
