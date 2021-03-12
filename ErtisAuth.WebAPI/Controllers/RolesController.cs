@@ -157,7 +157,7 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		#endregion
 
-		#region Region
+		#region Check Permission
 
 		[HttpGet("{id}/check-permission")]
 		[RbacAction(Rbac.CrudActions.Read)]

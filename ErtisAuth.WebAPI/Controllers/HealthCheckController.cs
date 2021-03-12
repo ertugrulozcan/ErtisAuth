@@ -1,5 +1,3 @@
-using System;
-using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
