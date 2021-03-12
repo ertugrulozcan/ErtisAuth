@@ -6,7 +6,7 @@ services:
         image: mongo
         restart: always
         volumes:
-            - ./data:/data/db
+            - ${HOME}/.docker/volumes/ertisauth:/data/db
         ports:
             - "27017:27017"
     web:
