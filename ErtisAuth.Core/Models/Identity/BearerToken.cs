@@ -26,6 +26,14 @@ namespace ErtisAuth.Core.Models.Identity
 		#region Constructors
 
 		/// <summary>
+		/// Private Constructor
+		/// </summary>
+		private BearerToken()
+		{
+			
+		}
+		
+		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="token"></param>
@@ -39,6 +47,19 @@ namespace ErtisAuth.Core.Models.Identity
 			this.RefreshToken = refreshToken;
 			this.RefreshExpiresIn = refreshExpiresIn;
 			this.CreatedAt = DateTime.Now;
+		}
+
+		#endregion
+
+		#region Methods
+
+		public static BearerToken CreateTemp(string token)
+		{
+			return new BearerToken
+			{
+				AccessToken = token,
+				CreatedAt = DateTime.Now
+			};
 		}
 
 		#endregion
