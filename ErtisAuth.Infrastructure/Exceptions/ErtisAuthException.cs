@@ -34,6 +34,11 @@ namespace ErtisAuth.Infrastructure.Exceptions
 		
 		#region Token Exceptions
 		
+		public static ErtisAuthException Unauthorized(string errorMessage)
+		{
+			return new ErtisAuthException(HttpStatusCode.Unauthorized, errorMessage, "Unauthorized");
+		}
+		
 		public static ErtisAuthException AuthorizationHeaderMissing()
 		{
 			return new ErtisAuthException(HttpStatusCode.BadRequest, "Authorization header missing or empty", "AuthorizationHeaderMissing");

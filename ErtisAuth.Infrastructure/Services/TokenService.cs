@@ -288,39 +288,44 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public async Task<BasicTokenValidationResult> VerifyBasicTokenAsync(string token, bool fireEvent = true)
+		public async Task<BasicTokenValidationResult> VerifyBasicTokenAsync(string basicToken, bool fireEvent = true)
 		{
-			if (string.IsNullOrEmpty(token))
+			if (string.IsNullOrEmpty(basicToken))
 			{
 				throw ErtisAuthException.InvalidToken();
 			}
 
-			var parts = token.Split(':');
+			var parts = basicToken.Split(':');
 			if (parts.Length != 2)
 			{
 				throw ErtisAuthException.InvalidToken();
 			}
 
 			var applicationId = parts[0];
-			//var secretKey = parts[1];
-
 			var application = await this.applicationService.GetByIdAsync(applicationId);
 			if (application == null)
 			{
 				throw ErtisAuthException.ApplicationNotFound(applicationId);
 			}
 
-			if (application.Secret != token)
+			var membership = await this.membershipService.GetAsync(application.MembershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(application.MembershipId);
+			}
+
+			var secret = parts[1];
+			if (membership.SecretKey != secret)
 			{
 				throw ErtisAuthException.ApplicationSecretMismatch();
 			}
 
 			if (fireEvent)
 			{
-				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, application, new { token }));	
+				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, application, new { basicToken }));	
 			}
 			
-			return new BasicTokenValidationResult(true, token, application);
+			return new BasicTokenValidationResult(true, basicToken, application);
 		}
 
 		#endregion

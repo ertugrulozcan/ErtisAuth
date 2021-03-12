@@ -100,7 +100,6 @@ namespace ErtisAuth.Infrastructure.Services
 			var application = base.Create(utilizer, membershipId, model);
 			if (application != null)
 			{
-				application.Secret = $"{application.Id}:{membership.SecretKey}";
 				application = this.Update(utilizer, membershipId, application);
 			}
 			
@@ -117,8 +116,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 			var application = await base.CreateAsync(utilizer, membershipId, model);
 			if (application != null)
-			{
-				application.Secret = $"{application.Id}:{membership.SecretKey}";	
+			{	
 				application = await this.UpdateAsync(utilizer, membershipId, application);
 			}
 
@@ -174,11 +172,6 @@ namespace ErtisAuth.Infrastructure.Services
 			if (string.IsNullOrEmpty(destination.Role))
 			{
 				destination.Role = source.Role;
-			}
-			
-			if (string.IsNullOrEmpty(destination.Secret))
-			{
-				destination.Secret = source.Secret;
 			}
 		}
 
