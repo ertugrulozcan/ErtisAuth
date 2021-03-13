@@ -24,6 +24,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Extensions.Http\ErtisAuth.Extensions.Http.csproj" />
         <ProjectReference Include="..\ErtisAuth.Sdk\ErtisAuth.Sdk.csproj" />
     </ItemGroup>
 

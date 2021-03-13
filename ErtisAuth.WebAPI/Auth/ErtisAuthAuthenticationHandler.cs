@@ -3,58 +3,55 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Ertis.Core.Exceptions;
-using ErtisAuth.Core.Models.Identity;
-using ErtisAuth.Extensions.AspNetCore.Extensions;
-using ErtisAuth.Extensions.AspNetCore.Helpers;
 using ErtisAuth.Core.Exceptions;
-using ErtisAuth.Extensions.Http.Extensions;
-using ErtisAuth.Sdk.Services.Interfaces;
+using ErtisAuth.Core.Models.Identity;
 using Microsoft.AspNetCore.Authentication;
+using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Extensions.Http.Extensions;
+using ErtisAuth.Infrastructure.Extensions;
+using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using IAuthenticationService = ErtisAuth.Sdk.Services.Interfaces.IAuthenticationService;
 
-namespace ErtisAuth.Extensions.AspNetCore
+namespace ErtisAuth.WebAPI.Auth
 {
 	public class ErtisAuthAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 	{
 		#region Services
 
-		private readonly IAuthenticationService authenticationService;
-		private readonly IApplicationService applicationService;
+		private readonly ITokenService tokenService;
 		private readonly IRoleService roleService;
 		
 		#endregion
 		
 		#region Constructors
-		
+
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="options"></param>
-		/// <param name="authenticationService"></param>
-		/// <param name="applicationService"></param>
+		/// <param name="tokenService"></param>
 		/// <param name="roleService"></param>
 		/// <param name="logger"></param>
 		/// <param name="encoder"></param>
 		/// <param name="clock"></param>
 		public ErtisAuthAuthenticationHandler(
 			IOptionsMonitor<AuthenticationSchemeOptions> options, 
-			IAuthenticationService authenticationService,
-			IApplicationService applicationService,
+			ITokenService tokenService, 
 			IRoleService roleService,
 			ILoggerFactory logger, 
 			UrlEncoder encoder, 
 			ISystemClock clock) : 
 			base(options, logger, encoder, clock)
 		{
-			this.authenticationService = authenticationService;
-			this.applicationService = applicationService;
+			this.tokenService = tokenService;
 			this.roleService = roleService;
 		}
-		
+
 		#endregion
+		
+		#region Methods
 
 		protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
 		{
@@ -92,7 +89,7 @@ namespace ErtisAuth.Extensions.AspNetCore
 				return AuthenticateResult.Fail(ex.Message);
 			}
 		}
-
+		
 		private async Task SetErrorToResponse(ErtisException ex)
 		{
 			try
@@ -120,7 +117,7 @@ namespace ErtisAuth.Extensions.AspNetCore
 		
 		private async Task<Utilizer> CheckAuthorizationAsync()
 		{
-			var token = this.Request.GetTokenFromHeader(out var tokenType);
+			var token = this.Context.Request.GetTokenFromHeader(out var tokenType);
 			if (string.IsNullOrEmpty(token))
 			{
 				throw ErtisAuthException.AuthorizationHeaderMissing();
@@ -130,81 +127,61 @@ namespace ErtisAuth.Extensions.AspNetCore
 			{
 				throw ErtisAuthException.UnsupportedTokenType();
 			}
-			
+
 			TokenTypeExtensions.TryParseTokenType(tokenType, out var _tokenType);
 			switch (_tokenType)
 			{
 				case SupportedTokenTypes.None:
 					throw ErtisAuthException.UnsupportedTokenType();
 				case SupportedTokenTypes.Basic:
-					var basicToken = new BasicToken(token);
-					var applicationId = token.Split(':')[0];
-					var getApplicationResponse = await this.applicationService.GetApplicationAsync(applicationId, basicToken);
-					if (getApplicationResponse.IsSuccess)
+					var validationResult = await this.tokenService.VerifyBasicTokenAsync(token);
+					if (!validationResult.IsValidated)
 					{
-						var rbacDefinition = this.Context.GetRbacDefinition(getApplicationResponse.Data.Id);
-						var rbac = $"{rbacDefinition.Resource}.{rbacDefinition.Action}";
-						var isPermittedForAction = await this.roleService.CheckPermissionAsync(rbac, basicToken);
-						if (!isPermittedForAction)
-						{
-							throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({rbac})");
-						}
-				
-						return new Utilizer
-						{
-							Id = getApplicationResponse.Data.Id,
-							Username = getApplicationResponse.Data.Name,
-							Type = tokenType == "Basic" ? Utilizer.UtilizerType.Application : Utilizer.UtilizerType.User,
-							Role = getApplicationResponse.Data.Role,
-							Token = token,
-							TokenType = _tokenType
-						};
+						throw ErtisAuthException.InvalidToken();
 					}
-					else
+					
+					var application = validationResult.Application;
+					if (!string.IsNullOrEmpty(application.Role))
 					{
-						var errorMessage = getApplicationResponse.Message;
-						if (ResponseHelper.TryParseError(getApplicationResponse.Message, out var error))
+						var role = await this.roleService.GetByNameAsync(application.Role, application.MembershipId);
+						if (role != null)
 						{
-							errorMessage = error.Message;
+							var rbac = this.Context.GetRbacDefinition(application.Id);
+							if (!role.HasPermission(rbac))
+							{
+								throw ErtisAuthException.AccessDenied("Your authorization role is unauthorized for this action");
+							}
 						}
-						
-						throw ErtisAuthException.Unauthorized(errorMessage);
 					}
+					
+					return application;
 				case SupportedTokenTypes.Bearer:
-					var meResponse = await this.authenticationService.WhoAmIAsync(token);
-					if (meResponse.IsSuccess)
+					var verifyTokenResult = await this.tokenService.VerifyBearerTokenAsync(token, false);
+					if (!verifyTokenResult.IsValidated)
 					{
-						var rbacDefinition = this.Context.GetRbacDefinition(meResponse.Data.Id);
-						var rbac = $"{rbacDefinition.Resource}.{rbacDefinition.Action}";
-						var isPermittedForAction = await this.roleService.CheckPermissionAsync(rbac, BearerToken.CreateTemp(token));
-						if (!isPermittedForAction)
-						{
-							throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({rbac})");
-						}
-				
-						return new Utilizer
-						{
-							Id = meResponse.Data.Id,
-							Username = meResponse.Data.Username,
-							Type = tokenType == "Basic" ? Utilizer.UtilizerType.Application : Utilizer.UtilizerType.User,
-							Role = meResponse.Data.Role,
-							Token = token,
-							TokenType = _tokenType
-						};
+						throw ErtisAuthException.InvalidToken();
 					}
-					else
+        
+					var user = verifyTokenResult.User;
+					if (!string.IsNullOrEmpty(user.Role))
 					{
-						var errorMessage = meResponse.Message;
-						if (ResponseHelper.TryParseError(meResponse.Message, out var error))
+						var role = await this.roleService.GetByNameAsync(user.Role, user.MembershipId);
+						if (role != null)
 						{
-							errorMessage = error.Message;
+							var rbac = this.Context.GetRbacDefinition(user.Id);
+							if (!role.HasPermission(rbac))
+							{
+								throw ErtisAuthException.AccessDenied("Your authorization role is unauthorized for this action");
+							}
 						}
-						
-						throw ErtisAuthException.Unauthorized(errorMessage);
 					}
+
+					return user;
 				default:
 					throw ErtisAuthException.UnsupportedTokenType();
 			}
 		}
+
+		#endregion
 	}
 }

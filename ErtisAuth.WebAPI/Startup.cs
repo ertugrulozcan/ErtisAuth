@@ -6,14 +6,15 @@ using Ertis.Net.Rest;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using ErtisAuth.Extensions.Authorization.Constants;
 using ErtisAuth.Identity.Jwt.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Adapters;
 using ErtisAuth.Infrastructure.Services;
-using ErtisAuth.WebAPI.Constants;
-using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models;
-using ErtisAuth.WebAPI.Services;
+using ErtisAuth.WebAPI.Adapters;
+using ErtisAuth.WebAPI.Auth;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -22,7 +23,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Sentry;
 
 namespace ErtisAuth.WebAPI
 {
@@ -110,11 +110,17 @@ namespace ErtisAuth.WebAPI
 					});
 			});
 
-			services.AddAuthorization(options =>
-			{
-				options.AddPolicy(Policies.ErtisAuthAuthorizationPolicyName, policy => policy.AddRequirements(new ErtisAuthAuthorizationRequirement()));
-			});
+			services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ErtisAuthAuthenticationHandler>(
+				Policies.ErtisAuthAuthorizationPolicyName, 
+				options => {});
 			
+			services.AddAuthorization(options =>
+				options.AddPolicy(Policies.ErtisAuthAuthorizationPolicyName, policy =>
+				{
+					policy.AddAuthenticationSchemes(Policies.ErtisAuthAuthorizationPolicyName);
+					policy.AddRequirements(new ErtisAuthAuthorizationRequirement());
+				}));
+
 			// Api versioning
 			int major = this.Configuration.GetSection("ApiVersion").GetValue<int>("Major");
 			int minor = this.Configuration.GetSection("ApiVersion").GetValue<int>("Minor");
@@ -142,14 +148,14 @@ namespace ErtisAuth.WebAPI
 				app.UseDeveloperExceptionPage();
 			}
 
-			var sentryHub = app.ApplicationServices.GetRequiredService<IHub>();
+			//var sentryHub = app.ApplicationServices.GetRequiredService<IHub>();
 
 			app.UseCors(CORS_POLICY_KEY);
 			app.UseHttpsRedirection();
 			app.UseRouting();
 			app.UseAuthentication();
 			app.UseAuthorization();
-			app.ConfigureGlobalExceptionHandler(sentryHub);
+			// app.ConfigureGlobalExceptionHandler(sentryHub);
 
 			// Swagger
 			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
