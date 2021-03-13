@@ -36,6 +36,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.AspNetCore", "ErtisAuth.Extensions.AspNetCore\ErtisAuth.Extensions.AspNetCore.csproj", "{5D54640F-E5B6-496F-A261-E1BBF48337ED}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Http", "ErtisAuth.Extensions.Http\ErtisAuth.Extensions.Http.csproj", "{EC7CBEBE-989C-463F-922F-A951CFF321DC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Authorization", "ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj", "{A091A175-9892-40BF-843E-8BECD8023B7C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +86,14 @@ Global
 		{5D54640F-E5B6-496F-A261-E1BBF48337ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D54640F-E5B6-496F-A261-E1BBF48337ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D54640F-E5B6-496F-A261-E1BBF48337ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC7CBEBE-989C-463F-922F-A951CFF321DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC7CBEBE-989C-463F-922F-A951CFF321DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC7CBEBE-989C-463F-922F-A951CFF321DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC7CBEBE-989C-463F-922F-A951CFF321DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A091A175-9892-40BF-843E-8BECD8023B7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A091A175-9892-40BF-843E-8BECD8023B7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A091A175-9892-40BF-843E-8BECD8023B7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A091A175-9892-40BF-843E-8BECD8023B7C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6FBE22E4-CCDC-444E-9D29-A805E6BB03A6} = {B788935F-3BD4-4133-BEC5-60145306126C}
@@ -94,5 +106,7 @@ Global
 		{77123630-7CAE-4EC5-9AAB-C20200363A54} = {B86768F1-AD3F-4519-A367-E8ACA40D1FD5}
 		{8162D3D5-AB68-4B86-ACFB-F780500B556D} = {597A11F4-86E6-428B-A283-0B1953FD290E}
 		{5D54640F-E5B6-496F-A261-E1BBF48337ED} = {872EE072-7CDD-40FB-B936-4640B68D06D8}
+		{EC7CBEBE-989C-463F-922F-A951CFF321DC} = {872EE072-7CDD-40FB-B936-4640B68D06D8}
+		{A091A175-9892-40BF-843E-8BECD8023B7C} = {872EE072-7CDD-40FB-B936-4640B68D06D8}
 	EndGlobalSection
 EndGlobal
