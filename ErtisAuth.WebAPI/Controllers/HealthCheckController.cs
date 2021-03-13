@@ -50,7 +50,11 @@ namespace ErtisAuth.WebAPI.Controllers
 				var dbStatistics = await dbStatisticsTask;
 				if (dbStatistics == null)
 				{
-					return this.Problem("Database statistics could not fetched!");
+					return this.Ok(new
+					{
+						Status = "Unhealthy",
+						Message = "Database statistics could not fetched"
+					});
 				}
 			
 				var collectionList = (await listCollectionsTask).ToList();
@@ -58,10 +62,17 @@ namespace ErtisAuth.WebAPI.Controllers
 					!collectionList.Contains("roles") ||
 					!collectionList.Contains("users"))
 				{
-					return this.Problem("Database have not migrated yet!");
+					return this.Ok(new
+					{
+						Status = "Unhealthy",
+						Message = "Database have not migrated yet"
+					});
 				}
 				
-				return this.Ok("Status: Healthy");
+				return this.Ok(new
+				{
+					Status = "Healthy"
+				});
 			}
 			catch (Exception ex)
 			{
