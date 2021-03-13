@@ -160,19 +160,14 @@ namespace ErtisAuth.Core.Models.Roles
 
 		public static RbacSegment GetSegment(CrudActions action)
 		{
-			switch (action)
+			return action switch
 			{
-				case CrudActions.Create:
-					return CrudActionSegments.Create;
-				case CrudActions.Read:
-					return CrudActionSegments.Read;
-				case CrudActions.Update:
-					return CrudActionSegments.Update;
-				case CrudActions.Delete:
-					return CrudActionSegments.Delete;
-				default:
-					return new RbacSegment(action.ToString());
-			}
+				CrudActions.Create => CrudActionSegments.Create,
+				CrudActions.Read => CrudActionSegments.Read,
+				CrudActions.Update => CrudActionSegments.Update,
+				CrudActions.Delete => CrudActionSegments.Delete,
+				_ => new RbacSegment(action.ToString())
+			};
 		}
 
 		public static class CrudActionSegments

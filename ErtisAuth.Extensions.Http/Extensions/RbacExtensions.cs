@@ -1,10 +1,10 @@
 using System.Linq;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Extensions.AspNetCore.Attributes;
+using ErtisAuth.Identity.Attributes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace ErtisAuth.Extensions.AspNetCore.Extensions
+namespace ErtisAuth.Extensions.Http.Extensions
 {
 	public static class RbacExtensions
 	{
