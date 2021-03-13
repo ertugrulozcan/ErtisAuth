@@ -5,7 +5,7 @@ using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Http;
 
-namespace ErtisAuth.WebAPI.Services
+namespace ErtisAuth.WebAPI.Adapters
 {
 	public class ScopeOwnerAccessor : IScopeOwnerAccessor
 	{
