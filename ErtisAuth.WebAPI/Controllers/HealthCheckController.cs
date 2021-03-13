@@ -61,10 +61,7 @@ namespace ErtisAuth.WebAPI.Controllers
 					return this.Problem("Database have not migrated yet!");
 				}
 				
-				return this.Ok(new
-				{
-					collectionList
-				});
+				return this.Ok("Status: Healthy");
 			}
 			catch (Exception ex)
 			{
