@@ -1,6 +1,6 @@
 using System;
 
-namespace ErtisAuth.Extensions.AspNetCore.Attributes
+namespace ErtisAuth.Identity.Attributes
 {
 	[AttributeUsage(AttributeTargets.Method)]
 	public class RbacObjectAttribute : Attribute

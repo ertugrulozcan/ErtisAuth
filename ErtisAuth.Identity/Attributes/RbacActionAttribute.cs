@@ -1,7 +1,7 @@
 using System;
 using ErtisAuth.Core.Models.Roles;
 
-namespace ErtisAuth.WebAPI.Annotations
+namespace ErtisAuth.Identity.Attributes
 {
 	[AttributeUsage(AttributeTargets.Method)]
 	public class RbacActionAttribute : Attribute
@@ -21,6 +21,15 @@ namespace ErtisAuth.WebAPI.Annotations
 		public RbacActionAttribute(Rbac.CrudActions action)
 		{
 			this.ActionSegment = Rbac.GetSegment(action);
+		}
+		
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="customAction"></param>
+		public RbacActionAttribute(string customAction)
+		{
+			this.ActionSegment = new RbacSegment(customAction);
 		}
 
 		#endregion

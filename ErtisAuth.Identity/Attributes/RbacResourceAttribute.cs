@@ -1,7 +1,7 @@
 using System;
 using ErtisAuth.Core.Models.Roles;
 
-namespace ErtisAuth.Extensions.AspNetCore.Attributes
+namespace ErtisAuth.Identity.Attributes
 {
 	[AttributeUsage(AttributeTargets.Class)]
 	public class RbacResourceAttribute : Attribute

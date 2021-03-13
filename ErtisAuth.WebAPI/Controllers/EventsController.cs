@@ -6,7 +6,8 @@ using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.WebAPI.Annotations;
+using ErtisAuth.Identity.Attributes;
+using ErtisAuth.Extensions.Authorization.Annotations;
 using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
