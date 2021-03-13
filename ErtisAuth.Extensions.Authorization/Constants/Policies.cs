@@ -1,4 +1,4 @@
-namespace ErtisAuth.Extensions.AspNetCore.Constants
+namespace ErtisAuth.Extensions.Authorization.Constants
 {
 	public static class Policies
 	{

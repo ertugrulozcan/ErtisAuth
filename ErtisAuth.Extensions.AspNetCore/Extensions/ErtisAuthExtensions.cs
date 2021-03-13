@@ -1,3 +1,4 @@
+using ErtisAuth.Extensions.Authorization.Constants;
 using ErtisAuth.Sdk.Services;
 using ErtisAuth.Sdk.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
@@ -15,7 +16,7 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 		public static void AddErtisAuth(this IServiceCollection services)
 		{
 			const string schemeName = Constants.Schemes.ErtisAuthAuthorizationSchemeName;
-			const string policyName = Constants.Policies.ErtisAuthAuthorizationPolicyName;
+			const string policyName = Policies.ErtisAuthAuthorizationPolicyName;
 			
 			services.AddSingleton<IApplicationService, ApplicationService>();
 			services.AddSingleton<IRoleService, RoleService>();
