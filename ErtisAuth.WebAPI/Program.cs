@@ -17,7 +17,7 @@ namespace ErtisAuth.WebAPI
 					webBuilder.UseStartup<Startup>();
 					
 					// Sentry.io integration
-					webBuilder.UseSentry();
+					//webBuilder.UseSentry();
 				});
 	}
 }
