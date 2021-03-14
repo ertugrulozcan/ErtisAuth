@@ -1,5 +1,7 @@
+
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Sentry;
 
 namespace ErtisAuth.WebAPI
 {
@@ -7,17 +9,25 @@ namespace ErtisAuth.WebAPI
 	{
 		public static void Main(string[] args)
 		{
-			CreateHostBuilder(args).Build().Run();
+			var hostBuilder = CreateHostBuilder(args);
+			var host = hostBuilder.Build();
+			host.Run();
 		}
 
-		public static IHostBuilder CreateHostBuilder(string[] args) =>
-			Host.CreateDefaultBuilder(args)
-				.ConfigureWebHostDefaults(webBuilder =>
+		public static IHostBuilder CreateHostBuilder(string[] args)
+		{
+			return Host.CreateDefaultBuilder(args).ConfigureWebHostDefaults(webBuilder =>
+			{
+				webBuilder.UseStartup<Startup>();
+
+				// Sentry.io integration
+				webBuilder.UseSentry(sentry =>
 				{
-					webBuilder.UseStartup<Startup>();
-					
-					// Sentry.io integration
-					//webBuilder.UseSentry();
+					sentry.AddExceptionFilterForType<Ertis.Core.Exceptions.ValidationException>();
+					sentry.AddExceptionFilterForType<Ertis.Core.Exceptions.ErtisException>();
+					sentry.AddExceptionFilterForType<Ertis.Core.Exceptions.HttpStatusCodeException>();
 				});
+			});
+		}
 	}
 }

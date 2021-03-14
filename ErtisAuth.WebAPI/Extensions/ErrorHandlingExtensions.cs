@@ -5,13 +5,14 @@ using Ertis.Core.Models.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Sentry;
 
 namespace ErtisAuth.WebAPI.Extensions
 {
 	public static class ErrorHandlingExtensions
 	{
-		public static void ConfigureGlobalExceptionHandler(this IApplicationBuilder app, IHub sentryHub)
+		public static void ConfigureGlobalExceptionHandler(this IApplicationBuilder app)
 		{
 			app.UseExceptionHandler(appError =>
 			{
@@ -58,13 +59,15 @@ namespace ErtisAuth.WebAPI.Extensions
 								errorModel = new ErrorModel
 								{
 									Message = contextFeature.Error.Message,
-									ErrorCode = "UndhandledExceptionError",
+									ErrorCode = "UnhandledExceptionError",
 									StatusCode = 500
 								};
+								
+								var sentryHub = app.ApplicationServices.GetService<IHub>();
+								sentryHub?.CaptureException(contextFeature.Error);
+								
 								break;
 						}
-
-						sentryHub?.CaptureException(contextFeature.Error);
 
 						var json = Newtonsoft.Json.JsonConvert.SerializeObject(errorModel);
 						await context.Response.WriteAsync(json);

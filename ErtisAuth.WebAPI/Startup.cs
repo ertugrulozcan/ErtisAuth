@@ -14,6 +14,7 @@ using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.WebAPI.Models;
 using ErtisAuth.WebAPI.Adapters;
 using ErtisAuth.WebAPI.Auth;
+using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -148,14 +149,12 @@ namespace ErtisAuth.WebAPI
 				app.UseDeveloperExceptionPage();
 			}
 
-			//var sentryHub = app.ApplicationServices.GetRequiredService<IHub>();
-
 			app.UseCors(CORS_POLICY_KEY);
 			app.UseHttpsRedirection();
 			app.UseRouting();
 			app.UseAuthentication();
 			app.UseAuthorization();
-			// app.ConfigureGlobalExceptionHandler(sentryHub);
+			app.ConfigureGlobalExceptionHandler();
 
 			// Swagger
 			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
