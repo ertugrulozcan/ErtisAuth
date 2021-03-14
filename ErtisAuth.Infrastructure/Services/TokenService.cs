@@ -9,6 +9,7 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
@@ -71,26 +72,15 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region WhoAmI
 
-		public async Task<User> WhoAmIAsync(string token, SupportedTokenTypes tokenType)
+		public async Task<User> WhoAmIAsync(BearerToken bearerToken)
 		{
-			switch (tokenType)
-			{
-				case SupportedTokenTypes.Bearer:
-					await this.VerifyBearerTokenAsync(token, false);
-					break;
-				case SupportedTokenTypes.Basic:
-					await this.VerifyBasicTokenAsync(token, false);
-					break;
-				default:
-					throw ErtisAuthException.UnsupportedTokenType();
-			}
-			
-			return await this.GetTokenOwnerAsync(token);
+			await this.VerifyBearerTokenAsync(bearerToken.AccessToken, false);
+			return await this.GetTokenOwnerUserAsync(bearerToken.AccessToken);
 		}
 
-		private async Task<User> GetTokenOwnerAsync(string token)
+		private async Task<User> GetTokenOwnerUserAsync(string bearerToken)
 		{
-			if (this.jwtService.TryDecodeToken(token, out var securityToken))
+			if (this.jwtService.TryDecodeToken(bearerToken, out var securityToken))
 			{
 				return await this.GetTokenOwnerAsync(securityToken);
 			}
@@ -98,6 +88,30 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				return null;
 			}
+		}
+
+		public async Task<Application> WhoAmIAsync(BasicToken basicToken)
+		{
+			await this.VerifyBasicTokenAsync(basicToken.AccessToken, false);
+			return await this.GetTokenOwnerApplicationAsync(basicToken.AccessToken);
+		}
+		
+		private async Task<Application> GetTokenOwnerApplicationAsync(string basicToken)
+		{
+			var parts = basicToken.Split(':');
+			if (parts.Length != 2)
+			{
+				throw ErtisAuthException.InvalidToken();
+			}
+
+			var applicationId = parts[0];
+			var application = await this.applicationService.GetByIdAsync(applicationId);
+			if (application == null)
+			{
+				throw ErtisAuthException.ApplicationNotFound(applicationId);
+			}
+
+			return application;
 		}
 		
 		private async Task<User> GetTokenOwnerAsync(JwtSecurityToken securityToken)

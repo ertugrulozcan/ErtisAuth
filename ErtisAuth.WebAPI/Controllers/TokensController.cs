@@ -55,14 +55,32 @@ namespace ErtisAuth.WebAPI.Controllers
 				throw ErtisAuthException.UnsupportedTokenType();	
 			}
 
-			var user = await this.tokenService.WhoAmIAsync(token, tokenType);
-			if (user != null)
+			switch (tokenType)
 			{
-				return this.Ok(user);
-			}
-			else
-			{
-				return this.InvalidToken();
+				case SupportedTokenTypes.None:
+					throw ErtisAuthException.UnsupportedTokenType();
+				case SupportedTokenTypes.Basic:
+					var application = await this.tokenService.WhoAmIAsync(new BasicToken(token));
+					if (application != null)
+					{
+						return this.Ok(application);
+					}
+					else
+					{
+						return this.InvalidToken();
+					}
+				case SupportedTokenTypes.Bearer:
+					var user = await this.tokenService.WhoAmIAsync(BearerToken.CreateTemp(token));
+					if (user != null)
+					{
+						return this.Ok(user);
+					}
+					else
+					{
+						return this.InvalidToken();
+					}
+				default:
+					throw ErtisAuthException.UnsupportedTokenType();
 			}
 		}
 		

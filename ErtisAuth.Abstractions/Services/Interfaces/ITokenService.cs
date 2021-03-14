@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 
@@ -6,7 +7,9 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface ITokenService
 	{
-		Task<User> WhoAmIAsync(string token, SupportedTokenTypes tokenType);
+		Task<User> WhoAmIAsync(BearerToken bearerToken);
+		
+		Task<Application> WhoAmIAsync(BasicToken basicToken);
 		
 		Task<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, bool fireEvent = true);
 
