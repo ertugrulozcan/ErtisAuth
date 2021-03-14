@@ -1,5 +1,6 @@
 using System;
 using Ertis.Data.Repository;
+using Ertis.Extensions.AspNetCore.Versioning;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Database;
 using Ertis.Net.Rest;
@@ -11,7 +12,6 @@ using ErtisAuth.Identity.Jwt.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Adapters;
 using ErtisAuth.Infrastructure.Services;
-using ErtisAuth.WebAPI.Models;
 using ErtisAuth.WebAPI.Adapters;
 using ErtisAuth.WebAPI.Auth;
 using ErtisAuth.WebAPI.Extensions;

@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Extensions.AspNetCore" Version="1.0.15" />
+      <PackageReference Include="Ertis.Extensions.AspNetCore" Version="1.0.16" />
       <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.10" />
       <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="4.2.0" />
       <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
@@ -17,10 +17,6 @@
       <ProjectReference Include="..\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj" />
       <ProjectReference Include="..\ErtisAuth.Extensions.Http\ErtisAuth.Extensions.Http.csproj" />
       <ProjectReference Include="..\ErtisAuth.Infrastructure\ErtisAuth.Infrastructure.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Models\Response" />
     </ItemGroup>
 
 
