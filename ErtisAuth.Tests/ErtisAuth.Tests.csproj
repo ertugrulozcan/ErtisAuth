@@ -16,6 +16,7 @@
       <ProjectReference Include="..\ErtisAuth.Abstractions\ErtisAuth.Abstractions.csproj" />
       <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
       <ProjectReference Include="..\ErtisAuth.Infrastructure\ErtisAuth.Infrastructure.csproj" />
+      <ProjectReference Include="..\ErtisAuth.Sdk\ErtisAuth.Sdk.csproj" />
     </ItemGroup>
 
 </Project>

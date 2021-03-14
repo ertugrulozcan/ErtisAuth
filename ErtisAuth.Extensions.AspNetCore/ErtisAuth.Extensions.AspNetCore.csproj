@@ -4,7 +4,7 @@
         <TargetFramework>netcoreapp3.1</TargetFramework>
 
         <PackageId>ErtisAuth.Extensions.AspNetCore</PackageId>
-        <PackageVersion>3.0.5</PackageVersion>
+        <PackageVersion>3.0.6</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Extensions.AspNetCore</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -14,8 +14,8 @@
         <Title>ErtisAuth.Extensions.AspNetCore</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan</RepositoryUrl>
-        <AssemblyVersion>3.0.5</AssemblyVersion>
-        <FileVersion>3.0.5</FileVersion>
+        <AssemblyVersion>3.0.6</AssemblyVersion>
+        <FileVersion>3.0.6</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>

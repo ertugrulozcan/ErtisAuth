@@ -171,12 +171,13 @@ namespace ErtisAuth.Extensions.AspNetCore
 						throw ErtisAuthException.Unauthorized(errorMessage);
 					}
 				case SupportedTokenTypes.Bearer:
-					var meResponse = await this.authenticationService.WhoAmIAsync(token);
+					var bearerToken = BearerToken.CreateTemp(token);
+					var meResponse = await this.authenticationService.WhoAmIAsync(bearerToken);
 					if (meResponse.IsSuccess)
 					{
 						var rbacDefinition = this.Context.GetRbacDefinition(meResponse.Data.Id);
 						var rbac = $"{rbacDefinition.Resource}.{rbacDefinition.Action}";
-						var isPermittedForAction = await this.roleService.CheckPermissionAsync(rbac, BearerToken.CreateTemp(token));
+						var isPermittedForAction = await this.roleService.CheckPermissionAsync(rbac, bearerToken);
 						if (!isPermittedForAction)
 						{
 							throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({rbac})");

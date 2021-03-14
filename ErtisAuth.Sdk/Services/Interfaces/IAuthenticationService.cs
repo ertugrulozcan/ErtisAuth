@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
+using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 
@@ -37,21 +38,13 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 		
 		Task<IResponseResult> RevokeTokenAsync(string accessToken);
 
-		IResponseResult<User> WhoAmI(string token);
+		IResponseResult<User> WhoAmI(BearerToken bearerToken);
 		
-		Task<IResponseResult<User>> WhoAmIAsync(string token);
-
-		IResponseResult<ResetPasswordToken> ResetPassword(string emailAddress);
-
-		Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress);
-
-		IResponseResult SetPassword(string email, string password, string resetToken);
-
-		Task<IResponseResult> SetPasswordAsync(string email, string password, string resetToken);
+		Task<IResponseResult<User>> WhoAmIAsync(BearerToken bearerToken);
 		
-		IResponseResult ChangePassword(string userId, string newPassword, string accessToken);
-
-		Task<IResponseResult> ChangePasswordAsync(string userId, string newPassword, string accessToken);
+		IResponseResult<Application> WhoAmI(BasicToken basicToken);
+		
+		Task<IResponseResult<Application>> WhoAmIAsync(BasicToken basicToken);
 
 		#endregion
 	}

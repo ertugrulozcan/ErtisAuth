@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
+using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Sdk.Configuration;
@@ -30,118 +31,134 @@ namespace ErtisAuth.Sdk.Services
 
 		public IResponseResult<BearerToken> GetToken(string username, string password)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/generate-token";
+			var headers = HeaderCollection.Add("X-Ertis-Alias", this.AuthApiMembershipId);
+			var body = new
+			{
+				username,
+				password
+			};
+			
+			return this.ExecuteRequest<BearerToken>(HttpMethod.Post, url, null, headers, new JsonRequestBody(body));
 		}
 
-		public Task<IResponseResult<BearerToken>> GetTokenAsync(string username, string password)
+		public async Task<IResponseResult<BearerToken>> GetTokenAsync(string username, string password)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/generate-token";
+			var headers = HeaderCollection.Add("X-Ertis-Alias", this.AuthApiMembershipId);
+			var body = new
+			{
+				username,
+				password
+			};
+			
+			return await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Post, url, null, headers, new JsonRequestBody(body));
 		}
 
-		public IResponseResult<BearerToken> RefreshToken(BearerToken token)
+		public IResponseResult<BearerToken> RefreshToken(BearerToken bearerToken)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/refresh-token";
+			var headers = HeaderCollection.Add("Authorization", bearerToken.RefreshToken);
+			return this.ExecuteRequest<BearerToken>(HttpMethod.Get, url, null, headers);
 		}
 
-		public Task<IResponseResult<BearerToken>> RefreshTokenAsync(BearerToken token)
+		public async Task<IResponseResult<BearerToken>> RefreshTokenAsync(BearerToken bearerToken)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/refresh-token";
+			var headers = HeaderCollection.Add("Authorization", bearerToken.RefreshToken);
+			return await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Get, url, null, headers);
 		}
 
 		public IResponseResult<BearerToken> RefreshToken(string refreshToken)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/refresh-token";
+			var headers = HeaderCollection.Add("Authorization", $"Bearer {refreshToken}");
+			return this.ExecuteRequest<BearerToken>(HttpMethod.Get, url, null, headers);
 		}
 
-		public Task<IResponseResult<BearerToken>> RefreshTokenAsync(string refreshToken)
+		public async Task<IResponseResult<BearerToken>> RefreshTokenAsync(string refreshToken)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/refresh-token";
+			var headers = HeaderCollection.Add("Authorization", $"Bearer {refreshToken}");
+			return await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Get, url, null, headers);
 		}
 
 		public IResponseResult<BearerToken> VerifyToken(BearerToken token)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/verify-token";
+			var headers = HeaderCollection.Add("Authorization", token.ToString());
+			return this.ExecuteRequest<BearerToken>(HttpMethod.Get, url, null, headers);
 		}
 
-		public Task<IResponseResult<BearerToken>> VerifyTokenAsync(BearerToken token)
+		public async Task<IResponseResult<BearerToken>> VerifyTokenAsync(BearerToken token)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/verify-token";
+			var headers = HeaderCollection.Add("Authorization", token.ToString());
+			return await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Get, url, null, headers);
 		}
 
 		public IResponseResult<BearerToken> VerifyToken(string accessToken)
 		{
-			throw new System.NotImplementedException();
+			return this.VerifyToken(BearerToken.CreateTemp(accessToken));
 		}
 
-		public Task<IResponseResult<BearerToken>> VerifyTokenAsync(string accessToken)
+		public async Task<IResponseResult<BearerToken>> VerifyTokenAsync(string accessToken)
 		{
-			throw new System.NotImplementedException();
+			return await this.VerifyTokenAsync(BearerToken.CreateTemp(accessToken));
 		}
 
 		public IResponseResult RevokeToken(BearerToken token)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/revoke-token";
+			var headers = HeaderCollection.Add("Authorization", token.ToString());
+			return this.ExecuteRequest<BearerToken>(HttpMethod.Get, url, null, headers);
 		}
 
-		public Task<IResponseResult> RevokeTokenAsync(BearerToken token)
+		public async Task<IResponseResult> RevokeTokenAsync(BearerToken token)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/revoke-token";
+			var headers = HeaderCollection.Add("Authorization", token.ToString());
+			return await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Get, url, null, headers);
 		}
 
 		public IResponseResult RevokeToken(string accessToken)
 		{
-			throw new System.NotImplementedException();
+			return this.RevokeToken(BearerToken.CreateTemp(accessToken));
 		}
 
-		public Task<IResponseResult> RevokeTokenAsync(string accessToken)
+		public async Task<IResponseResult> RevokeTokenAsync(string accessToken)
 		{
-			throw new System.NotImplementedException();
+			return await this.RevokeTokenAsync(BearerToken.CreateTemp(accessToken));
 		}
 
-		public IResponseResult<User> WhoAmI(string token)
-		{
-			var url = $"{this.AuthApiBaseUrl}/whoami";
-			var headers = HeaderCollection.Add("Authorization", $"Bearer {token}");
-			return this.ExecuteRequest<User>(HttpMethod.Get, url, null, headers);
-		}
-
-		public async Task<IResponseResult<User>> WhoAmIAsync(string token)
+		public IResponseResult<User> WhoAmI(BearerToken bearerToken)
 		{
 			var url = $"{this.AuthApiBaseUrl}/whoami";
-			var headers = HeaderCollection.Add("Authorization", $"Bearer {token}");
-			return await this.ExecuteRequestAsync<User>(HttpMethod.Get, url, null, headers);
+			var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
+			return this.ExecuteRequest<User>(HttpMethod.Get, url, null, headers);	
 		}
 
-		public IResponseResult<ResetPasswordToken> ResetPassword(string emailAddress)
+		public async Task<IResponseResult<User>> WhoAmIAsync(BearerToken bearerToken)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/whoami";
+			var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
+			return await this.ExecuteRequestAsync<User>(HttpMethod.Get, url, null, headers);	
 		}
 
-		public Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress)
+		public IResponseResult<Application> WhoAmI(BasicToken basicToken)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/whoami";
+			var headers = HeaderCollection.Add("Authorization", basicToken.ToString());
+			return this.ExecuteRequest<Application>(HttpMethod.Get, url, null, headers);	
 		}
 
-		public IResponseResult SetPassword(string email, string password, string resetToken)
+		public async Task<IResponseResult<Application>> WhoAmIAsync(BasicToken basicToken)
 		{
-			throw new System.NotImplementedException();
+			var url = $"{this.AuthApiBaseUrl}/whoami";
+			var headers = HeaderCollection.Add("Authorization", basicToken.ToString());
+			return await this.ExecuteRequestAsync<Application>(HttpMethod.Get, url, null, headers);
 		}
 
-		public Task<IResponseResult> SetPasswordAsync(string email, string password, string resetToken)
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public IResponseResult ChangePassword(string userId, string newPassword, string accessToken)
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public Task<IResponseResult> ChangePasswordAsync(string userId, string newPassword, string accessToken)
-		{
-			throw new System.NotImplementedException();
-		}
-		
 		#endregion
 	}
 }

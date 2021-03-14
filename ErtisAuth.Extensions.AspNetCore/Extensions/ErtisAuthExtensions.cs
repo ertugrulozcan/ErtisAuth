@@ -18,15 +18,19 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			const string schemeName = Constants.Schemes.ErtisAuthAuthorizationSchemeName;
 			const string policyName = Policies.ErtisAuthAuthorizationPolicyName;
 			
+			// Service registrations
+			services.AddSingleton<IAuthenticationService, AuthenticationService>();
 			services.AddSingleton<IApplicationService, ApplicationService>();
 			services.AddSingleton<IRoleService, RoleService>();
-			services.AddSingleton<IAuthenticationService, AuthenticationService>();
+			services.AddSingleton<IPasswordService, PasswordService>();
 			
+			// Authentication
 			services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ErtisAuthAuthenticationHandler>(schemeName, options =>
 			{
 				
 			});
 			
+			// Authorization
 			services.AddAuthorization(options =>
 				options.AddPolicy(policyName, policy =>
 				{
