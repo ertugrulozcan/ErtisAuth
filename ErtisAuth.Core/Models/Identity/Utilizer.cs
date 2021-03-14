@@ -43,6 +43,7 @@ namespace ErtisAuth.Core.Models.Identity
 		{
 			Id = user.Id,
 			Type = UtilizerType.User,
+			Username = user.Username,
 			MembershipId = user.MembershipId,
 			Role = user.Role
 		};
@@ -51,6 +52,7 @@ namespace ErtisAuth.Core.Models.Identity
 		{
 			Id = application.Id,
 			Type = UtilizerType.Application,
+			Username = application.Name,
 			MembershipId = application.MembershipId,
 			Role = application.Role
 		};

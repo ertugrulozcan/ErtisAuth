@@ -154,7 +154,10 @@ namespace ErtisAuth.WebAPI.Auth
 						}
 					}
 					
-					return application;
+					Utilizer applicationUtilizer= application;
+					applicationUtilizer.Token = token;
+					applicationUtilizer.TokenType = _tokenType;
+					return applicationUtilizer;
 				case SupportedTokenTypes.Bearer:
 					var verifyTokenResult = await this.tokenService.VerifyBearerTokenAsync(token, false);
 					if (!verifyTokenResult.IsValidated)
@@ -176,7 +179,10 @@ namespace ErtisAuth.WebAPI.Auth
 						}
 					}
 
-					return user;
+					Utilizer userUtilizer= user;
+					userUtilizer.Token = token;
+					userUtilizer.TokenType = _tokenType;
+					return userUtilizer;
 				default:
 					throw ErtisAuthException.UnsupportedTokenType();
 			}
