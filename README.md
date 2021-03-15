@@ -267,12 +267,12 @@ Başarılı Status Code : 201 Created
    "firstname": "Ertuğrul",
    "lastname": "Özcan",
    "username": "ertugrul.ozcan",
-   "email_address": "ertugrul.ozcan@kariyer.net",
+   "email_address": "ertugrul.ozcan@ertis.io",
    "role": "admin",
    "sys": {
       "created_at": "2020-12-28T17:41:05.571Z",
       "modified_at": "2021-01-06T14:03:47.786Z",
-      "modified_by": "ertugrul.ozcan@kariyer.net"
+      "modified_by": "ertugrul.ozcan@ertis.io"
    },
    "membership_id": "5fcf6da14790a1e031be5325",
    "_id": "5fd1165e93356e6a0be649f6"
