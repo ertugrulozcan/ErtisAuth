@@ -170,7 +170,7 @@ Başarılı Status Code : 201 Created
     "role": "enduser",
     "sys": {
         "created_at": "2021-01-08T02:15:48.6753356+03:00",
-        "created_by": "ertugrul.ozcan@kariyer.net"
+        "created_by": "ertugrul.ozcan@ertis.io"
     },
     "membership_id": "5fcf6da14790a1e031be5325",
     "_id": "5ff79624531d1c67765efb54"
