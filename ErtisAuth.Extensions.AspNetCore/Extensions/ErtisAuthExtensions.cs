@@ -1,16 +1,13 @@
 using System;
+using System.Linq;
 using Ertis.Net.Rest;
 using ErtisAuth.Extensions.Authorization.Constants;
 using ErtisAuth.Sdk.Configuration;
-using ErtisAuth.Sdk.Services;
-using ErtisAuth.Sdk.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using AuthenticationService = ErtisAuth.Sdk.Services.AuthenticationService;
-using IAuthenticationService = ErtisAuth.Sdk.Services.Interfaces.IAuthenticationService;
 
 namespace ErtisAuth.Extensions.AspNetCore.Extensions
 {
@@ -31,11 +28,8 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			services.AddSingleton<IRestHandler, SystemRestHandler>();
 			
 			// Service registrations
-			services.AddSingleton<IAuthenticationService, AuthenticationService>();
-			services.AddSingleton<IApplicationService, ApplicationService>();
-			services.AddSingleton<IRoleService, RoleService>();
-			services.AddSingleton<IPasswordService, PasswordService>();
-			
+			InitializeServices(services);
+
 			// Authentication
 			services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ErtisAuthAuthenticationHandler>(schemeName, options =>
 			{
@@ -70,6 +64,32 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 					.AddJsonFile($"appsettings.{environmentName}.json", true)
 					.AddEnvironmentVariables();
 				return builder.Build();
+			}
+		}
+
+		private static void InitializeServices(IServiceCollection services)
+		{
+			var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			var assembly = assemblies.FirstOrDefault(x => x.GetName().Name == "ErtisAuth.Sdk");
+			if (assembly == null)
+			{
+				throw new TypeUnloadedException("ErtisAuth.Sdk assembly was not loaded!");
+			}
+			
+			var types = assembly.GetTypes();
+			var interfaces = types.Where(x => !string.IsNullOrEmpty(x.FullName) && x.IsInterface && x.FullName.StartsWith("ErtisAuth.Sdk.Services.Interfaces")).ToList();
+			var implementations = types.Where(x => !string.IsNullOrEmpty(x.FullName) && x.IsClass && x.FullName.StartsWith("ErtisAuth.Sdk.Services"));
+			foreach (var implementation in implementations)
+			{
+				var baseInterface = interfaces.FirstOrDefault(x => x.IsAssignableFrom(implementation));
+				if (baseInterface != null)
+				{
+					services.AddSingleton(baseInterface, implementation);
+					
+					var interfaceName = baseInterface.Name;
+					var serviceName = implementation.Name;
+					Console.WriteLine($"{interfaceName} resolved as {serviceName}.");
+				}
 			}
 		}
 
