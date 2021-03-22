@@ -26,7 +26,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 			}
 			else if (endpoint is RouteEndpoint routeEndpoint)
 			{
-				rbacResourceSegment = new RbacSegment(routeEndpoint.RoutePattern.RawText);
+				rbacResourceSegment = new RbacSegment(routeEndpoint.RoutePattern.RawText.Split('/').Last());
 			}
             
 			// Action
