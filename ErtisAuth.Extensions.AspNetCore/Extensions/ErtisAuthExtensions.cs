@@ -1,4 +1,5 @@
 using System;
+using Ertis.Net.Rest;
 using ErtisAuth.Extensions.Authorization.Constants;
 using ErtisAuth.Sdk.Configuration;
 using ErtisAuth.Sdk.Services;
@@ -26,6 +27,9 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			services.Configure<ErtisAuthOptions>(configuration.GetSection("ErtisAuth"));
 			services.AddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);
 
+			// RestHandler registration
+			services.AddSingleton<IRestHandler, SystemRestHandler>();
+			
 			// Service registrations
 			services.AddSingleton<IAuthenticationService, AuthenticationService>();
 			services.AddSingleton<IApplicationService, ApplicationService>();
