@@ -26,7 +26,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 			}
             
 			// Action
-			var rbacActionSegment = RbacSegment.All;
+			var rbacActionSegment = Rbac.CrudActionSegments.Read;
 			var actionMetadata = endpoint?.Metadata?.FirstOrDefault(x => x.GetType() == typeof(RbacActionAttribute));
 			if (actionMetadata is RbacActionAttribute rbacActionAttribute)
 			{
