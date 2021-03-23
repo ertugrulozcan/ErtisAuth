@@ -92,6 +92,11 @@ namespace ErtisAuth.Core.Models.Roles
 		{
 			return this.AreEqual(other);
 		}
+		
+		public bool Equals(RbacSegment other, StringComparison stringComparison)
+		{
+			return this.AreEqual(other, stringComparison);
+		}
 
 		public bool Equals(string other)
 		{
@@ -103,18 +108,35 @@ namespace ErtisAuth.Core.Models.Roles
 			return this.AreEqual(obj);
 		}
 
-		private bool AreEqual(object obj)
+		private bool AreEqual(object obj, StringComparison? stringComparison = null)
 		{
-			switch (obj)
+			if (stringComparison == null)
 			{
-				case null:
-					return false;
-				case RbacSegment other:
-					return Value == other.Value && Slug == other.Slug;
-				case string str:
-					return Value == str && Slug == str;
-				default:
-					return false;
+				if (obj is RbacSegment other)
+				{
+					return this.Value == other.Value && this.Slug == other.Slug;
+				}
+				
+				return obj switch
+				{
+					null => false,
+					string str => this.Value == str && this.Slug == str,
+					_ => false
+				};
+			}
+			else
+			{
+				if (obj is RbacSegment other)
+				{
+					return string.Compare(this.Value, other.Value, stringComparison.Value) == 0 && string.Compare(this.Slug, other.Slug, stringComparison.Value) == 0;
+				}
+				
+				return obj switch
+				{
+					null => false,
+					string str => string.Compare(this.Value, str, stringComparison.Value) == 0 && string.Compare(this.Slug, str, stringComparison.Value) == 0,
+					_ => false
+				};
 			}
 		}
 
