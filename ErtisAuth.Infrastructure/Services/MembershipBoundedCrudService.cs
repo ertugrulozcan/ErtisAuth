@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading.Tasks;
 using Ertis.Data.Models;
 using Ertis.MongoDB.Repository;
@@ -230,17 +229,37 @@ namespace ErtisAuth.Infrastructure.Services
 			return updated;
 		}
 		
-		protected bool IsIdentical(TModel model1, TModel model2)
+		protected bool IsIdentical(TModel newModel, TModel currentModel)
 		{
-			if (model1 == null || model2 == null)
+			if (newModel == null || currentModel == null)
 			{
 				return false;
 			}
 			
-			var properties = typeof(TModel).GetProperties(BindingFlags.Default);
+			var properties = typeof(TModel).GetProperties();
 			foreach (var propertyInfo in properties)
 			{
-				if (propertyInfo.GetValue(model1) != propertyInfo.GetValue(model2))
+				var oldValue = propertyInfo.GetValue(currentModel);
+				var newValue = propertyInfo.GetValue(newModel);
+
+				if (oldValue == null && newValue == null)
+				{
+					continue;
+				}
+				
+				if (oldValue == null || newValue == null)
+				{
+					return false;
+				}
+				
+				if (oldValue is IEquatable<TModel> equatable)
+				{
+					if (!equatable.Equals(newValue))
+					{
+						return false;
+					}
+				}
+				else if (!oldValue.Equals(newValue))
 				{
 					return false;
 				}
