@@ -25,7 +25,7 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			services.AddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);
 
 			// RestHandler registration
-			services.AddSingleton<IRestHandler, SystemRestHandler>();
+			services.AddSingleton<IRestHandler, RestSharpRestHandler>();
 			
 			// Service registrations
 			InitializeServices(services);
