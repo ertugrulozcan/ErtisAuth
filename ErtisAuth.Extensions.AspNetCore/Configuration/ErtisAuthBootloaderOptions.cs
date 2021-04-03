@@ -40,7 +40,7 @@ namespace ErtisAuth.Extensions.AspNetCore.Configuration
 			this.SetConfiguration = true;
 			this.ConfigurationSectionName = "ErtisAuth";
 			this.RegisterRestHandler = true;
-			this.RestHandlerType = typeof(RestSharpRestHandler);
+			this.RestHandlerType = typeof(SystemRestHandler);
 			this.InitializeServices = true;
 			this.AuthorizationSchemeName = Constants.Schemes.ErtisAuthAuthorizationSchemeName;
 			this.AuthorizationPolicyName = Policies.ErtisAuthAuthorizationPolicyName;
