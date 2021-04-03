@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using Ertis.Net.Rest;
-using ErtisAuth.Extensions.Authorization.Constants;
+using ErtisAuth.Extensions.AspNetCore.Configuration;
 using ErtisAuth.Sdk.Configuration;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -15,41 +15,65 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 	{
 		#region Methods
 
-		public static void AddErtisAuth(this IServiceCollection services)
+		public static void AddErtisAuth(this IServiceCollection services, Action<ErtisAuthBootloaderOptions> ertisAuthBootloaderOptions = null)
 		{
-			const string schemeName = Constants.Schemes.ErtisAuthAuthorizationSchemeName;
-			const string policyName = Policies.ErtisAuthAuthorizationPolicyName;
+			var options = new ErtisAuthBootloaderOptions();
+			ertisAuthBootloaderOptions?.Invoke(options);
 
-			var configuration = BuildConfiguration();
-			services.Configure<ErtisAuthOptions>(configuration.GetSection("ErtisAuth"));
-			services.AddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);
+			// Configuration - ErtisAuthOptions
+			if (options.SetConfiguration)
+			{
+				var configuration = BuildConfiguration(options.Environment);
+				services.Configure<ErtisAuthOptions>(configuration.GetSection(options.ConfigurationSectionName));
+				services.AddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);	
+			}
 
 			// RestHandler registration
-			services.AddSingleton<IRestHandler, RestSharpRestHandler>();
-			
-			// Service registrations
-			InitializeServices(services);
-
-			// Authentication
-			services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ErtisAuthAuthenticationHandler>(schemeName, options =>
+			if (options.RegisterRestHandler)
 			{
-				
-			});
+				services.AddSingleton(typeof(IRestHandler), options.RestHandlerType);	
+			}
+
+			// Service registrations
+			if (options.InitializeServices)
+			{
+				InitializeServices(services);	
+			}
+
+			string schemeName = options.AuthorizationSchemeName;
+			string policyName = options.AuthorizationPolicyName;
 			
-			// Authorization
-			services.AddAuthorization(options =>
-				options.AddPolicy(policyName, policy =>
+			// Authentication
+			if (options.SetDefaultAuthenticationHandler)
+			{
+				services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ErtisAuthAuthenticationHandler>(schemeName, configureOptions =>
 				{
-					policy.AddAuthenticationSchemes(policyName);
-					policy.AddRequirements(new ErtisAuthAuthorizationRequirement());
-				}));
+					
+				});	
+			}
+
+			// Authorization
+			if (options.SetDefaultAuthorizationHandler)
+			{
+				services.AddAuthorization(authorizationOptions =>
+					authorizationOptions.AddPolicy(policyName, policy =>
+					{
+						policy.AddAuthenticationSchemes(policyName);
+						policy.AddRequirements(new ErtisAuthAuthorizationRequirement());
+					}));
 			
-			services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
+				services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();	
+			}
 		}
 		
-		private static IConfigurationRoot BuildConfiguration()
+		private static IConfigurationRoot BuildConfiguration(string environment = null)
 		{
 			var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+			if (!string.IsNullOrEmpty(environment))
+			{
+				environmentName = environment;
+			}
+			
 			if (string.IsNullOrEmpty(environmentName))
 			{
 				var builder = new ConfigurationBuilder()
