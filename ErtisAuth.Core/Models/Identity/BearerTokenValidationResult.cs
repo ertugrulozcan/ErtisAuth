@@ -17,8 +17,8 @@ namespace ErtisAuth.Core.Models.Identity
 		[JsonProperty("token")]
 		public string Token { get; }
 		
-		[JsonProperty("token_type")]
-		public string TokenType
+		[JsonProperty("token_kind")]
+		public string TokenKind
 		{
 			get
 			{
@@ -38,14 +38,8 @@ namespace ErtisAuth.Core.Models.Identity
 		public TimeSpan RemainingTime { get; }
 
 		[JsonProperty("remaining_time")]
-		public int RemainingTimeUnixEpoch
-		{
-			get
-			{
-				return (int) this.RemainingTime.TotalSeconds;
-			}
-		}
-		
+		public int RemainingTimeUnixEpoch => (int) this.RemainingTime.TotalSeconds;
+
 		#endregion
 
 		#region Constructors

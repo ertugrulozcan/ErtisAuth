@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
@@ -8,6 +9,7 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Sdk.Configuration;
 using ErtisAuth.Sdk.Services.Interfaces;
+using Newtonsoft.Json.Linq;
 
 namespace ErtisAuth.Sdk.Services
 {
@@ -83,26 +85,136 @@ namespace ErtisAuth.Sdk.Services
 			return await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Get, url, null, headers);
 		}
 
-		public IResponseResult<BearerToken> VerifyToken(BearerToken token)
+		public IResponseResult<ITokenValidationResult> VerifyToken(BearerToken token)
 		{
 			var url = $"{this.AuthApiBaseUrl}/verify-token";
 			var headers = HeaderCollection.Add("Authorization", token.ToString());
-			return this.ExecuteRequest<BearerToken>(HttpMethod.Get, url, null, headers);
+			var response = this.ExecuteRequest(HttpMethod.Get, url, null, headers);
+			if (response.IsSuccess)
+			{
+				if (Newtonsoft.Json.JsonConvert.DeserializeObject(response.Json) is JObject jObject)
+				{
+					var isVerified = jObject["verified"]?.Value<bool>();
+					var access_token = jObject["token"]?.Value<string>();
+					var remaining_time = jObject["remaining_time"]?.Value<int>();
+
+					if (response.StatusCode != null)
+					{
+						return new ResponseResult<ITokenValidationResult>(response.StatusCode.Value, response.Message)
+						{
+							Data = new BearerTokenValidationResult(isVerified ?? true, access_token, null, TimeSpan.FromSeconds(remaining_time ?? 0)),
+							Json = response.Json,
+							RawData = response.RawData
+						};
+					}
+					else
+					{
+						return new ResponseResult<ITokenValidationResult>(response.IsSuccess, response.Message)
+						{
+							Data = new BearerTokenValidationResult(isVerified ?? true, access_token, null, TimeSpan.FromSeconds(remaining_time ?? 0)),
+							Json = response.Json,
+							RawData = response.RawData
+						};
+					}
+				}
+				else
+				{
+					return new ResponseResult<ITokenValidationResult>(false, "Response success but could not deserialized!")
+					{
+						Json = response.Json,
+						RawData = response.RawData
+					};
+				}
+			}
+			else
+			{
+				if (response.StatusCode != null)
+				{
+					return new ResponseResult<ITokenValidationResult>(response.StatusCode.Value, response.Message)
+					{
+						Json = response.Json,
+						RawData = response.RawData
+					};
+				}
+				else
+				{
+					return new ResponseResult<ITokenValidationResult>(response.IsSuccess, response.Message)
+					{
+						Json = response.Json,
+						RawData = response.RawData
+					};
+				}
+			}
 		}
 
-		public async Task<IResponseResult<BearerToken>> VerifyTokenAsync(BearerToken token)
+		public async Task<IResponseResult<ITokenValidationResult>> VerifyTokenAsync(BearerToken token)
 		{
 			var url = $"{this.AuthApiBaseUrl}/verify-token";
 			var headers = HeaderCollection.Add("Authorization", token.ToString());
-			return await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Get, url, null, headers);
+			var response = await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Get, url, null, headers);
+			if (response.IsSuccess)
+			{
+				if (Newtonsoft.Json.JsonConvert.DeserializeObject(response.Json) is JObject jObject)
+				{
+					var isVerified = jObject["verified"]?.Value<bool>();
+					var access_token = jObject["token"]?.Value<string>();
+					var remaining_time = jObject["remaining_time"]?.Value<int>();
+
+					if (response.StatusCode != null)
+					{
+						return new ResponseResult<ITokenValidationResult>(response.StatusCode.Value, response.Message)
+						{
+							Data = new BearerTokenValidationResult(isVerified ?? true, access_token, null, TimeSpan.FromSeconds(remaining_time ?? 0)),
+							Json = response.Json,
+							RawData = response.RawData
+						};
+					}
+					else
+					{
+						return new ResponseResult<ITokenValidationResult>(response.IsSuccess, response.Message)
+						{
+							Data = new BearerTokenValidationResult(isVerified ?? true, access_token, null, TimeSpan.FromSeconds(remaining_time ?? 0)),
+							Json = response.Json,
+							RawData = response.RawData
+						};
+					}
+				}
+				else
+				{
+					return new ResponseResult<ITokenValidationResult>(false, "Response success but could not deserialized!")
+					{
+						Json = response.Json,
+						RawData = response.RawData
+					};
+				}
+			}
+			else
+			{
+				if (response.StatusCode != null)
+				{
+					return new ResponseResult<ITokenValidationResult>(response.StatusCode.Value, response.Message)
+					{
+						Json = response.Json,
+						RawData = response.RawData
+					};
+				}
+				else
+				{
+					return new ResponseResult<ITokenValidationResult>(response.IsSuccess, response.Message)
+					{
+						Json = response.Json,
+						RawData = response.RawData
+					};
+				}
+			}
 		}
 
-		public IResponseResult<BearerToken> VerifyToken(string accessToken)
+		public IResponseResult<ITokenValidationResult> VerifyToken(string accessToken)
 		{
 			return this.VerifyToken(BearerToken.CreateTemp(accessToken));
 		}
 
-		public async Task<IResponseResult<BearerToken>> VerifyTokenAsync(string accessToken)
+		public async Task<IResponseResult<ITokenValidationResult>> VerifyTokenAsync(string accessToken)
 		{
 			return await this.VerifyTokenAsync(BearerToken.CreateTemp(accessToken));
 		}

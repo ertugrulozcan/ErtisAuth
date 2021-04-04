@@ -22,13 +22,13 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 		
 		Task<IResponseResult<BearerToken>> RefreshTokenAsync(string refreshToken);
 		
-		IResponseResult<BearerToken> VerifyToken(BearerToken token);
+		IResponseResult<ITokenValidationResult> VerifyToken(BearerToken token);
 		
-		Task<IResponseResult<BearerToken>> VerifyTokenAsync(BearerToken token);
+		Task<IResponseResult<ITokenValidationResult>> VerifyTokenAsync(BearerToken token);
 		
-		IResponseResult<BearerToken> VerifyToken(string accessToken);
+		IResponseResult<ITokenValidationResult> VerifyToken(string accessToken);
 		
-		Task<IResponseResult<BearerToken>> VerifyTokenAsync(string accessToken);
+		Task<IResponseResult<ITokenValidationResult>> VerifyTokenAsync(string accessToken);
 		
 		IResponseResult RevokeToken(BearerToken token);
 		
