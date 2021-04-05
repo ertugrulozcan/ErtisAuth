@@ -61,10 +61,10 @@ namespace ErtisAuth.Infrastructure.Mapping
 			mappings.Add<Membership, MembershipDto>();
 			mappings.Add<UserDto, User>();
 			mappings.Add<User, UserDto>();
-			mappings.Add<UserDto, UserWithPassword>();
-			mappings.Add<UserWithPassword, UserDto>();
-			mappings.Add<User, UserWithPassword>();
-			mappings.Add<UserWithPassword, User>();
+			mappings.Add<UserDto, UserWithPasswordHash>();
+			mappings.Add<UserWithPasswordHash, UserDto>();
+			mappings.Add<User, UserWithPasswordHash>();
+			mappings.Add<UserWithPasswordHash, User>();
 			mappings.Add<ApplicationDto, Application>();
 			mappings.Add<Application, ApplicationDto>();
 			mappings.Add<RoleDto, Role>();

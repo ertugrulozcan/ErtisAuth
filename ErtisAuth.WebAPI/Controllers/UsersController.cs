@@ -63,7 +63,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.MembershipNotFound(membershipId);
 			}
 			
-			var userModel = new UserWithPassword
+			var userModel = new UserWithPasswordHash
 			{
 				Username = model.Username,
 				EmailAddress = model.EmailAddress,

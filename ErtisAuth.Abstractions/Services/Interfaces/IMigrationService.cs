@@ -7,6 +7,6 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface IMigrationService
 	{
-		Task<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPassword _user, Application _application);
+		Task<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPasswordHash _user, Application _application);
 	}
 }

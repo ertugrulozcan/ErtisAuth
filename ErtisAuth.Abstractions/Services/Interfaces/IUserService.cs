@@ -6,13 +6,13 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface IUserService : IMembershipBoundedCrudService<User>
 	{
-		UserWithPassword GetUserWithPassword(string id, string membershipId);
+		UserWithPasswordHash GetUserWithPassword(string id, string membershipId);
 		
-		Task<UserWithPassword> GetUserWithPasswordAsync(string id, string membershipId);
+		Task<UserWithPasswordHash> GetUserWithPasswordAsync(string id, string membershipId);
 		
-		UserWithPassword GetUserWithPassword(string username, string email, string membershipId);
+		UserWithPasswordHash GetUserWithPassword(string username, string email, string membershipId);
 		
-		Task<UserWithPassword> GetUserWithPasswordAsync(string username, string email, string membershipId);
+		Task<UserWithPasswordHash> GetUserWithPasswordAsync(string username, string email, string membershipId);
 
 		User ChangePassword(Utilizer utilizer, string membershipId, string userId, string newPassword);
 		

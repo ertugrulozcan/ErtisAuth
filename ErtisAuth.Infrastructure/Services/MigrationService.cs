@@ -57,7 +57,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Methods
 
-		public async Task<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPassword _user, Application _application)
+		public async Task<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPasswordHash _user, Application _application)
 		{
 			// Validation
 			var databaseInformation = Ertis.MongoDB.Helpers.ConnectionStringHelper.ParseConnectionString(connectionString);
@@ -98,7 +98,7 @@ namespace ErtisAuth.Infrastructure.Services
 			});
 			
 			// 3. User (admin)
-			var adminUser = await this.userService.CreateAsync(utilizer, membership.Id, new UserWithPassword
+			var adminUser = await this.userService.CreateAsync(utilizer, membership.Id, new UserWithPasswordHash
 			{
 				Username = _user.Username,
 				FirstName = _user.FirstName,

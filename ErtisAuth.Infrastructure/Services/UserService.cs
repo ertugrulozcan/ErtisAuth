@@ -107,24 +107,24 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			var currentUser = this.GetUserWithPassword(model.Id, membershipId);
 			var passwordHash = currentUser.PasswordHash;
-			if (model is UserWithPassword userWithPassword && !string.IsNullOrEmpty(userWithPassword.PasswordHash) && userWithPassword.PasswordHash != passwordHash)
+			if (model is UserWithPasswordHash userWithPassword && !string.IsNullOrEmpty(userWithPassword.PasswordHash) && userWithPassword.PasswordHash != passwordHash)
 			{
 				passwordHash = userWithPassword.PasswordHash;
 			}
 			
-			return base.Update(utilizer, membershipId, new UserWithPassword(model) { PasswordHash = passwordHash });
+			return base.Update(utilizer, membershipId, new UserWithPasswordHash(model) { PasswordHash = passwordHash });
 		}
 
 		public override async Task<User> UpdateAsync(Utilizer utilizer, string membershipId, User model)
 		{
 			var currentUser = await this.GetUserWithPasswordAsync(model.Id, membershipId);
 			var passwordHash = currentUser.PasswordHash;
-			if (model is UserWithPassword userWithPassword && !string.IsNullOrEmpty(userWithPassword.PasswordHash) && userWithPassword.PasswordHash != passwordHash)
+			if (model is UserWithPasswordHash userWithPassword && !string.IsNullOrEmpty(userWithPassword.PasswordHash) && userWithPassword.PasswordHash != passwordHash)
 			{
 				passwordHash = userWithPassword.PasswordHash;
 			}
 			
-			return await base.UpdateAsync(utilizer, membershipId, new UserWithPassword(model) { PasswordHash = passwordHash });
+			return await base.UpdateAsync(utilizer, membershipId, new UserWithPasswordHash(model) { PasswordHash = passwordHash });
 		}
 
 		protected override bool ValidateModel(User model, out IEnumerable<string> errors)
@@ -162,7 +162,7 @@ namespace ErtisAuth.Infrastructure.Services
 				}
 			}
 
-			if (model is UserWithPassword userWithPassword)
+			if (model is UserWithPasswordHash userWithPassword)
 			{
 				if (string.IsNullOrEmpty(userWithPassword.PasswordHash))
 				{
@@ -210,9 +210,9 @@ namespace ErtisAuth.Infrastructure.Services
 				destination.Role = source.Role;
 			}
 			
-			if (destination is UserWithPassword destinationWithPassword)
+			if (destination is UserWithPasswordHash destinationWithPassword)
 			{
-				if (source is UserWithPassword sourceWithPassword)
+				if (source is UserWithPasswordHash sourceWithPassword)
 				{
 					destinationWithPassword.PasswordHash = sourceWithPassword.PasswordHash;
 				}	
@@ -269,7 +269,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return ErtisAuthException.UserNotFound(id, "_id");
 		}
 
-		public UserWithPassword GetUserWithPassword(string id, string membershipId)
+		public UserWithPasswordHash GetUserWithPassword(string id, string membershipId)
 		{
 			var dto = this.repository.FindOne(x => x.Id == id && x.MembershipId == membershipId);
 			if (dto == null)
@@ -277,10 +277,10 @@ namespace ErtisAuth.Infrastructure.Services
 				return null;
 			}
 			
-			return Mapper.Current.Map<UserDto, UserWithPassword>(dto);
+			return Mapper.Current.Map<UserDto, UserWithPasswordHash>(dto);
 		}
 
-		public async Task<UserWithPassword> GetUserWithPasswordAsync(string id, string membershipId)
+		public async Task<UserWithPasswordHash> GetUserWithPasswordAsync(string id, string membershipId)
 		{
 			var dto = await this.repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId);
 			if (dto == null)
@@ -288,10 +288,10 @@ namespace ErtisAuth.Infrastructure.Services
 				return null;
 			}
 			
-			return Mapper.Current.Map<UserDto, UserWithPassword>(dto);
+			return Mapper.Current.Map<UserDto, UserWithPasswordHash>(dto);
 		}
 		
-		public UserWithPassword GetUserWithPassword(string username, string email, string membershipId)
+		public UserWithPasswordHash GetUserWithPassword(string username, string email, string membershipId)
 		{
 			var dto = this.repository.FindOne(x =>
 				(x.Username == username || 
@@ -304,10 +304,10 @@ namespace ErtisAuth.Infrastructure.Services
 				return null;
 			}
 			
-			return Mapper.Current.Map<UserDto, UserWithPassword>(dto);
+			return Mapper.Current.Map<UserDto, UserWithPasswordHash>(dto);
 		}
 		
-		public async Task<UserWithPassword> GetUserWithPasswordAsync(string username, string email, string membershipId)
+		public async Task<UserWithPasswordHash> GetUserWithPasswordAsync(string username, string email, string membershipId)
 		{
 			var dto = await this.repository.FindOneAsync(x =>
 				(x.Username == username || 
@@ -320,7 +320,7 @@ namespace ErtisAuth.Infrastructure.Services
 				return null;
 			}
 			
-			return Mapper.Current.Map<UserDto, UserWithPassword>(dto);
+			return Mapper.Current.Map<UserDto, UserWithPasswordHash>(dto);
 		}
 		
 		private bool IsValidEmail(string email)
@@ -362,7 +362,7 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.UserNotFound(userId, "_id");
 			}
 
-			var userWithPassword = Mapper.Current.Map<User, UserWithPassword>(user);
+			var userWithPassword = Mapper.Current.Map<User, UserWithPasswordHash>(user);
 			var passwordHash = this.cryptographyService.CalculatePasswordHash(membership, newPassword);
 			userWithPassword.PasswordHash = passwordHash;
 
@@ -402,7 +402,7 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.UserNotFound(userId, "_id");
 			}
 
-			var userWithPassword = Mapper.Current.Map<User, UserWithPassword>(user);
+			var userWithPassword = Mapper.Current.Map<User, UserWithPasswordHash>(user);
 			var passwordHash = this.cryptographyService.CalculatePasswordHash(membership, newPassword);
 			userWithPassword.PasswordHash = passwordHash;
 
