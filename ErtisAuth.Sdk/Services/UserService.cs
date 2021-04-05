@@ -98,7 +98,7 @@ namespace ErtisAuth.Sdk.Services
 			if (limit != null)
 				queryString.Add("limit", limit.Value);
 			if (withCount != null)
-				queryString.Add("withCount", withCount.Value.ToString().ToLower());
+				queryString.Add("with_count", withCount.Value.ToString().ToLower());
 
 			if (!string.IsNullOrEmpty(orderBy))
 			{
