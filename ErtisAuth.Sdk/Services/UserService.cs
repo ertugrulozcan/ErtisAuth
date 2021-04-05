@@ -7,6 +7,7 @@ using Ertis.Net.Rest;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Sdk.Configuration;
+using ErtisAuth.Sdk.Helpers;
 using ErtisAuth.Sdk.Services.Interfaces;
 
 namespace ErtisAuth.Sdk.Services
@@ -81,37 +82,10 @@ namespace ErtisAuth.Sdk.Services
 			return await this.ExecuteRequestAsync<PaginationCollection<User>>(
 				HttpMethod.Get, 
 				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/users", 
-				GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
+				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()));
 		}
 
-		private static IQueryString GetQueryString(
-			int? skip = null, 
-			int? limit = null, 
-			bool? withCount = null, 
-			string orderBy = null, 
-			SortDirection? sortDirection = null)
-		{
-			var queryString = QueryString.Empty;
-			if (skip != null)
-				queryString.Add("skip", skip.Value);
-			if (limit != null)
-				queryString.Add("limit", limit.Value);
-			if (withCount != null)
-				queryString.Add("with_count", withCount.Value.ToString().ToLower());
-
-			if (!string.IsNullOrEmpty(orderBy))
-			{
-				var sortQueryParam = orderBy;
-				if (sortDirection == SortDirection.Descending)
-					sortQueryParam += "%20desc";
-				
-				queryString.Add("sort", sortQueryParam);
-			}
-
-			return queryString;
-		}
-		
 		#endregion
 
 		#region Query Methods
@@ -146,7 +120,7 @@ namespace ErtisAuth.Sdk.Services
 			return await this.ExecuteRequestAsync<PaginationCollection<User>>(
 				HttpMethod.Post, 
 				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/users", 
-				GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
+				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)));
 		}
