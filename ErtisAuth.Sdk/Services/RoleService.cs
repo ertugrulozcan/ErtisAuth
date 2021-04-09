@@ -69,7 +69,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync<Role>(
 				HttpMethod.Get, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/role/{roleId}", 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/roles/{roleId}", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()));
 		}
