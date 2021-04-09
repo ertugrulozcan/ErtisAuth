@@ -37,7 +37,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync<ErtisAuthEvent>(
 				HttpMethod.Post, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/ertisAuthEvents", 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(ertisAuthEvent));
@@ -54,7 +54,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync<ErtisAuthEvent>(
 				HttpMethod.Get, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/ertisAuthEvents/{ertisAuthEventId}", 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events/{ertisAuthEventId}", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()));
 		}
@@ -88,7 +88,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync<PaginationCollection<ErtisAuthEvent>>(
 				HttpMethod.Get, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/ertisAuthEvents", 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()));
 		}
@@ -126,7 +126,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync<PaginationCollection<ErtisAuthEvent>>(
 				HttpMethod.Post, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/ertisAuthEvents", 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)));
@@ -148,7 +148,7 @@ namespace ErtisAuth.Sdk.Services
 			
 			return await this.ExecuteRequestAsync<ErtisAuthEvent>(
 				HttpMethod.Put, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/ertisAuthEvents/{ertisAuthEvent.Id}", 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events/{ertisAuthEvent.Id}", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(ertisAuthEvent));
@@ -165,7 +165,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync<ErtisAuthEvent>(
 				HttpMethod.Delete, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/ertisAuthEvents/{ertisAuthEventId}", 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events/{ertisAuthEventId}", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()));
 		}
