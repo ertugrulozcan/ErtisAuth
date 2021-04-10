@@ -64,7 +64,7 @@ namespace ErtisAuth.Infrastructure.Services
 				
 				ertisAuthEvent.EventTime = DateTime.Now;
 			
-				await this.eventRepository.InsertAsync(new EventDto
+				var insertedEvent = await this.eventRepository.InsertAsync(new EventDto
 				{
 					EventType = ertisAuthEvent.EventType.ToString(),
 					UtilizerId = ertisAuthEvent.UtilizerId,
@@ -74,7 +74,15 @@ namespace ErtisAuth.Infrastructure.Services
 					EventTime = ertisAuthEvent.EventTime
 				});
 
-				this.EventFired?.Invoke(sender, ertisAuthEvent);
+				if (insertedEvent != null)
+				{
+					ertisAuthEvent.Id = insertedEvent.Id;
+					this.EventFired?.Invoke(sender, ertisAuthEvent);
+				}
+				else
+				{
+					Console.WriteLine("EventService.FireEventAsync error: Event could not inserted!");
+				}
 			}
 			catch (Exception ex)
 			{

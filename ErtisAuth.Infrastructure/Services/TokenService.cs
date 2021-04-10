@@ -173,7 +173,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 				if (fireEvent)
 				{
-					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenGenerated, user, token));	
+					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenGenerated, user, token) { MembershipId = membershipId });	
 				}
 				
 				return token;
@@ -277,7 +277,7 @@ namespace ErtisAuth.Infrastructure.Services
 						
 						if (fireEvent)
 						{
-							await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }));	
+							await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }) { MembershipId = membershipId });	
 						}
 				
 						return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
@@ -336,7 +336,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 			if (fireEvent)
 			{
-				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, application, new { basicToken }));	
+				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, application, new { basicToken }) { MembershipId = membership.Id });	
 			}
 			
 			return new BasicTokenValidationResult(true, basicToken, application);
@@ -381,7 +381,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 										if (fireEvent)
 										{
-											await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRefreshed, user, token, new { refreshToken }));	
+											await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRefreshed, user, token, new { refreshToken }) { MembershipId = membershipId });	
 										}
 				
 										return token;
@@ -466,7 +466,7 @@ namespace ErtisAuth.Infrastructure.Services
 				}	
 			}
 
-			await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, validationResult.User, new { token }));
+			await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, validationResult.User, new { token }) { MembershipId = membership.Id });
 			
 			return true;
 		}

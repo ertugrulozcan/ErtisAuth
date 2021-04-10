@@ -123,7 +123,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				throw ErtisAuthException.UnsupportedTokenType();	
 			}
 
-			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType);
+			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false);
 			if (validationResult.IsValidated)
 			{
 				return this.Ok(validationResult);
@@ -154,7 +154,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.AuthorizationHeaderMissing();
 			}
 
-			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType);
+			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false);
 			if (validationResult.IsValidated)
 			{
 				return this.Ok(validationResult);

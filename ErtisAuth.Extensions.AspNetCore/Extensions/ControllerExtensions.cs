@@ -50,9 +50,10 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			if (utilizerIdentity != null)
 			{
 				var idClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerIdClaimName);
-				var usernameClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerUsernameClaimName);
 				var typeClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerTypeClaimName);
+				var usernameClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerUsernameClaimName);
 				var roleClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerRoleClaimName);
+				var membershipIdClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.MembershipIdClaimName);
 				var tokenClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerTokenClaimName);
 				var tokenTypeClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerTokenTypeClaimName);
 
@@ -64,6 +65,7 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 					Username = usernameClaim?.Value,
 					Type = Utilizer.ParseType(typeClaim?.Value),
 					Role = roleClaim?.Value,
+					MembershipId = membershipIdClaim?.Value,
 					Token = tokenClaim?.Value,
 					TokenType = tokenType
 				};
