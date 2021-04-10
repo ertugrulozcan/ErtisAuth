@@ -54,7 +54,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync<Application>(
 				HttpMethod.Get, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/application/{applicationId}", 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/applications/{applicationId}", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()));
 		}

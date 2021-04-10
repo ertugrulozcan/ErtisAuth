@@ -122,5 +122,27 @@ namespace ErtisAuth.Sdk.Services
 		}
 		
 		#endregion
+		
+		#region Update Methods
+		
+		public IResponseResult<Membership> UpdateMembership(Membership membership, TokenBase token) =>
+			this.UpdateMembershipAsync(membership, token).ConfigureAwait(false).GetAwaiter().GetResult();
+
+		public async Task<IResponseResult<Membership>> UpdateMembershipAsync(Membership membership, TokenBase token)
+		{
+			if (string.IsNullOrEmpty(membership.Id))
+			{
+				return new ResponseResult<Membership>(false, "Membership id is required!");
+			}
+			
+			return await this.ExecuteRequestAsync<Membership>(
+				HttpMethod.Put, 
+				$"{this.AuthApiBaseUrl}/memberships/{membership.Id}", 
+				null, 
+				HeaderCollection.Add("Authorization", token.ToString()),
+				new JsonRequestBody(membership));
+		}
+		
+		#endregion
 	}
 }

@@ -19,5 +19,9 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 		IResponseResult<IPaginationCollection<Membership>> QueryMemberships(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null);
 		
 		Task<IResponseResult<IPaginationCollection<Membership>>> QueryMembershipsAsync(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null);
+		
+		IResponseResult<Membership> UpdateMembership(Membership membership, TokenBase token);
+		
+		Task<IResponseResult<Membership>> UpdateMembershipAsync(Membership membership, TokenBase token);
 	}
 }
