@@ -1,6 +1,7 @@
 using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 
 namespace ErtisAuth.Core.Models.Identity
 {
@@ -13,7 +14,7 @@ namespace ErtisAuth.Core.Models.Identity
 		public override SupportedTokenTypes TokenType => SupportedTokenTypes.Bearer;
 
 		[JsonProperty("refresh_token")]
-		public string RefreshToken { get; }
+		public string RefreshToken { get; private set; }
 
 		[JsonIgnore]
 		public TimeSpan RefreshExpiresIn { get; private set; }
@@ -60,6 +61,47 @@ namespace ErtisAuth.Core.Models.Identity
 				AccessToken = token,
 				CreatedAt = DateTime.Now
 			};
+		}
+		
+		public static BearerToken ParseFromJson(string json)
+		{
+			var bearerToken = new BearerToken();
+			
+			var obj = JsonConvert.DeserializeObject(json);
+			if (obj is JObject jObject)
+			{
+				if (jObject.ContainsKey("access_token"))
+				{
+					var access_token = jObject["access_token"]?.ToString();
+					bearerToken.AccessToken = access_token;
+				}
+				
+				if (jObject.ContainsKey("refresh_token"))
+				{
+					var refresh_token = jObject["refresh_token"]?.ToString();
+					bearerToken.RefreshToken = refresh_token;
+				}
+				
+				if (jObject.ContainsKey("expires_in"))
+				{
+					int.TryParse(jObject["expires_in"]?.ToString(), out var expires_in);
+					bearerToken.ExpiresIn = TimeSpan.FromSeconds(expires_in);
+				}
+				
+				if (jObject.ContainsKey("refresh_token_expires_in"))
+				{
+					int.TryParse(jObject["refresh_token_expires_in"]?.ToString(), out var refresh_token_expires_in);
+					bearerToken.RefreshExpiresIn = TimeSpan.FromSeconds(refresh_token_expires_in);
+				}
+				
+				if (jObject.ContainsKey("created_at"))
+				{
+					DateTime.TryParse(jObject["created_at"]?.ToString(), out var created_at);
+					bearerToken.CreatedAt = created_at;
+				}
+			}
+
+			return bearerToken;
 		}
 
 		#endregion

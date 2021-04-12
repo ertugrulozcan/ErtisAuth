@@ -1,4 +1,7 @@
+using System;
+using System.Globalization;
 using Ertis.Net.Rest;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Sdk.Configuration;
 using ErtisAuth.Sdk.Services;
 using ErtisAuth.Sdk.Services.Interfaces;
@@ -42,6 +45,22 @@ namespace ErtisAuth.Tests.Sdk.ErtisAuth.Sdk.Tests
 			{
 				
 			}
+		}
+
+		[Test]
+		public void BearerToken_ParseFromJson_Test()
+		{
+			string json =
+				"{\"token_type\": \"bearer\", \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\", \"refresh_token_expires_in\": 86400, \"access_token\": \"ayJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\", \"expires_in\": 3600, \"created_at\": \"2021-04-12T21:04:13.4757966+00:00\"}";
+
+			var bearerToken = BearerToken.ParseFromJson(json);
+			Assert.AreEqual(SupportedTokenTypes.Bearer, bearerToken.TokenType);
+			Assert.AreEqual("ayJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", bearerToken.AccessToken);
+			Assert.AreEqual("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", bearerToken.RefreshToken);
+			Assert.AreEqual(TimeSpan.FromSeconds(86400), bearerToken.RefreshExpiresIn);
+			Assert.AreEqual(86400, bearerToken.RefreshTokenExpiresInTimeStamp);
+			Assert.AreEqual(3600, bearerToken.ExpiresInTimeStamp);
+			Assert.AreEqual(DateTime.Parse("2021-04-12T21:04:13", CultureInfo.InvariantCulture).AddHours(3), bearerToken.CreatedAt);
 		}
 
 		#endregion

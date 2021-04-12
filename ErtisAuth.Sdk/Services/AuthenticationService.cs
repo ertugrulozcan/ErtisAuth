@@ -41,7 +41,8 @@ namespace ErtisAuth.Sdk.Services
 				password
 			};
 			
-			return this.ExecuteRequest<BearerToken>(HttpMethod.Post, url, null, headers, new JsonRequestBody(body));
+			var response = this.ExecuteRequest(HttpMethod.Post, url, null, headers, new JsonRequestBody(body));
+			return ConvertToBearerTokenResponse(response);
 		}
 
 		public async Task<IResponseResult<BearerToken>> GetTokenAsync(string username, string password)
@@ -54,35 +55,40 @@ namespace ErtisAuth.Sdk.Services
 				password
 			};
 			
-			return await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Post, url, null, headers, new JsonRequestBody(body));
+			var response = await this.ExecuteRequestAsync(HttpMethod.Post, url, null, headers, new JsonRequestBody(body));
+			return ConvertToBearerTokenResponse(response);
 		}
 
 		public IResponseResult<BearerToken> RefreshToken(BearerToken bearerToken)
 		{
 			var url = $"{this.AuthApiBaseUrl}/refresh-token";
 			var headers = HeaderCollection.Add("Authorization", bearerToken.RefreshToken);
-			return this.ExecuteRequest<BearerToken>(HttpMethod.Get, url, null, headers);
+			var response = this.ExecuteRequest(HttpMethod.Get, url, null, headers);
+			return ConvertToBearerTokenResponse(response);
 		}
 
 		public async Task<IResponseResult<BearerToken>> RefreshTokenAsync(BearerToken bearerToken)
 		{
 			var url = $"{this.AuthApiBaseUrl}/refresh-token";
 			var headers = HeaderCollection.Add("Authorization", bearerToken.RefreshToken);
-			return await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Get, url, null, headers);
+			var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, null, headers);
+			return ConvertToBearerTokenResponse(response);
 		}
 
 		public IResponseResult<BearerToken> RefreshToken(string refreshToken)
 		{
 			var url = $"{this.AuthApiBaseUrl}/refresh-token";
 			var headers = HeaderCollection.Add("Authorization", $"Bearer {refreshToken}");
-			return this.ExecuteRequest<BearerToken>(HttpMethod.Get, url, null, headers);
+			var response = this.ExecuteRequest(HttpMethod.Get, url, null, headers);
+			return ConvertToBearerTokenResponse(response);
 		}
 
 		public async Task<IResponseResult<BearerToken>> RefreshTokenAsync(string refreshToken)
 		{
 			var url = $"{this.AuthApiBaseUrl}/refresh-token";
 			var headers = HeaderCollection.Add("Authorization", $"Bearer {refreshToken}");
-			return await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Get, url, null, headers);
+			var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, null, headers);
+			return ConvertToBearerTokenResponse(response);
 		}
 
 		public IResponseResult<ITokenValidationResult> VerifyToken(BearerToken token)
@@ -223,14 +229,14 @@ namespace ErtisAuth.Sdk.Services
 		{
 			var url = $"{this.AuthApiBaseUrl}/revoke-token";
 			var headers = HeaderCollection.Add("Authorization", token.ToString());
-			return this.ExecuteRequest<BearerToken>(HttpMethod.Get, url, null, headers);
+			return this.ExecuteRequest(HttpMethod.Get, url, null, headers);
 		}
 
 		public async Task<IResponseResult> RevokeTokenAsync(BearerToken token)
 		{
 			var url = $"{this.AuthApiBaseUrl}/revoke-token";
 			var headers = HeaderCollection.Add("Authorization", token.ToString());
-			return await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Get, url, null, headers);
+			return await this.ExecuteRequestAsync(HttpMethod.Get, url, null, headers);
 		}
 
 		public IResponseResult RevokeToken(string accessToken)
@@ -269,6 +275,55 @@ namespace ErtisAuth.Sdk.Services
 			var url = $"{this.AuthApiBaseUrl}/whoami";
 			var headers = HeaderCollection.Add("Authorization", basicToken.ToString());
 			return await this.ExecuteRequestAsync<Application>(HttpMethod.Get, url, null, headers);
+		}
+		
+		private static IResponseResult<BearerToken> ConvertToBearerTokenResponse(IResponseResult response)
+		{
+			if (response.IsSuccess)
+			{
+				var bearerToken = BearerToken.ParseFromJson(response.Json);
+				if (response.StatusCode == null)
+				{
+					return new ResponseResult<BearerToken>(response.IsSuccess, response.Message)
+					{
+						Data = bearerToken,
+						Json = response.Json,
+						RawData = response.RawData,
+						Exception = response.Exception
+					};
+				}
+				else
+				{
+					return new ResponseResult<BearerToken>(response.StatusCode.Value, response.Message)
+					{
+						Data = bearerToken,
+						Json = response.Json,
+						RawData = response.RawData,
+						Exception = response.Exception
+					};
+				}
+			}
+			else
+			{
+				if (response.StatusCode == null)
+				{
+					return new ResponseResult<BearerToken>(response.IsSuccess, response.Message)
+					{
+						Json = response.Json,
+						RawData = response.RawData,
+						Exception = response.Exception
+					};
+				}
+				else
+				{
+					return new ResponseResult<BearerToken>(response.StatusCode.Value, response.Message)
+					{
+						Json = response.Json,
+						RawData = response.RawData,
+						Exception = response.Exception
+					};
+				}
+			}
 		}
 
 		#endregion
