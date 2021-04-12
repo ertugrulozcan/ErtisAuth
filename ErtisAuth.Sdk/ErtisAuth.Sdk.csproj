@@ -4,7 +4,7 @@
         <TargetFramework>netcoreapp3.1</TargetFramework>
 
         <PackageId>ErtisAuth.Sdk</PackageId>
-        <PackageVersion>3.1.8</PackageVersion>
+        <PackageVersion>3.1.9</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Sdk</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -14,8 +14,8 @@
         <Title>ErtisAuth.Sdk</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>3.1.8</AssemblyVersion>
-        <FileVersion>3.1.8</FileVersion>
+        <AssemblyVersion>3.1.9</AssemblyVersion>
+        <FileVersion>3.1.9</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
