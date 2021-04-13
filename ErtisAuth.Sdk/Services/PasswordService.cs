@@ -1,5 +1,7 @@
+using System.Net.Http;
 using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
+using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Sdk.Configuration;
@@ -24,35 +26,41 @@ namespace ErtisAuth.Sdk.Services
 		#endregion
 		
 		#region Methods
+		
+		public IResponseResult ChangePassword(string userId, string newPassword, TokenBase token) => this.ChangePasswordAsync(userId, newPassword, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public IResponseResult<ResetPasswordToken> ResetPassword(string emailAddress)
+		public async Task<IResponseResult> ChangePasswordAsync(string userId, string newPassword, TokenBase token)
 		{
-			throw new System.NotImplementedException();
+			return await this.ExecuteRequestAsync(
+				HttpMethod.Put, 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/users/{userId}/change-password", 
+				null, 
+				HeaderCollection.Add("Authorization", token.ToString()),
+				new JsonRequestBody(new { password = newPassword }));
 		}
 
-		public async Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress)
+		public IResponseResult<ResetPasswordToken> ResetPassword(string emailAddress, TokenBase token) => this.ResetPasswordAsync(emailAddress, token).ConfigureAwait(false).GetAwaiter().GetResult();
+
+		public async Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress, TokenBase token)
 		{
-			throw new System.NotImplementedException();
+			return await this.ExecuteRequestAsync<ResetPasswordToken>(
+				HttpMethod.Post, 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/users/reset-password", 
+				null, 
+				HeaderCollection.Add("Authorization", token.ToString()),
+				new JsonRequestBody(new { email_address = emailAddress }));
 		}
 
-		public IResponseResult SetPassword(string email, string password, string resetToken)
-		{
-			throw new System.NotImplementedException();
-		}
+		public IResponseResult SetPassword(string email, string password, string resetToken, TokenBase token) => this.SetPasswordAsync(email, password, resetToken, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult> SetPasswordAsync(string email, string password, string resetToken)
+		public async Task<IResponseResult> SetPasswordAsync(string email, string password, string resetToken, TokenBase token)
 		{
-			throw new System.NotImplementedException();
-		}
-
-		public IResponseResult ChangePassword(string userId, string newPassword, string accessToken)
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public async Task<IResponseResult> ChangePasswordAsync(string userId, string newPassword, string accessToken)
-		{
-			throw new System.NotImplementedException();
+			return await this.ExecuteRequestAsync(
+				HttpMethod.Post, 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/users/set-password", 
+				null, 
+				HeaderCollection.Add("Authorization", token.ToString()),
+				new JsonRequestBody(new { email_address = email, reset_token = resetToken, password }));
 		}
 
 		#endregion

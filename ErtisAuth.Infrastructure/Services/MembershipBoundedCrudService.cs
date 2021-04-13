@@ -235,7 +235,12 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				return false;
 			}
-			
+
+			if (newModel.GetType() != currentModel.GetType())
+			{
+				return false;
+			}
+
 			var properties = typeof(TModel).GetProperties();
 			foreach (var propertyInfo in properties)
 			{

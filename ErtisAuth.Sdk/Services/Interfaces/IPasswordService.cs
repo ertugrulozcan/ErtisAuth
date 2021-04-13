@@ -6,16 +6,16 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 {
 	public interface IPasswordService
 	{
-		IResponseResult<ResetPasswordToken> ResetPassword(string emailAddress);
+		IResponseResult ChangePassword(string userId, string newPassword, TokenBase token);
 
-		Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress);
-
-		IResponseResult SetPassword(string email, string password, string resetToken);
-
-		Task<IResponseResult> SetPasswordAsync(string email, string password, string resetToken);
+		Task<IResponseResult> ChangePasswordAsync(string userId, string newPassword, TokenBase token);
 		
-		IResponseResult ChangePassword(string userId, string newPassword, string accessToken);
+		IResponseResult<ResetPasswordToken> ResetPassword(string emailAddress, TokenBase token);
 
-		Task<IResponseResult> ChangePasswordAsync(string userId, string newPassword, string accessToken);
+		Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress, TokenBase token);
+
+		IResponseResult SetPassword(string email, string password, string resetToken, TokenBase token);
+
+		Task<IResponseResult> SetPasswordAsync(string email, string password, string resetToken, TokenBase token);
 	}
 }
