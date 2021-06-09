@@ -126,7 +126,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync<PaginationCollection<ErtisAuthEvent>>(
 				HttpMethod.Post, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events", 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events/_query", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)));
