@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Events
 {
-	public class ErtisAuthEventLog : IErtisAuthEvent
+	public class ErtisAuthEventLog : ResourceBase, IErtisAuthEvent, IHasMembership
 	{
 		#region Properties
 
