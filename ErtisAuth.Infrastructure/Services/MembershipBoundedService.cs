@@ -16,8 +16,8 @@ namespace ErtisAuth.Infrastructure.Services
 	{
 		#region Services
 
-		private readonly IMembershipService membershipService;
-		private readonly IMongoRepository<TDto> repository;
+		protected readonly IMembershipService membershipService;
+		protected readonly IMongoRepository<TDto> repository;
 
 		#endregion
 

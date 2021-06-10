@@ -22,7 +22,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Services
 
 		private readonly IEventService eventService;
-		
+		private readonly IMembershipService membershipService;
+
 		#endregion
 
 		#region Constructors
@@ -31,9 +32,11 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// Constructor
 		/// </summary>
 		/// <param name="eventService"></param>
-		public EventsController(IEventService eventService)
+		/// <param name="membershipService"></param>
+		public EventsController(IEventService eventService, IMembershipService membershipService)
 		{
 			this.eventService = eventService;
+			this.membershipService = membershipService;
 		}
 
 		#endregion
@@ -79,6 +82,49 @@ namespace ErtisAuth.WebAPI.Controllers
 			return await this.eventService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 		}
 		
+		#endregion
+		
+		#region Create Methods
+
+		[HttpPost]
+		[RbacAction(Rbac.CrudActions.Create)]
+		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] ErtisAuthCustomEvent model)
+		{
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				return this.MembershipNotFound(membershipId);
+			}
+			
+			// Validation
+			if (string.IsNullOrEmpty(model.EventType))
+			{
+				return this.BadRequest("event_type is required field");
+			}
+
+			var eventType = model.EventType;
+			eventType = eventType.Replace(" ", string.Empty);
+
+			var utilizerId = model.UtilizerId;
+			if (string.IsNullOrEmpty(utilizerId))
+			{
+				var utilizer = this.GetUtilizer();
+				utilizerId = utilizer.Id;
+			}
+			
+			var ertisAuthCustomEvent = new ErtisAuthCustomEvent
+			{
+				EventType = eventType,
+				Document = model.Document,
+				Prior = model.Prior,
+				MembershipId = membershipId,
+				UtilizerId = utilizerId
+			};
+				
+			var ertisAuthEvent = await this.eventService.FireEventAsync(this, ertisAuthCustomEvent);
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{ertisAuthEvent.Id}", ertisAuthEvent);
+		}
+
 		#endregion
 	}
 }

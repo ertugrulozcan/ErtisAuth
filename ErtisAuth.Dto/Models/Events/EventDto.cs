@@ -27,6 +27,9 @@ namespace ErtisAuth.Dto.Models.Events
 		
 		[BsonElement("event_time")]
 		public DateTime EventTime { get; set; }
+		
+		[BsonElement("is_custom_event")] 
+		public bool IsCustomEvent { get; set; }
 
 		#endregion
 	}

@@ -4,7 +4,7 @@
         <TargetFramework>netcoreapp3.1</TargetFramework>
 
         <PackageId>ErtisAuth.Identity</PackageId>
-        <PackageVersion>3.0.4</PackageVersion>
+        <PackageVersion>3.0.5</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Identity</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -14,8 +14,8 @@
         <Title>ErtisAuth.Identity</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan</RepositoryUrl>
-        <AssemblyVersion>3.0.4</AssemblyVersion>
-        <FileVersion>3.0.4</FileVersion>
+        <AssemblyVersion>3.0.5</AssemblyVersion>
+        <FileVersion>3.0.5</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>

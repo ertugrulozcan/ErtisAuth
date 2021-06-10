@@ -134,40 +134,28 @@ namespace ErtisAuth.Sdk.Services
 		
 		#endregion
 		
-		#region Update Methods
-		
-		public IResponseResult<ErtisAuthEvent> UpdateErtisAuthEvent(ErtisAuthEvent ertisAuthEvent, TokenBase token) =>
-			this.UpdateErtisAuthEventAsync(ertisAuthEvent, token).ConfigureAwait(false).GetAwaiter().GetResult();
+		#region Fire Custom Event Methods
 
-		public async Task<IResponseResult<ErtisAuthEvent>> UpdateErtisAuthEventAsync(ErtisAuthEvent ertisAuthEvent, TokenBase token)
+		public IResponseResult<ErtisAuthCustomEvent> FireCustomEvent(string eventType, string utilizerId, object document, object prior, TokenBase token) =>
+			this.FireCustomEventAsync(eventType, utilizerId, document, prior, token).ConfigureAwait(false).GetAwaiter().GetResult();
+
+		public async Task<IResponseResult<ErtisAuthCustomEvent>> FireCustomEventAsync(string eventType, string utilizerId, object document, object prior, TokenBase token)
 		{
-			if (string.IsNullOrEmpty(ertisAuthEvent.Id))
+			var ertisAuthCustomEvent = new ErtisAuthCustomEvent
 			{
-				return new ResponseResult<ErtisAuthEvent>(false, "ErtisAuthEvent id is required!");
-			}
+				EventType = eventType,
+				UtilizerId = utilizerId,
+				Document = document,
+				Prior = prior,
+				MembershipId = this.AuthApiMembershipId
+			};
 			
-			return await this.ExecuteRequestAsync<ErtisAuthEvent>(
-				HttpMethod.Put, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events/{ertisAuthEvent.Id}", 
+			return await this.ExecuteRequestAsync<ErtisAuthCustomEvent>(
+				HttpMethod.Post, 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(ertisAuthEvent));
-		}
-		
-		#endregion
-		
-		#region Delete Methods
-		
-		public IResponseResult DeleteErtisAuthEvent(string ertisAuthEventId, TokenBase token) =>
-			this.DeleteErtisAuthEventAsync(ertisAuthEventId, token).ConfigureAwait(false).GetAwaiter().GetResult();
-
-		public async Task<IResponseResult> DeleteErtisAuthEventAsync(string ertisAuthEventId, TokenBase token)
-		{
-			return await this.ExecuteRequestAsync<ErtisAuthEvent>(
-				HttpMethod.Delete, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events/{ertisAuthEventId}", 
-				null, 
-				HeaderCollection.Add("Authorization", token.ToString()));
+				new JsonRequestBody(ertisAuthCustomEvent));	
 		}
 		
 		#endregion

@@ -19,7 +19,6 @@ namespace ErtisAuth.Infrastructure.Services
 	{
 		#region Services
 
-		private readonly IMembershipService membershipService;
 		private readonly IEventService eventService;
 
 		#endregion
@@ -34,7 +33,6 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="roleRepository"></param>
 		public RoleService(IMembershipService membershipService, IEventService eventService, IRoleRepository roleRepository) : base(membershipService, roleRepository)
 		{
-			this.membershipService = membershipService;
 			this.eventService = eventService;
 
 			this.Initialize();

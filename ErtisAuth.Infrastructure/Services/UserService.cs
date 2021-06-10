@@ -22,7 +22,6 @@ namespace ErtisAuth.Infrastructure.Services
 	{
 		#region Services
 
-		private readonly IMembershipService membershipService;
 		private readonly IRoleService roleService;
 		private readonly IEventService eventService;
 		private readonly IJwtService jwtService;
@@ -50,7 +49,6 @@ namespace ErtisAuth.Infrastructure.Services
 			IUserRepository userRepository) : 
 			base(membershipService, userRepository)
 		{
-			this.membershipService = membershipService;
 			this.roleService = roleService;
 			this.eventService = eventService;
 			this.jwtService = jwtService;

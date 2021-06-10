@@ -1,21 +1,19 @@
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace ErtisAuth.Core.Models.Events
 {
-	public class ErtisAuthEvent : ErtisAuthEventBase
+	public class ErtisAuthCustomEvent : ErtisAuthEventBase
 	{
 		#region Properties
 
 		[JsonProperty("event_type")]
-		[JsonConverter(typeof(StringEnumConverter))]
-		public ErtisAuthEventType EventType { get; set; }
-
-		[JsonProperty("is_custom_event")] 
-		public override bool IsCustomEvent => false;
+		public string EventType { get; set; }
 		
+		[JsonProperty("is_custom_event")] 
+		public override bool IsCustomEvent => true;
+
 		#endregion
 		
 		#region Constructors
@@ -23,7 +21,7 @@ namespace ErtisAuth.Core.Models.Events
 		/// <summary>
 		/// Default Constructor
 		/// </summary>
-		public ErtisAuthEvent()
+		public ErtisAuthCustomEvent()
 		{
 			
 		}
@@ -35,7 +33,7 @@ namespace ErtisAuth.Core.Models.Events
 		/// <param name="user"></param>
 		/// <param name="document"></param>
 		/// <param name="prior"></param>
-		public ErtisAuthEvent(ErtisAuthEventType type, User user, dynamic document = null, dynamic prior = null)
+		public ErtisAuthCustomEvent(string type, User user, dynamic document = null, dynamic prior = null)
 		{
 			this.EventType = type;
 			this.UtilizerId = user.Id;
@@ -51,7 +49,7 @@ namespace ErtisAuth.Core.Models.Events
 		/// <param name="application"></param>
 		/// <param name="document"></param>
 		/// <param name="prior"></param>
-		public ErtisAuthEvent(ErtisAuthEventType type, Application application, dynamic document = null, dynamic prior = null)
+		public ErtisAuthCustomEvent(string type, Application application, dynamic document = null, dynamic prior = null)
 		{
 			this.EventType = type;
 			this.UtilizerId = application.Id;
@@ -68,7 +66,7 @@ namespace ErtisAuth.Core.Models.Events
 		/// <param name="membershipId"></param>
 		/// <param name="document"></param>
 		/// <param name="prior"></param>
-		public ErtisAuthEvent(ErtisAuthEventType type, string utilizerId, string membershipId, dynamic document = null, dynamic prior = null)
+		public ErtisAuthCustomEvent(string type, string utilizerId, string membershipId, dynamic document = null, dynamic prior = null)
 		{
 			this.EventType = type;
 			this.UtilizerId = utilizerId;

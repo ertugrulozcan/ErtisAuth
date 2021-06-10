@@ -24,12 +24,8 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 		
 		Task<IResponseResult<IPaginationCollection<ErtisAuthEvent>>> QueryErtisAuthEventsAsync(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null);
 		
-		IResponseResult<ErtisAuthEvent> UpdateErtisAuthEvent(ErtisAuthEvent ertisAuthEvent, TokenBase token);
+		IResponseResult<ErtisAuthCustomEvent> FireCustomEvent(string eventType, string utilizerId, object document, object prior, TokenBase token);
 		
-		Task<IResponseResult<ErtisAuthEvent>> UpdateErtisAuthEventAsync(ErtisAuthEvent ertisAuthEvent, TokenBase token);
-		
-		IResponseResult DeleteErtisAuthEvent(string ertisAuthEventId, TokenBase token);
-		
-		Task<IResponseResult> DeleteErtisAuthEventAsync(string ertisAuthEventId, TokenBase token);
+		Task<IResponseResult<ErtisAuthCustomEvent>> FireCustomEventAsync(string eventType, string utilizerId, object document, object prior, TokenBase token);
 	}
 }

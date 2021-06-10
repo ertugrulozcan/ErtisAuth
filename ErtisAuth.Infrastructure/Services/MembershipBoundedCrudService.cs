@@ -17,13 +17,6 @@ namespace ErtisAuth.Infrastructure.Services
 		where TModel : Core.Models.IHasMembership, Core.Models.IHasIdentifier
 		where TDto : IEntity<string>, Dto.Models.IHasMembership
 	{
-		#region Services
-
-		private readonly IMembershipService membershipService;
-		protected readonly IMongoRepository<TDto> repository;
-
-		#endregion
-
 		#region Constructors
 
 		/// <summary>
@@ -33,8 +26,7 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="repository"></param>
 		protected MembershipBoundedCrudService(IMembershipService membershipService, IMongoRepository<TDto> repository) : base(membershipService, repository)
 		{
-			this.membershipService = membershipService;
-			this.repository = repository;
+			
 		}
 
 		#endregion
