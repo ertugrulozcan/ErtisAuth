@@ -3,10 +3,13 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Events
 {
-	public abstract class ErtisAuthEventBase : ResourceBase, IErtisAuthEvent, IHasMembership
+	public class ErtisAuthEventLog : IErtisAuthEvent
 	{
 		#region Properties
 
+		[JsonProperty("event_type")]
+		public string EventType { get; set; }
+		
 		[JsonProperty("utilizer_id")]
 		public string UtilizerId { get; set; }
 		
@@ -23,7 +26,7 @@ namespace ErtisAuth.Core.Models.Events
 		public DateTime EventTime { get; set; }
 		
 		[JsonProperty("is_custom_event")]
-		public abstract bool IsCustomEvent { get; }
+		public bool IsCustomEvent { get; set; }
 		
 		#endregion
 	}

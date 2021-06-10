@@ -47,19 +47,19 @@ namespace ErtisAuth.Sdk.Services
 		
 		#region Read Methods
 		
-		public IResponseResult<ErtisAuthEvent> GetErtisAuthEvent(string ertisAuthEventId, TokenBase token) =>
+		public IResponseResult<ErtisAuthEventLog> GetErtisAuthEvent(string ertisAuthEventId, TokenBase token) =>
 			this.GetErtisAuthEventAsync(ertisAuthEventId, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<ErtisAuthEvent>> GetErtisAuthEventAsync(string ertisAuthEventId, TokenBase token)
+		public async Task<IResponseResult<ErtisAuthEventLog>> GetErtisAuthEventAsync(string ertisAuthEventId, TokenBase token)
 		{
-			return await this.ExecuteRequestAsync<ErtisAuthEvent>(
+			return await this.ExecuteRequestAsync<ErtisAuthEventLog>(
 				HttpMethod.Get, 
 				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events/{ertisAuthEventId}", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()));
 		}
 		
-		public IResponseResult<IPaginationCollection<ErtisAuthEvent>> GetErtisAuthEvents(
+		public IResponseResult<IPaginationCollection<ErtisAuthEventLog>> GetErtisAuthEvents(
 			TokenBase token, 
 			int? skip = null, 
 			int? limit = null, 
@@ -77,7 +77,7 @@ namespace ErtisAuth.Sdk.Services
 				searchKeyword)
 				.ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<IPaginationCollection<ErtisAuthEvent>>> GetErtisAuthEventsAsync(
+		public async Task<IResponseResult<IPaginationCollection<ErtisAuthEventLog>>> GetErtisAuthEventsAsync(
 			TokenBase token,
 			int? skip = null,
 			int? limit = null,
@@ -86,7 +86,7 @@ namespace ErtisAuth.Sdk.Services
 			SortDirection? sortDirection = null,
 			string searchKeyword = null)
 		{
-			return await this.ExecuteRequestAsync<PaginationCollection<ErtisAuthEvent>>(
+			return await this.ExecuteRequestAsync<PaginationCollection<ErtisAuthEventLog>>(
 				HttpMethod.Get, 
 				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
@@ -97,7 +97,7 @@ namespace ErtisAuth.Sdk.Services
 		
 		#region Query Methods
 		
-		public IResponseResult<IPaginationCollection<ErtisAuthEvent>> QueryErtisAuthEvents(
+		public IResponseResult<IPaginationCollection<ErtisAuthEventLog>> QueryErtisAuthEvents(
 			TokenBase token, 
 			string query, 
 			int? skip = null, 
@@ -115,7 +115,7 @@ namespace ErtisAuth.Sdk.Services
 				sortDirection)
 				.ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<IPaginationCollection<ErtisAuthEvent>>> QueryErtisAuthEventsAsync(
+		public async Task<IResponseResult<IPaginationCollection<ErtisAuthEventLog>>> QueryErtisAuthEventsAsync(
 			TokenBase token,
 			string query,
 			int? skip = null,
@@ -124,7 +124,7 @@ namespace ErtisAuth.Sdk.Services
 			string orderBy = null,
 			SortDirection? sortDirection = null)
 		{
-			return await this.ExecuteRequestAsync<PaginationCollection<ErtisAuthEvent>>(
+			return await this.ExecuteRequestAsync<PaginationCollection<ErtisAuthEventLog>>(
 				HttpMethod.Post, 
 				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events/_query", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
