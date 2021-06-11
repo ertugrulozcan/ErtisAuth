@@ -158,7 +158,8 @@ namespace ErtisAuth.Extensions.AspNetCore
 							Type = tokenType == "Basic" ? Utilizer.UtilizerType.Application : Utilizer.UtilizerType.User,
 							Role = getApplicationResponse.Data.Role,
 							Token = token,
-							TokenType = _tokenType
+							TokenType = _tokenType,
+							MembershipId = getApplicationResponse.Data.MembershipId
 						};
 					}
 					else
@@ -191,7 +192,8 @@ namespace ErtisAuth.Extensions.AspNetCore
 							Type = tokenType == "Basic" ? Utilizer.UtilizerType.Application : Utilizer.UtilizerType.User,
 							Role = meResponse.Data.Role,
 							Token = token,
-							TokenType = _tokenType
+							TokenType = _tokenType,
+							MembershipId = meResponse.Data.MembershipId
 						};
 					}
 					else
