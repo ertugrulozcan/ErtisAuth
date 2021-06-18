@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 
 namespace ErtisAuth.Infrastructure.Extensions
@@ -34,6 +35,32 @@ namespace ErtisAuth.Infrastructure.Extensions
 			var matchedForbiddens = role.Forbidden?.Where(isPermittedFilter) ?? new string[] {};
 
 			return !matchedForbiddens.Any() && matchedPermissions.Any();
+		}
+
+		public static bool HasOwnUpdatePermission(this Role role, Rbac rbac, Utilizer utilizer)
+		{
+			if (rbac.Action.Slug != Rbac.GetSegment(Rbac.CrudActions.Update).Slug)
+			{
+				return false;
+			}
+			
+			if (rbac.Resource== "users" && utilizer.Type == Utilizer.UtilizerType.User)
+			{
+				if (rbac.Object == utilizer.Id)
+				{
+					return true;
+				}
+			}
+			
+			if (rbac.Resource== "applications" && utilizer.Type == Utilizer.UtilizerType.Application)
+			{
+				if (rbac.Object == utilizer.Id)
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		#endregion

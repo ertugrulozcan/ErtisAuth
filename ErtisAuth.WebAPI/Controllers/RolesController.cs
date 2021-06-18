@@ -173,6 +173,10 @@ namespace ErtisAuth.WebAPI.Controllers
 					{
 						return this.Ok();
 					}
+					else if (role.HasOwnUpdatePermission(rbac, this.GetUtilizer()))
+					{
+						return this.Ok();
+					}
 					else
 					{
 						return this.Unauthorized();
@@ -200,6 +204,10 @@ namespace ErtisAuth.WebAPI.Controllers
 				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
 				{
 					if (role.HasPermission(rbac))
+					{
+						return this.Ok();
+					}
+					else if (role.HasOwnUpdatePermission(rbac, this.GetUtilizer()))
 					{
 						return this.Ok();
 					}

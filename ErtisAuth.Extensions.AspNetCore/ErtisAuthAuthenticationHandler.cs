@@ -144,7 +144,7 @@ namespace ErtisAuth.Extensions.AspNetCore
 					if (getApplicationResponse.IsSuccess)
 					{
 						var rbacDefinition = this.Context.GetRbacDefinition(getApplicationResponse.Data.Id);
-						var rbac = $"{rbacDefinition.Resource}.{rbacDefinition.Action}";
+						var rbac = rbacDefinition.ToString();
 						var isPermittedForAction = await this.roleService.CheckPermissionAsync(rbac, basicToken);
 						if (!isPermittedForAction)
 						{
@@ -178,7 +178,7 @@ namespace ErtisAuth.Extensions.AspNetCore
 					if (meResponse.IsSuccess)
 					{
 						var rbacDefinition = this.Context.GetRbacDefinition(meResponse.Data.Id);
-						var rbac = $"{rbacDefinition.Resource}.{rbacDefinition.Action}";
+						var rbac = rbacDefinition.ToString();
 						var isPermittedForAction = await this.roleService.CheckPermissionAsync(rbac, bearerToken);
 						if (!isPermittedForAction)
 						{
