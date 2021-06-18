@@ -135,13 +135,14 @@ namespace ErtisAuth.WebAPI.Auth
 				case SupportedTokenTypes.None:
 					throw ErtisAuthException.UnsupportedTokenType();
 				case SupportedTokenTypes.Basic:
-					var validationResult = await this.tokenService.VerifyBasicTokenAsync(token);
+					var validationResult = await this.tokenService.VerifyBasicTokenAsync(token, false);
 					if (!validationResult.IsValidated)
 					{
 						throw ErtisAuthException.InvalidToken();
 					}
 					
 					var application = validationResult.Application;
+					Utilizer applicationUtilizer= application;
 					if (!string.IsNullOrEmpty(application.Role))
 					{
 						var role = await this.roleService.GetByNameAsync(application.Role, application.MembershipId);
@@ -150,12 +151,14 @@ namespace ErtisAuth.WebAPI.Auth
 							var rbac = this.Context.GetRbacDefinition(application.Id);
 							if (!role.HasPermission(rbac))
 							{
-								throw ErtisAuthException.AccessDenied("Your authorization role is unauthorized for this action");
+								if (!role.HasOwnUpdatePermission(rbac, applicationUtilizer))
+								{
+									throw ErtisAuthException.AccessDenied("Your authorization role is unauthorized for this action");
+								}
 							}
 						}
 					}
 					
-					Utilizer applicationUtilizer= application;
 					applicationUtilizer.Token = token;
 					applicationUtilizer.TokenType = _tokenType;
 					return applicationUtilizer;
@@ -167,6 +170,7 @@ namespace ErtisAuth.WebAPI.Auth
 					}
         
 					var user = verifyTokenResult.User;
+					Utilizer userUtilizer= user;
 					if (!string.IsNullOrEmpty(user.Role))
 					{
 						var role = await this.roleService.GetByNameAsync(user.Role, user.MembershipId);
@@ -175,12 +179,14 @@ namespace ErtisAuth.WebAPI.Auth
 							var rbac = this.Context.GetRbacDefinition(user.Id);
 							if (!role.HasPermission(rbac))
 							{
-								throw ErtisAuthException.AccessDenied("Your authorization role is unauthorized for this action");
+								if (!role.HasOwnUpdatePermission(rbac, userUtilizer))
+								{
+									throw ErtisAuthException.AccessDenied("Your authorization role is unauthorized for this action");
+								}
 							}
 						}
 					}
-
-					Utilizer userUtilizer= user;
+					
 					userUtilizer.Token = token;
 					userUtilizer.TokenType = _tokenType;
 					return userUtilizer;
