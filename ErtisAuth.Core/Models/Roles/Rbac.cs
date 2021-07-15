@@ -138,6 +138,9 @@ namespace ErtisAuth.Core.Models.Roles
 
 		private static bool AreEquals(Rbac rbac1, Rbac rbac2)
 		{
+			if (rbac1 is null && rbac2 is null)
+				return true;
+			
 			if (rbac1 is null || rbac2 is null)
 				return false;
 			
