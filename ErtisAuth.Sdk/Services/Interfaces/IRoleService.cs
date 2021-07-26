@@ -12,6 +12,10 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 
 		Task<bool> CheckPermissionAsync(string rbac, TokenBase token);
 		
+		bool CheckPermissionByRole(string roleId, string rbac, TokenBase token);
+
+		Task<bool> CheckPermissionByRoleAsync(string roleId, string rbac, TokenBase token);
+		
 		IResponseResult<Role> CreateRole(Role role, TokenBase token);
 		
 		Task<IResponseResult<Role>> CreateRoleAsync(Role role, TokenBase token);

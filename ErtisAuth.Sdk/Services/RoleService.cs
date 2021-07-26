@@ -40,6 +40,17 @@ namespace ErtisAuth.Sdk.Services
 			var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, queryString, headers);
 			return response.IsSuccess;
 		}
+		
+		public bool CheckPermissionByRole(string roleId, string rbac, TokenBase token) => this.CheckPermissionByRoleAsync(roleId, rbac, token).ConfigureAwait(false).GetAwaiter().GetResult();
+		
+		public async Task<bool> CheckPermissionByRoleAsync(string roleId, string rbac, TokenBase token)
+		{
+			var url = $"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/roles/{roleId}/check-permission";
+			var queryString = QueryString.Add("permission", rbac);
+			var headers = HeaderCollection.Add("Authorization", token.ToString());
+			var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, queryString, headers);
+			return response.IsSuccess;
+		}
 
 		#endregion
 		
