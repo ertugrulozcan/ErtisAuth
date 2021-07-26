@@ -7,13 +7,16 @@ namespace ErtisAuth.Core.Models.Identity
 		#region Properties
 
 		[JsonProperty("_id")]
-		public string Id { get; set; }
+		string Id { get; set; }
 		
 		[JsonProperty("role")]
-		public string Role { get; set; }
+		string Role { get; set; }
 		
 		[JsonIgnore]
-		public Utilizer.UtilizerType UtilizerType { get; }
+		Utilizer.UtilizerType UtilizerType { get; }
+		
+		[JsonProperty("membership_id")]
+		string MembershipId { get; set; }
 
 		#endregion
 	}

@@ -62,6 +62,32 @@ namespace ErtisAuth.Infrastructure.Extensions
 
 			return false;
 		}
+		
+		public static bool HasOwnUpdatePermission(this Role role, Rbac rbac, IUtilizer utilizer)
+		{
+			if (rbac.Action.Slug != Rbac.GetSegment(Rbac.CrudActions.Update).Slug)
+			{
+				return false;
+			}
+			
+			if (rbac.Resource== "users" && utilizer.UtilizerType == Utilizer.UtilizerType.User)
+			{
+				if (rbac.Object == utilizer.Id)
+				{
+					return true;
+				}
+			}
+			
+			if (rbac.Resource== "applications" && utilizer.UtilizerType == Utilizer.UtilizerType.Application)
+			{
+				if (rbac.Object == utilizer.Id)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
 
 		#endregion
 	}

@@ -160,9 +160,16 @@ namespace ErtisAuth.Core.Exceptions
 		
 		#region Role Exceptions
 		
-		public static ErtisAuthException RoleNotFound(string roleId)
+		public static ErtisAuthException RoleNotFound(string roleIdOrName, bool passedRoleName = false)
 		{
-			return new ErtisAuthException(HttpStatusCode.NotFound, $"Role not found in db by given _id: <{roleId}>", "RoleNotFound");
+			if (passedRoleName)
+			{
+				return new ErtisAuthException(HttpStatusCode.NotFound, $"Role not found in db by given name: <{roleIdOrName}>", "RoleNotFound");
+			}
+			else
+			{
+				return new ErtisAuthException(HttpStatusCode.NotFound, $"Role not found in db by given _id: <{roleIdOrName}>", "RoleNotFound");	
+			}
 		}
 		
 		public static ErtisAuthException RoleWithSameNameAlreadyExists(string name)
