@@ -150,17 +150,12 @@ namespace ErtisAuth.Extensions.AspNetCore
 						{
 							throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({rbac})");
 						}
-				
-						return new Utilizer
-						{
-							Id = getApplicationResponse.Data.Id,
-							Username = getApplicationResponse.Data.Name,
-							Type = tokenType == "Basic" ? Utilizer.UtilizerType.Application : Utilizer.UtilizerType.User,
-							Role = getApplicationResponse.Data.Role,
-							Token = token,
-							TokenType = _tokenType,
-							MembershipId = getApplicationResponse.Data.MembershipId
-						};
+
+						Utilizer utilizer = getApplicationResponse.Data;
+						utilizer.Token = token;
+						utilizer.TokenType = _tokenType;
+						
+						return utilizer;
 					}
 					else
 					{
@@ -185,16 +180,11 @@ namespace ErtisAuth.Extensions.AspNetCore
 							throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({rbac})");
 						}
 				
-						return new Utilizer
-						{
-							Id = meResponse.Data.Id,
-							Username = meResponse.Data.Username,
-							Type = tokenType == "Basic" ? Utilizer.UtilizerType.Application : Utilizer.UtilizerType.User,
-							Role = meResponse.Data.Role,
-							Token = token,
-							TokenType = _tokenType,
-							MembershipId = meResponse.Data.MembershipId
-						};
+						Utilizer utilizer = meResponse.Data;
+						utilizer.Token = token;
+						utilizer.TokenType = _tokenType;
+						
+						return utilizer;
 					}
 					else
 					{
