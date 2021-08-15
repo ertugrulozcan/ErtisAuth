@@ -28,43 +28,113 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 
 		#region Test Methods
 
-		/*
-			# Admin Role Tests
-			
-			*.users.read.*
-			*.users.create.*
-			*.users.update.*
-			*.users.delete.*
-			*.users.read.permit_user_id
-			*.users.create.permit_user_id
-			*.users.update.permit_user_id
-			*.users.delete.permit_user_id
-			*.users.read.forbid_user_id
-			*.users.create.forbid_user_id
-			*.users.update.forbid_user_id
-			*.users.delete.forbid_user_id
-			*.users.read.other_user_id
-			*.users.create.other_user_id
-			*.users.update.other_user_id
-			*.users.delete.other_user_id
+		[Test]
+		public void Permission_Check_All_Users_Read_All_Return_True_Test()
+		{
+			var role = this.roleService.GetByName("admin", "test_membership");
+			const string rbac = "*.users.read.*";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsTrue(hasPermission);
+		}
 		
-			subject_id.users.read.*
-			subject_id.users.create.*
-			subject_id.users.update.*
-			subject_id.users.delete.*
-			subject_id.users.read.permit_user_id
-			subject_id.users.create.permit_user_id
-			subject_id.users.update.permit_user_id
-			subject_id.users.delete.permit_user_id
-			subject_id.users.read.forbid_user_id
-			subject_id.users.create.forbid_user_id
-			subject_id.users.update.forbid_user_id
-			subject_id.users.delete.forbid_user_id
-			subject_id.users.read.other_user_id
-			subject_id.users.create.other_user_id
-			subject_id.users.update.other_user_id
-			subject_id.users.delete.other_user_id
-		*/
+		[Test]
+		public void Permission_Check_All_Users_Create_All_Return_True_Test()
+		{
+			var role = this.roleService.GetByName("admin", "test_membership");
+			const string rbac = "*.users.create.*";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsTrue(hasPermission);
+		}
+		
+		[Test]
+		public void Permission_Check_All_Users_Update_All_Return_True_Test()
+		{
+			var role = this.roleService.GetByName("admin", "test_membership");
+			const string rbac = "*.users.update.*";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsTrue(hasPermission);
+		}
+		
+		[Test]
+		public void Permission_Check_All_Users_Delete_All_Return_True_Test()
+		{
+			var role = this.roleService.GetByName("admin", "test_membership");
+			const string rbac = "*.users.delete.*";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsTrue(hasPermission);
+		}
+		
+		[Test]
+		public void Permission_Check_All_Users_Read_All_With_Permit_User_Return_True_Test()
+		{
+			var role = this.roleService.GetByName("admin", "test_membership");
+			const string rbac = "*.users.read.test_utilizer";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsTrue(hasPermission);
+		}
+		
+		[Test]
+		public void Permission_Check_All_Users_Create_All_With_Permit_User_Return_True_Test()
+		{
+			var role = this.roleService.GetByName("admin", "test_membership");
+			const string rbac = "*.users.create.test_utilizer";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsTrue(hasPermission);
+		}
+		
+		[Test]
+		public void Permission_Check_All_Users_Update_All_With_Permit_User_Return_True_Test()
+		{
+			var role = this.roleService.GetByName("admin", "test_membership");
+			const string rbac = "*.users.update.test_utilizer";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsTrue(hasPermission);
+		}
+		
+		[Test]
+		public void Permission_Check_All_Users_Delete_All_With_Permit_User_Return_True_Test()
+		{
+			var role = this.roleService.GetByName("admin", "test_membership");
+			const string rbac = "*.users.delete.test_utilizer";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsTrue(hasPermission);
+		}
+		
+		[Test]
+		public void Permission_Check_All_Users_Read_All_With_Forbid_User_Return_True_Test()
+		{
+			var role = this.roleService.GetByName("readonly", "test_membership");
+			const string rbac = "*.users.read.forbid_user_id";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsTrue(hasPermission);
+		}
+		
+		[Test]
+		public void Permission_Check_All_Users_Create_All_With_Forbid_User_Return_False_Test()
+		{
+			var role = this.roleService.GetByName("readonly", "test_membership");
+			const string rbac = "*.users.create.forbid_user_id";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsFalse(hasPermission);
+		}
+		
+		[Test]
+		public void Permission_Check_All_Users_Update_All_With_Forbid_User_Return_False_Test()
+		{
+			var role = this.roleService.GetByName("readonly", "test_membership");
+			const string rbac = "*.users.update.forbid_user_id";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsFalse(hasPermission);
+		}
+		
+		[Test]
+		public void Permission_Check_All_Users_Delete_All_With_Forbid_User_Return_False_Test()
+		{
+			var role = this.roleService.GetByName("readonly", "test_membership");
+			const string rbac = "*.users.delete.forbid_user_id";
+			var hasPermission = this.accessControlService.HasPermission(role, rbac);
+			Assert.IsFalse(hasPermission);
+		}
 
 		#endregion
 	}
