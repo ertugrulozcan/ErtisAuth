@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
@@ -31,6 +32,10 @@ namespace ErtisAuth.Core.Models.Identity
 		
 		public string Role { get; set; }
 		
+		public IEnumerable<string> Permissions { get; set; }
+		
+		public IEnumerable<string> Forbidden { get; set; }
+		
 		public string Token { get; set; }
 		
 		public SupportedTokenTypes TokenType { get; set; }
@@ -45,7 +50,9 @@ namespace ErtisAuth.Core.Models.Identity
 			Type = UtilizerType.User,
 			Username = user.Username,
 			MembershipId = user.MembershipId,
-			Role = user.Role
+			Role = user.Role,
+			Permissions = user.Permissions,
+			Forbidden = user.Forbidden
 		};
 		
 		public static implicit operator Utilizer(Application application) => new Utilizer
@@ -54,7 +61,9 @@ namespace ErtisAuth.Core.Models.Identity
 			Type = UtilizerType.Application,
 			Username = application.Name,
 			MembershipId = application.MembershipId,
-			Role = application.Role
+			Role = application.Role,
+			Permissions = application.Permissions,
+			Forbidden = application.Forbidden
 		};
 
 		#endregion

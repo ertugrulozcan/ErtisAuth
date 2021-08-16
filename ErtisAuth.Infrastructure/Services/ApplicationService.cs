@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -5,6 +6,7 @@ using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Infrastructure.Events;
@@ -111,6 +113,45 @@ namespace ErtisAuth.Infrastructure.Services
 					errorList.Add($"Role is invalid. There is no role named '{model.Role}'");
 				}
 			}
+			
+			try
+			{
+				var permissionList = new List<Ubac>();
+				if (model.Permissions != null)
+				{
+					foreach (var permission in model.Permissions)
+					{
+						var ubac = Ubac.Parse(permission);
+						permissionList.Add(ubac);
+					}
+				}
+				
+				var forbiddenList = new List<Ubac>();
+				if (model.Forbidden != null)
+				{
+					foreach (var forbidden in model.Forbidden)
+					{
+						var ubac = Ubac.Parse(forbidden);
+						forbiddenList.Add(ubac);
+					}
+				}
+				
+				// Is there any conflict?
+				foreach (var permissionUbac in permissionList)
+				{
+					foreach (var forbiddenUbac in forbiddenList)
+					{
+						if (permissionUbac == forbiddenUbac)
+						{
+							errorList.Add($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{permissionUbac}')");
+						}
+					}	
+				}
+			}
+			catch (Exception ex)
+			{
+				errorList.Add(ex.Message);
+			}
 
 			errors = errorList;
 			return !errors.Any();
@@ -135,6 +176,16 @@ namespace ErtisAuth.Infrastructure.Services
 			if (string.IsNullOrEmpty(destination.Role))
 			{
 				destination.Role = source.Role;
+			}
+			
+			if (destination.Permissions == null)
+			{
+				destination.Permissions = source.Permissions;
+			}
+			
+			if (destination.Forbidden == null)
+			{
+				destination.Forbidden = source.Forbidden;
 			}
 		}
 

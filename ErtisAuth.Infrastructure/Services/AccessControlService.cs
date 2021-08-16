@@ -118,6 +118,12 @@ namespace ErtisAuth.Infrastructure.Services
 
 		private bool CheckPermission(string roleName, string membershipId, Rbac rbac, IUtilizer utilizer = null)
 		{
+			var hasUbacPermission = utilizer?.HasPermission(rbac);
+			if (hasUbacPermission != null)
+			{
+				return hasUbacPermission.Value;
+			}
+			
 			var role = this.roleService.GetByName(roleName, membershipId);
 			if (role != null)
 			{
@@ -131,6 +137,12 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private bool CheckPermission(string roleName, string membershipId, Rbac rbac, Utilizer utilizer)
 		{
+			var hasUbacPermission = utilizer.HasPermission(rbac);
+			if (hasUbacPermission != null)
+			{
+				return hasUbacPermission.Value;
+			}
+			
 			var role = this.roleService.GetByName(roleName, membershipId);
 			if (role != null)
 			{
@@ -144,6 +156,12 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private static bool CheckPermission(Role role, Rbac rbac, IUtilizer utilizer = null)
 		{
+			var hasUbacPermission = utilizer?.HasPermission(rbac);
+			if (hasUbacPermission != null)
+			{
+				return hasUbacPermission.Value;
+			}
+			
 			if (role.HasPermission(rbac))
 			{
 				return true;
@@ -160,6 +178,12 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private static bool CheckPermission(Role role, Rbac rbac, Utilizer utilizer)
 		{
+			var hasUbacPermission = utilizer.HasPermission(rbac);
+			if (hasUbacPermission != null)
+			{
+				return hasUbacPermission.Value;
+			}
+			
 			if (role.HasPermission(rbac))
 			{
 				return true;

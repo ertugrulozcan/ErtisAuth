@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Identity
@@ -11,6 +12,12 @@ namespace ErtisAuth.Core.Models.Identity
 		
 		[JsonProperty("role")]
 		string Role { get; set; }
+		
+		[JsonProperty("permissions")]
+		IEnumerable<string> Permissions { get; set; }
+		
+		[JsonProperty("forbidden")]
+		IEnumerable<string> Forbidden { get; set; }
 		
 		[JsonIgnore]
 		Utilizer.UtilizerType UtilizerType { get; }
