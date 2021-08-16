@@ -29,6 +29,7 @@ namespace ErtisAuth.Identity.Jwt.Services
                 tokenClaims.Principal,
                 tokenClaims.FirstName,
                 tokenClaims.LastName,
+				tokenClaims.Username,
                 tokenClaims.EmailAddress,
                 tokenClaims.AdditionalClaims);
         }
@@ -48,7 +49,8 @@ namespace ErtisAuth.Identity.Jwt.Services
                 tokenClaims.Principal,
                 tokenClaims.FirstName,
                 tokenClaims.LastName,
-                tokenClaims.EmailAddress,
+                tokenClaims.Username,
+				tokenClaims.EmailAddress,
                 tokenClaims.AdditionalClaims);
         }
 
@@ -65,6 +67,7 @@ namespace ErtisAuth.Identity.Jwt.Services
             string principal = null,
             string firstName = null,
             string lastName = null,
+            string username = null,
             string email = null,
             IDictionary<string, object> additionalClaims = null)
         {
@@ -119,10 +122,15 @@ namespace ErtisAuth.Identity.Jwt.Services
                 claims.Add(new Claim(JwtRegisteredClaimNames.FamilyName, lastName));
             }
 
-            if (!string.IsNullOrEmpty(email))
+            if (!string.IsNullOrEmpty(username))
             {
-                claims.Add(new Claim(JwtRegisteredClaimNames.Email, email));
+                claims.Add(new Claim(JwtRegisteredClaimNames.UniqueName, username));
             }
+			
+			if (!string.IsNullOrEmpty(email))
+			{
+				claims.Add(new Claim(JwtRegisteredClaimNames.Email, email));
+			}
 
             if (additionalClaims != null)
             {

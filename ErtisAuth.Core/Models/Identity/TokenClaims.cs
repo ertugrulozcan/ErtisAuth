@@ -28,6 +28,8 @@ namespace ErtisAuth.Core.Models.Identity
 		
 		public string LastName { get; }
 		
+		public string Username { get; }
+		
 		public string EmailAddress { get; }
 		
 		public ReadOnlyDictionary<string, object> AdditionalClaims { get; }
@@ -55,6 +57,7 @@ namespace ErtisAuth.Core.Models.Identity
 			this.ExpiresIn = TimeSpan.FromSeconds(membership.ExpiresIn);
 			this.FirstName = user.FirstName;
 			this.LastName = user.LastName;
+			this.Username = user.Username;
 			this.EmailAddress = user.EmailAddress;
 			
 			this.OtherClaims = new Dictionary<string, object>();

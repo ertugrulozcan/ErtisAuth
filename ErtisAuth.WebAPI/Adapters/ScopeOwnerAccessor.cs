@@ -39,14 +39,22 @@ namespace ErtisAuth.WebAPI.Adapters
 			{
 				if (this.jwtService.TryDecodeToken(accessToken, out var securityToken))
 				{
-					var emailClaim = securityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Email);
-					if (emailClaim != null)
+					var usernameClaim = securityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.UniqueName);
+					if (usernameClaim != null)
 					{
-						return emailClaim.Value;
+						return usernameClaim.Value;
 					}
 					else
 					{
-						return securityToken.Subject;
+						var emailClaim = securityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Email);
+						if (emailClaim != null)
+						{
+							return emailClaim.Value;
+						}
+						else
+						{
+							return securityToken.Subject;
+						}	
 					}
 				}
 			}
