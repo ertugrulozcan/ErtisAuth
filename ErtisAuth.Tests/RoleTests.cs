@@ -1,43 +1,10 @@
-using Ertis.MongoDB.Configuration;
-using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Dao.Repositories;
-using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Infrastructure.Services;
 using NUnit.Framework;
 
 namespace ErtisAuth.Tests
 {
 	public class RoleTests
 	{
-		#region Services
-
-		private IRoleService roleService;
-
-		#endregion
-		
-		#region Setup
-
-		[SetUp]
-		public void Setup()
-		{
-			IDatabaseSettings databaseSettings = new DatabaseSettings
-			{
-				Host = "172.17.0.2",
-				Port = 27017,
-				DefaultAuthDatabase = "ertisauth"
-			};
-			
-			IMembershipRepository membershipRepository = new MembershipRepository(databaseSettings, null);
-			IRoleRepository roleRepository = new RoleRepository(databaseSettings, null);
-			IMembershipService membershipService = new MembershipService(membershipRepository);
-			IEventRepository eventRepository = new EventRepository(databaseSettings, null);
-			IEventService eventService = new EventService(membershipService, eventRepository);
-			this.roleService = new RoleService(membershipService, eventService, roleRepository);
-		}
-
-		#endregion
-		
 		#region Methods
 
 		[Test]
@@ -45,7 +12,7 @@ namespace ErtisAuth.Tests
 		{
 			var rbac_test1 = new Rbac(new RbacSegment("subject"), new RbacSegment("resource"), new RbacSegment("action"), new RbacSegment("object"));
 			var rbac_test2 = new Rbac(new RbacSegment("subject"), new RbacSegment("resource"), new RbacSegment("action"), new RbacSegment("object"));
-			var rbac_test3 = new Rbac(new RbacSegment("subject"), new RbacSegment("resource"), new RbacSegment("action"), new RbacSegment("anan"));
+			var rbac_test3 = new Rbac(new RbacSegment("subject"), new RbacSegment("resource"), new RbacSegment("action"), new RbacSegment("other"));
 			
 			if (rbac_test1 == rbac_test2)
 			{
@@ -101,7 +68,7 @@ namespace ErtisAuth.Tests
 			Assert.AreEqual("write", rbac1.Action);
 			Assert.AreEqual(RbacSegment.All, rbac1.Object);
 			
-			var rbac2 = Rbac.Parse("*.users.write");
+			var rbac2 = Rbac.Parse("*.users.write.*");
 			Assert.AreEqual(RbacSegment.All, rbac2.Subject);
 			Assert.AreEqual("users", rbac2.Resource);
 			Assert.AreEqual("write", rbac2.Action);
