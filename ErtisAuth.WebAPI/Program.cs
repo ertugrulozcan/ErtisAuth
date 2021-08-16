@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -9,6 +10,8 @@ namespace ErtisAuth.WebAPI
 	public class Program
 	{
 		private static IConfigurationRoot BootConfiguration;
+		
+		private static readonly Dictionary<string, object> EnvironmentParameters = new Dictionary<string, object>();
 		
 		public static void Main(string[] args)
 		{
@@ -31,14 +34,15 @@ namespace ErtisAuth.WebAPI
 				{
 					var sentryDsn = BootConfiguration["Sentry:Dsn"];
 					bool.TryParse(BootConfiguration["Sentry:Debug"], out bool isSentryDebuggingEnabled);
-					webBuilder.UseSentry(sentry =>
+					webBuilder.UseSentry(o =>
 					{
-						sentry.Dsn = sentryDsn;
-						sentry.Debug = isSentryDebuggingEnabled;
-						sentry.TracesSampleRate = 1.0;
-						sentry.AddExceptionFilterForType<Ertis.Core.Exceptions.ValidationException>();
-						sentry.AddExceptionFilterForType<Ertis.Core.Exceptions.ErtisException>();
-						sentry.AddExceptionFilterForType<Ertis.Core.Exceptions.HttpStatusCodeException>();
+						o.Dsn = sentryDsn;
+						o.Debug = isSentryDebuggingEnabled;
+						o.TracesSampleRate = 0.5;
+						o.Environment = BootConfiguration["Environment"];
+						o.AddExceptionFilterForType<Ertis.Core.Exceptions.ValidationException>();
+						o.AddExceptionFilterForType<Ertis.Core.Exceptions.ErtisException>();
+						o.AddExceptionFilterForType<Ertis.Core.Exceptions.HttpStatusCodeException>();
 					});	
 				}
 			});
@@ -52,6 +56,24 @@ namespace ErtisAuth.WebAPI
 					$"appsettings.{environment}.json",
 					optional: true)
 				.Build();
+
+			SetEnvironmentParameter("Environment", BootConfiguration["Environment"]);
+		}
+		
+		public static void SetEnvironmentParameter(string key, object value)
+		{
+			if (EnvironmentParameters.ContainsKey(key))
+				EnvironmentParameters[key] = value;
+			else
+				EnvironmentParameters.Add(key, value);
+		}
+		
+		public static object GetEnvironmentParameter(string key)
+		{
+			if (EnvironmentParameters.ContainsKey(key))
+				return EnvironmentParameters[key];
+
+			return null;
 		}
 	}
 }

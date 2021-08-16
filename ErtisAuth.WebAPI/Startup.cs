@@ -24,6 +24,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Sentry.AspNetCore;
 
 namespace ErtisAuth.WebAPI
 {
@@ -157,6 +158,12 @@ namespace ErtisAuth.WebAPI
 			app.UseAuthorization();
 			app.ConfigureGlobalExceptionHandler();
 
+			// Sentry
+			if (this.Configuration.GetSection("Sentry").GetValue<bool>("Enabled") && this.Configuration.GetSection("Sentry").GetValue<bool>("Tracing"))
+			{
+				app.UseSentryTracing();
+			}
+			
 			// Swagger
 			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
 			{
