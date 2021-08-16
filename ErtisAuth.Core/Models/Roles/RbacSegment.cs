@@ -6,7 +6,7 @@ namespace ErtisAuth.Core.Models.Roles
 	{
 		#region Constants
 
-		public const char SEPERATOR = '.';
+		public const char SEPARATOR = '.';
 
 		#endregion
 		

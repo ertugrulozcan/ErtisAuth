@@ -51,7 +51,7 @@ namespace ErtisAuth.Core.Models.Roles
 				throw new ArgumentException("Role permission path is empty!");
 			}
 			
-			var segments = path.Split(RbacSegment.SEPERATOR);
+			var segments = path.Split(RbacSegment.SEPARATOR);
 			switch (segments.Length)
 			{
 				case 1:
@@ -138,6 +138,9 @@ namespace ErtisAuth.Core.Models.Roles
 
 		private static bool AreEquals(Rbac rbac1, Rbac rbac2)
 		{
+			if (rbac1 is null && rbac2 is null)
+				return true;
+			
 			if (rbac1 is null || rbac2 is null)
 				return false;
 			
@@ -146,7 +149,7 @@ namespace ErtisAuth.Core.Models.Roles
 		
 		public override string ToString()
 		{
-			return $"{this.Subject}{RbacSegment.SEPERATOR}{this.Resource}{RbacSegment.SEPERATOR}{this.Action}{RbacSegment.SEPERATOR}{this.Object}";
+			return $"{this.Subject}{RbacSegment.SEPARATOR}{this.Resource}{RbacSegment.SEPARATOR}{this.Action}{RbacSegment.SEPARATOR}{this.Object}";
 		}
 
 		#endregion

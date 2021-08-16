@@ -1,6 +1,7 @@
 using System.Linq;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Extensions.Authorization.Extensions;
 using ErtisAuth.WebAPI.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -59,26 +60,7 @@ namespace ErtisAuth.WebAPI.Extensions
 			var utilizerIdentity = claimUser.Identities.FirstOrDefault(x => x.NameClaimType == "Utilizer");
 			if (utilizerIdentity != null)
 			{
-				var idClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerIdClaimName);
-				var typeClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerTypeClaimName);
-				var usernameClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerUsernameClaimName);
-				var roleClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerRoleClaimName);
-				var membershipIdClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.MembershipIdClaimName);
-				var tokenClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerTokenClaimName);
-				var tokenTypeClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerTokenTypeClaimName);
-
-				TokenTypeExtensions.TryParseTokenType(tokenTypeClaim?.Value, out var tokenType);
-				
-				return new Utilizer
-				{
-					Id = idClaim?.Value,
-					Type = Utilizer.ParseType(typeClaim?.Value),
-					Username = usernameClaim?.Value,
-					Role = roleClaim?.Value,
-					MembershipId = membershipIdClaim?.Value,
-					Token = tokenClaim?.Value,
-					TokenType = tokenType
-				};
+				return utilizerIdentity.ConvertToUtilizer();
 			}
 
 			return new Utilizer();

@@ -7,7 +7,6 @@ using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Identity.Attributes;
-using ErtisAuth.Infrastructure.Extensions;
 using ErtisAuth.Extensions.Authorization.Annotations;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Roles;
@@ -24,6 +23,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Services
 
 		private readonly IRoleService roleService;
+		private readonly IAccessControlService accessControlService;
 		private readonly IMembershipService membershipService;
 
 		#endregion
@@ -34,10 +34,12 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// Constructor
 		/// </summary>
 		/// <param name="roleService"></param>
+		/// <param name="accessControlService"></param>
 		/// <param name="membershipService"></param>
-		public RolesController(IRoleService roleService, IMembershipService membershipService)
+		public RolesController(IRoleService roleService, IAccessControlService accessControlService, IMembershipService membershipService)
 		{
 			this.roleService = roleService;
+			this.accessControlService = accessControlService;
 			this.membershipService = membershipService;
 		}
 
@@ -169,17 +171,13 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
 				{
-					if (role.HasPermission(rbac))
-					{
-						return this.Ok();
-					}
-					else if (role.HasOwnUpdatePermission(rbac, this.GetUtilizer()))
+					if (this.accessControlService.HasPermission(role, rbac, this.GetUtilizer()))
 					{
 						return this.Ok();
 					}
 					else
 					{
-						return this.Unauthorized();
+						return this.Unauthorized(); 	
 					}
 				}
 				else
@@ -203,17 +201,13 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
 				{
-					if (role.HasPermission(rbac))
-					{
-						return this.Ok();
-					}
-					else if (role.HasOwnUpdatePermission(rbac, this.GetUtilizer()))
+					if (this.accessControlService.HasPermission(role, rbac, this.GetUtilizer()))
 					{
 						return this.Ok();
 					}
 					else
 					{
-						return this.Unauthorized();
+						return this.Unauthorized(); 	
 					}
 				}
 				else

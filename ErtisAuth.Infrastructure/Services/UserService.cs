@@ -159,6 +159,45 @@ namespace ErtisAuth.Infrastructure.Services
 					errorList.Add($"Role is invalid. There is no role named '{model.Role}'");
 				}
 			}
+			
+			try
+			{
+				var permissionList = new List<Ubac>();
+				if (model.Permissions != null)
+				{
+					foreach (var permission in model.Permissions)
+					{
+						var ubac = Ubac.Parse(permission);
+						permissionList.Add(ubac);
+					}
+				}
+				
+				var forbiddenList = new List<Ubac>();
+				if (model.Forbidden != null)
+				{
+					foreach (var forbidden in model.Forbidden)
+					{
+						var ubac = Ubac.Parse(forbidden);
+						forbiddenList.Add(ubac);
+					}
+				}
+				
+				// Is there any conflict?
+				foreach (var permissionUbac in permissionList)
+				{
+					foreach (var forbiddenUbac in forbiddenList)
+					{
+						if (permissionUbac == forbiddenUbac)
+						{
+							errorList.Add($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{permissionUbac}')");
+						}
+					}	
+				}
+			}
+			catch (Exception ex)
+			{
+				errorList.Add(ex.Message);
+			}
 
 			if (model is UserWithPasswordHash userWithPassword)
 			{
@@ -206,6 +245,16 @@ namespace ErtisAuth.Infrastructure.Services
 			if (string.IsNullOrEmpty(destination.Role))
 			{
 				destination.Role = source.Role;
+			}
+			
+			if (destination.Permissions == null)
+			{
+				destination.Permissions = source.Permissions;
+			}
+			
+			if (destination.Forbidden == null)
+			{
+				destination.Forbidden = source.Forbidden;
 			}
 			
 			if (destination is UserWithPasswordHash destinationWithPassword)
