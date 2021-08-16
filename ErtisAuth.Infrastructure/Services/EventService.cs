@@ -105,8 +105,12 @@ namespace ErtisAuth.Infrastructure.Services
 				string priorJson = JsonConvert.SerializeObject(ertisAuthEvent.Prior);
 				priorBson = BsonDocument.Parse(priorJson);
 			}
-				
-			ertisAuthEvent.EventTime = DateTime.Now;
+
+			var now = DateTime.Now;
+			var utc = now.ToUniversalTime();
+			var local = now.ToLocalTime();
+			var timeZoneDiff = local - utc;
+			ertisAuthEvent.EventTime = utc.Add(timeZoneDiff);
 
 			string eventType;
 			if (ertisAuthEvent.IsCustomEvent)
@@ -124,8 +128,8 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				eventType = "Unknown";
 			}
-			
-			return await this.repository.InsertAsync(new EventDto
+
+			var eventDto = new EventDto
 			{
 				EventType = eventType,
 				UtilizerId = ertisAuthEvent.UtilizerId,
@@ -133,7 +137,9 @@ namespace ErtisAuth.Infrastructure.Services
 				Document = documentBson,
 				Prior = priorBson,
 				EventTime = ertisAuthEvent.EventTime
-			});
+			};
+			
+			return await this.repository.InsertAsync(eventDto);
 		}
 
 		#endregion

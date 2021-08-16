@@ -26,6 +26,7 @@ namespace ErtisAuth.Dto.Models.Events
 		public BsonDocument Prior { get; set; }
 		
 		[BsonElement("event_time")]
+		[BsonDateTimeOptions(Kind = DateTimeKind.Local)]
 		public DateTime EventTime { get; set; }
 		
 		[BsonElement("is_custom_event")] 

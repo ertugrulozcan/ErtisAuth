@@ -23,6 +23,7 @@ namespace ErtisAuth.Dto.Models.Identity
 		public string TokenType { get; set; }
 
 		[BsonElement("created_at")]
+		[BsonDateTimeOptions(Kind = DateTimeKind.Local)]
 		public DateTime CreatedAt { get; set; }
 
 		#endregion

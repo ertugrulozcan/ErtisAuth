@@ -9,6 +9,7 @@ namespace ErtisAuth.Dto.Models.Resources
 
 		[BsonIgnoreIfNull]
 		[BsonElement("created_at")]
+		[BsonDateTimeOptions(Kind = DateTimeKind.Local)]
 		public DateTime? CreatedAt { get; set; }
 		
 		[BsonIgnoreIfNull]
@@ -17,6 +18,7 @@ namespace ErtisAuth.Dto.Models.Resources
 		
 		[BsonIgnoreIfNull]
 		[BsonElement("modified_at")]
+		[BsonDateTimeOptions(Kind = DateTimeKind.Local)]
 		public DateTime? ModifiedAt { get; set; }
 		
 		[BsonIgnoreIfNull]
