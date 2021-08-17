@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ErtisAuth.Core.Models.Roles;
 using NUnit.Framework;
 
@@ -8,6 +9,63 @@ namespace ErtisAuth.Tests.Shared.Core.AccessControl
 	{
 		#region Methods
 
+		[Test]
+		public void RbacEqualityTest()
+		{
+			var rbac1 = new Rbac(new RbacSegment("subject"), new RbacSegment("resource"), new RbacSegment("action"), new RbacSegment("object"));
+			var rbac2 = new Rbac(new RbacSegment("subject"), new RbacSegment("resource"), new RbacSegment("action"), new RbacSegment("object"));
+			var rbac3 = new Rbac(new RbacSegment("subject"), new RbacSegment("resource"), new RbacSegment("action"), new RbacSegment("other"));
+
+			Assert.AreEqual(rbac1, rbac2);
+			Assert.AreNotEqual(rbac1, rbac3);
+		}
+		
+		[Test]
+		[SuppressMessage("ReSharper", "ExpressionIsAlwaysNull")]
+		public void RbacNullValuesEqualityTest()
+		{
+			var rbac1 = new Rbac(new RbacSegment("subject"), new RbacSegment("resource"), new RbacSegment("action"), new RbacSegment("object"));
+			Rbac rbac2 = null;
+			Rbac rbac3 = null;
+
+			Assert.AreNotEqual(rbac1, rbac2);
+			
+			Assert.AreEqual(rbac2, rbac3);
+		}
+		
+		[Test]
+		public void RbacSegmentEqualityTest()
+		{
+			var segment1 = new RbacSegment("0000");
+			var segment2 = new RbacSegment("0000");
+			var segment3 = new RbacSegment("0001");
+
+			Assert.AreEqual(segment1, segment2);
+			Assert.AreNotEqual(segment1, segment3);
+		}
+		
+		[Test]
+		public void RbacParseTest()
+		{
+			var rbac1 = Rbac.Parse("subject.resource.action.*");
+			Assert.AreEqual("subject", rbac1.Subject);
+			Assert.AreEqual("resource", rbac1.Resource);
+			Assert.AreEqual("action", rbac1.Action);
+			Assert.AreEqual(RbacSegment.All, rbac1.Object);
+			
+			var rbac2 = Rbac.Parse("*.resource.action.*");
+			Assert.AreEqual(RbacSegment.All, rbac2.Subject);
+			Assert.AreEqual("resource", rbac2.Resource);
+			Assert.AreEqual("action", rbac2.Action);
+			Assert.AreEqual(RbacSegment.All, rbac2.Object);
+			
+			var rbac3 = Rbac.Parse("*.resource.action.object");
+			Assert.AreEqual(RbacSegment.All, rbac3.Subject);
+			Assert.AreEqual("resource", rbac3.Resource);
+			Assert.AreEqual("action", rbac3.Action);
+			Assert.AreEqual("object", rbac3.Object);
+		}
+		
 		[Test]
 		public void RbacEquality_WithOperator_AllSegmentsSame_ReturnTrue_Test1()
 		{
