@@ -71,6 +71,8 @@ namespace ErtisAuth.Infrastructure.Mapping
 			mappings.Add<Role, RoleDto>();
 			mappings.Add<OAuthProviderDto, OAuthProvider>();
 			mappings.Add<OAuthProvider, OAuthProviderDto>();
+			mappings.Add<ActiveTokenDto, ActiveToken>();
+			mappings.Add<ActiveToken, ActiveTokenDto>();
 			mappings.Add<RevokedTokenDto, RevokedToken>();
 			mappings.Add<RevokedToken, RevokedTokenDto>();
 			mappings.Add<EventDto, ErtisAuthEvent>();

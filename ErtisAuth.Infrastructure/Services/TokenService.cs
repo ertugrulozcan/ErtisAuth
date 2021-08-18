@@ -34,6 +34,7 @@ namespace ErtisAuth.Infrastructure.Services
 		private readonly IJwtService jwtService;
 		private readonly ICryptographyService cryptographyService;
 		private readonly IEventService eventService;
+		private readonly IActiveTokensRepository activeTokensRepository;
 		private readonly IRevokedTokensRepository revokedTokensRepository;
 		
 		#endregion
@@ -49,6 +50,7 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="jwtService"></param>
 		/// <param name="cryptographyService"></param>
 		/// <param name="eventService"></param>
+		/// <param name="activeTokensRepository"></param>
 		/// <param name="revokedTokensRepository"></param>
 		public TokenService(
 			IMembershipService membershipService, 
@@ -57,6 +59,7 @@ namespace ErtisAuth.Infrastructure.Services
 			IJwtService jwtService,
 			ICryptographyService cryptographyService,
 			IEventService eventService,
+			IActiveTokensRepository activeTokensRepository,
 			IRevokedTokensRepository revokedTokensRepository)
 		{
 			this.membershipService = membershipService;
@@ -65,6 +68,7 @@ namespace ErtisAuth.Infrastructure.Services
 			this.jwtService = jwtService;
 			this.cryptographyService = cryptographyService;
 			this.eventService = eventService;
+			this.activeTokensRepository = activeTokensRepository;
 			this.revokedTokensRepository = revokedTokensRepository;
 		}
 
@@ -169,8 +173,8 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			else
 			{
-				var token = this.GenerateBearerToken(user, membership);
-
+				var token = await this.GenerateBearerTokenAsync(user, membership);
+				
 				if (fireEvent)
 				{
 					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenGenerated, user, token) { MembershipId = membershipId });	
@@ -180,7 +184,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		private BearerToken GenerateBearerToken(User user, Membership membership)
+		private async Task<BearerToken> GenerateBearerTokenAsync(User user, Membership membership)
 		{
 			string tokenId = Guid.NewGuid().ToString();
 			var tokenClaims = new TokenClaims(tokenId, user, membership);
@@ -189,8 +193,12 @@ namespace ErtisAuth.Infrastructure.Services
 			var accessToken = this.jwtService.GenerateToken(tokenClaims, hashAlgorithm, encoding);
 			var refreshExpiresIn = TimeSpan.FromSeconds(membership.RefreshTokenExpiresIn);
 			var refreshToken = this.jwtService.GenerateToken(tokenClaims.AddClaim(REFRESH_TOKEN_CLAIM, true), hashAlgorithm, encoding);
-
-			return new BearerToken(accessToken, tokenClaims.ExpiresIn, refreshToken, refreshExpiresIn);
+			var bearerToken = new BearerToken(accessToken, tokenClaims.ExpiresIn, refreshToken, refreshExpiresIn);
+			
+			// Save to active tokens collection
+			await this.StoreActiveTokenAsync(bearerToken, user.Id, membership.Id);
+			
+			return bearerToken;
 		}
 
 		private bool IsRefreshToken(JwtSecurityToken securityToken)
@@ -213,6 +221,30 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				value = null;
 				return false;
+			}
+		}
+
+		private async Task StoreActiveTokenAsync(BearerToken token, string userId, string membershipId)
+		{
+			await this.activeTokensRepository.InsertAsync(new ActiveTokenDto
+			{
+				AccessToken = token.AccessToken,
+				RefreshToken = token.RefreshToken,
+				ExpiresIn = token.ExpiresInTimeStamp,
+				RefreshTokenExpiresIn = token.RefreshTokenExpiresInTimeStamp,
+				TokenType = token.TokenType.ToString(),
+				CreatedAt = token.CreatedAt,
+				UserId = userId,
+				MembershipId = membershipId
+			});
+		}
+		
+		private async Task DeleteActiveTokenAsync(string token)
+		{
+			var foundList = await this.activeTokensRepository.QueryAsync(x => x.AccessToken == token);
+			if (foundList.Items != null && foundList.Items.Any())
+			{
+				await this.activeTokensRepository.BulkDeleteAsync(foundList.Items.Cast<ActiveTokenDto>().ToArray());
 			}
 		}
 		
@@ -372,7 +404,7 @@ namespace ErtisAuth.Infrastructure.Services
 									var user = await this.userService.GetAsync(membershipId, userId);
 									if (user != null)
 									{
-										var token = this.GenerateBearerToken(user, membership);
+										var token = await this.GenerateBearerTokenAsync(user, membership);
 
 										if (revokeBefore)
 										{
@@ -465,6 +497,8 @@ namespace ErtisAuth.Infrastructure.Services
 					}				
 				}	
 			}
+
+			await this.DeleteActiveTokenAsync(token);
 
 			await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, validationResult.User, new { token }) { MembershipId = membership.Id });
 			
