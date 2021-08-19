@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Identity
 {
-	public class RevokedToken : ResourceBase
+	public class RevokedToken : MembershipBoundedResource
 	{
 		#region Properties
 

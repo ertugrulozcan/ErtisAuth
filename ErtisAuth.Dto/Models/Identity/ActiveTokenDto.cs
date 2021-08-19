@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Identity
 {
-	public class ActiveTokenDto : TokenDto
+	public class ActiveTokenDto : TokenDto, IHasMembership
 	{
 		#region Properties
 

@@ -87,6 +87,8 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<ICryptographyService, CryptographyService>();
 			services.AddSingleton<IJwtService, JwtService>();
 			services.AddSingleton<ITokenService, TokenService>();
+			services.AddSingleton<IActiveTokenService, ActiveTokenService>();
+			services.AddSingleton<IRevokedTokenService, RevokedTokenService>();
 			services.AddSingleton<IAccessControlService, AccessControlService>();
 			services.AddSingleton<IMembershipService, MembershipService>();
 			services.AddSingleton<IUserService, UserService>();

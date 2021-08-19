@@ -216,6 +216,15 @@ namespace ErtisAuth.Core.Exceptions
 
 		#endregion
 
+		#region Active Token Exceptions
+
+		public static ErtisAuthException ActiveTokenNotFound(string id)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"Active token not found in db by given id: <{id}>", "ActiveTokenNotFound");
+		}
+
+		#endregion
+
 		#region Migration Exceptions
 
 		public static ErtisAuthException MigrationRejected(string message)

@@ -164,5 +164,69 @@ namespace ErtisAuth.Sdk.Services
 		}
 
 		#endregion
+
+		#region Active Tokens
+
+		public IResponseResult<IPaginationCollection<ActiveToken>> GetActiveTokens(
+			string userId, 
+			TokenBase token,
+			int? skip = null, 
+			int? limit = null, 
+			bool? withCount = null, 
+			string orderBy = null, 
+			SortDirection? sortDirection = null) =>
+			this.GetActiveTokensAsync(userId, token, skip, limit, withCount, orderBy, sortDirection).ConfigureAwait(false).GetAwaiter().GetResult();
+
+		public async Task<IResponseResult<IPaginationCollection<ActiveToken>>> GetActiveTokensAsync(
+			string userId, 
+			TokenBase token,
+			int? skip = null, 
+			int? limit = null, 
+			bool? withCount = null, 
+			string orderBy = null, 
+			SortDirection? sortDirection = null)
+		{
+			var query = "{ 'where': { 'user_id': '" + userId + "', 'membership_id': '" + this.AuthApiMembershipId + "' } }";
+			return await this.ExecuteRequestAsync<IPaginationCollection<ActiveToken>>(
+				HttpMethod.Post, 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/active-tokens/_query", 
+				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
+				HeaderCollection.Add("Authorization", token.ToString()),
+				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)));
+		}
+
+		#endregion
+		
+		#region Revoked Tokens
+
+		public IResponseResult<IPaginationCollection<RevokedToken>> GetRevokedTokens(
+			string userId, 
+			TokenBase token,
+			int? skip = null, 
+			int? limit = null, 
+			bool? withCount = null, 
+			string orderBy = null, 
+			SortDirection? sortDirection = null) =>
+			this.GetRevokedTokensAsync(userId, token, skip, limit, withCount, orderBy, sortDirection).ConfigureAwait(false).GetAwaiter().GetResult();
+
+		public async Task<IResponseResult<IPaginationCollection<RevokedToken>>> GetRevokedTokensAsync(
+			string userId, 
+			TokenBase token,
+			int? skip = null, 
+			int? limit = null, 
+			bool? withCount = null, 
+			string orderBy = null, 
+			SortDirection? sortDirection = null)
+		{
+			var query = "{ 'where': { 'user_id': '" + userId + "', 'membership_id': '" + this.AuthApiMembershipId + "' } }";
+			return await this.ExecuteRequestAsync<IPaginationCollection<RevokedToken>>(
+				HttpMethod.Post, 
+				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/revoked-tokens/_query", 
+				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
+				HeaderCollection.Add("Authorization", token.ToString()),
+				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)));
+		}
+
+		#endregion
 	}
 }

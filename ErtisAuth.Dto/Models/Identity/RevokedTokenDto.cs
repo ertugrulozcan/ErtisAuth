@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Identity
 {
-	public class RevokedTokenDto : EntityBase
+	public class RevokedTokenDto : EntityBase, IHasMembership
 	{
 		#region Properties
 

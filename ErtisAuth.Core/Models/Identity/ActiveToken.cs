@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Identity
 {
-	public class ActiveToken
+	public class ActiveToken : MembershipBoundedResource
 	{
 		#region Properties
 
@@ -28,9 +28,6 @@ namespace ErtisAuth.Core.Models.Identity
 		[JsonProperty("user_id")]
 		public string UserId { get; set; }
 		
-		[JsonProperty("membership_id")]
-		public string MembershipId { get; set; }
-
 		[JsonProperty("expire_time")]
 		public DateTime ExpireTime => this.CreatedAt.Add(TimeSpan.FromSeconds(this.ExpiresIn));
 

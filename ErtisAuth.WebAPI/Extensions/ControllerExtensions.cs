@@ -120,6 +120,11 @@ namespace ErtisAuth.WebAPI.Extensions
 		{
 			return controller.Unauthorized(ErtisAuthException.InvalidToken().Error);
 		}
+		
+		public static NotFoundObjectResult ActiveTokenNotFound(this ControllerBase controller, string activeTokenId)
+		{
+			return controller.NotFound(ErtisAuthException.ActiveTokenNotFound(activeTokenId));
+		}
 
 		#endregion
 	}
