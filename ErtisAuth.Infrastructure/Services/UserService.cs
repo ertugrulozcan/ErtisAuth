@@ -13,7 +13,7 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
-using ErtisAuth.Infrastructure.Events;
+using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services

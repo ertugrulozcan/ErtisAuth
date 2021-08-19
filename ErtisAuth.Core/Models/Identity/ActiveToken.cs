@@ -30,7 +30,10 @@ namespace ErtisAuth.Core.Models.Identity
 		
 		[JsonProperty("membership_id")]
 		public string MembershipId { get; set; }
-		
+
+		[JsonProperty("expire_time")]
+		public DateTime ExpireTime => this.CreatedAt.Add(TimeSpan.FromSeconds(this.ExpiresIn));
+
 		#endregion
 	}
 }

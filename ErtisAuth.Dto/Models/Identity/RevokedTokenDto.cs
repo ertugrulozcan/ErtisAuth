@@ -13,6 +13,9 @@ namespace ErtisAuth.Dto.Models.Identity
 		[BsonElement("user_id")]
 		public string UserId { get; set; }
 		
+		[BsonElement("membership_id")]
+		public string MembershipId { get; set; }
+		
 		[BsonElement("revoked_at")]
 		[BsonDateTimeOptions(Kind = DateTimeKind.Local)]
 		public DateTime RevokedAt { get; set; }

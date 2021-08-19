@@ -8,6 +8,7 @@ using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Extensions.Authorization.Constants;
+using ErtisAuth.Extensions.Quartz.Extensions;
 using ErtisAuth.Identity.Jwt.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Adapters;
@@ -139,6 +140,9 @@ namespace ErtisAuth.WebAPI
 			{
 				services.AddSwaggerGen();
 			}
+
+			// Quartz
+			services.AddQuartzJobs();
 
 			services
 				.AddControllers()

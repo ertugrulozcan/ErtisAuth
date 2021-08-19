@@ -1,9 +1,8 @@
-using System;
 using ErtisAuth.Core.Models.Identity;
 
-namespace ErtisAuth.Infrastructure.Events
+namespace ErtisAuth.Events.EventArgs
 {
-	public class UpdateResourceEventArgs<TModel> : EventArgs
+	public class UpdateResourceEventArgs<TModel> : System.EventArgs
 	{
 		#region Properties
 
@@ -17,6 +16,17 @@ namespace ErtisAuth.Infrastructure.Events
 
 		#region Constructors
 
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="prior"></param>
+		/// <param name="updated"></param>
+		public UpdateResourceEventArgs(TModel prior, TModel updated)
+		{
+			this.Prior = prior;
+			this.Updated = updated;
+		}
+		
 		/// <summary>
 		/// Constructor
 		/// </summary>

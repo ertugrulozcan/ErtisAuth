@@ -23,7 +23,9 @@ namespace ErtisAuth.Infrastructure.Services
 		}
 
 		#endregion
-		
+
+		#region Methods
+
 		protected override bool ValidateModel(Membership model, out IEnumerable<string> errors)
 		{
 			var errorList = new List<string>();
@@ -137,5 +139,7 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			return ErtisAuthException.MembershipNotFound(id);
 		}
+
+		#endregion
 	}
 }

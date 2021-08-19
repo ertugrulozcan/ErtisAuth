@@ -6,7 +6,7 @@ using Ertis.MongoDB.Repository;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
-using ErtisAuth.Infrastructure.Events;
+using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services
@@ -274,8 +274,13 @@ namespace ErtisAuth.Infrastructure.Services
 			var current = this.Get(membershipId, id);
 			if (current != null)
 			{
-				this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));
-				return this.repository.Delete(id);
+				var isDeleted = this.repository.Delete(id);
+				if (isDeleted)
+				{
+					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));		
+				}
+
+				return isDeleted;
 			}
 			else
 			{
@@ -288,8 +293,13 @@ namespace ErtisAuth.Infrastructure.Services
 			var current = await this.GetAsync(membershipId, id);
 			if (current != null)
 			{
-				this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));
-				return await this.repository.DeleteAsync(id);
+				var isDeleted = await this.repository.DeleteAsync(id);
+				if (isDeleted)
+				{
+					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));
+				}
+
+				return isDeleted;
 			}
 			else
 			{

@@ -9,7 +9,7 @@ using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Roles;
-using ErtisAuth.Infrastructure.Events;
+using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.Infrastructure.Mapping;
 
@@ -53,7 +53,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private async Task InitializeAsync()
 		{
-			var memberships = await this.membershipService.GetAsync(0, null, false, null, null);
+			var memberships = await this.membershipService.GetAsync();
 			if (memberships?.Items != null)
 			{
 				foreach (var membership in memberships.Items)

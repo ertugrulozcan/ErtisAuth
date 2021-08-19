@@ -13,7 +13,7 @@ using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Webhooks;
-using ErtisAuth.Infrastructure.Events;
+using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
 using Newtonsoft.Json;
 

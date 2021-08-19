@@ -1,9 +1,8 @@
-using System;
 using ErtisAuth.Core.Models.Identity;
 
-namespace ErtisAuth.Infrastructure.Events
+namespace ErtisAuth.Events.EventArgs
 {
-	public class CreateResourceEventArgs<TModel> : EventArgs
+	public class CreateResourceEventArgs<TModel> : System.EventArgs
 	{
 		#region Properties
 
@@ -15,6 +14,15 @@ namespace ErtisAuth.Infrastructure.Events
 
 		#region Constructors
 
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="resource"></param>
+		public CreateResourceEventArgs(TModel resource)
+		{
+			this.Resource = resource;
+		}
+		
 		/// <summary>
 		/// Constructor
 		/// </summary>

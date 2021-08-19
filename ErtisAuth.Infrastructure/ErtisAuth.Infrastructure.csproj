@@ -7,6 +7,7 @@
     <ItemGroup>
       <ProjectReference Include="..\ErtisAuth.Abstractions\ErtisAuth.Abstractions.csproj" />
       <ProjectReference Include="..\ErtisAuth.Dao\ErtisAuth.Dao.csproj" />
+      <ProjectReference Include="..\ErtisAuth.Events\ErtisAuth.Events.csproj" />
       <ProjectReference Include="..\ErtisAuth.Identity\ErtisAuth.Identity.csproj" />
     </ItemGroup>
 

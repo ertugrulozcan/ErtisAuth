@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using Ertis.Data.Models;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services
@@ -31,6 +33,16 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			this.repository = repository;
 		}
+
+		#endregion
+		
+		#region Events
+
+		public event EventHandler<CreateResourceEventArgs<TModel>> OnCreated;
+		
+		public event EventHandler<UpdateResourceEventArgs<TModel>> OnUpdated;
+		
+		public event EventHandler<DeleteResourceEventArgs<TModel>> OnDeleted;
 
 		#endregion
 		
@@ -64,7 +76,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<TDto, TModel>(dto);
 		}
 		
-		public IPaginationCollection<TModel> Get(int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
+		public IPaginationCollection<TModel> Get(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null)
 		{
 			var paginatedDtoCollection = this.repository.Find(expression: null, skip, limit, withCount, orderBy, sortDirection);
 			if (paginatedDtoCollection?.Items != null)
@@ -81,7 +93,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public async Task<IPaginationCollection<TModel>> GetAsync(int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
+		public async Task<IPaginationCollection<TModel>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null)
 		{
 			var paginatedDtoCollection = await this.repository.FindAsync(expression: null, skip, limit, withCount, orderBy, sortDirection);
 			if (paginatedDtoCollection?.Items != null)
@@ -130,8 +142,12 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			// Insert to database
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var inserted = this.repository.Insert(dto);
-			return Mapper.Current.Map<TDto, TModel>(inserted);
+			var insertedDto = this.repository.Insert(dto);
+			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
+			
+			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(inserted));
+
+			return inserted;
 		}
 		
 		public virtual async Task<TModel> CreateAsync(TModel model)
@@ -150,8 +166,12 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			// Insert to database
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var inserted = await this.repository.InsertAsync(dto);
-			return Mapper.Current.Map<TDto, TModel>(inserted);
+			var insertedDto = await this.repository.InsertAsync(dto);
+			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
+			
+			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(inserted));
+
+			return inserted;
 		}
 		
 		#endregion
@@ -182,8 +202,12 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var updated = this.repository.Update(dto);
-			return Mapper.Current.Map<TDto, TModel>(updated);
+			var updatedDto = this.repository.Update(dto);
+			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
+
+			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(current, updated));
+
+			return updated;
 		}
 		
 		public virtual async Task<TModel> UpdateAsync(TModel model)
@@ -210,8 +234,12 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var updated = await this.repository.UpdateAsync(dto);
-			return Mapper.Current.Map<TDto, TModel>(updated);
+			var updatedDto = await this.repository.UpdateAsync(dto);
+			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
+
+			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(current, updated));
+
+			return updated;
 		}
 		
 		#endregion
@@ -223,7 +251,13 @@ namespace ErtisAuth.Infrastructure.Services
 			var current = this.Get(id);
 			if (current != null)
 			{
-				return this.repository.Delete(id);
+				var isDeleted = this.repository.Delete(id);
+				if (isDeleted)
+				{
+					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(current));	
+				}
+
+				return isDeleted;
 			}
 			else
 			{
@@ -236,7 +270,13 @@ namespace ErtisAuth.Infrastructure.Services
 			var current = await this.GetAsync(id);
 			if (current != null)
 			{
-				return await this.repository.DeleteAsync(id);
+				var isDeleted = await this.repository.DeleteAsync(id);
+				if (isDeleted)
+				{
+					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(current));	
+				}
+
+				return isDeleted;
 			}
 			else
 			{

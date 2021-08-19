@@ -52,6 +52,7 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="eventService"></param>
 		/// <param name="activeTokensRepository"></param>
 		/// <param name="revokedTokensRepository"></param>
+		/// <param name="scheduledJobService"></param>
 		public TokenService(
 			IMembershipService membershipService, 
 			IUserService userService, 
@@ -60,7 +61,8 @@ namespace ErtisAuth.Infrastructure.Services
 			ICryptographyService cryptographyService,
 			IEventService eventService,
 			IActiveTokensRepository activeTokensRepository,
-			IRevokedTokensRepository revokedTokensRepository)
+			IRevokedTokensRepository revokedTokensRepository,
+			IScheduledJobService scheduledJobService)
 		{
 			this.membershipService = membershipService;
 			this.userService = userService;
@@ -70,6 +72,8 @@ namespace ErtisAuth.Infrastructure.Services
 			this.eventService = eventService;
 			this.activeTokensRepository = activeTokensRepository;
 			this.revokedTokensRepository = revokedTokensRepository;
+
+			scheduledJobService.ScheduleTokenCleanerJobsAsync().ConfigureAwait(false);
 		}
 
 		#endregion
@@ -477,7 +481,8 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				Token = token,
 				RevokedAt = DateTime.Now,
-				UserId = validationResult.User.Id
+				UserId = validationResult.User.Id,
+				MembershipId = validationResult.User.MembershipId
 			});
 			
 			var membership = await this.membershipService.GetAsync(validationResult.User.MembershipId);
@@ -528,6 +533,52 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 
 			return null;
+		}
+
+		#endregion
+
+		#region Cleaning
+
+		public async Task ClearExpiredActiveTokens(string membershipId)
+		{
+			try
+			{
+				var expiredActiveTokensResult = await this.activeTokensRepository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.Now);
+				var expiredActiveTokens = expiredActiveTokensResult.Items.ToArray();
+				if (expiredActiveTokens.Any())
+				{
+					var isDeleted = await this.activeTokensRepository.BulkDeleteAsync(expiredActiveTokens);
+					if (isDeleted)
+					{
+						Console.WriteLine($"{expiredActiveTokens.Length} expired active token cleared");
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex);
+			}
+		}
+
+		public async Task ClearRevokedTokens(string membershipId)
+		{
+			try
+			{
+				var revokedTokensResult = await this.revokedTokensRepository.FindAsync(x => x.MembershipId == membershipId && x.RevokedAt < DateTime.Now.AddHours(24));
+				var revokedTokens = revokedTokensResult.Items.ToArray();
+				if (revokedTokens.Any())
+				{
+					var isDeleted = await this.revokedTokensRepository.BulkDeleteAsync(revokedTokens);
+					if (isDeleted)
+					{
+						Console.WriteLine($"{revokedTokens.Length} revoked token cleared");
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex);
+			}
 		}
 
 		#endregion

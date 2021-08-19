@@ -1,3 +1,4 @@
+using System;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Identity
@@ -11,6 +12,10 @@ namespace ErtisAuth.Dto.Models.Identity
 		
 		[BsonElement("membership_id")]
 		public string MembershipId { get; set; }
+		
+		[BsonElement("expire_time")]
+		[BsonDateTimeOptions(Kind = DateTimeKind.Local)]
+		public DateTime ExpireTime => this.CreatedAt.Add(TimeSpan.FromSeconds(this.ExpiresIn));
 		
 		#endregion
 	}

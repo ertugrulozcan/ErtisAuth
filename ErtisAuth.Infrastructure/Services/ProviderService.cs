@@ -7,7 +7,7 @@ using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Providers;
-using ErtisAuth.Infrastructure.Events;
+using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services

@@ -5,6 +5,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
+      <ProjectReference Include="..\ErtisAuth.Events\ErtisAuth.Events.csproj" />
     </ItemGroup>
 
     <ItemGroup>
