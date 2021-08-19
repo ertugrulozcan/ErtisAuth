@@ -12,8 +12,8 @@
         <PackageReleaseNotes>Initial package</PackageReleaseNotes>
         <PackageTags>ErtisAuth.Extensions.Http</PackageTags>
         <Title>ErtisAuth.Extensions.Http</Title>
-        <PackageProjectUrl>https://github.com/ertugrulozcan</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/ertugrulozcan</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
         <AssemblyVersion>3.0.9</AssemblyVersion>
         <FileVersion>3.0.9</FileVersion>
     </PropertyGroup>
