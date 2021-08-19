@@ -218,7 +218,7 @@ namespace ErtisAuth.Sdk.Services
 			string orderBy = null, 
 			SortDirection? sortDirection = null)
 		{
-			var query = "{ 'where': { 'user_id': '" + userId + "', 'membership_id': '" + this.AuthApiMembershipId + "' } }";
+			var query = "{ 'where': { 'user_id': '" + userId + "', 'membership_id': '" + this.AuthApiMembershipId + "', 'token_type': 'bearer_token' } }";
 			return await this.ExecuteRequestAsync<PaginationCollection<RevokedToken>>(
 				HttpMethod.Post, 
 				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/revoked-tokens/_query", 

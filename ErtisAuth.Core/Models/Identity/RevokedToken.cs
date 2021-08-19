@@ -13,6 +13,9 @@ namespace ErtisAuth.Core.Models.Identity
 		[JsonProperty("user_id")]
 		public string UserId { get; set; }
 		
+		[JsonProperty("token_type")]
+		public string TokenType { get; set; }
+		
 		[JsonProperty("revoked_at")]
 		public DateTime RevokedAt { get; set; }
 

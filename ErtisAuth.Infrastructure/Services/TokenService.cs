@@ -490,12 +490,19 @@ namespace ErtisAuth.Infrastructure.Services
 
 			foreach (var activeToken in activeTokens)
 			{
+				var isRefreshToken = false;
+				if (this.jwtService.TryDecodeToken(activeToken, out var securityToken))
+				{
+					isRefreshToken = this.IsRefreshToken(securityToken);
+				}
+				
 				await this.revokedTokensRepository.InsertAsync(new RevokedTokenDto
 				{
 					Token = activeToken,
 					RevokedAt = DateTime.Now,
 					UserId = validationResult.User.Id,
-					MembershipId = validationResult.User.MembershipId
+					MembershipId = validationResult.User.MembershipId,
+					TokenType = isRefreshToken ? "refresh_token" : "bearer_token"
 				});
 			
 				var membership = await this.membershipService.GetAsync(validationResult.User.MembershipId);
@@ -504,16 +511,13 @@ namespace ErtisAuth.Infrastructure.Services
 					throw ErtisAuthException.MembershipNotFound(validationResult.User.MembershipId);
 				}
 
-				if (this.jwtService.TryDecodeToken(activeToken, out var securityToken))
+				if (!isRefreshToken)
 				{
-					if (!this.IsRefreshToken(securityToken))
+					var refreshToken = this.StimulateRefreshToken(activeToken, validationResult.User, membership);
+					if (!string.IsNullOrEmpty(refreshToken))
 					{
-						var refreshToken = this.StimulateRefreshToken(activeToken, validationResult.User, membership);
-						if (!string.IsNullOrEmpty(refreshToken))
-						{
-							await this.RevokeRefreshTokenAsync(refreshToken);	
-						}				
-					}	
+						await this.RevokeRefreshTokenAsync(refreshToken);	
+					}				
 				}
 
 				await this.DeleteActiveTokenAsync(activeToken);
