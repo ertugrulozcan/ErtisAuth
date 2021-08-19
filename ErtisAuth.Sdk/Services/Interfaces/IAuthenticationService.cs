@@ -30,13 +30,13 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 		
 		Task<IResponseResult<ITokenValidationResult>> VerifyTokenAsync(string accessToken);
 		
-		IResponseResult RevokeToken(BearerToken token);
+		IResponseResult RevokeToken(BearerToken token, bool logoutFromAllDevices = false);
 		
-		Task<IResponseResult> RevokeTokenAsync(BearerToken token);
+		Task<IResponseResult> RevokeTokenAsync(BearerToken token, bool logoutFromAllDevices = false);
 		
-		IResponseResult RevokeToken(string accessToken);
+		IResponseResult RevokeToken(string accessToken, bool logoutFromAllDevices = false);
 		
-		Task<IResponseResult> RevokeTokenAsync(string accessToken);
+		Task<IResponseResult> RevokeTokenAsync(string accessToken, bool logoutFromAllDevices = false);
 
 		IResponseResult<User> WhoAmI(BearerToken bearerToken);
 		

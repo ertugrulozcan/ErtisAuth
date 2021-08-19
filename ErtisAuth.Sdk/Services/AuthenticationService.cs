@@ -225,28 +225,30 @@ namespace ErtisAuth.Sdk.Services
 			return await this.VerifyTokenAsync(BearerToken.CreateTemp(accessToken));
 		}
 
-		public IResponseResult RevokeToken(BearerToken token)
+		public IResponseResult RevokeToken(BearerToken token, bool logoutFromAllDevices = false)
 		{
 			var url = $"{this.AuthApiBaseUrl}/revoke-token";
 			var headers = HeaderCollection.Add("Authorization", token.ToString());
-			return this.ExecuteRequest(HttpMethod.Get, url, null, headers);
+			var queryString = logoutFromAllDevices ? QueryString.Add("logout-all", true) : QueryString.Empty;
+			return this.ExecuteRequest(HttpMethod.Get, url, queryString, headers);
 		}
 
-		public async Task<IResponseResult> RevokeTokenAsync(BearerToken token)
+		public async Task<IResponseResult> RevokeTokenAsync(BearerToken token, bool logoutFromAllDevices = false)
 		{
 			var url = $"{this.AuthApiBaseUrl}/revoke-token";
 			var headers = HeaderCollection.Add("Authorization", token.ToString());
-			return await this.ExecuteRequestAsync(HttpMethod.Get, url, null, headers);
+			var queryString = logoutFromAllDevices ? QueryString.Add("logout-all", true) : QueryString.Empty;
+			return await this.ExecuteRequestAsync(HttpMethod.Get, url, queryString, headers);
 		}
 
-		public IResponseResult RevokeToken(string accessToken)
+		public IResponseResult RevokeToken(string accessToken, bool logoutFromAllDevices = false)
 		{
-			return this.RevokeToken(BearerToken.CreateTemp(accessToken));
+			return this.RevokeToken(BearerToken.CreateTemp(accessToken), logoutFromAllDevices);
 		}
 
-		public async Task<IResponseResult> RevokeTokenAsync(string accessToken)
+		public async Task<IResponseResult> RevokeTokenAsync(string accessToken, bool logoutFromAllDevices = false)
 		{
-			return await this.RevokeTokenAsync(BearerToken.CreateTemp(accessToken));
+			return await this.RevokeTokenAsync(BearerToken.CreateTemp(accessToken), logoutFromAllDevices);
 		}
 
 		public IResponseResult<User> WhoAmI(BearerToken bearerToken)

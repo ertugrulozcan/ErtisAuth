@@ -215,7 +215,13 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.AuthorizationHeaderMissing();
 			}
 
-			if (await this.tokenService.RevokeTokenAsync(token))
+			bool logoutFromAllDevices = false;
+			if (this.Request.Query.ContainsKey("logout-all"))
+			{
+				bool.TryParse(this.Request.Query["logout-all"], out logoutFromAllDevices);
+			}
+			
+			if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices))
 			{
 				return this.NoContent();
 			}
@@ -235,7 +241,13 @@ namespace ErtisAuth.WebAPI.Controllers
 				token = model.Token;
 			}
 
-			if (await this.tokenService.RevokeTokenAsync(token))
+			bool logoutFromAllDevices = false;
+			if (this.Request.Query.ContainsKey("logout-all"))
+			{
+				bool.TryParse(this.Request.Query["logout-all"], out logoutFromAllDevices);
+			}
+			
+			if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices))
 			{
 				return this.NoContent();
 			}

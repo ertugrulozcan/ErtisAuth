@@ -469,7 +469,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Revoke Token
 
-		public async Task<bool> RevokeTokenAsync(string token, bool fireEvent = true)
+		public async Task<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true)
 		{
 			var validationResult = await this.VerifyBearerTokenAsync(token, false);
 			if (!validationResult.IsValidated)
@@ -477,42 +477,56 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.InvalidToken();
 			}
 
-			await this.revokedTokensRepository.InsertAsync(new RevokedTokenDto
+			var activeTokens = new List<string> { token };
+			if (logoutFromAllDevices)
 			{
-				Token = token,
-				RevokedAt = DateTime.Now,
-				UserId = validationResult.User.Id,
-				MembershipId = validationResult.User.MembershipId
-			});
-			
-			var membership = await this.membershipService.GetAsync(validationResult.User.MembershipId);
-			if (membership == null)
-			{
-				throw ErtisAuthException.MembershipNotFound(validationResult.User.MembershipId);
-			}
-
-			if (this.jwtService.TryDecodeToken(token, out var securityToken))
-			{
-				if (!this.IsRefreshToken(securityToken))
+				var activeTokenDtos = await this.GetActiveTokensByUser(validationResult.User.Id, validationResult.User.MembershipId);
+				if (activeTokenDtos != null)
 				{
-					var refreshToken = this.StimulateRefreshToken(token, validationResult.User, membership);
-					if (!string.IsNullOrEmpty(refreshToken))
-					{
-						await this.RevokeRefreshTokenAsync(refreshToken);	
-					}				
-				}	
+					activeTokens.AddRange(activeTokenDtos.Select(x => x.AccessToken));
+					activeTokens = activeTokens.Distinct().ToList();
+				}
 			}
 
-			await this.DeleteActiveTokenAsync(token);
+			foreach (var activeToken in activeTokens)
+			{
+				await this.revokedTokensRepository.InsertAsync(new RevokedTokenDto
+				{
+					Token = activeToken,
+					RevokedAt = DateTime.Now,
+					UserId = validationResult.User.Id,
+					MembershipId = validationResult.User.MembershipId
+				});
+			
+				var membership = await this.membershipService.GetAsync(validationResult.User.MembershipId);
+				if (membership == null)
+				{
+					throw ErtisAuthException.MembershipNotFound(validationResult.User.MembershipId);
+				}
 
-			await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, validationResult.User, new { token }) { MembershipId = membership.Id });
+				if (this.jwtService.TryDecodeToken(activeToken, out var securityToken))
+				{
+					if (!this.IsRefreshToken(securityToken))
+					{
+						var refreshToken = this.StimulateRefreshToken(activeToken, validationResult.User, membership);
+						if (!string.IsNullOrEmpty(refreshToken))
+						{
+							await this.RevokeRefreshTokenAsync(refreshToken);	
+						}				
+					}	
+				}
+
+				await this.DeleteActiveTokenAsync(activeToken);
+
+				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, validationResult.User, new { activeToken }) { MembershipId = membership.Id });
+			}
 			
 			return true;
 		}
 
 		private async Task RevokeRefreshTokenAsync(string refreshToken)
 		{
-			await this.RevokeTokenAsync(refreshToken, false);
+			await this.RevokeTokenAsync(refreshToken, false, false);
 		}
 		
 		private string StimulateRefreshToken(string accessToken, User user, Membership membership)
@@ -539,6 +553,12 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Cleaning
 
+		private async Task<IEnumerable<ActiveTokenDto>> GetActiveTokensByUser(string userId, string membershipId)
+		{
+			var expiredActiveTokensResult = await this.activeTokensRepository.FindAsync(x => x.UserId == userId && x.MembershipId == membershipId);
+			return expiredActiveTokensResult.Items;
+		}
+		
 		public async Task ClearExpiredActiveTokens(string membershipId)
 		{
 			try
