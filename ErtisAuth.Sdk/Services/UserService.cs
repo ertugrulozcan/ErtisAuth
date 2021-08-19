@@ -187,7 +187,7 @@ namespace ErtisAuth.Sdk.Services
 			SortDirection? sortDirection = null)
 		{
 			var query = "{ 'where': { 'user_id': '" + userId + "', 'membership_id': '" + this.AuthApiMembershipId + "' } }";
-			return await this.ExecuteRequestAsync<IPaginationCollection<ActiveToken>>(
+			return await this.ExecuteRequestAsync<PaginationCollection<ActiveToken>>(
 				HttpMethod.Post, 
 				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/active-tokens/_query", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
@@ -219,7 +219,7 @@ namespace ErtisAuth.Sdk.Services
 			SortDirection? sortDirection = null)
 		{
 			var query = "{ 'where': { 'user_id': '" + userId + "', 'membership_id': '" + this.AuthApiMembershipId + "' } }";
-			return await this.ExecuteRequestAsync<IPaginationCollection<RevokedToken>>(
+			return await this.ExecuteRequestAsync<PaginationCollection<RevokedToken>>(
 				HttpMethod.Post, 
 				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/revoked-tokens/_query", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
