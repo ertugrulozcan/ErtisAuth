@@ -12,10 +12,12 @@ using ErtisAuth.Extensions.Quartz.Extensions;
 using ErtisAuth.Identity.Jwt.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Adapters;
+using ErtisAuth.Infrastructure.Configuration;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.WebAPI.Adapters;
 using ErtisAuth.WebAPI.Auth;
 using ErtisAuth.WebAPI.Extensions;
+using MaxMind.GeoIP2;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -102,6 +104,15 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IRestHandler, SystemRestHandler>();
 			services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
 			services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
+			
+			// GeoLocation Tracking
+			services.Configure<GeoLocationOptions>(this.Configuration.GetSection("GeoLocationTracking"));
+			services.AddSingleton<IGeoLocationOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<GeoLocationOptions>>().Value);
+			if (this.Configuration.GetSection("GeoLocationTracking").GetValue<bool>("Enabled"))
+			{
+				services.Configure<WebServiceClientOptions>(this.Configuration.GetSection("MaxMind"));
+				services.AddHttpClient<WebServiceClient>();	
+			}
 			
 			services.AddHttpContextAccessor();
 			

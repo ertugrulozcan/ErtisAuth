@@ -81,6 +81,8 @@ namespace ErtisAuth.Infrastructure.Mapping
 			mappings.Add<Webhook, WebhookDto>();
 			mappings.Add<WebhookRequestDto, WebhookRequest>();
 			mappings.Add<WebhookRequest, WebhookRequestDto>();
+			mappings.Add<ClientInfoDto, ClientInfo>();
+			mappings.Add<ClientInfo, ClientInfoDto>();
 
 			this.Implementation = new TinyMapperImpl(mappings);
 		}

@@ -97,7 +97,19 @@ namespace ErtisAuth.WebAPI.Controllers
 			string username = model.Username;
 			string password = model.Password;
 
-			var token = await this.tokenService.GenerateTokenAsync(username, password, membershipId);
+			string ipAddress = null;
+			if (this.Request.Query.ContainsKey("X-IpAddress"))
+			{
+				ipAddress = this.Request.Query["X-IpAddress"].ToString();
+			}
+			
+			string userAgent = null;
+			if (this.Request.Query.ContainsKey("X-UserAgent"))
+			{
+				userAgent = this.Request.Query["X-UserAgent"].ToString();
+			}
+			
+			var token = await this.tokenService.GenerateTokenAsync(username, password, membershipId, ipAddress: ipAddress, userAgent: userAgent);
 			if (token != null)
 			{
 				return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);

@@ -11,7 +11,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		
 		Task<Application> WhoAmIAsync(BasicToken basicToken);
 		
-		Task<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, bool fireEvent = true);
+		Task<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true);
 
 		Task<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true);
 		

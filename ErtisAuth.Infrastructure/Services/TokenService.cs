@@ -10,11 +10,14 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Applications;
+using ErtisAuth.Core.Models.GeoLocation;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
+using ErtisAuth.Infrastructure.Configuration;
 using ErtisAuth.Infrastructure.Extensions;
 using Microsoft.IdentityModel.Tokens;
+using MaxMind.GeoIP2;
 
 namespace ErtisAuth.Infrastructure.Services
 {
@@ -36,6 +39,8 @@ namespace ErtisAuth.Infrastructure.Services
 		private readonly IEventService eventService;
 		private readonly IActiveTokensRepository activeTokensRepository;
 		private readonly IRevokedTokensRepository revokedTokensRepository;
+		private readonly IGeoLocationOptions geoLocationOptions;
+		private readonly WebServiceClient maxMindClient;
 		
 		#endregion
 
@@ -53,6 +58,8 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="activeTokensRepository"></param>
 		/// <param name="revokedTokensRepository"></param>
 		/// <param name="scheduledJobService"></param>
+		/// <param name="geoLocationOptions"></param>
+		/// <param name="maxMindClient"></param>
 		public TokenService(
 			IMembershipService membershipService, 
 			IUserService userService, 
@@ -62,7 +69,9 @@ namespace ErtisAuth.Infrastructure.Services
 			IEventService eventService,
 			IActiveTokensRepository activeTokensRepository,
 			IRevokedTokensRepository revokedTokensRepository,
-			IScheduledJobService scheduledJobService)
+			IScheduledJobService scheduledJobService,
+			IGeoLocationOptions geoLocationOptions,
+			WebServiceClient maxMindClient)
 		{
 			this.membershipService = membershipService;
 			this.userService = userService;
@@ -72,6 +81,8 @@ namespace ErtisAuth.Infrastructure.Services
 			this.eventService = eventService;
 			this.activeTokensRepository = activeTokensRepository;
 			this.revokedTokensRepository = revokedTokensRepository;
+			this.geoLocationOptions = geoLocationOptions;
+			this.maxMindClient = maxMindClient;
 
 			scheduledJobService.ScheduleTokenCleanerJobsAsync().ConfigureAwait(false);
 		}
@@ -148,7 +159,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Generate Token
 
-		public async Task<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, bool fireEvent = true)
+		public async Task<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true)
 		{
 			// Check membership
 			var membership = await this.membershipService.GetAsync(membershipId);
@@ -161,7 +172,7 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				throw ErtisAuthException.MalformedMembership(membershipId, errors);
 			}
-
+			
 			// Check user
 			var user = await this.userService.GetUserWithPasswordAsync(username, username, membership.Id);
 			if (user == null)
@@ -177,7 +188,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			else
 			{
-				var token = await this.GenerateBearerTokenAsync(user, membership);
+				var token = await this.GenerateBearerTokenAsync(user, membership, ipAddress, userAgent);
 				
 				if (fireEvent)
 				{
@@ -188,7 +199,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		private async Task<BearerToken> GenerateBearerTokenAsync(User user, Membership membership)
+		private async Task<BearerToken> GenerateBearerTokenAsync(User user, Membership membership, string ipAddress = null, string userAgent = null)
 		{
 			string tokenId = Guid.NewGuid().ToString();
 			var tokenClaims = new TokenClaims(tokenId, user, membership);
@@ -200,7 +211,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var bearerToken = new BearerToken(accessToken, tokenClaims.ExpiresIn, refreshToken, refreshExpiresIn);
 			
 			// Save to active tokens collection
-			await this.StoreActiveTokenAsync(bearerToken, user.Id, membership.Id);
+			await this.StoreActiveTokenAsync(bearerToken, user, membership.Id, ipAddress, userAgent);
 			
 			return bearerToken;
 		}
@@ -228,7 +239,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		private async Task StoreActiveTokenAsync(BearerToken token, string userId, string membershipId)
+		private async Task StoreActiveTokenAsync(BearerToken token, User user, string membershipId, string ipAddress = null, string userAgent = null)
 		{
 			await this.activeTokensRepository.InsertAsync(new ActiveTokenDto
 			{
@@ -238,9 +249,59 @@ namespace ErtisAuth.Infrastructure.Services
 				RefreshTokenExpiresIn = token.RefreshTokenExpiresInTimeStamp,
 				TokenType = token.TokenType.ToString(),
 				CreatedAt = token.CreatedAt,
-				UserId = userId,
-				MembershipId = membershipId
+				UserId = user.Id,
+				UserName = user.Username,
+				EmailAddress = user.EmailAddress,
+				FirstName = user.FirstName,
+				LastName = user.LastName,
+				MembershipId = membershipId,
+				ClientInfo = ConvertToClientInfoDto(await this.GetClientInfo(ipAddress, userAgent))
 			});
+		}
+
+		private static ClientInfoDto ConvertToClientInfoDto(ClientInfo clientInfo)
+		{
+			return new ClientInfoDto
+			{
+				IPAddress = clientInfo.IPAddress,
+				UserAgent = clientInfo.UserAgent,
+				GeoLocation = clientInfo.GeoLocation,
+			};
+		}
+		
+		private async Task<ClientInfo> GetClientInfo(string ipAddress, string userAgent)
+		{
+			var clientInfo = new ClientInfo
+			{
+				IPAddress = ipAddress,
+				UserAgent = userAgent
+			};
+
+			try
+			{
+				if (this.geoLocationOptions.Enabled && !string.IsNullOrEmpty(ipAddress))
+				{
+					var city = await this.maxMindClient.CityAsync(ipAddress);
+					clientInfo.GeoLocation = new GeoLocationInfo
+					{
+						City = city.City.Name,
+						Continent = city.Continent.Name,
+						Country = city.Country.Name,
+						PostalCode = city.Postal.Code,
+						Location = new Coordinate
+						{
+							Latitude = city.Location.Latitude,
+							Longitude = city.Location.Longitude
+						}
+					};
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex);
+			}
+
+			return clientInfo;
 		}
 		
 		private async Task DeleteActiveTokenAsync(string token)
@@ -501,6 +562,10 @@ namespace ErtisAuth.Infrastructure.Services
 					Token = activeToken,
 					RevokedAt = DateTime.Now,
 					UserId = validationResult.User.Id,
+					UserName = validationResult.User.Username,
+					EmailAddress = validationResult.User.EmailAddress,
+					FirstName = validationResult.User.FirstName,
+					LastName = validationResult.User.LastName,
 					MembershipId = validationResult.User.MembershipId,
 					TokenType = isRefreshToken ? "refresh_token" : "bearer_token"
 				});

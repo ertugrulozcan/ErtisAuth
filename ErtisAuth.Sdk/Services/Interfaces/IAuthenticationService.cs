@@ -10,9 +10,9 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 	{
 		#region Methods
 
-		IResponseResult<BearerToken> GetToken(string username, string password);
+		IResponseResult<BearerToken> GetToken(string username, string password, string ipAddress = null, string userAgent = null);
 		
-		Task<IResponseResult<BearerToken>> GetTokenAsync(string username, string password);
+		Task<IResponseResult<BearerToken>> GetTokenAsync(string username, string password, string ipAddress = null, string userAgent = null);
 		
 		IResponseResult<BearerToken> RefreshToken(BearerToken token);
 		

@@ -31,10 +31,20 @@ namespace ErtisAuth.Sdk.Services
 		
 		#region Methods
 
-		public IResponseResult<BearerToken> GetToken(string username, string password)
+		public IResponseResult<BearerToken> GetToken(string username, string password, string ipAddress = null, string userAgent = null)
 		{
 			var url = $"{this.AuthApiBaseUrl}/generate-token";
 			var headers = HeaderCollection.Add("X-Ertis-Alias", this.AuthApiMembershipId);
+			if (!string.IsNullOrEmpty(ipAddress))
+			{
+				headers.Add("X-IpAddress", ipAddress);
+			}
+			
+			if (!string.IsNullOrEmpty(userAgent))
+			{
+				headers.Add("X-UserAgent", userAgent);
+			}
+			
 			var body = new
 			{
 				username,
@@ -45,10 +55,20 @@ namespace ErtisAuth.Sdk.Services
 			return ConvertToBearerTokenResponse(response);
 		}
 
-		public async Task<IResponseResult<BearerToken>> GetTokenAsync(string username, string password)
+		public async Task<IResponseResult<BearerToken>> GetTokenAsync(string username, string password, string ipAddress = null, string userAgent = null)
 		{
 			var url = $"{this.AuthApiBaseUrl}/generate-token";
 			var headers = HeaderCollection.Add("X-Ertis-Alias", this.AuthApiMembershipId);
+			if (!string.IsNullOrEmpty(ipAddress))
+			{
+				headers.Add("X-IpAddress", ipAddress);
+			}
+			
+			if (!string.IsNullOrEmpty(userAgent))
+			{
+				headers.Add("X-UserAgent", userAgent);
+			}
+			
 			var body = new
 			{
 				username,

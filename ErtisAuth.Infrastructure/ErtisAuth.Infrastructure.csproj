@@ -16,6 +16,7 @@
       <PackageReference Include="Ertis.Net" Version="1.0.9" />
       <PackageReference Include="Ertis.Security" Version="1.0.2" />
       <PackageReference Include="Mapster" Version="7.0.1" />
+      <PackageReference Include="MaxMind.GeoIP2" Version="4.0.1" />
       <PackageReference Include="TinyMapper" Version="3.0.3" />
     </ItemGroup>
 
