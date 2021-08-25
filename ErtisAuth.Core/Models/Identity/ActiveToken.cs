@@ -42,6 +42,9 @@ namespace ErtisAuth.Core.Models.Identity
 		
 		[JsonProperty("expire_time")]
 		public DateTime ExpireTime => this.CreatedAt.Add(TimeSpan.FromSeconds(this.ExpiresIn));
+		
+		[JsonProperty("client_info")]
+		public ClientInfo ClientInfo { get; set; }
 
 		#endregion
 	}
