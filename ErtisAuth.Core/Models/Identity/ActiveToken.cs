@@ -28,6 +28,18 @@ namespace ErtisAuth.Core.Models.Identity
 		[JsonProperty("user_id")]
 		public string UserId { get; set; }
 		
+		[JsonProperty("username")]
+		public string UserName { get; set; }
+		
+		[JsonProperty("email_address")]
+		public string EmailAddress { get; set; }
+		
+		[JsonProperty("first_name")]
+		public string FirstName { get; set; }
+		
+		[JsonProperty("last_name")]
+		public string LastName { get; set; }
+		
 		[JsonProperty("expire_time")]
 		public DateTime ExpireTime => this.CreatedAt.Add(TimeSpan.FromSeconds(this.ExpiresIn));
 

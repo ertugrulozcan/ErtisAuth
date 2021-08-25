@@ -13,6 +13,18 @@ namespace ErtisAuth.Dto.Models.Identity
 		[BsonElement("user_id")]
 		public string UserId { get; set; }
 		
+		[BsonElement("username")]
+		public string UserName { get; set; }
+		
+		[BsonElement("email_address")]
+		public string EmailAddress { get; set; }
+		
+		[BsonElement("first_name")]
+		public string FirstName { get; set; }
+		
+		[BsonElement("last_name")]
+		public string LastName { get; set; }
+		
 		[BsonElement("membership_id")]
 		public string MembershipId { get; set; }
 		
