@@ -260,20 +260,27 @@ namespace ErtisAuth.Infrastructure.Services
 
 		private static ClientInfoDto ConvertToClientInfoDto(ClientInfo clientInfo)
 		{
+			var geoLocation = clientInfo.GeoLocation;
+			GeoLocationInfoDto geoLocationDto = null;
+			if (geoLocation != null)
+			{
+				geoLocationDto = new GeoLocationInfoDto
+				{
+					City = geoLocation.City,
+					Country = geoLocation.Country,
+					CountryCode = geoLocation.CountryCode,
+					PostalCode = geoLocation.PostalCode,
+					Location = geoLocation.Location,
+					Isp = geoLocation.Isp,
+					IspDomain = geoLocation.IspDomain
+				};
+			}
+			
 			return new ClientInfoDto
 			{
 				IPAddress = clientInfo.IPAddress,
 				UserAgent = clientInfo.UserAgent,
-				GeoLocation = new GeoLocationInfoDto
-				{
-					City = clientInfo.GeoLocation.City,
-					Country = clientInfo.GeoLocation.Country,
-					CountryCode = clientInfo.GeoLocation.CountryCode,
-					PostalCode = clientInfo.GeoLocation.PostalCode,
-					Location = clientInfo.GeoLocation.Location,
-					Isp = clientInfo.GeoLocation.Isp,
-					IspDomain = clientInfo.GeoLocation.IspDomain
-				}
+				GeoLocation = geoLocationDto
 			};
 		}
 		
