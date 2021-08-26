@@ -10,14 +10,12 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Applications;
-using ErtisAuth.Core.Models.GeoLocation;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Configuration;
 using ErtisAuth.Infrastructure.Extensions;
 using Microsoft.IdentityModel.Tokens;
-using MaxMind.GeoIP2;
 
 namespace ErtisAuth.Infrastructure.Services
 {
@@ -40,7 +38,7 @@ namespace ErtisAuth.Infrastructure.Services
 		private readonly IActiveTokensRepository activeTokensRepository;
 		private readonly IRevokedTokensRepository revokedTokensRepository;
 		private readonly IGeoLocationOptions geoLocationOptions;
-		private readonly WebServiceClient maxMindClient;
+		private readonly IGeoLocationService geoLocationService;
 		
 		#endregion
 
@@ -59,7 +57,7 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="revokedTokensRepository"></param>
 		/// <param name="scheduledJobService"></param>
 		/// <param name="geoLocationOptions"></param>
-		/// <param name="maxMindClient"></param>
+		/// <param name="geoLocationService"></param>
 		public TokenService(
 			IMembershipService membershipService, 
 			IUserService userService, 
@@ -71,7 +69,7 @@ namespace ErtisAuth.Infrastructure.Services
 			IRevokedTokensRepository revokedTokensRepository,
 			IScheduledJobService scheduledJobService,
 			IGeoLocationOptions geoLocationOptions,
-			WebServiceClient maxMindClient)
+			IGeoLocationService geoLocationService)
 		{
 			this.membershipService = membershipService;
 			this.userService = userService;
@@ -82,7 +80,7 @@ namespace ErtisAuth.Infrastructure.Services
 			this.activeTokensRepository = activeTokensRepository;
 			this.revokedTokensRepository = revokedTokensRepository;
 			this.geoLocationOptions = geoLocationOptions;
-			this.maxMindClient = maxMindClient;
+			this.geoLocationService = geoLocationService;
 
 			scheduledJobService.ScheduleTokenCleanerJobsAsync().ConfigureAwait(false);
 		}
@@ -281,19 +279,7 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				if (this.geoLocationOptions.Enabled && !string.IsNullOrEmpty(ipAddress))
 				{
-					var city = await this.maxMindClient.CityAsync(ipAddress);
-					clientInfo.GeoLocation = new GeoLocationInfo
-					{
-						City = city.City.Name,
-						Continent = city.Continent.Name,
-						Country = city.Country.Name,
-						PostalCode = city.Postal.Code,
-						Location = new Coordinate
-						{
-							Latitude = city.Location.Latitude,
-							Longitude = city.Location.Longitude
-						}
-					};
+					clientInfo.GeoLocation = await this.geoLocationService.LookupAsync(ipAddress);
 				}
 			}
 			catch (Exception ex)
