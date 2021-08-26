@@ -11,6 +11,7 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using ErtisAuth.Dto.Models.GeoLocation;
 using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Configuration;
@@ -263,7 +264,16 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				IPAddress = clientInfo.IPAddress,
 				UserAgent = clientInfo.UserAgent,
-				GeoLocation = clientInfo.GeoLocation,
+				GeoLocation = new GeoLocationInfoDto
+				{
+					City = clientInfo.GeoLocation.City,
+					Country = clientInfo.GeoLocation.Country,
+					CountryCode = clientInfo.GeoLocation.CountryCode,
+					PostalCode = clientInfo.GeoLocation.PostalCode,
+					Location = clientInfo.GeoLocation.Location,
+					Isp = clientInfo.GeoLocation.Isp,
+					IspDomain = clientInfo.GeoLocation.IspDomain
+				}
 			};
 		}
 		

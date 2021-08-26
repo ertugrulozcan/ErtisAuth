@@ -1,4 +1,4 @@
-using ErtisAuth.Core.Models.GeoLocation;
+using ErtisAuth.Dto.Models.GeoLocation;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Identity
@@ -14,7 +14,7 @@ namespace ErtisAuth.Dto.Models.Identity
 		public string UserAgent { get; set; }
 		
 		[BsonElement("geo_location")]
-		public GeoLocationInfo GeoLocation { get; set; }
+		public GeoLocationInfoDto GeoLocation { get; set; }
 		
 		#endregion
 	}

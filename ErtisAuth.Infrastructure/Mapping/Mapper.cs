@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
+using ErtisAuth.Core.Models.GeoLocation;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Providers;
@@ -10,6 +11,7 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Dto.Models.Events;
+using ErtisAuth.Dto.Models.GeoLocation;
 using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Dto.Models.Memberships;
 using ErtisAuth.Dto.Models.Providers;
@@ -83,6 +85,8 @@ namespace ErtisAuth.Infrastructure.Mapping
 			mappings.Add<WebhookRequest, WebhookRequestDto>();
 			mappings.Add<ClientInfoDto, ClientInfo>();
 			mappings.Add<ClientInfo, ClientInfoDto>();
+			mappings.Add<GeoLocationInfoDto, GeoLocationInfo>();
+			mappings.Add<GeoLocationInfo, GeoLocationInfoDto>();
 
 			this.Implementation = new TinyMapperImpl(mappings);
 		}
