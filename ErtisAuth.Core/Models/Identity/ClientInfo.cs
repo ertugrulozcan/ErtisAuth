@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Identity
 {
-	public struct ClientInfo
+	public class ClientInfo
 	{
 		#region Properties
 

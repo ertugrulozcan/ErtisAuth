@@ -98,15 +98,15 @@ namespace ErtisAuth.WebAPI.Controllers
 			string password = model.Password;
 
 			string ipAddress = null;
-			if (this.Request.Query.ContainsKey("X-IpAddress"))
+			if (this.Request.Headers.ContainsKey("X-IpAddress"))
 			{
-				ipAddress = this.Request.Query["X-IpAddress"].ToString();
+				ipAddress = this.Request.Headers["X-IpAddress"].ToString();
 			}
 			
 			string userAgent = null;
-			if (this.Request.Query.ContainsKey("X-UserAgent"))
+			if (this.Request.Headers.ContainsKey("X-UserAgent"))
 			{
-				userAgent = this.Request.Query["X-UserAgent"].ToString();
+				userAgent = this.Request.Headers["X-UserAgent"].ToString();
 			}
 			
 			var token = await this.tokenService.GenerateTokenAsync(username, password, membershipId, ipAddress: ipAddress, userAgent: userAgent);

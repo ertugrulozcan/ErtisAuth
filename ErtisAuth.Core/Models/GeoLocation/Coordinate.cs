@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.GeoLocation
 {
-	public struct Coordinate
+	public class Coordinate
 	{
 		#region Properties
 
