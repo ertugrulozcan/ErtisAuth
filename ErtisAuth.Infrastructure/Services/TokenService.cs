@@ -307,15 +307,6 @@ namespace ErtisAuth.Infrastructure.Services
 			return clientInfo;
 		}
 		
-		private async Task DeleteActiveTokenAsync(string token)
-		{
-			var foundList = await this.activeTokensRepository.QueryAsync(x => x.AccessToken == token);
-			if (foundList.Items != null && foundList.Items.Any())
-			{
-				await this.activeTokensRepository.BulkDeleteAsync(foundList.Items.Cast<ActiveTokenDto>().ToArray());
-			}
-		}
-		
 		#endregion
 
 		#region Verify Token
@@ -541,28 +532,20 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.InvalidToken();
 			}
 
-			var activeTokens = new List<string> { token };
-			if (logoutFromAllDevices)
-			{
-				var activeTokenDtos = await this.GetActiveTokensByUser(validationResult.User.Id, validationResult.User.MembershipId);
-				if (activeTokenDtos != null)
-				{
-					activeTokens.AddRange(activeTokenDtos.Select(x => x.AccessToken));
-					activeTokens = activeTokens.Distinct().ToList();
-				}
-			}
+			var activeTokenDtos = await this.GetActiveTokensByUser(validationResult.User.Id, validationResult.User.MembershipId);
+			var activeTokens = logoutFromAllDevices ? activeTokenDtos.ToArray() : new[] { activeTokenDtos.FirstOrDefault(x => x.AccessToken == token) };
 
-			foreach (var activeToken in activeTokens)
+			foreach (var activeTokenDto in activeTokens)
 			{
 				var isRefreshToken = false;
-				if (this.jwtService.TryDecodeToken(activeToken, out var securityToken))
+				if (this.jwtService.TryDecodeToken(activeTokenDto.AccessToken, out var securityToken))
 				{
 					isRefreshToken = this.IsRefreshToken(securityToken);
 				}
 				
 				await this.revokedTokensRepository.InsertAsync(new RevokedTokenDto
 				{
-					Token = activeToken,
+					Token = activeTokenDto.AccessToken,
 					RevokedAt = DateTime.Now,
 					UserId = validationResult.User.Id,
 					UserName = validationResult.User.Username,
@@ -581,17 +564,17 @@ namespace ErtisAuth.Infrastructure.Services
 
 				if (!isRefreshToken)
 				{
-					var refreshToken = this.StimulateRefreshToken(activeToken, validationResult.User, membership);
+					var refreshToken = this.StimulateRefreshToken(activeTokenDto.AccessToken, validationResult.User, membership);
 					if (!string.IsNullOrEmpty(refreshToken))
 					{
 						await this.RevokeRefreshTokenAsync(refreshToken);	
 					}				
 				}
 
-				await this.DeleteActiveTokenAsync(activeToken);
-
-				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, validationResult.User, new { activeToken }) { MembershipId = membership.Id });
+				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, validationResult.User, new { activeTokenDto.AccessToken }) { MembershipId = membership.Id });
 			}
+
+			await this.activeTokensRepository.BulkDeleteAsync(activeTokens);
 			
 			return true;
 		}
