@@ -526,56 +526,80 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public async Task<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true)
 		{
-			var validationResult = await this.VerifyBearerTokenAsync(token, false);
-			if (!validationResult.IsValidated)
+			User user;
+			
+			try
 			{
-				throw ErtisAuthException.InvalidToken();
+				var validationResult = await this.VerifyBearerTokenAsync(token, false);
+				user = validationResult.User;
+				if (!validationResult.IsValidated)
+				{
+					throw ErtisAuthException.InvalidToken();
+				}
+			}
+			catch (ErtisAuthException ex)
+			{
+				if (ex.ErrorCode == ErtisAuthException.TokenWasRevoked().ErrorCode)
+				{
+					Console.WriteLine("This token was revoked already");
+				}
+
+				return false;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex);
+				return false;
 			}
 
-			var activeTokenDtos = await this.GetActiveTokensByUser(validationResult.User.Id, validationResult.User.MembershipId);
-			var activeTokens = logoutFromAllDevices ? activeTokenDtos.ToArray() : new[] { activeTokenDtos.FirstOrDefault(x => x.AccessToken == token) };
+			var activeTokenDtos = await this.GetActiveTokensByUser(user.Id, user.MembershipId);
+			var filteredActiveTokenDtos = logoutFromAllDevices ? activeTokenDtos : new[] { activeTokenDtos.FirstOrDefault(x => x.AccessToken == token) };
+			var activeTokens = filteredActiveTokenDtos.Where(x => x != null).ToArray();
 
-			foreach (var activeTokenDto in activeTokens)
+			if (activeTokens.Any())
 			{
-				var isRefreshToken = false;
-				if (this.jwtService.TryDecodeToken(activeTokenDto.AccessToken, out var securityToken))
+				foreach (var activeTokenDto in activeTokens)
 				{
-					isRefreshToken = this.IsRefreshToken(securityToken);
-				}
-				
-				await this.revokedTokensRepository.InsertAsync(new RevokedTokenDto
-				{
-					Token = activeTokenDto.AccessToken,
-					RevokedAt = DateTime.Now,
-					UserId = validationResult.User.Id,
-					UserName = validationResult.User.Username,
-					EmailAddress = validationResult.User.EmailAddress,
-					FirstName = validationResult.User.FirstName,
-					LastName = validationResult.User.LastName,
-					MembershipId = validationResult.User.MembershipId,
-					TokenType = isRefreshToken ? "refresh_token" : "bearer_token"
-				});
-			
-				var membership = await this.membershipService.GetAsync(validationResult.User.MembershipId);
-				if (membership == null)
-				{
-					throw ErtisAuthException.MembershipNotFound(validationResult.User.MembershipId);
-				}
-
-				if (!isRefreshToken)
-				{
-					var refreshToken = this.StimulateRefreshToken(activeTokenDto.AccessToken, validationResult.User, membership);
-					if (!string.IsNullOrEmpty(refreshToken))
+					var isRefreshToken = false;
+					if (this.jwtService.TryDecodeToken(activeTokenDto.AccessToken, out var securityToken))
 					{
-						await this.RevokeRefreshTokenAsync(refreshToken);	
-					}				
+						isRefreshToken = this.IsRefreshToken(securityToken);
+					}
+				
+					await this.revokedTokensRepository.InsertAsync(new RevokedTokenDto
+					{
+						Token = activeTokenDto.AccessToken,
+						RevokedAt = DateTime.Now,
+						UserId = user.Id,
+						UserName = user.Username,
+						EmailAddress = user.EmailAddress,
+						FirstName = user.FirstName,
+						LastName = user.LastName,
+						MembershipId = user.MembershipId,
+						TokenType = isRefreshToken ? "refresh_token" : "bearer_token"
+					});
+			
+					var membership = await this.membershipService.GetAsync(user.MembershipId);
+					if (membership == null)
+					{
+						throw ErtisAuthException.MembershipNotFound(user.MembershipId);
+					}
+
+					if (!isRefreshToken)
+					{
+						var refreshToken = this.StimulateRefreshToken(activeTokenDto.AccessToken, user, membership);
+						if (!string.IsNullOrEmpty(refreshToken))
+						{
+							await this.RevokeRefreshTokenAsync(refreshToken);	
+						}				
+					}
+
+					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, user, new { activeTokenDto.AccessToken }) { MembershipId = membership.Id });
 				}
 
-				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, validationResult.User, new { activeTokenDto.AccessToken }) { MembershipId = membership.Id });
+				await this.activeTokensRepository.BulkDeleteAsync(activeTokens);
 			}
 
-			await this.activeTokensRepository.BulkDeleteAsync(activeTokens);
-			
 			return true;
 		}
 
