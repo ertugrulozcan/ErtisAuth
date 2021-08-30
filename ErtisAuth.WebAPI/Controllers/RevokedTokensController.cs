@@ -7,6 +7,7 @@ using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.Authorization.Annotations;
 using ErtisAuth.Identity.Attributes;
+using ErtisAuth.WebAPI.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
@@ -58,7 +59,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
 		{
-			return await this.revokedTokenService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			var dtos = await this.revokedTokenService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			return QueryHelper.FixTimeZoneOffsetInQueryResult(dtos);
 		}
 		
 		#endregion
