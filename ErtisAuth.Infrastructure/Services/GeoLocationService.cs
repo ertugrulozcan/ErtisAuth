@@ -74,4 +74,16 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#endregion
 	}
+
+	public class GeoLocationDisabledService : IGeoLocationService
+	{
+		#region Methods
+
+		public Task<GeoLocationInfo> LookupAsync(string ipAddress)
+		{
+			return null;
+		}
+
+		#endregion
+	}
 }
