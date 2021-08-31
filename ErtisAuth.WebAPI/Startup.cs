@@ -114,6 +114,10 @@ namespace ErtisAuth.WebAPI
 				
 				services.AddSingleton<IGeoLocationService, GeoLocationService>();
 			}
+			else
+			{
+				services.AddSingleton<IGeoLocationService, GeoLocationDisabledService>();
+			}
 			
 			services.AddHttpContextAccessor();
 			
