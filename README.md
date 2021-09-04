@@ -1,248 +1,228 @@
 # ErtisAuth
-## Open Source & Generic Identity and Access Management Service
 
-## 1. Giriş
-ErtisAuth, kimlik ve yetkilendirme yönetimi sağlayan, OpenID-Connect protokollerine bağlı, claim temsil protolokü olarak JWT tabanlı bir OAuth2.0 implementasyonu, role tabanlı bir authentication hizmetidir. Yetki/erişim denetimi için RBAC (Role based access control) modelini baz alır.
+### **Open Source Identity and Access Management API**
 
-## 2. Project Structure
+<br/>
 
-### Ertis Project
+## Get Started
 
-Data
-1. Ertis.Data
-2. Ertis.MongoDB
+<br/>
 
-Extensions
-3. Ertis.Extensions.AspNetCore
+[<img align="left" width="81px" src="https://avatars.githubusercontent.com/u/80157920?s=400&u=8771a9040e5010a204a587b9a30061952787d818&v=4" style="box-shadow: rgba(130, 130, 130, 0.24) 0px 3px 10px; margin-top: 12px; margin-right: 14px; margin-bottom: 4px;" />](https://github.com/ertugrulozcan/ErtisAuth)
 
-Network
-4. Ertis.Net 
+**ErtisAuth** is a free and open-source OpenID-Connect framework and high performer identity and access management API.
+It's designed to provide a common way to authenticate requests to all of your applications, whether they're web, native, mobile, or Web API endpoints.
+It is based on the RBAC (Role based access control) and UBAC (User based access control) models for authorization/access control.
+ErtisAuth incorporates features needed to integrate token-based authentication, SSO and API access control in your applications for authorization and authentication.
+It is licensed under MIT License (an OSI approved license).
 
-Security
-5. Ertis.Security
+<br/>
 
-Shared
-6. Ertis.Core
+## Installation
 
+### Install & Build on Mac, Linux or Windows
 
-### ErtisAuth
+* Install the latest .NET Core 3.1 SDK
+* Install Git
+* Clone this repo
+* Install MongoDB
+* Set database configuration
+* Build solution in the root of the cloned repo
+* Start ErtisAuth Server
+* Migrate
+* Enjoy with ErtisAuth
 
-Api
-1. ErtisAuth.WebAPI
+<br/>
 
-Business
-2. ErtisAuth.Infrastructure
+## ErtisAuth on Docker
 
-Data
-3. ErtisAuth.Dao
-4. ErtisAuth.Dto
+Make sure you have Docker installed.
 
-Identity
-5. ErtisAuth.Identity
+### Standalone Running from Docker Image
 
-Shared
-6. ErtisAuth.Abstractions
-7. ErtisAuth.Core
+If you have a mongo database, you just run ErtisAuth with docker image. Database configuration can be pass with environment variables on the docker run command.
 
-## 3. API
+From a terminal start ErtisAuth with the following command:
 
-### Documentation
-
-Postman Collection => https://www.getpostman.com/collections/185db33e4db8d129d493
-
-Swagger UI => /swagger/index.html
-
-### Authentication / Authorization
-Healthcheck ve api-map endpoint'leri haricindeki tüm endpoint'ler authorization'a tabidir.
-
-API kullanıcıları için bearer token ve/veya makineden makineye B2B operasyonlarda kullanılmak üzere basic token ile kimlik ibrazı zorunludur. Yetki denetimi token sahibi utilizer (user/application) rolü üzerinden yapılır. Token type (Bearer/Basic) token başına eklenmek zorundadır, aksi halde 'UnsupportedTokenType' cevabı ile karşılaşılacaktır. 
-
-Token iletmek için iki farklı yöntem kullanılabilir; (bkz rfc6750/4)
-
-1. URI Query Parameter
-
-Access token bilgisi 'access_token' anahtarı ile query string üzerinden iletilir.
-
-`/resource?access_token={{access_token}}`
-
-2. Authorization Request Header Field
-
-Access token bilgisi 'Authorization' header'ı ile iletilir.
-
-Authorization için tanımlanan request/response challenge aşağıda şematize edilmiştir.
-
-
-     +--------+                               +---------------+
-     |        |--(A)- Authorization Request ->|   Resource    |
-     |        |                               |     Owner     |
-     |        |<-(B)-- Authorization Grant ---|               |
-     |        |                               +---------------+
-     |        |
-     |        |                               +---------------+
-     |        |--(C)-- Authorization Grant -->| Authorization |
-     | Client |                               |     Server    |
-     |        |<-(D)----- Access Token -------|               |
-     |        |                               +---------------+
-     |        |
-     |        |                               +---------------+
-     |        |--(E)----- Access Token ------>|    Resource   |
-     |        |                               |     Server    |
-     |        |<-(F)--- Protected Resource ---|               |
-     +--------+                               +---------------+
-
-Başarısız bir authentication sürecinde alınabilecek olası cevaplar aşağıdaki gibi özetlenebilir.
-
-Token iletilmediği durumda;
-```json
-{
-    "Message": "Authorization header missing or empty",
-    "ErrorCode": "AuthorizationHeaderMissing",
-    "StatusCode": 400
-}
+```shell
+$ docker run -p 9716:80 ertugrulozcan/ertisauth:latest
 ```
 
-Token type eksik olduğu durumda;
-```json
-{
-   "Message": "Token type not supported. Token type must be one of Bearer or Basic",
-   "ErrorCode": "TokenTypeNotSupported",
-   "StatusCode": 400
-}
+For database configuration with environment variables;
+
+```shell
+$ docker run -p 9716:80 /
+    -e Database__Scheme=<DB_SCHEME> /
+    -e Database__Host=<DB_HOST> /
+    -e Database__Port=<DB_PORT> /
+    -e Database__Username=<DB_USERNAME> /
+    -e Database__Password=<DB_PASSWORD> /
+    -e Database__DefaultAuthDatabase=<DB_DATABASE> /
+ertugrulozcan/ertisauth:latest
 ```
 
-Geçersiz bir token gönderildiği durumda;
-```json
-{
-   "Message": "Provided token is invalid",
-   "ErrorCode": "InvalidToken",
-   "StatusCode": 401
-}
+- `DB_SCHEME`: Specify name of the schema prefix string to use for DB that support schemas (optional, default is 'mongodb').
+- `DB_HOST`: Specify hostname of the database (optional). ErtisAuth will append DB_PORT (if specify) to the hosts without port, otherwise it will append the default port 27017, again to the address without port only.
+- `DB_PORT`: Specify port of the database (optional, default is 27017)
+- `DB_USERNAME`: Specify user to use to authenticate to the database (optional, default is ``).
+- `DB_PASSWORD`: Specify user's password to use to authenticate to the database (optional, default is ``).
+- `DB_DATABASE`: Optional, default is 'ertisauth'. The authentication database to use if the connection string includes username:password@ authentication credentials but the authSource option is unspecified. If both authSource and defaultauthdb are unspecified, the client will attempt to authenticate the specified user to the admin database.
+
+### Working with Docker Compose
+
+* Download [docker-compose.yml](https://github.com/ertugrulozcan/ErtisAuth/blob/master/docker-compose.yml) file
+* Run `docker-compose up -d` command on shell
+* ErtisAuth is now running on public port 9716
+
+```shell
+$ docker-compose up -d
 ```
 
-Token'ın yaşam süresi dolduğu durumda;
-```json
-{
-   "Message": "Provided token was expired",
-   "ErrorCode": "TokenWasExpired",
-   "StatusCode": 401
-}
-```
+This command will start ErtisAuth API exposed on the local port 9716 along with a composed MongoDB in same container. It will also create an membership (realm) an initial admin user and an application (optional) for machine to machine communication.
+If you wish, you can migrate whether membership, admin user, application etc resources later. For more information about the migration, look at the migration section in the documentation.
 
-İptal edilmiş bir token gönderildiği durumda;
-```json
-{
-   "Message": "Provided token was revoked",
-   "ErrorCode": "TokenWasRevoked",
-   "StatusCode": 401
-}
-```
+<br/>
 
+## Migration
 
+To start using ErtisAuth, you must have at least one membership and at least one user for generating tokens.
+To use basic authentication method, you must have an application.
+ErtisAuth incorporates a migration API endpoint to create basic resources such as membership and admin user and set administrator settings at the first installation.
+The migrate command creates these resources and configures relations and settings.
+The admin role will be created automatically by ErtisAuth.
+The database connection string must be sent in headers to checking the database authorization.
 
-### a. Register
+<br/>
 
-Register işlemi için `/users` endpoint'ine POST ile gidilir. Ayrıntılı bilgi için Users başlığını inceleyiniz.
+Request Model
 
-**Örnek Request**
-```
-curl --location --request POST '{{base_url}}/api/v1/memberships/{{membership_id}}/users' \
-   --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhenAiOiI1ZmQxMTY1ZTkzMzU2ZTZhMGJlNjQ5ZjYiLCJpYXQiOiIxNjEwMDUyODUzIiwic3ViIjoiNWZkMTE2NWU5MzM1NmU2YTBiZTY0OWY2IiwianRpIjoiMzc2YTk3N2ItM2YzZi00ODBhLWI1MjEtMWNkNTU3ZDEzNmQxIiwicHJuIjoiNWZjZjZkYTE0NzkwYTFlMDMxYmU1MzI1IiwiZ2l2ZW5fbmFtZSI6IkVydHXEn3J1bCIsImZhbWlseV9uYW1lIjoiw5Z6Y2FuIiwiZW1haWwiOiJlcnR1Z3J1bC5vemNhbkBiaWwub211LmVkdS50ciIsImV4cCI6MTYxMDA3NDQ1MywiaXNzIjoia2FyaXllcm5ldCIsImF1ZCI6IjVmZDExNjVlOTMzNTZlNmEwYmU2NDlmNiJ9.zenHCr-bdzfb9bUFALN358NllqcPq_mlqG1esYEVDuc' \
-   --header 'Content-Type: application/json' \
-   --data-raw '{
-      "firstname": "<first_name>",
-      "lastname": "<last_name>",
-      "username": "<username>",
-      "email_address": "<email>",
-      "role": "<role>",
-      "password": "<password>"
-   }'
-```
-
-**Response**
-
-Başarılı Status Code : 201 Created
-```json
-{
-    "firstname": "John",
-    "lastname": "Smith",
-    "username": "johnsmith",
-    "email_address": "john.smith@gmail.com",
-    "role": "enduser",
-    "sys": {
-        "created_at": "2021-01-08T02:15:48.6753356+03:00",
-        "created_by": "ertugrul.ozcan@ertis.io"
+```yaml
+curl --location --request POST '{{base_url}}/api/v1/migrate' \
+--header 'ConnectionString: {{db_connection_string}}' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "membership": {
+        "name": "{{membership_name}}",
+        "expires_in": {{token_life_time}},
+        "refresh_token_expires_in": {{refresh_token_life_time}},
+        "hash_algorithm": "{{hash_algorithm}}",
+        "encoding": "UTF-8"
     },
-    "membership_id": "5fcf6da14790a1e031be5325",
-    "_id": "5ff79624531d1c67765efb54"
-}
+    "user": {
+        "username": "{{usernamme}}",
+        "firstname": "{{first_name}}",
+        "lastname": "{{last_name}}",
+        "email_address": "{{email_address}}",
+        "password": "{{password}}"
+    },
+    "application": {
+        "name": "{{application_name}}",
+        "role": "admin"
+    }
+}'
 ```
 
-**Olası Başarısız Durumlar**
+<br/>
 
-Status Code : 400 BadRequest
+## Health Check
+
+Request Model
+
+```yaml
+curl --location --request GET '{{base_url}}/api/v1/healthcheck'
+```
+
+Successful Response
+
+Status Code : `200 OK`
+
 ```json
 {
-   "Data": [
-      "username is a required field",
-      "email_address is a required field"
-   ],
-   "Message": "Some fields are not validated, invalid or missing. Check response detail.",
-   "ErrorCode": "ModelValidationError",
-   "StatusCode": 400
+    "status": "Healthy"
 }
 ```
 
-Status Code : 400 BadRequest
+Failed Response
+
+Status Code : `50X` (Sample unhealhty case)
+
 ```json
 {
-   "Data": [
-      "Role is invalid. There is no role named 'foobar'"
-   ],
-   "Message": "Some fields are not validated, invalid or missing. Check response detail.",
-   "ErrorCode": "ModelValidationError",
-   "StatusCode": 400
+    "status": "Unhealthy",
+    "message": "Database have not migrated yet"
 }
 ```
 
-Status Code : 409 Conflict
-```json
-{
-    "Message": "The user with same username or email is already exists ('jonhsmith', 'jonh.smith@gmail.com')",
-    "ErrorCode": "UserWithSameUsernameAlreadyExists",
-    "StatusCode": 409
-}
-```
+<br/>
 
+# Endpoints
 
-### b. Login / Generate Token
+<br/>
 
-Token almak için `/generate-token` endpoint'ine POST ile gidilir. Body'de username (veya email adresi) ve password bilgileri gönderilir.
-Header'da da 'X-Ertis-Alias' anahtarı ile kullanıcının bağlı ollduğu realm olan membership_id bilgisinin iletilmesi gerekmektedir.
+## 1. Tokens Endpoint &nbsp;&nbsp; *`/tokens`*
 
-**Örnek Request**
-```
+<br/>
+
+| Routes                   | Method     | Headers                                                       | Query String                    | Body                        |
+| ------------------------ | ---------- | ------------------------------------------------------------- | ------------------------------- | --------------------------- |
+| `/tokens/me`             | GET        | Authorization Header                                          | -                               | -                           |
+| `/tokens/whoami`         | GET        | Authorization Header                                          | -                               | -                           |
+| `/tokens/generate-token` | POST       | X-Ertis-Alias, X-IpAddress (optional), X-UserAgent (optional) | -                               | Username & Password payload |                   |
+| `/tokens/verify-token`   | GET        | Authorization Header                                          | -                               | -                           |
+| `/tokens/verify-token`   | POST       | -                                                             | -                               | Token payload               |
+| `/tokens/refresh-token`  | GET        | Authorization Header                                          | revoke=true (Default false)     | -                           |
+| `/tokens/refresh-token`  | POST       | -                                                             | revoke=true (Default false)     | Token payload               |
+| `/tokens/revoke-token`   | GET        | Authorization Header                                          | logout-all=true (Default false) | -                           |
+| `/tokens/revoke-token`   | POST       | -                                                             | logout-all=true (Default false) | Token payload               |
+
+<br/>
+
+## Login / Generate Token
+
+<br/>
+
+Request Model
+
+```yaml
 curl --location --request POST '{{base_url}}/api/v1/generate-token' \
-   --header 'X-Ertis-Alias: {{membership_id}}' \
-   --header 'Content-Type: application/json' \
-   --data-raw '{
-       "username": "<username>",
-       "password": "<password>"
-   }'
+--header 'X-Ertis-Alias: {{membership_id}}' \
+--header 'X-IpAddress: {{client_ip}}' \
+--header 'X-UserAgent: {{user_agent}}' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "username": "{{username}}",
+    "password": "{{password}}"
+}'
 ```
 
-Başarılı Status Code : 201 Created
+Body Model
+
 ```json
 {
-   "token_type": "bearer",
-   "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhenAiOiI1ZmQxMTY1ZTkzMzU2ZTZhMGJlNjQ5ZjYiLCJpYXQiOiIxNjEwMDUyODUzIiwic3ViIjoiNWZkMTE2NWU5MzM1NmU2YTBiZTY0OWY2IiwianRpIjoiMzc2YTk3N2ItM2YzZi00ODBhLWI1MjEtMWNkNTU3ZDEzNmQxIiwicHJuIjoiNWZjZjZkYTE0NzkwYTFlMDMxYmU1MzI1IiwiZ2l2ZW5fbmFtZSI6IkVydHXEn3J1bCIsImZhbWlseV9uYW1lIjoiw5Z6Y2FuIiwiZW1haWwiOiJlcnR1Z3J1bC5vemNhbkBiaWwub211LmVkdS50ciIsInJlZnJlc2hfdG9rZW4iOiJUcnVlIiwiZXhwIjoxNjEwMDc0NDUzLCJpc3MiOiJrYXJpeWVybmV0IiwiYXVkIjoiNWZkMTE2NWU5MzM1NmU2YTBiZTY0OWY2In0.n_AiWRnHOnp2WPbhZCKabcozebcl5Lw6UmkNgq9c3f4",
-   "refresh_token_expires_in": 21600,
-   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhenAiOiI1ZmQxMTY1ZTkzMzU2ZTZhMGJlNjQ5ZjYiLCJpYXQiOiIxNjEwMDUyODUzIiwic3ViIjoiNWZkMTE2NWU5MzM1NmU2YTBiZTY0OWY2IiwianRpIjoiMzc2YTk3N2ItM2YzZi00ODBhLWI1MjEtMWNkNTU3ZDEzNmQxIiwicHJuIjoiNWZjZjZkYTE0NzkwYTFlMDMxYmU1MzI1IiwiZ2l2ZW5fbmFtZSI6IkVydHXEn3J1bCIsImZhbWlseV9uYW1lIjoiw5Z6Y2FuIiwiZW1haWwiOiJlcnR1Z3J1bC5vemNhbkBiaWwub211LmVkdS50ciIsImV4cCI6MTYxMDA3NDQ1MywiaXNzIjoia2FyaXllcm5ldCIsImF1ZCI6IjVmZDExNjVlOTMzNTZlNmEwYmU2NDlmNiJ9.zenHCr-bdzfb9bUFALN358NllqcPq_mlqG1esYEVDuc",
-   "expires_in": 21600,
-   "created_at": "2021-01-07T23:54:13.5556795+03:00"
+    "username": "{{username}}",
+    "password": "{{password}}"
 }
 ```
 
-Status Code : 401 Unauthorized
+Successful Response
+
+Status Code : `201 Created`
+
+```json
+{
+    "token_type": "bearer",
+    "refresh_token": "{refresh_token}",
+    "refresh_token_expires_in": 86400,
+    "access_token": "{access_token}",
+    "expires_in": 43200,
+    "created_at": "2021-09-01T20:46:03.1354057+03:00"
+}
+```
+
+Failed Response (Username or password incorrect)
+
+Status Code : `401 Unauthorized`
+
 ```json
 {
     "Message": "Username or password is wrong",
@@ -251,39 +231,261 @@ Status Code : 401 Unauthorized
 }
 ```
 
-### c. Me / WhoAmI
+Failed Response (X-Ertis-Alias Header Missing)
 
-Token sahibi kullanıcıyı öğrenmek için `/me` veya `/whoami` endpoint^lerinden birine GET ile gidilir. Authentication header'da token bilgisi gönderilir.
+Status Code : `400 Bad Request`
 
-**Örnek Request**
-```
-curl --location --request GET 'http://localhost:5000/api/v1/me' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhenAiOiI1ZmQxMTY1ZTkzMzU2ZTZhMGJlNjQ5ZjYiLCJpYXQiOiIxNjEwMDYyODYzIiwic3ViIjoiNWZkMTE2NWU5MzM1NmU2YTBiZTY0OWY2IiwianRpIjoiMjFjYmU3YmQtMGI1Yi00NjY4LTkwYTUtMmRhNmU3YjMzMGU4IiwicHJuIjoiNWZjZjZkYTE0NzkwYTFlMDMxYmU1MzI1IiwiZ2l2ZW5fbmFtZSI6IkVydHXEn3J1bCIsImZhbWlseV9uYW1lIjoiw5Z6Y2FuIiwiZW1haWwiOiJlcnR1Z3J1bC5vemNhbkBiaWwub211LmVkdS50ciIsImV4cCI6MTYxMDA4NDQ2MywiaXNzIjoia2FyaXllcm5ldCIsImF1ZCI6IjVmZDExNjVlOTMzNTZlNmEwYmU2NDlmNiJ9.A0oKaq5NdNPlR4mIygBUi8vO4bmmn6MSiIf7G6R_AV8'
-```
-
-Başarılı Status Code : 201 Created
 ```json
 {
-   "firstname": "Ertuğrul",
-   "lastname": "Özcan",
-   "username": "ertugrul.ozcan",
-   "email_address": "ertugrul.ozcan@ertis.io",
-   "role": "admin",
-   "sys": {
-      "created_at": "2020-12-28T17:41:05.571Z",
-      "modified_at": "2021-01-06T14:03:47.786Z",
-      "modified_by": "ertugrul.ozcan@ertis.io"
-   },
-   "membership_id": "5fcf6da14790a1e031be5325",
-   "_id": "5fd1165e93356e6a0be649f6"
+    "message": "Membership id should be added in headers with 'X-Ertis-Alias' key.",
+    "errorCode": "XErtisAliasMissing",
+    "statusCode": 400
 }
 ```
 
-## Referanslar
-* https://tools.ietf.org/html/rfc6749
-* https://tools.ietf.org/html/rfc7519
-* https://tools.ietf.org/id/draft-ietf-regext-rdap-openid-03.html
-* https://www.ietf.org/rfc/rfc6750.txt
-* https://openid.net/specs/openid-connect-core-1_0.html
+<hr>
+<br/>
 
-docker run -d --name mongodb --mount source=mongodb_volume,target=/ertisauth -p 27017:27107 mongodb:latest
+## Me
+
+<br/>
+
+Request Model
+
+```yaml
+curl --location --request GET '{{base_url}}/api/v1/me' \
+--header 'Authorization: Bearer {{access_token}}'
+```
+
+or
+
+```yaml
+curl --location --request GET '{{base_url}}/api/v1/whoami' \
+--header 'Authorization: Bearer {{access_token}}'
+```
+
+Successful Response
+
+Status Code : `200 OK`
+
+```json
+{
+    "_id": "{{id}}",
+    "firstname": "{{first_name}}",
+    "lastname": "{{last_name}}",
+    "username": "{{username}}",
+    "email_address": "{{email}}",
+    "role": "{{role}}",
+    "permissions": [],
+    "forbidden": [],
+    "sys": {
+        "created_at": "2021-06-03T20:29:22.545+03:00",
+        "created_by": "{{created_by}}",
+        "modified_at": "2021-09-01T18:31:57.932+03:00",
+        "modified_by": "{{modified_by}}",
+    },
+    "membership_id": "{{membership_id}}"
+}
+```
+
+Failed Response (Authorization Header Missing)
+
+Status Code : `400 Bad Request`
+
+```json
+{
+    "Message": "Authorization header missing or empty",
+    "ErrorCode": "AuthorizationHeaderMissing",
+    "StatusCode": 400
+}
+```
+
+Failed Response (Ambiguous or unsupported token type)
+
+Status Code : `400 Bad Request`
+
+```json
+{
+   "Message": "Token type not supported. Token type must be one of Bearer or Basic",
+   "ErrorCode": "TokenTypeNotSupported",
+   "StatusCode": 400
+}
+```
+
+Failed Response (Invalid token)
+
+Status Code : `401 Unauthorized`
+
+```json
+{
+   "Message": "Provided token is invalid",
+   "ErrorCode": "InvalidToken",
+   "StatusCode": 401
+}
+```
+
+Failed Response (Expired token)
+
+Status Code : `401 Unauthorized`
+
+```json
+{
+   "Message": "Provided token was expired",
+   "ErrorCode": "TokenWasExpired",
+   "StatusCode": 401
+}
+```
+
+Failed Response (Revoked token)
+
+Status Code : `401 Unauthorized`
+
+```json
+{
+   "Message": "Provided token was revoked",
+   "ErrorCode": "TokenWasRevoked",
+   "StatusCode": 401
+}
+```
+
+<hr>
+<br/>
+
+## Verify Token
+
+<br/>
+
+Request Model
+
+```yaml
+curl --location --request GET '{{base_url}}/api/v1/verify-token' \
+--header 'Authorization: Bearer {{access_token}}'
+```
+
+or
+
+```yaml
+curl --location --request POST '{{base_url}}/api/v1/verify-token' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "token": "Bearer {{access_token}}"
+}'
+```
+
+Successful Response
+
+Status Code : `200 OK`
+
+```json
+{
+    "verified": true,
+    "token": "{{access_token}}",
+    "token_kind": "access_token",
+    "remaining_time": {{remaining_time_seconds}}
+}
+```
+
+<hr>
+<br/>
+
+## Refresh Token
+
+<br/>
+
+Request Model
+
+```yaml
+curl --location --request GET '{{base_url}}/api/v1/refresh-token' \
+--header 'Authorization: Bearer {{refresh_token}}'
+```
+
+or
+
+```yaml
+curl --location --request POST '{{base_url}}/api/v1/refresh-token' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "token": "Bearer {{refresh_token}}"
+}'
+```
+
+> &nbsp;
+>
+> If you want to revoke the current token besides the token refresh, add "?revoke=true" to the query string
+>
+> &nbsp;
+
+<br/>
+
+Successful Response
+
+Status Code : `201 Created`
+
+```json
+{
+    "token_type": "bearer",
+    "refresh_token": "{refresh_token}",
+    "refresh_token_expires_in": 86400,
+    "access_token": "{{access_token}}",
+    "expires_in": 43200,
+    "created_at": "2021-09-01T20:46:03.1354057+03:00"
+}
+```
+
+Failed Response (Expired refresh token)
+
+Status Code : `401 Unauthorized`
+
+```json
+{
+    "Message": "Provided refresh token was expired",
+    "ErrorCode": "RefreshTokenWasExpired",
+    "StatusCode": 401
+}
+```
+
+<hr>
+<br/>
+
+## Logout / Revoke Token
+
+<br/>
+
+Request Model
+
+```yaml
+curl --location --request GET '{{base_url}}/api/v1/revoke-token' \
+--header 'Authorization: Bearer {{access_token}}'
+```
+
+or
+
+```yaml
+curl --location --request POST '{{base_url}}/api/v1/revoke-token' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "token": "Bearer {{access_token}}"
+}'
+```
+
+> &nbsp;
+>
+> If you want to log out of all sessions, add "?logout-all=true" to the query string. This operation will be signed-out of all sessions for the owner of the token on all devices.
+>
+> &nbsp;
+
+<br/>
+
+Successful Response
+
+Status Code : `204 No Content`
+
+<br/>
+
+Failed Response (Invalid or already revoked token)
+
+Status Code : `401 Unauthorized`
+
+<br/>
+<hr>
+<br/>

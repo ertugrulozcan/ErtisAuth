@@ -2,17 +2,20 @@ version: '3.1'
 
 services:
     mongo:
-        container_name: mongo_db
+        container_name: ertisauth_mongo
         image: mongo
         restart: always
         volumes:
             - ${HOME}/.docker/volumes/ertisauth:/data/db
         ports:
             - "27017:27017"
-    web:
-        build: .
+    web_api:
+        container_name: ertisauth_web_api
+        image: ertugrulozcan/ertisauth:latest
         ports:
             - "9716:80"
+        environment:
+            - Database__Host=ertisauth_mongo
         depends_on:
             - mongo
         volumes:
