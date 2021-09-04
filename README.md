@@ -8,8 +8,6 @@
 
 <br/>
 
-[<img align="right" width="80px" src="https://avatars.githubusercontent.com/u/80157920?s=400&u=8771a9040e5010a204a587b9a30061952787d818&v=4" style="box-shadow: rgba(130, 130, 130, 0.24) 0px 3px 10px; margin-left: 12px;" />](https://github.com/ertugrulozcan/ErtisAuth)
-
 **ErtisAuth** is a free and open-source OpenID-Connect framework and high performer identity and access management API.
 It's designed to provide a common way to authenticate requests to all of your applications, whether they're web, native, mobile, or Web API endpoints.
 It is based on the RBAC (Role based access control) and UBAC (User based access control) models for authorization/access control.
