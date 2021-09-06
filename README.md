@@ -14,6 +14,10 @@ It is based on the RBAC (Role based access control) and UBAC (User based access 
 ErtisAuth incorporates features needed to integrate token-based authentication, SSO and API access control in your applications for authorization and authentication.
 It is licensed under MIT License (an OSI approved license).
 
+## Documentation
+
+For developer guide and API documentation, please visit [wiki page](https://github.com/ertugrulozcan/ErtisAuth/wiki).
+
 <br/>
 
 ## Installation
