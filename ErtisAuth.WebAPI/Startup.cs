@@ -26,7 +26,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Sentry.AspNetCore;
+using Microsoft.OpenApi.Models;
 
 namespace ErtisAuth.WebAPI
 {
@@ -41,6 +41,8 @@ namespace ErtisAuth.WebAPI
 		#region Properties
 
 		public IConfiguration Configuration { get; }
+		
+		private int ApiVersion { get; set; }
 
 		#endregion
 		
@@ -134,8 +136,7 @@ namespace ErtisAuth.WebAPI
 			});
 
 			services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ErtisAuthAuthenticationHandler>(
-				Policies.ErtisAuthAuthorizationPolicyName, 
-				options => {});
+				Policies.ErtisAuthAuthorizationPolicyName, _ => {});
 			
 			services.AddAuthorization(options =>
 				options.AddPolicy(Policies.ErtisAuthAuthorizationPolicyName, policy =>
@@ -145,26 +146,27 @@ namespace ErtisAuth.WebAPI
 				}));
 
 			// Api versioning
-			int major = this.Configuration.GetSection("ApiVersion").GetValue<int>("Major");
-			int minor = this.Configuration.GetSection("ApiVersion").GetValue<int>("Minor");
+			var major = this.Configuration.GetSection("ApiVersion").GetValue<int>("Major");
+			var minor = this.Configuration.GetSection("ApiVersion").GetValue<int>("Minor");
+			this.ApiVersion = major;
+			
 			services.AddApiVersioning(o => {
 				o.ReportApiVersions = true;
 				o.AssumeDefaultVersionWhenUnspecified = true;
 				o.DefaultApiVersion = new ApiVersion(major, minor);
 			});
 			
-			// Swagger
-			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
-			{
-				services.AddSwaggerGen();
-			}
-
 			// Quartz
 			services.AddQuartzJobs();
 
-			services
-				.AddControllers()
-				.AddNewtonsoftJson();
+			services.AddControllers().AddNewtonsoftJson();
+			
+			// Swagger
+			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
+			{
+				var swaggerVersion = $"v{this.ApiVersion}";
+				services.AddSwaggerGen(c => { c.SwaggerDoc(swaggerVersion, new OpenApiInfo { Title = "ErtisAuth.WebAPI", Version = swaggerVersion }); });	
+			}
 		}
 		
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -173,6 +175,18 @@ namespace ErtisAuth.WebAPI
 			{
 				app.UseDeveloperExceptionPage();
 			}
+			
+			// Swagger
+			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
+			{
+				app.UseSwagger();
+				app.UseSwaggerUI(options =>
+				{
+					var swaggerVersion = $"V{this.ApiVersion}";
+					options.SwaggerEndpoint("/swagger/v1/swagger.json", "ErtisAuth.WebAPI " + swaggerVersion);
+					options.DefaultModelsExpandDepth(-1);
+				});	
+			}
 
 			app.UseCors(CORS_POLICY_KEY);
 			app.UseHttpsRedirection();
@@ -180,24 +194,6 @@ namespace ErtisAuth.WebAPI
 			app.UseAuthentication();
 			app.UseAuthorization();
 			app.ConfigureGlobalExceptionHandler();
-
-			// Sentry
-			if (this.Configuration.GetSection("Sentry").GetValue<bool>("Enabled") && this.Configuration.GetSection("Sentry").GetValue<bool>("Tracing"))
-			{
-				app.UseSentryTracing();
-			}
-			
-			// Swagger
-			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
-			{
-				app.UseSwagger();
-
-				int majorVersion = this.Configuration.GetSection("ApiVersion").GetValue<int>("Major");
-				app.UseSwaggerUI(c =>
-				{
-					c.SwaggerEndpoint($"/swagger/v{majorVersion}/swagger.json", $"ErtisAuth V{majorVersion}");
-				});
-			}
 			
 			app.UseEndpoints(endpoints =>
 			{

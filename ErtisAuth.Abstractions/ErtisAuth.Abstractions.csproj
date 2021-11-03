@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net5.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
@@ -9,7 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Core" Version="1.0.9" />
-      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
+      <PackageReference Include="Ertis.Core" Version="5.1.0" />
     </ItemGroup>
+
 </Project>

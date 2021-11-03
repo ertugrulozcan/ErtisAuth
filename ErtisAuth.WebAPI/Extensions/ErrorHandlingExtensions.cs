@@ -5,8 +5,6 @@ using Ertis.Core.Models.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Sentry;
 
 namespace ErtisAuth.WebAPI.Extensions
 {
@@ -62,9 +60,6 @@ namespace ErtisAuth.WebAPI.Extensions
 									ErrorCode = "UnhandledExceptionError",
 									StatusCode = 500
 								};
-								
-								var sentryHub = app.ApplicationServices.GetService<IHub>();
-								sentryHub?.CaptureException(contextFeature.Error);
 								
 								break;
 						}

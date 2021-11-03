@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net5.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Data" Version="1.0.12" />
-      <PackageReference Include="MongoDB.Driver" Version="2.11.4" />
+      <PackageReference Include="Ertis.Data" Version="5.1.0" />
+      <PackageReference Include="MongoDB.Driver" Version="2.13.2" />
     </ItemGroup>
 
     <ItemGroup>

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Sentry;
 
 namespace ErtisAuth.WebAPI
 {
@@ -12,41 +11,18 @@ namespace ErtisAuth.WebAPI
 		private static IConfigurationRoot BootConfiguration;
 		
 		private static readonly Dictionary<string, object> EnvironmentParameters = new Dictionary<string, object>();
-		
+
 		public static void Main(string[] args)
 		{
 			var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 			SetBootConfiguration(environment);
 			
-			var hostBuilder = CreateHostBuilder(args);
-			var host = hostBuilder.Build();
-			host.Run();
+			CreateHostBuilder(args).Build().Run();
 		}
-
-		public static IHostBuilder CreateHostBuilder(string[] args)
-		{
-			return Host.CreateDefaultBuilder(args).ConfigureWebHostDefaults(webBuilder =>
-			{
-				webBuilder.UseStartup<Startup>();
-
-				// Sentry.io integration
-				if (bool.TryParse(BootConfiguration["Sentry:Enabled"], out bool isSentryEnabled) && isSentryEnabled)
-				{
-					var sentryDsn = BootConfiguration["Sentry:Dsn"];
-					bool.TryParse(BootConfiguration["Sentry:Debug"], out bool isSentryDebuggingEnabled);
-					webBuilder.UseSentry(o =>
-					{
-						o.Dsn = sentryDsn;
-						o.Debug = isSentryDebuggingEnabled;
-						o.TracesSampleRate = 0.5;
-						o.Environment = BootConfiguration["Environment"];
-						o.AddExceptionFilterForType<Ertis.Core.Exceptions.ValidationException>();
-						o.AddExceptionFilterForType<Ertis.Core.Exceptions.ErtisException>();
-						o.AddExceptionFilterForType<Ertis.Core.Exceptions.HttpStatusCodeException>();
-					});	
-				}
-			});
-		}
+		
+		public static IHostBuilder CreateHostBuilder(string[] args) =>
+			Host.CreateDefaultBuilder(args)
+				.ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
 		
 		private static void SetBootConfiguration(string environment)
 		{

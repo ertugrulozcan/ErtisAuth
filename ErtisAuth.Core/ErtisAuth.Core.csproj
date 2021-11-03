@@ -1,27 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-
+        <TargetFramework>net5.0</TargetFramework>
         <PackageId>ErtisAuth.Core</PackageId>
-        <PackageVersion>1.2.4</PackageVersion>
+        <PackageVersion>5.1.0</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Core</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <Copyright>Ertuğrul Özcan | Copyright 2020 (c)</Copyright>
-        <PackageReleaseNotes>Initial package</PackageReleaseNotes>
+        <Copyright>Ertuğrul Özcan | Copyright 2021 (c)</Copyright>
+        <PackageReleaseNotes>.Net 5</PackageReleaseNotes>
         <PackageTags>ErtisAuth.Core</PackageTags>
         <Title>ErtisAuth.Core</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>1.2.4</AssemblyVersion>
-        <FileVersion>1.2.4</FileVersion>
+        <AssemblyVersion>5.1.0</AssemblyVersion>
+        <FileVersion>5.1.0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Core" Version="1.0.9" />
-      <PackageReference Include="Ertis.Security" Version="1.0.2" />
-      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+      <PackageReference Include="Ertis.Core" Version="5.1.0" />
+      <PackageReference Include="Ertis.Security" Version="5.1.0" />
     </ItemGroup>
 
 </Project>
