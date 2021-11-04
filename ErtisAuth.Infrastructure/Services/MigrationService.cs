@@ -57,7 +57,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Methods
 
-		public async Task<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPasswordHash _user, Application _application)
+		public async ValueTask<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPasswordHash _user, Application _application)
 		{
 			// Validation
 			var databaseInformation = Ertis.MongoDB.Helpers.ConnectionStringHelper.ParseConnectionString(connectionString);

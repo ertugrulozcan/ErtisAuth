@@ -245,7 +245,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<ApplicationDto, Application>(dto);
 		}
 
-		public async Task<Application> GetByIdAsync(string id)
+		public async ValueTask<Application> GetByIdAsync(string id)
 		{
 			var dto = await this.repository.FindOneAsync(x => x.Id == id);
 			return Mapper.Current.Map<ApplicationDto, Application>(dto);

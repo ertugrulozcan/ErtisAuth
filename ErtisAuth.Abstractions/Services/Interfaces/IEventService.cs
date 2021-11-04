@@ -6,9 +6,9 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface IEventService : IMembershipBoundedService<ErtisAuthEventBase>, IDynamicResourceService
 	{
-		Task<ErtisAuthEvent> FireEventAsync(object sender, ErtisAuthEvent ertisAuthEvent);
+		ValueTask<ErtisAuthEvent> FireEventAsync(object sender, ErtisAuthEvent ertisAuthEvent);
 		
-		Task<ErtisAuthCustomEvent> FireEventAsync(object sender, ErtisAuthCustomEvent ertisAuthCustomEvent);
+		ValueTask<ErtisAuthCustomEvent> FireEventAsync(object sender, ErtisAuthCustomEvent ertisAuthCustomEvent);
 
 		event EventHandler<ErtisAuthEvent> EventFired;
 		

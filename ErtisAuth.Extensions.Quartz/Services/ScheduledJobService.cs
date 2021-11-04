@@ -45,7 +45,7 @@ namespace ErtisAuth.Extensions.Quartz.Services
 
 		#region Methods
 
-		public async Task ScheduleTokenCleanerJobsAsync()
+		public async ValueTask ScheduleTokenCleanerJobsAsync()
 		{
 			try
 			{

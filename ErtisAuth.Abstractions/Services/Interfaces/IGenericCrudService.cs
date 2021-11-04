@@ -21,23 +21,23 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 
 		T Get(string id);
 		
-		Task<T> GetAsync(string id);
+		ValueTask<T> GetAsync(string id);
 
 		IPaginationCollection<T> Get(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null);
 		
-		Task<IPaginationCollection<T>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null);
+		ValueTask<IPaginationCollection<T>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null);
 		
 		T Create(T model);
 		
-		Task<T> CreateAsync(T model);
+		ValueTask<T> CreateAsync(T model);
 
 		T Update(T model);
 		
-		Task<T> UpdateAsync(T model);
+		ValueTask<T> UpdateAsync(T model);
 
 		bool Delete(string id);
 
-		Task<bool> DeleteAsync(string id);
+		ValueTask<bool> DeleteAsync(string id);
 
 		#endregion
 	}

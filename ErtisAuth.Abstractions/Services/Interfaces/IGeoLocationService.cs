@@ -5,6 +5,6 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface IGeoLocationService
     {
-    	Task<GeoLocationInfo> LookupAsync(string ipAddress);
+		Task<GeoLocationInfo> LookupAsync(string ipAddress);
     }
 }

@@ -51,7 +51,7 @@ namespace ErtisAuth.Infrastructure.Services
 			this.InitializeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 		
-		private async Task InitializeAsync()
+		private async ValueTask InitializeAsync()
 		{
 			var memberships = await this.membershipService.GetAsync();
 			if (memberships?.Items != null)
@@ -271,7 +271,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<RoleDto, Role>(dto);
 		}
 		
-		public async Task<Role> GetByNameAsync(string name, string membershipId)
+		public async ValueTask<Role> GetByNameAsync(string name, string membershipId)
 		{
 			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
 			if (dto == null)

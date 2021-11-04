@@ -4,6 +4,6 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface IScheduledJobService
 	{
-		Task ScheduleTokenCleanerJobsAsync();
+		ValueTask ScheduleTokenCleanerJobsAsync();
 	}
 }

@@ -7,24 +7,24 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface ITokenService
 	{
-		Task<User> WhoAmIAsync(BearerToken bearerToken);
+		ValueTask<User> WhoAmIAsync(BearerToken bearerToken);
 		
-		Task<Application> WhoAmIAsync(BasicToken basicToken);
+		ValueTask<Application> WhoAmIAsync(BasicToken basicToken);
 		
-		Task<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true);
+		ValueTask<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true);
 
-		Task<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true);
+		ValueTask<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true);
 		
-		Task<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true);
+		ValueTask<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true);
 		
-		Task<BasicTokenValidationResult> VerifyBasicTokenAsync(string token, bool fireEvent = true);
+		ValueTask<BasicTokenValidationResult> VerifyBasicTokenAsync(string token, bool fireEvent = true);
 		
-		Task<BearerToken> RefreshTokenAsync(string refreshToken, bool revokeBefore = true, bool fireEvent = true);
+		ValueTask<BearerToken> RefreshTokenAsync(string refreshToken, bool revokeBefore = true, bool fireEvent = true);
 
-		Task<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true);
+		ValueTask<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true);
 		
-		Task ClearExpiredActiveTokens(string membershipId);
+		ValueTask ClearExpiredActiveTokens(string membershipId);
 		
-		Task ClearRevokedTokens(string membershipId);
+		ValueTask ClearRevokedTokens(string membershipId);
 	}
 }

@@ -18,8 +18,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Core" Version="5.1.0" />
-      <PackageReference Include="Ertis.Security" Version="5.1.0" />
+      <PackageReference Include="Ertis.Core" Version="5.1.1" />
+      <PackageReference Include="Ertis.Security" Version="5.1.1" />
     </ItemGroup>
 
 </Project>

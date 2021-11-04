@@ -90,7 +90,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region WhoAmI
 
-		public async Task<User> WhoAmIAsync(BearerToken bearerToken)
+		public async ValueTask<User> WhoAmIAsync(BearerToken bearerToken)
 		{
 			await this.VerifyBearerTokenAsync(bearerToken.AccessToken, false);
 			return await this.GetTokenOwnerUserAsync(bearerToken.AccessToken);
@@ -108,7 +108,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		public async Task<Application> WhoAmIAsync(BasicToken basicToken)
+		public async ValueTask<Application> WhoAmIAsync(BasicToken basicToken)
 		{
 			await this.VerifyBasicTokenAsync(basicToken.AccessToken, false);
 			return await this.GetTokenOwnerApplicationAsync(basicToken.AccessToken);
@@ -158,7 +158,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Generate Token
 
-		public async Task<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true)
+		public async ValueTask<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true)
 		{
 			// Check membership
 			var membership = await this.membershipService.GetAsync(membershipId);
@@ -311,7 +311,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Verify Token
 
-		public async Task<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true)
+		public async ValueTask<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true)
 		{
 			switch (tokenType)
 			{
@@ -324,7 +324,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public async Task<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true)
+		public async ValueTask<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true)
 		{
 			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token == token);
 			if (revokedToken != null)
@@ -393,7 +393,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public async Task<BasicTokenValidationResult> VerifyBasicTokenAsync(string basicToken, bool fireEvent = true)
+		public async ValueTask<BasicTokenValidationResult> VerifyBasicTokenAsync(string basicToken, bool fireEvent = true)
 		{
 			if (string.IsNullOrEmpty(basicToken))
 			{
@@ -437,7 +437,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Refresh Token
 
-		public async Task<BearerToken> RefreshTokenAsync(string refreshToken, bool revokeBefore = true, bool fireEvent = true)
+		public async ValueTask<BearerToken> RefreshTokenAsync(string refreshToken, bool revokeBefore = true, bool fireEvent = true)
 		{
 			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token == refreshToken);
 			if (revokedToken != null)
@@ -524,7 +524,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Revoke Token
 
-		public async Task<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true)
+		public async ValueTask<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true)
 		{
 			User user;
 			
@@ -638,7 +638,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return expiredActiveTokensResult.Items;
 		}
 		
-		public async Task ClearExpiredActiveTokens(string membershipId)
+		public async ValueTask ClearExpiredActiveTokens(string membershipId)
 		{
 			try
 			{
@@ -659,7 +659,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		public async Task ClearRevokedTokens(string membershipId)
+		public async ValueTask ClearRevokedTokens(string membershipId)
 		{
 			try
 			{

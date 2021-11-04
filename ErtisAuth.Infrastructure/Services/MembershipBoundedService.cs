@@ -50,7 +50,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return this.repository.Query(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 		}
 		
-		public async Task<IPaginationCollection<dynamic>> QueryAsync(
+		public async ValueTask<IPaginationCollection<dynamic>> QueryAsync(
 			string query, 
 			int? skip = null, 
 			int? limit = null, 
@@ -78,7 +78,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<TDto, TModel>(dto);
 		}
 
-		public virtual async Task<TModel> GetAsync(string membershipId, string id)
+		public virtual async ValueTask<TModel> GetAsync(string membershipId, string id)
 		{
 			var membership = await this.membershipService.GetAsync(membershipId);
 			if (membership == null)
@@ -113,7 +113,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public virtual async Task<IPaginationCollection<TModel>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
+		public virtual async ValueTask<IPaginationCollection<TModel>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
 		{
 			var membership = await this.membershipService.GetAsync(membershipId);
 			if (membership == null)

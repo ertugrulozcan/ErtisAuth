@@ -16,7 +16,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 			SortDirection? sortDirection = null,
 			IDictionary<string, bool> selectFields = null);
 		
-		Task<IPaginationCollection<dynamic>> QueryAsync(
+		ValueTask<IPaginationCollection<dynamic>> QueryAsync(
 			string query, 
 			int? skip = null, 
 			int? limit = null,
@@ -27,10 +27,10 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 
 		TModel Get(string membershipId, string id);
 		
-		Task<TModel> GetAsync(string membershipId, string id);
+		ValueTask<TModel> GetAsync(string membershipId, string id);
 		
 		IPaginationCollection<TModel> Get(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
 
-		Task<IPaginationCollection<TModel>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
+		ValueTask<IPaginationCollection<TModel>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
 	}
 }

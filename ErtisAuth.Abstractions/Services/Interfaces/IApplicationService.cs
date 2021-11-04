@@ -7,6 +7,6 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 	{
 		Application GetById(string id);
 		
-		Task<Application> GetByIdAsync(string id);
+		ValueTask<Application> GetByIdAsync(string id);
 	}
 }
