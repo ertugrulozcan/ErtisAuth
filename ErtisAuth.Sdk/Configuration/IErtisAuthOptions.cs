@@ -7,12 +7,6 @@ namespace ErtisAuth.Sdk.Configuration
 		string BaseUrl { get; }
 		
 		string MembershipId { get; }
-		
-		string ApplicationId { get; }
-		
-		string Secret { get; }
-		
-		string BasicToken { get; }
 
 		#endregion
 	}
@@ -21,15 +15,11 @@ namespace ErtisAuth.Sdk.Configuration
 	{
 		#region Properties
 
+		// ReSharper disable once UnusedAutoPropertyAccessor.Global
 		public string BaseUrl { get; set; }
 		
+		// ReSharper disable once UnusedAutoPropertyAccessor.Global
 		public string MembershipId { get; set; }
-		
-		public string ApplicationId { get; set; }
-		
-		public string Secret { get; set; }
-
-		public string BasicToken => $"{this.ApplicationId}:{this.Secret}";
 
 		#endregion
 	}
