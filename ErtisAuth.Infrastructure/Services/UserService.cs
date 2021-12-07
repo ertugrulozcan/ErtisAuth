@@ -113,7 +113,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return base.Update(utilizer, membershipId, new UserWithPasswordHash(model) { PasswordHash = passwordHash });
 		}
 
-		public override async Task<User> UpdateAsync(Utilizer utilizer, string membershipId, User model)
+		public override async ValueTask<User> UpdateAsync(Utilizer utilizer, string membershipId, User model)
 		{
 			var currentUser = await this.GetUserWithPasswordAsync(model.Id, membershipId);
 			var passwordHash = currentUser.PasswordHash;
@@ -327,7 +327,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<UserDto, UserWithPasswordHash>(dto);
 		}
 
-		public async Task<UserWithPasswordHash> GetUserWithPasswordAsync(string id, string membershipId)
+		public async ValueTask<UserWithPasswordHash> GetUserWithPasswordAsync(string id, string membershipId)
 		{
 			var dto = await this.repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId);
 			if (dto == null)
@@ -354,7 +354,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<UserDto, UserWithPasswordHash>(dto);
 		}
 		
-		public async Task<UserWithPasswordHash> GetUserWithPasswordAsync(string username, string email, string membershipId)
+		public async ValueTask<UserWithPasswordHash> GetUserWithPasswordAsync(string username, string email, string membershipId)
 		{
 			var dto = await this.repository.FindOneAsync(x =>
 				(x.Username == username || 
@@ -427,7 +427,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return updatedUser;
 		}
 		
-		public async Task<User> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword)
+		public async ValueTask<User> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword)
 		{
 			if (string.IsNullOrEmpty(newPassword))
 			{
@@ -476,7 +476,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return this.ResetPasswordAsync(utilizer, membershipId, usernameOrEmailAddress).ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 
-		public async Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string usernameOrEmailAddress)
+		public async ValueTask<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string usernameOrEmailAddress)
 		{
 			if (string.IsNullOrEmpty(usernameOrEmailAddress))
 			{
@@ -526,7 +526,7 @@ namespace ErtisAuth.Infrastructure.Services
 			this.SetPasswordAsync(utilizer, membershipId, resetToken, usernameOrEmailAddress, password).ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 
-		public async Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password)
+		public async ValueTask SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password)
 		{
 			if (string.IsNullOrEmpty(usernameOrEmailAddress))
 			{

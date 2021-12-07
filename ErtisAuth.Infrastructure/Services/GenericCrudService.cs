@@ -70,7 +70,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<TDto, TModel>(dto);
 		}
 		
-		public async Task<TModel> GetAsync(string id)
+		public async ValueTask<TModel> GetAsync(string id)
 		{
 			var dto = await this.repository.FindOneAsync(id);
 			return Mapper.Current.Map<TDto, TModel>(dto);
@@ -93,7 +93,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public async Task<IPaginationCollection<TModel>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null)
+		public async ValueTask<IPaginationCollection<TModel>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null)
 		{
 			var paginatedDtoCollection = await this.repository.FindAsync(expression: null, skip, limit, withCount, orderBy, sortDirection);
 			if (paginatedDtoCollection?.Items != null)
@@ -150,7 +150,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return inserted;
 		}
 		
-		public virtual async Task<TModel> CreateAsync(TModel model)
+		public virtual async ValueTask<TModel> CreateAsync(TModel model)
 		{
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -210,7 +210,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return updated;
 		}
 		
-		public virtual async Task<TModel> UpdateAsync(TModel model)
+		public virtual async ValueTask<TModel> UpdateAsync(TModel model)
 		{
 			// Overwrite
 			var current = await this.GetAsync(model.Id);
@@ -265,7 +265,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public virtual async Task<bool> DeleteAsync(string id)
+		public virtual async ValueTask<bool> DeleteAsync(string id)
 		{
 			var current = await this.GetAsync(id);
 			if (current != null)

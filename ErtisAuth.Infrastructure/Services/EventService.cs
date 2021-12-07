@@ -38,7 +38,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Fire Methods
 
-		public async Task<ErtisAuthEvent> FireEventAsync(object sender, ErtisAuthEvent ertisAuthEvent)
+		public async ValueTask<ErtisAuthEvent> FireEventAsync(object sender, ErtisAuthEvent ertisAuthEvent)
 		{
 			try
 			{
@@ -64,7 +64,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		public async Task<ErtisAuthCustomEvent> FireEventAsync(object sender, ErtisAuthCustomEvent ertisAuthCustomEvent)
+		public async ValueTask<ErtisAuthCustomEvent> FireEventAsync(object sender, ErtisAuthCustomEvent ertisAuthCustomEvent)
 		{
 			try
 			{
@@ -158,7 +158,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return DtoToModel(dto);
 		}
 
-		public override async Task<ErtisAuthEventBase> GetAsync(string membershipId, string id)
+		public override async ValueTask<ErtisAuthEventBase> GetAsync(string membershipId, string id)
 		{
 			var membership = await this.membershipService.GetAsync(membershipId);
 			if (membership == null)
@@ -193,7 +193,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public override async Task<IPaginationCollection<ErtisAuthEventBase>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
+		public override async ValueTask<IPaginationCollection<ErtisAuthEventBase>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
 		{
 			var membership = await this.membershipService.GetAsync(membershipId);
 			if (membership == null)
@@ -281,7 +281,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return null;
 		}
 
-		public async Task<dynamic> GetDynamicAsync(string membershipId, string id)
+		public async ValueTask<dynamic> GetDynamicAsync(string membershipId, string id)
 		{
 			var membership = await this.membershipService.GetAsync(membershipId);
 			if (membership == null)
@@ -309,7 +309,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return this.repository.Query(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
 		}
 
-		public async Task<IPaginationCollection<dynamic>> GetDynamicAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
+		public async ValueTask<IPaginationCollection<dynamic>> GetDynamicAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
 		{
 			var membership = await this.membershipService.GetAsync(membershipId);
 			if (membership == null)

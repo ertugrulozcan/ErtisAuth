@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Dto.Models.Resources;
 using MongoDB.Bson.Serialization.Attributes;
 

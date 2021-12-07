@@ -4,23 +4,24 @@
 		"windowsAuthentication": false,
 		"anonymousAuthentication": true,
 		"iisExpress": {
-			"applicationUrl": "http://localhost:8566",
-			"sslPort": 44319
+			"applicationUrl": "http://localhost:24580",
+			"sslPort": 44345
 		}
 	},
 	"profiles": {
 		"IIS Express": {
 			"commandName": "IISExpress",
 			"launchBrowser": true,
-			"launchUrl": "api/v1/healthcheck",
+			"launchUrl": "swagger",
 			"environmentVariables": {
 				"ASPNETCORE_ENVIRONMENT": "Development"
 			}
 		},
 		"ErtisAuth.WebAPI": {
 			"commandName": "Project",
+			"dotnetRunMessages": "true",
 			"launchBrowser": true,
-			"launchUrl": "api/v1/healthcheck",
+			"launchUrl": "swagger",
 			"applicationUrl": "http://localhost:9716",
 			"environmentVariables": {
 				"ASPNETCORE_ENVIRONMENT": "Development"

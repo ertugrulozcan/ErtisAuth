@@ -7,6 +7,6 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 	{
 		Role GetByName(string name, string membershipId);
 		
-		Task<Role> GetByNameAsync(string name, string membershipId);
+		ValueTask<Role> GetByNameAsync(string name, string membershipId);
 	}
 }

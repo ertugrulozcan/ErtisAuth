@@ -94,7 +94,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return inserted;
 		}
 		
-		public virtual async Task<TModel> CreateAsync(Utilizer utilizer, string membershipId, TModel model)
+		public virtual async ValueTask<TModel> CreateAsync(Utilizer utilizer, string membershipId, TModel model)
 		{
 			// Check membership
 			var membership = await this.membershipService.GetAsync(membershipId);
@@ -177,7 +177,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return updated;
 		}
 		
-		public virtual async Task<TModel> UpdateAsync(Utilizer utilizer, string membershipId, TModel model)
+		public virtual async ValueTask<TModel> UpdateAsync(Utilizer utilizer, string membershipId, TModel model)
 		{
 			// Check membership
 			var membership = await this.membershipService.GetAsync(membershipId);
@@ -288,7 +288,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public virtual async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
+		public virtual async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
 		{
 			var current = await this.GetAsync(membershipId, id);
 			if (current != null)

@@ -114,7 +114,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public Role Get(string membershipId, string id) => this.GetAsync(membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<Role> GetAsync(string membershipId, string id)
+		public async ValueTask<Role> GetAsync(string membershipId, string id)
 		{
 			await Task.CompletedTask;
 			return this.MockRepository.FirstOrDefault(x => x.MembershipId == membershipId && x.Id == id);
@@ -123,7 +123,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 		public IPaginationCollection<Role> Get(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection) =>
 			this.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IPaginationCollection<Role>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
+		public async ValueTask<IPaginationCollection<Role>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
 		{
 			await Task.CompletedTask;
 			var filteredItems = this.MockRepository.Where(x => x.MembershipId == membershipId);
@@ -160,7 +160,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 		
 		public Role GetByName(string name, string membershipId) => this.GetByNameAsync(name, membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<Role> GetByNameAsync(string name, string membershipId)
+		public async ValueTask<Role> GetByNameAsync(string name, string membershipId)
 		{
 			await Task.CompletedTask;
 			return this.MockRepository.FirstOrDefault(x => x.MembershipId == membershipId && x.Name == name);
@@ -188,7 +188,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 				selectFields)
 				.ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IPaginationCollection<dynamic>> QueryAsync(
+		public async ValueTask<IPaginationCollection<dynamic>> QueryAsync(
 			string query, 
 			int? skip = null, 
 			int? limit = null, 
@@ -207,7 +207,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public Role Create(Utilizer utilizer, string membershipId, Role model) => this.CreateAsync(utilizer, membershipId, model).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model)
+		public async ValueTask<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model)
 		{
 			model.MembershipId = membershipId;
 			model.Sys = new SysModel
@@ -227,7 +227,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public Role Update(Utilizer utilizer, string membershipId, Role model) => this.UpdateAsync(utilizer, membershipId, model).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<Role> UpdateAsync(Utilizer utilizer, string membershipId, Role model)
+		public async ValueTask<Role> UpdateAsync(Utilizer utilizer, string membershipId, Role model)
 		{
 			model.MembershipId = membershipId;
 			var current = await this.GetAsync(membershipId, model.Id);
@@ -264,7 +264,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public bool Delete(Utilizer utilizer, string membershipId, string id) => this.DeleteAsync(utilizer, membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
+		public async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
 		{
 			var index = this.MockRepository.FindIndex(x => x.MembershipId == membershipId && x.Id == id);
 			if (index >= 0)

@@ -8,14 +8,14 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 	{
 		T Create(Utilizer utilizer, string membershipId, T model);
 		
-		Task<T> CreateAsync(Utilizer utilizer, string membershipId, T model);
+		ValueTask<T> CreateAsync(Utilizer utilizer, string membershipId, T model);
 
 		T Update(Utilizer utilizer, string membershipId, T model);
 		
-		Task<T> UpdateAsync(Utilizer utilizer, string membershipId, T model);
+		ValueTask<T> UpdateAsync(Utilizer utilizer, string membershipId, T model);
 
 		bool Delete(Utilizer utilizer, string membershipId, string id);
 
-		Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id);
+		ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id);
 	}
 }

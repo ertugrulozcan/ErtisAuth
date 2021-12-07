@@ -98,7 +98,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public User Get(string membershipId, string id) => this.GetAsync(membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<User> GetAsync(string membershipId, string id)
+		public async ValueTask<User> GetAsync(string membershipId, string id)
 		{
 			await Task.CompletedTask;
 			return this.MockRepository.FirstOrDefault(x => x.MembershipId == membershipId && x.Id == id);
@@ -107,7 +107,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 		public IPaginationCollection<User> Get(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection) =>
 			this.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IPaginationCollection<User>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
+		public async ValueTask<IPaginationCollection<User>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
 		{
 			await Task.CompletedTask;
 			var filteredItems = this.MockRepository.Where(x => x.MembershipId == membershipId);
@@ -164,7 +164,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 				selectFields)
 				.ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IPaginationCollection<dynamic>> QueryAsync(
+		public async ValueTask<IPaginationCollection<dynamic>> QueryAsync(
 			string query, 
 			int? skip = null, 
 			int? limit = null, 
@@ -183,7 +183,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public User Create(Utilizer utilizer, string membershipId, User model) => this.CreateAsync(utilizer, membershipId, model).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<User> CreateAsync(Utilizer utilizer, string membershipId, User model)
+		public async ValueTask<User> CreateAsync(Utilizer utilizer, string membershipId, User model)
 		{
 			model.MembershipId = membershipId;
 			model.Sys = new SysModel
@@ -203,7 +203,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public User Update(Utilizer utilizer, string membershipId, User model) => this.UpdateAsync(utilizer, membershipId, model).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<User> UpdateAsync(Utilizer utilizer, string membershipId, User model)
+		public async ValueTask<User> UpdateAsync(Utilizer utilizer, string membershipId, User model)
 		{
 			model.MembershipId = membershipId;
 			var current = await this.GetAsync(membershipId, model.Id);
@@ -240,7 +240,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public bool Delete(Utilizer utilizer, string membershipId, string id) => this.DeleteAsync(utilizer, membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
+		public async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
 		{
 			var index = this.MockRepository.FindIndex(x => x.MembershipId == membershipId && x.Id == id);
 			if (index >= 0)
@@ -264,7 +264,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 			throw new NotImplementedException();
 		}
 
-		public Task<UserWithPasswordHash> GetUserWithPasswordAsync(string id, string membershipId)
+		public ValueTask<UserWithPasswordHash> GetUserWithPasswordAsync(string id, string membershipId)
 		{
 			throw new NotImplementedException();
 		}
@@ -274,7 +274,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 			throw new NotImplementedException();
 		}
 
-		public Task<UserWithPasswordHash> GetUserWithPasswordAsync(string username, string email, string membershipId)
+		public ValueTask<UserWithPasswordHash> GetUserWithPasswordAsync(string username, string email, string membershipId)
 		{
 			throw new NotImplementedException();
 		}
@@ -284,7 +284,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 			throw new NotImplementedException();
 		}
 
-		public Task<User> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword)
+		public ValueTask<User> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword)
 		{
 			throw new NotImplementedException();
 		}
@@ -294,7 +294,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 			throw new NotImplementedException();
 		}
 
-		public Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string usernameOrEmailAddress)
+		public ValueTask<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string usernameOrEmailAddress)
 		{
 			throw new NotImplementedException();
 		}
@@ -304,7 +304,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 			throw new NotImplementedException();
 		}
 
-		public Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password)
+		public ValueTask SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password)
 		{
 			throw new NotImplementedException();
 		}

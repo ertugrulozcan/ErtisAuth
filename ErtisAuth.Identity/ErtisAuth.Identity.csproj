@@ -1,33 +1,29 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-
+        <TargetFramework>net5.0</TargetFramework>
         <PackageId>ErtisAuth.Identity</PackageId>
-        <PackageVersion>3.1.4</PackageVersion>
+        <PackageVersion>5.1.1</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Identity</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <Copyright>Ertuğrul Özcan | Copyright 2021 (c)</Copyright>
-        <PackageReleaseNotes>Initial package</PackageReleaseNotes>
+        <PackageReleaseNotes>.Net 5</PackageReleaseNotes>
         <PackageTags>ErtisAuth.Identity</PackageTags>
         <Title>ErtisAuth.Identity</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>3.1.4</AssemblyVersion>
-        <FileVersion>3.1.4</FileVersion>
+        <AssemblyVersion>5.1.1</AssemblyVersion>
+        <FileVersion>5.1.1</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Jwt" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.14.0" />
+      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.14.0" />
     </ItemGroup>
 
 </Project>
