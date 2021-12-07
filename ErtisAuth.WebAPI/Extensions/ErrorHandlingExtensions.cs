@@ -66,6 +66,7 @@ namespace ErtisAuth.WebAPI.Extensions
 
 						var json = Newtonsoft.Json.JsonConvert.SerializeObject(errorModel);
 						await context.Response.WriteAsync(json);
+						await context.Response.CompleteAsync();
 					}
 				});
 			});
