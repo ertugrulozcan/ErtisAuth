@@ -111,8 +111,6 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				passwordHash = userWithPassword.PasswordHash;
 			}
-
-			this.EnsureUserType(membershipId, model);
 			
 			return base.Update(utilizer, membershipId, new UserWithPasswordHash(model) { PasswordHash = passwordHash });
 		}
@@ -126,69 +124,7 @@ namespace ErtisAuth.Infrastructure.Services
 				passwordHash = userWithPassword.PasswordHash;
 			}
 			
-			await this.EnsureUserTypeAsync(membershipId, model);
-			
 			return await base.UpdateAsync(utilizer, membershipId, new UserWithPasswordHash(model) { PasswordHash = passwordHash });
-		}
-		
-		private void EnsureUserType(string membershipId, User model)
-		{
-			var membership = this.membershipService.Get(membershipId);
-			if (membership == null)
-			{
-				throw ErtisAuthException.MembershipNotFound(membershipId);
-			}
-			
-			if (membership.UserType != null)
-			{
-				try
-				{
-					var schema = membership.UserType.ConvertToJSchema();
-					if (model.AdditionalProperties is JObject jObject)
-					{
-						jObject.Validate(schema);
-					}
-					else
-					{
-						jObject = JObject.FromObject(model.AdditionalProperties);
-						jObject.Validate(schema);	
-					}
-				}
-				catch (Exception ex)
-				{
-					throw ErtisAuthException.UserTypeValidationException(ex.Message);
-				}
-			}
-		}
-		
-		private async Task EnsureUserTypeAsync(string membershipId, User model)
-		{
-			var membership = await this.membershipService.GetAsync(membershipId);
-			if (membership == null)
-			{
-				throw ErtisAuthException.MembershipNotFound(membershipId);
-			}
-			
-			if (membership.UserType != null)
-			{
-				try
-				{
-					var schema = membership.UserType.ConvertToJSchema();
-					if (model.AdditionalProperties is JObject jObject)
-					{
-						jObject.Validate(schema);
-					}
-					else
-					{
-						jObject = JObject.FromObject(model.AdditionalProperties);
-						jObject.Validate(schema);	
-					}
-				}
-				catch (Exception ex)
-				{
-					throw ErtisAuthException.UserTypeValidationException(ex.Message);
-				}
-			}
 		}
 
 		protected override bool ValidateModel(User model, out IEnumerable<string> errors)
@@ -223,6 +159,36 @@ namespace ErtisAuth.Infrastructure.Services
 				if (role == null)
 				{
 					errorList.Add($"Role is invalid. There is no role named '{model.Role}'");
+				}
+			}
+
+			if (model.AdditionalProperties != null)
+			{
+				var membership = this.membershipService.Get(model.MembershipId);
+				if (membership == null)
+				{
+					throw ErtisAuthException.MembershipNotFound(model.MembershipId);
+				}
+			
+				if (membership.UserType != null)
+				{
+					try
+					{
+						var schema = membership.UserType.ConvertToJSchema();
+						if (model.AdditionalProperties is JObject jObject)
+						{
+							jObject.Validate(schema);
+						}
+						else
+						{
+							jObject = JObject.FromObject(model.AdditionalProperties);
+							jObject.Validate(schema);	
+						}
+					}
+					catch (Exception ex)
+					{
+						throw ErtisAuthException.UserTypeValidationException(ex.Message);
+					}
 				}
 			}
 			
@@ -321,6 +287,11 @@ namespace ErtisAuth.Infrastructure.Services
 			if (destination.Forbidden == null)
 			{
 				destination.Forbidden = source.Forbidden;
+			}
+			
+			if (destination.AdditionalProperties == null)
+			{
+				destination.AdditionalProperties = source.AdditionalProperties;
 			}
 			
 			if (destination is UserWithPasswordHash destinationWithPassword)
