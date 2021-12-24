@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ErtisAuth.Dto.Models.Resources;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Users
@@ -37,6 +38,9 @@ namespace ErtisAuth.Dto.Models.Users
 		
 		[BsonElement("sys")]
 		public SysModelDto Sys { get; set; }
+		
+		[BsonElement("additional_properties")]
+		public BsonDocument AdditionalProperties { get; set; }
 		
 		#endregion
 	}

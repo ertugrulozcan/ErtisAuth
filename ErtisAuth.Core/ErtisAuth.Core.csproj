@@ -20,6 +20,7 @@
     <ItemGroup>
       <PackageReference Include="Ertis.Core" Version="5.1.1" />
       <PackageReference Include="Ertis.Security" Version="5.1.1" />
+      <PackageReference Include="Newtonsoft.Json.Schema" Version="3.0.14" />
     </ItemGroup>
 
 </Project>

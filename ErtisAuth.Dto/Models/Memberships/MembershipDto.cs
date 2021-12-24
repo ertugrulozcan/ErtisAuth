@@ -1,4 +1,5 @@
 using ErtisAuth.Dto.Models.Resources;
+using ErtisAuth.Dto.Models.Users;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Memberships
@@ -24,6 +25,9 @@ namespace ErtisAuth.Dto.Models.Memberships
 
 		[BsonElement("encoding")]
 		public string DefaultEncoding { get; set; }
+		
+		[BsonElement("user_type")]
+		public UserTypeDto UserType { get; set; }
 
 		[BsonElement("sys")]
 		public SysModelDto Sys { get; set; }

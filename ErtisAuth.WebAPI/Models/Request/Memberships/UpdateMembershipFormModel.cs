@@ -1,3 +1,4 @@
+using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.WebAPI.Models.Request.Memberships
@@ -14,6 +15,9 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		
 		[JsonProperty("refresh_token_expires_in")]
 		public int RefreshTokenExpiresIn { get; set; }
+		
+		[JsonProperty("user_type")]
+		public UserType UserType { get; set; }
 		
 		#endregion
 	}

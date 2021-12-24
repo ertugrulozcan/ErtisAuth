@@ -14,8 +14,8 @@ namespace ErtisAuth.Infrastructure.Services
 	public abstract class MembershipBoundedCrudService<TModel, TDto> : 
 		MembershipBoundedService<TModel, TDto>, 
 		IMembershipBoundedCrudService<TModel> 
-		where TModel : Core.Models.IHasMembership, Core.Models.IHasIdentifier
-		where TDto : IEntity<string>, Dto.Models.IHasMembership
+		where TModel : class, Core.Models.IHasMembership, Core.Models.IHasIdentifier
+		where TDto : class, IEntity<string>, Dto.Models.IHasMembership
 	{
 		#region Constructors
 

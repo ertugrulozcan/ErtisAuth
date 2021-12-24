@@ -1,3 +1,4 @@
+using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.WebAPI.Models.Request.Memberships
@@ -23,6 +24,9 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 
 		[JsonProperty("encoding")]
 		public string DefaultEncoding { get; set; }
+		
+		[JsonProperty("user_type")]
+		public UserType UserType { get; set; }
 		
 		#endregion
 	}

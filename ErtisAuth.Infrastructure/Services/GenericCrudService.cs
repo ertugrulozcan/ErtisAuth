@@ -14,8 +14,8 @@ namespace ErtisAuth.Infrastructure.Services
 {
 	public abstract class GenericCrudService<TModel, TDto> : 
 		IGenericCrudService<TModel>
-		where TModel : Core.Models.IHasIdentifier
-		where TDto : IEntity<string>
+		where TModel : class, Core.Models.IHasIdentifier
+		where TDto : class, IEntity<string>
 	{
 		#region Services
 

@@ -52,7 +52,8 @@ namespace ErtisAuth.WebAPI.Controllers
 				RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
 				SecretKey = model.SecretKey,
 				HashAlgorithm = model.HashAlgorithm,
-				DefaultEncoding = model.DefaultEncoding
+				DefaultEncoding = model.DefaultEncoding,
+				UserType = model.UserType
 			};
 			
 			var membership = await this.membershipService.CreateAsync(membershipModel);
@@ -115,7 +116,8 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				Id = id,
 				ExpiresIn = model.ExpiresIn,
-				RefreshTokenExpiresIn = model.RefreshTokenExpiresIn
+				RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
+				UserType = model.UserType
 			};
 			
 			var user = await this.membershipService.UpdateAsync(membershipModel);

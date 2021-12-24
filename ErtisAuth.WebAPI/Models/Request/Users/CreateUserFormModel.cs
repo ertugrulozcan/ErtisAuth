@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.WebAPI.Models.Request.Users
@@ -24,6 +25,15 @@ namespace ErtisAuth.WebAPI.Models.Request.Users
 		[JsonProperty("password")]
 		public string Password { get; set; }
 
+		[JsonProperty("additional_properties")]
+		public dynamic AdditionalProperties { get; set; }
+		
+		[JsonProperty("permissions")]
+		public IEnumerable<string> Permissions { get; set; }
+		
+		[JsonProperty("forbidden")]
+		public IEnumerable<string> Forbidden { get; set; }
+		
 		#endregion
 	}
 }

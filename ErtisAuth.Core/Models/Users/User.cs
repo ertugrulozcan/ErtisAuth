@@ -35,6 +35,9 @@ namespace ErtisAuth.Core.Models.Users
 
 		[JsonIgnore] 
 		public Utilizer.UtilizerType UtilizerType => Utilizer.UtilizerType.User;
+		
+		[JsonProperty("additional_properties")]
+		public dynamic AdditionalProperties { get; set; }
 
 		#endregion
 	}

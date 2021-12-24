@@ -139,6 +139,30 @@ namespace ErtisAuth.Core.Exceptions
 		
 		#endregion
 
+		#region UserType Exceptions
+
+		public static ErtisAuthException UserTypeValidationException(string message)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"Additional properties is not valid. ({message})", "UserTypeValidationException");
+		}
+		
+		public static ErtisAuthException UserTypePropertiesRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type properties is required.", "UserTypePropertiesRequired");
+		}
+		
+		public static ErtisAuthException UserTypeRequiredFieldsRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type required field is required.", "UserTypeRequiredFieldsRequired");
+		}
+		
+		public static ErtisAuthException UserTypeTitleRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type title is required.", "UserTypeTitleRequired");
+		}
+
+		#endregion
+
 		#region Application Exceptions
 		
 		public static ErtisAuthException ApplicationNotFound(string id)

@@ -20,6 +20,8 @@ namespace ErtisAuth.Infrastructure.Mapping.Impls
 		#region Methods
 
 		public TOut Map<TIn, TOut>(TIn instance)
+			where TIn : class
+			where TOut : class
 		{
 			return instance.Adapt<TOut>();
 		}
