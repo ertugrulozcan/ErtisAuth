@@ -10,7 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Core" Version="5.1.1" />
+      <PackageReference Include="Ertis.Core" Version="5.1.2" />
     </ItemGroup>
 
 </Project>
