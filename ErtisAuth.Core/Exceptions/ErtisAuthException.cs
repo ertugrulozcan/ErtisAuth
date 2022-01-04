@@ -249,6 +249,15 @@ namespace ErtisAuth.Core.Exceptions
 
 		#endregion
 
+		#region Search Exceptions
+
+		public static ErtisAuthException SearchKeywordRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "Search keyword is required", "SearchKeywordRequired");
+		}
+
+		#endregion
+
 		#region Migration Exceptions
 
 		public static ErtisAuthException MigrationRejected(string message)

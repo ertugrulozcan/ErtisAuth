@@ -1,3 +1,4 @@
+using Ertis.MongoDB.Attributes;
 using ErtisAuth.Dto.Models.Resources;
 using ErtisAuth.Dto.Models.Users;
 using MongoDB.Bson.Serialization.Attributes;
@@ -8,6 +9,7 @@ namespace ErtisAuth.Dto.Models.Memberships
 	{
 		#region Properties
 		
+		[Searchable]
 		[BsonElement("name")]
 		public string Name { get; set; }
 		

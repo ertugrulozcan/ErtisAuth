@@ -27,6 +27,22 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		
 		ValueTask<IPaginationCollection<T>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null);
 		
+		IPaginationCollection<T> Search(
+			string keyword, 
+			int? skip = null, 
+			int? limit = null,
+			bool? withCount = null, 
+			string sortField = null, 
+			SortDirection? sortDirection = null);
+		
+		ValueTask<IPaginationCollection<T>> SearchAsync(
+			string keyword, 
+			int? skip = null, 
+			int? limit = null,
+			bool? withCount = null, 
+			string sortField = null, 
+			SortDirection? sortDirection = null);
+		
 		T Create(T model);
 		
 		ValueTask<T> CreateAsync(T model);

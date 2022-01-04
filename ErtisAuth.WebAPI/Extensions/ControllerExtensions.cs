@@ -125,6 +125,11 @@ namespace ErtisAuth.WebAPI.Extensions
 		{
 			return controller.NotFound(ErtisAuthException.ActiveTokenNotFound(activeTokenId));
 		}
+		
+		public static BadRequestObjectResult SearchKeywordRequired(this ControllerBase controller)
+		{
+			return controller.BadRequest(ErtisAuthException.SearchKeywordRequired().Error);
+		}
 
 		#endregion
 	}

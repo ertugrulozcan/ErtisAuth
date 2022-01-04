@@ -9,8 +9,4 @@
       <ProjectReference Include="..\ErtisAuth.Events\ErtisAuth.Events.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Ertis.Core" Version="5.1.2" />
-    </ItemGroup>
-
 </Project>

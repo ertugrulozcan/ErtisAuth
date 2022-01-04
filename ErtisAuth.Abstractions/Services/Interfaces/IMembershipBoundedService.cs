@@ -32,5 +32,21 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		IPaginationCollection<TModel> Get(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
 
 		ValueTask<IPaginationCollection<TModel>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
+		
+		IPaginationCollection<TModel> Search(
+			string keyword, 
+			int? skip = null, 
+			int? limit = null,
+			bool? withCount = null, 
+			string sortField = null, 
+			SortDirection? sortDirection = null);
+		
+		ValueTask<IPaginationCollection<TModel>> SearchAsync(
+			string keyword, 
+			int? skip = null, 
+			int? limit = null,
+			bool? withCount = null, 
+			string sortField = null, 
+			SortDirection? sortDirection = null);
 	}
 }

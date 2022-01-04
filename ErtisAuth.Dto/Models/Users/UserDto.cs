@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Ertis.MongoDB.Attributes;
 using ErtisAuth.Dto.Models.Resources;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -9,15 +10,19 @@ namespace ErtisAuth.Dto.Models.Users
 	{
 		#region Properties
 		
+		[Searchable]
 		[BsonElement("firstname")]
 		public string FirstName { get; set; }
 		
+		[Searchable]
 		[BsonElement("lastname")]
 		public string LastName { get; set; }
 		
+		[Searchable]
 		[BsonElement("username")]
 		public string Username { get; set; }
 		
+		[Searchable]
 		[BsonElement("email_address")]
 		public string EmailAddress { get; set; }
 		

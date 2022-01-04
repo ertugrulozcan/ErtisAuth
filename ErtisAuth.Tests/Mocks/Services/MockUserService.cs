@@ -142,6 +142,18 @@ namespace ErtisAuth.Tests.Mocks.Services
 			}
 		}
 
+		public IPaginationCollection<User> Search(string keyword, int? skip = null, int? limit = null, bool? withCount = null,
+			string sortField = null, SortDirection? sortDirection = null)
+		{
+			throw new NotImplementedException();
+		}
+
+		public ValueTask<IPaginationCollection<User>> SearchAsync(string keyword, int? skip = null, int? limit = null, bool? withCount = null,
+			string sortField = null, SortDirection? sortDirection = null)
+		{
+			throw new NotImplementedException();
+		}
+
 		#endregion
 		
 		#region Query Methods

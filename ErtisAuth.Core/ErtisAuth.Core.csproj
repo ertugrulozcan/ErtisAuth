@@ -16,7 +16,7 @@
         <AssemblyVersion>5.1.2</AssemblyVersion>
         <FileVersion>5.1.2</FileVersion>
     </PropertyGroup>
-
+    
     <ItemGroup>
       <PackageReference Include="Ertis.Core" Version="5.1.2" />
       <PackageReference Include="Ertis.Security" Version="5.1.2" />

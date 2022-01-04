@@ -157,7 +157,19 @@ namespace ErtisAuth.Tests.Mocks.Services
 				};
 			}
 		}
-		
+
+		public IPaginationCollection<Role> Search(string keyword, int? skip = null, int? limit = null, bool? withCount = null,
+			string sortField = null, SortDirection? sortDirection = null)
+		{
+			throw new NotImplementedException();
+		}
+
+		public ValueTask<IPaginationCollection<Role>> SearchAsync(string keyword, int? skip = null, int? limit = null, bool? withCount = null,
+			string sortField = null, SortDirection? sortDirection = null)
+		{
+			throw new NotImplementedException();
+		}
+
 		public Role GetByName(string name, string membershipId) => this.GetByNameAsync(name, membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
 
 		public async ValueTask<Role> GetByNameAsync(string name, string membershipId)

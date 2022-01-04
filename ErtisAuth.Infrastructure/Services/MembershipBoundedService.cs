@@ -137,5 +137,55 @@ namespace ErtisAuth.Infrastructure.Services
 		}
 
 		#endregion
+
+		#region Search Methods
+
+		public IPaginationCollection<TModel> Search(
+			string keyword,
+			int? skip = null,
+			int? limit = null,
+			bool? withCount = null,
+			string sortField = null,
+			SortDirection? sortDirection = null)
+		{
+			var paginatedDtoCollection = this.repository.Search(keyword, skip, limit, withCount, sortField, sortDirection);
+			if (paginatedDtoCollection?.Items != null)
+			{
+				return new PaginationCollection<TModel>
+				{
+					Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
+					Count = paginatedDtoCollection.Count
+				};
+			}
+			else
+			{
+				return new PaginationCollection<TModel>();
+			}
+		}
+
+		public async ValueTask<IPaginationCollection<TModel>> SearchAsync(
+			string keyword,
+			int? skip = null,
+			int? limit = null,
+			bool? withCount = null,
+			string sortField = null,
+			SortDirection? sortDirection = null)
+		{
+			var paginatedDtoCollection = await this.repository.SearchAsync(keyword, skip, limit, withCount, sortField, sortDirection);
+			if (paginatedDtoCollection?.Items != null)
+			{
+				return new PaginationCollection<TModel>
+				{
+					Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
+					Count = paginatedDtoCollection.Count
+				};
+			}
+			else
+			{
+				return new PaginationCollection<TModel>();
+			}
+		}
+
+		#endregion
 	}
 }

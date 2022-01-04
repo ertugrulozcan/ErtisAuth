@@ -112,11 +112,22 @@ namespace ErtisAuth.Sdk.Services
 			SortDirection? sortDirection = null,
 			string searchKeyword = null)
 		{
-			return await this.ExecuteRequestAsync<PaginationCollection<Role>>(
-				HttpMethod.Get, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/roles", 
-				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
-				HeaderCollection.Add("Authorization", token.ToString()));
+			if (string.IsNullOrEmpty(searchKeyword) || string.IsNullOrEmpty(searchKeyword.Trim()))
+			{
+				return await this.ExecuteRequestAsync<PaginationCollection<Role>>(
+					HttpMethod.Get, 
+					$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/roles", 
+					QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
+					HeaderCollection.Add("Authorization", token.ToString()));
+			}
+			else
+			{
+				return await this.ExecuteRequestAsync<PaginationCollection<Role>>(
+					HttpMethod.Get, 
+					$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/roles/search", 
+					QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection).Add("keyword", searchKeyword), 
+					HeaderCollection.Add("Authorization", token.ToString()));
+			}
 		}
 		
 		#endregion
