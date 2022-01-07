@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 
@@ -322,5 +323,27 @@ namespace ErtisAuth.Tests.Mocks.Services
 		}
 
 		#endregion
+
+		public TModel Get<TModel>(string membershipId, string id) where TModel : class, IHasMembership
+		{
+			throw new NotImplementedException();
+		}
+
+		public ValueTask<TModel> GetAsync<TModel>(string membershipId, string id) where TModel : class, IHasMembership
+		{
+			throw new NotImplementedException();
+		}
+
+		public IPaginationCollection<TModel> Get<TModel>(string membershipId, int? skip, int? limit, bool withCount, string orderBy,
+			SortDirection? sortDirection) where TModel : class, IHasMembership
+		{
+			throw new NotImplementedException();
+		}
+
+		public ValueTask<IPaginationCollection<TModel>> GetAsync<TModel>(string membershipId, int? skip, int? limit, bool withCount, string orderBy,
+			SortDirection? sortDirection) where TModel : class, IHasMembership
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

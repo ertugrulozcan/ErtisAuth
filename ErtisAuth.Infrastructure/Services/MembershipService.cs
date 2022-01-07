@@ -15,7 +15,7 @@ namespace ErtisAuth.Infrastructure.Services
 	{
 		#region Properties
 
-		private List<IMembershipBoundedCrudService<MembershipBoundedResource>> MembershipBoundedServiceCollection { get; }
+		private List<IMembershipBoundedService> MembershipBoundedServiceCollection { get; }
 
 		#endregion
 		
@@ -27,16 +27,19 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="membershipRepository"></param>
 		public MembershipService(IMembershipRepository membershipRepository) : base(membershipRepository)
 		{
-			this.MembershipBoundedServiceCollection = new List<IMembershipBoundedCrudService<MembershipBoundedResource>>();
+			this.MembershipBoundedServiceCollection = new List<IMembershipBoundedService>();
 		}
 
 		#endregion
 
 		#region Methods
 
-		public void RegisterService(IMembershipBoundedCrudService<MembershipBoundedResource> service)
+		public void RegisterService<T>(IMembershipBoundedService<T> service) where T : IHasMembership, IHasIdentifier
 		{
-			this.MembershipBoundedServiceCollection.Add(service);
+			if (service is IMembershipBoundedService membershipBoundedResource)
+			{
+				this.MembershipBoundedServiceCollection.Add(membershipBoundedResource);	
+			}
 		}
 		
 		protected override bool ValidateModel(Membership model, out IEnumerable<string> errors)
@@ -171,7 +174,7 @@ namespace ErtisAuth.Infrastructure.Services
 		private async Task<IEnumerable<MembershipBoundedResource>> GetMembershipBoundedResourcesAsync(string membershipId, int limit = 10)
 		{
 			var tasks = this.MembershipBoundedServiceCollection.Select(service => 
-				service.GetAsync(membershipId, 0, limit, false, null, null).AsTask())
+				service.GetAsync<MembershipBoundedResource>(membershipId, 0, limit, false, null, null).AsTask())
 				.ToArray();
 
 			await Task.WhenAll(tasks);

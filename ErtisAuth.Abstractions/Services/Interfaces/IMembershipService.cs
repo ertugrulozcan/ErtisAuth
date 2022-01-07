@@ -8,7 +8,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface IMembershipService : IGenericCrudService<Membership>
 	{
-		void RegisterService(IMembershipBoundedCrudService<MembershipBoundedResource> service);
+		void RegisterService<T>(IMembershipBoundedService<T> service) where T : IHasMembership, IHasIdentifier;
 		
 		Task<IPaginationCollection<dynamic>> QueryAsync(
 			string query, 

@@ -136,6 +136,40 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
+		public T Get<T>(string membershipId, string id) where T : class, Core.Models.IHasMembership
+		{
+			return this.Get(membershipId, id) as T;
+		}
+		
+		public async ValueTask<T> GetAsync<T>(string membershipId, string id) where T : class, Core.Models.IHasMembership
+		{
+			return await this.GetAsync(membershipId, id) as T;
+		}
+
+		public IPaginationCollection<T> Get<T>(
+			string membershipId, 
+			int? skip, 
+			int? limit, 
+			bool withCount,
+			string orderBy, 
+			SortDirection? sortDirection) 
+			where T : class, Core.Models.IHasMembership
+		{
+			return this.Get(membershipId, skip, limit, withCount, orderBy, sortDirection) as IPaginationCollection<T>;
+		}
+
+		public async ValueTask<IPaginationCollection<T>> GetAsync<T>(
+			string membershipId, 
+			int? skip,
+			int? limit, 
+			bool withCount, 
+			string orderBy, 
+			SortDirection? sortDirection)
+			where T : class, Core.Models.IHasMembership
+		{
+			return await this.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection) as IPaginationCollection<T>;
+		}
+
 		#endregion
 
 		#region Search Methods
