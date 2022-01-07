@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Memberships;
@@ -12,9 +13,9 @@ namespace ErtisAuth.Infrastructure.Services
 {
 	public class MembershipService : GenericCrudService<Membership, MembershipDto>, IMembershipService
 	{
-		#region Services
+		#region Properties
 
-		private readonly IMembershipUsageService membershipUsageService;
+		private List<IMembershipBoundedCrudService<MembershipBoundedResource>> MembershipBoundedServiceCollection { get; }
 
 		#endregion
 		
@@ -23,17 +24,21 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="membershipUsageService"></param>
 		/// <param name="membershipRepository"></param>
-		public MembershipService(IMembershipUsageService membershipUsageService, IMembershipRepository membershipRepository) : base(membershipRepository)
+		public MembershipService(IMembershipRepository membershipRepository) : base(membershipRepository)
 		{
-			this.membershipUsageService = membershipUsageService;
+			this.MembershipBoundedServiceCollection = new List<IMembershipBoundedCrudService<MembershipBoundedResource>>();
 		}
 
 		#endregion
 
 		#region Methods
 
+		public void RegisterService(IMembershipBoundedCrudService<MembershipBoundedResource> service)
+		{
+			this.MembershipBoundedServiceCollection.Add(service);
+		}
+		
 		protected override bool ValidateModel(Membership model, out IEnumerable<string> errors)
 		{
 			var errorList = new List<string>();
@@ -159,6 +164,27 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			return ErtisAuthException.MembershipNotFound(id);
 		}
+		
+		private IEnumerable<MembershipBoundedResource> GetMembershipBoundedResources(string membershipId, int limit = 10) =>
+			this.GetMembershipBoundedResourcesAsync(membershipId, limit).ConfigureAwait(false).GetAwaiter().GetResult();
+
+		private async Task<IEnumerable<MembershipBoundedResource>> GetMembershipBoundedResourcesAsync(string membershipId, int limit = 10)
+		{
+			var tasks = this.MembershipBoundedServiceCollection.Select(service => 
+				service.GetAsync(membershipId, 0, limit, false, null, null).AsTask())
+				.ToArray();
+
+			await Task.WhenAll(tasks);
+
+			var cumulativeList = new List<MembershipBoundedResource>();
+			foreach (var task in tasks)
+			{
+				var items = (await task).Items;
+				cumulativeList.AddRange(items);
+			}
+
+			return cumulativeList.Take(limit);
+		}
 
 		#endregion
 		
@@ -166,7 +192,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public override bool Delete(string id)
 		{
-			var membershipBoundedResources = this.membershipUsageService.GetMembershipBoundedResources(id);
+			var membershipBoundedResources = this.GetMembershipBoundedResources(id);
 			if (membershipBoundedResources.Any())
 			{
 				throw ErtisAuthException.MembershipCouldNotDeleted(id);
@@ -177,7 +203,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		public override async ValueTask<bool> DeleteAsync(string id)
 		{
-			var membershipBoundedResources = await this.membershipUsageService.GetMembershipBoundedResourcesAsync(id);
+			var membershipBoundedResources = await this.GetMembershipBoundedResourcesAsync(id);
 			if (membershipBoundedResources.Any())
 			{
 				throw ErtisAuthException.MembershipCouldNotDeleted(id);

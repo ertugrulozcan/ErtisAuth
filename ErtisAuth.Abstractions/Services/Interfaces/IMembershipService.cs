@@ -1,12 +1,15 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
 
 namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface IMembershipService : IGenericCrudService<Membership>
 	{
+		void RegisterService(IMembershipBoundedCrudService<MembershipBoundedResource> service);
+		
 		Task<IPaginationCollection<dynamic>> QueryAsync(
 			string query, 
 			int? skip = null, 

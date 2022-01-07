@@ -26,7 +26,7 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="repository"></param>
 		protected MembershipBoundedCrudService(IMembershipService membershipService, IMongoRepository<TDto> repository) : base(membershipService, repository)
 		{
-			
+			membershipService.RegisterService(this as IMembershipBoundedCrudService<ErtisAuth.Core.Models.MembershipBoundedResource>);
 		}
 
 		#endregion

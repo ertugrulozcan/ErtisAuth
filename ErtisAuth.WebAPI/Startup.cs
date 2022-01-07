@@ -94,7 +94,6 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IRevokedTokenService, RevokedTokenService>();
 			services.AddSingleton<IAccessControlService, AccessControlService>();
 			services.AddSingleton<IMembershipService, MembershipService>();
-			services.AddSingleton<IMembershipUsageService, MembershipUsageService>();
 			services.AddSingleton<IUserService, UserService>();
 			services.AddSingleton<IApplicationService, ApplicationService>();
 			services.AddSingleton<IRoleService, RoleService>();
@@ -177,6 +176,8 @@ namespace ErtisAuth.WebAPI
 				app.UseDeveloperExceptionPage();
 			}
 			
+			this.ResolveRequiredServices(app.ApplicationServices);
+			
 			// Swagger
 			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
 			{
@@ -200,6 +201,15 @@ namespace ErtisAuth.WebAPI
 			{
 				endpoints.MapControllers();
 			});
+		}
+
+		private void ResolveRequiredServices(IServiceProvider serviceProvider)
+		{
+			serviceProvider.GetRequiredService<IUserService>();
+			serviceProvider.GetRequiredService<IApplicationService>();
+			serviceProvider.GetRequiredService<IRoleService>();
+			serviceProvider.GetRequiredService<IProviderService>();
+			serviceProvider.GetRequiredService<IWebhookService>();
 		}
 
 		#endregion
