@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ErtisAuth.Infrastructure.Services
 {
@@ -23,23 +25,14 @@ namespace ErtisAuth.Infrastructure.Services
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="userService"></param>
-        /// <param name="applicationService"></param>
-        /// <param name="roleService"></param>
-        /// <param name="providerService"></param>
-        /// <param name="webhookService"></param>
-        public MembershipUsageService(
-            IUserService userService,
-            IApplicationService applicationService,
-            IRoleService roleService,
-            IProviderService providerService,
-            IWebhookService webhookService)
+        /// <param name="serviceProvider"></param>
+        public MembershipUsageService(IServiceProvider serviceProvider)
         {
-            this.userService = userService;
-            this.applicationService = applicationService;
-            this.roleService = roleService;
-            this.providerService = providerService;
-            this.webhookService = webhookService;
+            this.userService = serviceProvider.GetRequiredService<IUserService>();
+            this.applicationService = serviceProvider.GetRequiredService<IApplicationService>();
+            this.roleService = serviceProvider.GetRequiredService<IRoleService>();
+            this.providerService = serviceProvider.GetRequiredService<IProviderService>();
+            this.webhookService = serviceProvider.GetRequiredService<IWebhookService>();
         }
 
         #endregion
