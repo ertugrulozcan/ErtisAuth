@@ -12,15 +12,22 @@ namespace ErtisAuth.Infrastructure.Services
 {
 	public class MembershipService : GenericCrudService<Membership, MembershipDto>, IMembershipService
 	{
+		#region Services
+
+		private readonly IMembershipUsageService membershipUsageService;
+
+		#endregion
+		
 		#region Constructors
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
+		/// <param name="membershipUsageService"></param>
 		/// <param name="membershipRepository"></param>
-		public MembershipService(IMembershipRepository membershipRepository) : base(membershipRepository)
+		public MembershipService(IMembershipUsageService membershipUsageService, IMembershipRepository membershipRepository) : base(membershipRepository)
 		{
-			
+			this.membershipUsageService = membershipUsageService;
 		}
 
 		#endregion
@@ -153,6 +160,32 @@ namespace ErtisAuth.Infrastructure.Services
 			return ErtisAuthException.MembershipNotFound(id);
 		}
 
+		#endregion
+		
+		#region Delete Methods
+
+		public override bool Delete(string id)
+		{
+			var membershipBoundedResources = this.membershipUsageService.GetMembershipBoundedResources(id);
+			if (membershipBoundedResources.Any())
+			{
+				throw ErtisAuthException.MembershipCouldNotDeleted(id);
+			}
+			
+			return base.Delete(id);
+		}
+		
+		public override async ValueTask<bool> DeleteAsync(string id)
+		{
+			var membershipBoundedResources = await this.membershipUsageService.GetMembershipBoundedResourcesAsync(id);
+			if (membershipBoundedResources.Any())
+			{
+				throw ErtisAuthException.MembershipCouldNotDeleted(id);
+			}
+			
+			return await base.DeleteAsync(id);
+		}
+		
 		#endregion
 	}
 }

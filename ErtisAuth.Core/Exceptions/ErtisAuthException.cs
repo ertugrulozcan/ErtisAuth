@@ -118,6 +118,11 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"Membership is already exists ({membershipId})", "MembershipAlreadyExists");
 		}
 		
+		public static ErtisAuthException MembershipCouldNotDeleted(string membershipId)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"This membership is already using by some membership related resources, it's could not be deleted ({membershipId})", "MembershipCouldNotDeleted");
+		}
+
 		#endregion
 		
 		#region User Exceptions

@@ -33,6 +33,23 @@ namespace ErtisAuth.Sdk.Services
 		}
 
 		#endregion
+
+		#region Create Methods
+
+		public IResponseResult<Membership> CreateMembership(Membership membership, TokenBase token) =>
+			this.CreateMembershipAsync(membership, token).ConfigureAwait(false).GetAwaiter().GetResult();
+
+		public async Task<IResponseResult<Membership>> CreateMembershipAsync(Membership membership, TokenBase token)
+		{
+			return await this.ExecuteRequestAsync<Membership>(
+				HttpMethod.Post, 
+				$"{this.AuthApiBaseUrl}/memberships", 
+				null, 
+				HeaderCollection.Add("Authorization", token.ToString()),
+				new JsonRequestBody(membership));
+		}
+
+		#endregion
 		
 		#region Read Methods
 		
@@ -152,6 +169,22 @@ namespace ErtisAuth.Sdk.Services
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(membership));
+		}
+		
+		#endregion
+		
+		#region Delete Methods
+		
+		public IResponseResult DeleteMembership(string membershipId, TokenBase token) =>
+			this.DeleteMembershipAsync(membershipId, token).ConfigureAwait(false).GetAwaiter().GetResult();
+
+		public async Task<IResponseResult> DeleteMembershipAsync(string membershipId, TokenBase token)
+		{
+			return await this.ExecuteRequestAsync<Membership>(
+				HttpMethod.Delete, 
+				$"{this.AuthApiBaseUrl}/memberships/{membershipId}", 
+				null, 
+				HeaderCollection.Add("Authorization", token.ToString()));
 		}
 		
 		#endregion

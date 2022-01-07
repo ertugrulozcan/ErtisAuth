@@ -94,6 +94,7 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IRevokedTokenService, RevokedTokenService>();
 			services.AddSingleton<IAccessControlService, AccessControlService>();
 			services.AddSingleton<IMembershipService, MembershipService>();
+			services.AddSingleton<IMembershipUsageService, MembershipUsageService>();
 			services.AddSingleton<IUserService, UserService>();
 			services.AddSingleton<IApplicationService, ApplicationService>();
 			services.AddSingleton<IRoleService, RoleService>();
