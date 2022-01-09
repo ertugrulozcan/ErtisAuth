@@ -208,8 +208,15 @@ namespace ErtisAuth.Infrastructure.Extensions
         
         public static WebhookRequestDto ToDto(this WebhookRequest model)
         {
-            var json = model.Body?.ToString();
-            var body = string.IsNullOrEmpty(json) ? null : BsonDocument.Parse(json);
+            BsonDocument body = null;
+            if (model.Body != null)
+            {
+                var json = model.Body.ToString();
+                if (!string.IsNullOrEmpty(json))
+                {
+                    body = BsonDocument.Parse(json);    
+                }
+            }
             
             return new WebhookRequestDto
             {
