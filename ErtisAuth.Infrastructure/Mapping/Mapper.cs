@@ -84,7 +84,9 @@ namespace ErtisAuth.Infrastructure.Mapping
 				.Add(new CustomMapper<User, UserDto>((model) => model.ToDto()))
 				.Add(new CustomMapper<UserDto, User>((dto) => dto.ToModel()))
 				.Add(new CustomMapper<UserWithPasswordHash, UserDto>((model) => model.ToDto()))
-				.Add(new CustomMapper<UserDto, UserWithPasswordHash>((dto) => new UserWithPasswordHash(dto.ToModel()) { PasswordHash = dto.PasswordHash }));
+				.Add(new CustomMapper<UserDto, UserWithPasswordHash>((dto) => new UserWithPasswordHash(dto.ToModel()) { PasswordHash = dto.PasswordHash }))
+				.Add(new CustomMapper<Webhook, WebhookDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<WebhookDto, Webhook>((dto) => dto.ToModel()));
 		}
 
 		#endregion

@@ -1,10 +1,13 @@
+using System.Linq;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
+using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Dto.Extensions;
 using ErtisAuth.Dto.Models.Memberships;
 using ErtisAuth.Dto.Models.Resources;
 using ErtisAuth.Dto.Models.Users;
+using ErtisAuth.Dto.Models.Webhooks;
 using MongoDB.Bson;
 using Newtonsoft.Json;
 
@@ -153,6 +156,67 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Description = model.Description,
                 Properties = schema,
                 RequiredFields = model.RequiredFields
+            };
+        }
+
+        #endregion
+
+        #region Webhook
+
+        public static Webhook ToModel(this WebhookDto dto)
+        {
+            return new Webhook
+            {
+                Id = dto.Id,
+                Name = dto.Name,
+                Description = dto.Description,
+                Event = dto.Event,
+                Status = dto.Status,
+                RequestList = dto.RequestList?.Select(x => x.ToModel()).ToArray(),
+                TryCount = dto.TryCount,
+                MembershipId = dto.MembershipId,
+                Sys = dto.Sys?.ToModel()
+            };
+        }
+        
+        public static WebhookDto ToDto(this Webhook model)
+        {
+            return new WebhookDto
+            {
+                Id = model.Id,
+                Name = model.Name,
+                Description = model.Description,
+                Event = model.Event,
+                Status = model.Status,
+                RequestList = model.RequestList?.Select(x => x.ToDto()).ToArray(),
+                TryCount = model.TryCount,
+                MembershipId = model.MembershipId,
+                Sys = model.Sys?.ToDto()
+            };
+        }
+        
+        public static WebhookRequest ToModel(this WebhookRequestDto dto)
+        {
+            return new WebhookRequest
+            {
+                Url = dto.Url,
+                Method = dto.Method,
+                Headers = dto.Headers,
+                Body = dto.Body?.ToDynamicObject()
+            };
+        }
+        
+        public static WebhookRequestDto ToDto(this WebhookRequest model)
+        {
+            var json = model.Body?.ToString();
+            var body = string.IsNullOrEmpty(json) ? null : BsonDocument.Parse(json);
+            
+            return new WebhookRequestDto
+            {
+                Url = model.Url,
+                Method = model.Method,
+                Headers = model.Headers,
+                Body = body
             };
         }
 
