@@ -3,9 +3,12 @@ using Ertis.Core.Collections;
 using Ertis.Core.Models.Response;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
+using ErtisAuth.Sdk.Attributes;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ErtisAuth.Sdk.Services.Interfaces
 {
+	[ServiceLifetime(ServiceLifetime.Singleton)]
 	public interface IMembershipService
 	{
 		IResponseResult<Membership> CreateMembership(Membership membership, TokenBase token);
