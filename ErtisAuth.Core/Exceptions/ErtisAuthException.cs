@@ -263,6 +263,27 @@ namespace ErtisAuth.Core.Exceptions
 
 		#endregion
 
+		#region BulkDelete Exceptions
+
+		public static ErtisAuthException BulkDeleteFailed(IEnumerable<string> ids)
+		{
+			if (ids != null)
+			{
+				return new ErtisAuthException(HttpStatusCode.NotFound, $"Bulk delete operation failed ({string.Join(", ", ids)})", "BulkDeleteFailed");
+			}
+			else
+			{
+				return new ErtisAuthException(HttpStatusCode.NotFound, "Bulk delete operation failed (ids: null)", "BulkDeleteFailed");
+			}
+		}
+		
+		public static ErtisAuthException BulkDeletePartial()
+		{
+			return new ErtisAuthException(HttpStatusCode.OK, $"Bulk delete operation was partial completed", "BulkDeletePartial");
+		}
+
+		#endregion
+
 		#region Migration Exceptions
 
 		public static ErtisAuthException MigrationRejected(string message)

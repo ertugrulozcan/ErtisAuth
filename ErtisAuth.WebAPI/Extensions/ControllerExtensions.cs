@@ -1,4 +1,7 @@
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Extensions.Authorization.Extensions;
@@ -129,6 +132,44 @@ namespace ErtisAuth.WebAPI.Extensions
 		public static BadRequestObjectResult SearchKeywordRequired(this ControllerBase controller)
 		{
 			return controller.BadRequest(ErtisAuthException.SearchKeywordRequired().Error);
+		}
+		
+		public static async Task<IActionResult> BulkDeleteAsync(this ControllerBase controller, IDeletableMembershipBoundedService service, string membershipId, string[] ids)
+		{
+			var utilizer = controller.GetUtilizer();
+			if (ids != null)
+			{
+				var isDeleted = await service.BulkDeleteAsync(utilizer, membershipId, ids);
+				if (isDeleted != null)
+				{
+					if (isDeleted.Value)
+					{
+						return controller.NoContent();	
+					}
+					else
+					{
+						return controller.BulkDeleteFailed(ids);
+					}
+				}
+				else
+				{
+					return controller.BulkDeletePartial();
+				}	
+			}
+			else
+			{
+				return controller.BadRequest();
+			}
+		}
+		
+		public static NotFoundObjectResult BulkDeleteFailed(this ControllerBase controller, IEnumerable<string> ids)
+		{
+			return controller.NotFound(ErtisAuthException.BulkDeleteFailed(ids).Error);
+		}
+		
+		public static OkObjectResult BulkDeletePartial(this ControllerBase controller)
+		{
+			return controller.Ok(ErtisAuthException.BulkDeletePartial().Error);
 		}
 
 		#endregion

@@ -292,6 +292,16 @@ namespace ErtisAuth.Tests.Mocks.Services
 			}
 		}
 
+		public bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids)
+		{
+			throw new NotImplementedException();
+		}
+
+		public ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids)
+		{
+			throw new NotImplementedException();
+		}
+
 		#endregion
 
 		public TModel Get<TModel>(string membershipId, string id) where TModel : class, IHasMembership

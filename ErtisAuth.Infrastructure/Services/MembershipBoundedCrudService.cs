@@ -307,6 +307,76 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
+		public virtual bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids)
+		{
+			var isAllDeleted = true;
+			var isAllFailed = true;
+			
+			foreach (var id in ids)
+			{
+				var current = this.Get(membershipId, id);
+				if (current != null)
+				{
+					var isDeleted = this.repository.Delete(id);
+					if (isDeleted)
+					{
+						this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));		
+					}
+
+					isAllDeleted &= isDeleted;
+					isAllFailed &= !isDeleted;
+				}
+			}
+
+			if (isAllDeleted)
+			{
+				return true;
+			}
+			else if (isAllFailed)
+			{
+				return false;
+			}
+			else
+			{
+				return null;
+			}
+		}
+		
+		public virtual async ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids)
+		{
+			var isAllDeleted = true;
+			var isAllFailed = true;
+			
+			foreach (var id in ids)
+			{
+				var current = await this.GetAsync(membershipId, id);
+				if (current != null)
+				{
+					var isDeleted = await this.repository.DeleteAsync(id);
+					if (isDeleted)
+					{
+						this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));		
+					}
+
+					isAllDeleted &= isDeleted;
+					isAllFailed &= !isDeleted;
+				}
+			}
+
+			if (isAllDeleted)
+			{
+				return true;
+			}
+			else if (isAllFailed)
+			{
+				return false;
+			}
+			else
+			{
+				return null;
+			}
+		}
+		
 		#endregion
 	}
 }

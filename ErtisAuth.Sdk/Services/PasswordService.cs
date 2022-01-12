@@ -33,7 +33,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync(
 				HttpMethod.Put, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/users/{userId}/change-password", 
+				$"{this.BaseUrl}/memberships/{this.MembershipId}/users/{userId}/change-password", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(new { password = newPassword }));
@@ -45,7 +45,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync<ResetPasswordToken>(
 				HttpMethod.Post, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/users/reset-password", 
+				$"{this.BaseUrl}/memberships/{this.MembershipId}/users/reset-password", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(new { email_address = emailAddress }));
@@ -57,7 +57,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync(
 				HttpMethod.Post, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/users/set-password", 
+				$"{this.BaseUrl}/memberships/{this.MembershipId}/users/set-password", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(new { email_address = email, reset_token = resetToken, password }));

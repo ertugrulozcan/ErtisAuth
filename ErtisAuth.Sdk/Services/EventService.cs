@@ -1,19 +1,23 @@
 using System.Net.Http;
 using System.Threading.Tasks;
-using Ertis.Core.Collections;
 using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Sdk.Configuration;
-using ErtisAuth.Sdk.Helpers;
 using ErtisAuth.Sdk.Services.Interfaces;
 
 namespace ErtisAuth.Sdk.Services
 {
-	public class EventService : MembershipBoundedService, IEventService
+	public class EventService : ReadonlyMembershipBoundedService<ErtisAuthEventLog>, IEventService
 	{
+		#region Properties
+
+		protected override string Slug => "events";	
+
+		#endregion
+		
 		#region Constructors
 
 		/// <summary>
@@ -27,113 +31,7 @@ namespace ErtisAuth.Sdk.Services
 		}
 
 		#endregion
-		
-		#region Create Methods
-		
-		public IResponseResult<ErtisAuthEvent> CreateErtisAuthEvent(ErtisAuthEvent ertisAuthEvent, TokenBase token) =>
-			this.CreateErtisAuthEventAsync(ertisAuthEvent, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<ErtisAuthEvent>> CreateErtisAuthEventAsync(ErtisAuthEvent ertisAuthEvent, TokenBase token)
-		{
-			return await this.ExecuteRequestAsync<ErtisAuthEvent>(
-				HttpMethod.Post, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events", 
-				null, 
-				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(ertisAuthEvent));
-		}
-		
-		#endregion
-		
-		#region Read Methods
-		
-		public IResponseResult<ErtisAuthEventLog> GetErtisAuthEvent(string ertisAuthEventId, TokenBase token) =>
-			this.GetErtisAuthEventAsync(ertisAuthEventId, token).ConfigureAwait(false).GetAwaiter().GetResult();
-
-		public async Task<IResponseResult<ErtisAuthEventLog>> GetErtisAuthEventAsync(string ertisAuthEventId, TokenBase token)
-		{
-			return await this.ExecuteRequestAsync<ErtisAuthEventLog>(
-				HttpMethod.Get, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events/{ertisAuthEventId}", 
-				null, 
-				HeaderCollection.Add("Authorization", token.ToString()));
-		}
-		
-		public IResponseResult<IPaginationCollection<ErtisAuthEventLog>> GetErtisAuthEvents(
-			TokenBase token, 
-			int? skip = null, 
-			int? limit = null, 
-			bool? withCount = null, 
-			string orderBy = null, 
-			SortDirection? sortDirection = null, 
-			string searchKeyword = null) =>
-			this.GetErtisAuthEventsAsync(
-				token,
-				skip,
-				limit,
-				withCount,
-				orderBy,
-				sortDirection,
-				searchKeyword)
-				.ConfigureAwait(false).GetAwaiter().GetResult();
-
-		public async Task<IResponseResult<IPaginationCollection<ErtisAuthEventLog>>> GetErtisAuthEventsAsync(
-			TokenBase token,
-			int? skip = null,
-			int? limit = null,
-			bool? withCount = null,
-			string orderBy = null,
-			SortDirection? sortDirection = null,
-			string searchKeyword = null)
-		{
-			return await this.ExecuteRequestAsync<PaginationCollection<ErtisAuthEventLog>>(
-				HttpMethod.Get, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events", 
-				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
-				HeaderCollection.Add("Authorization", token.ToString()));
-		}
-		
-		#endregion
-		
-		#region Query Methods
-		
-		public IResponseResult<IPaginationCollection<ErtisAuthEventLog>> QueryErtisAuthEvents(
-			TokenBase token, 
-			string query, 
-			int? skip = null, 
-			int? limit = null, 
-			bool? withCount = null, 
-			string orderBy = null, 
-			SortDirection? sortDirection = null) =>
-			this.QueryErtisAuthEventsAsync(
-				token,
-				query,
-				skip,
-				limit,
-				withCount,
-				orderBy,
-				sortDirection)
-				.ConfigureAwait(false).GetAwaiter().GetResult();
-
-		public async Task<IResponseResult<IPaginationCollection<ErtisAuthEventLog>>> QueryErtisAuthEventsAsync(
-			TokenBase token,
-			string query,
-			int? skip = null,
-			int? limit = null,
-			bool? withCount = null,
-			string orderBy = null,
-			SortDirection? sortDirection = null)
-		{
-			return await this.ExecuteRequestAsync<PaginationCollection<ErtisAuthEventLog>>(
-				HttpMethod.Post, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events/_query", 
-				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
-				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)));
-		}
-		
-		#endregion
-		
 		#region Fire Custom Event Methods
 
 		public IResponseResult<ErtisAuthCustomEvent> FireCustomEvent(string eventType, string utilizerId, object document, object prior, TokenBase token) =>
@@ -147,12 +45,12 @@ namespace ErtisAuth.Sdk.Services
 				UtilizerId = utilizerId,
 				Document = document,
 				Prior = prior,
-				MembershipId = this.AuthApiMembershipId
+				MembershipId = this.MembershipId
 			};
 			
 			return await this.ExecuteRequestAsync<ErtisAuthCustomEvent>(
 				HttpMethod.Post, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/events", 
+				$"{this.BaseUrl}/memberships/{this.MembershipId}/events", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(ertisAuthCustomEvent));	

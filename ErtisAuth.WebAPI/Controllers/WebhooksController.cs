@@ -207,6 +207,17 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.WebhookNotFound(id);
 			}
 		}
+		
+		[HttpDelete]
+		[ProducesResponseType(StatusCodes.Status204NoContent)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		[RbacAction(Rbac.CrudActions.Delete)]
+		public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids)
+		{
+			return await this.BulkDeleteAsync(this.webhookService, membershipId, ids);
+		}
 
 		#endregion
 	}

@@ -140,7 +140,7 @@ namespace ErtisAuth.Extensions.AspNetCore
 				case SupportedTokenTypes.Basic:
 					var basicToken = new BasicToken(token);
 					var applicationId = token.Split(':')[0];
-					var getApplicationResponse = await this.applicationService.GetApplicationAsync(applicationId, basicToken);
+					var getApplicationResponse = await this.applicationService.GetAsync(applicationId, basicToken);
 					if (getApplicationResponse.IsSuccess)
 					{
 						var rbacDefinition = this.Context.GetRbacDefinition(getApplicationResponse.Data.Id);
