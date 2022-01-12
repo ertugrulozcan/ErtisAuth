@@ -6,7 +6,7 @@ using ErtisAuth.Core.Models.Users;
 
 namespace ErtisAuth.Sdk.Services.Interfaces
 {
-	public interface IUserService
+	public interface IUserService : IMembershipBoundedService<User>
 	{
 		IResponseResult<IPaginationCollection<ActiveToken>> GetActiveTokens(string userId, TokenBase token, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null);
 
