@@ -70,9 +70,12 @@ namespace ErtisAuth.Infrastructure.Services
 			
 				var webhooksDynamicCollection = this.Query(query.Value.ToString());
 				var webhooks = JsonConvert.DeserializeObject<PaginationCollection<Webhook>>(JsonConvert.SerializeObject(webhooksDynamicCollection));
-				foreach (var webhook in webhooks.Items)
+				if (webhooks != null)
 				{
-					this.ExecuteWebhookAsync(webhook, ertisAuthEvent.UtilizerId, ertisAuthEvent.MembershipId, ertisAuthEvent.Document, ertisAuthEvent.Prior);
+					foreach (var webhook in webhooks.Items)
+					{
+						this.ExecuteWebhookAsync(webhook, ertisAuthEvent.UtilizerId, ertisAuthEvent.MembershipId, ertisAuthEvent.Document, ertisAuthEvent.Prior);
+					}	
 				}
 			}
 			catch (Exception ex)
@@ -81,9 +84,9 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		private void WebhookCreatedEventHandler(object sender, CreateResourceEventArgs<Webhook> eventArgs)
+		private async void WebhookCreatedEventHandler(object sender, CreateResourceEventArgs<Webhook> eventArgs)
 		{
-			this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.WebhookCreated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -92,9 +95,9 @@ namespace ErtisAuth.Infrastructure.Services
 			});
 		}
 		
-		private void WebhookUpdatedEventHandler(object sender, UpdateResourceEventArgs<Webhook> eventArgs)
+		private async void WebhookUpdatedEventHandler(object sender, UpdateResourceEventArgs<Webhook> eventArgs)
 		{
-			this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.WebhookUpdated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -104,9 +107,9 @@ namespace ErtisAuth.Infrastructure.Services
 			});
 		}
 		
-		private void WebhookDeletedEventHandler(object sender, DeleteResourceEventArgs<Webhook> eventArgs)
+		private async void WebhookDeletedEventHandler(object sender, DeleteResourceEventArgs<Webhook> eventArgs)
 		{
-			this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.WebhookDeleted,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -125,11 +128,18 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				if (webhook.IsActive)
 				{
-					int tryCount = webhook.TryCount > 0 ? webhook.TryCount : 1;
-				
+					var tryCount = webhook.TryCount > 0 ? webhook.TryCount : 1;
 					foreach (var webhookRequest in webhook.RequestList)
 					{
-						this.ExecuteWebhookRequestAsync(webhookRequest, utilizerId, membershipId, document, prior, tryCount);
+						try
+						{
+							this.ExecuteWebhookRequestAsync(webhookRequest, utilizerId, membershipId, document, prior, tryCount);
+						}
+						catch (Exception ex)
+						{
+							Console.WriteLine("Webhook execution occured an exception");
+							Console.WriteLine(ex);
+						}
 					}	
 				}
 			});
@@ -144,40 +154,72 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				foreach (var webhookRequestHeader in webhookRequest.Headers)
 				{
-					headers = headers.Add(webhookRequestHeader);
+					if (!string.IsNullOrEmpty(webhookRequestHeader.Key) && webhookRequestHeader.Value != null && !string.IsNullOrEmpty(webhookRequestHeader.Value.ToString()))
+					{
+						headers = headers.Add(webhookRequestHeader);	
+					}
 				}
 			}
 
-			var body = new JsonRequestBody(new
+			IRequestBody body = null;
+			switch (webhookRequest.BodyTypeEnum)
 			{
-				document,
-				prior,
-				payload = webhookRequest.Body
-			});
-
-			for (int i = 0; i < tryCount; i++)
-			{
-				var response = await this.restHandler.ExecuteRequestAsync(httpMethod, url, QueryString.Empty, headers, body);
-				if (response.IsSuccess)
-				{
-					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
-						ErtisAuthEventType.WebhookRequestSent,
-						utilizerId,
-						membershipId,
-						response
-					));
-					
+				case WebhookRequestBodyType.None:
+				case WebhookRequestBodyType.Javascript:
+				case WebhookRequestBodyType.Json:
+					body = new JsonRequestBody(new
+					{
+						document,
+						prior,
+						payload = webhookRequest.Body
+					});
 					break;
+				case WebhookRequestBodyType.Html:
+				case WebhookRequestBodyType.Xml:
+					body = new XmlRequestBody(new
+					{
+						document,
+						prior,
+						payload = webhookRequest.Body
+					});
+					break;
+			}
+
+			for (var i = 0; i < tryCount; i++)
+			{
+				try
+				{
+					var response = await this.restHandler.ExecuteRequestAsync(httpMethod, url, QueryString.Empty, headers, body);
+					if (response.IsSuccess)
+					{
+						await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
+							ErtisAuthEventType.WebhookRequestSent,
+							utilizerId,
+							membershipId,
+							response
+						));
+					
+						break;
+					}
+					else
+					{
+						await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
+							ErtisAuthEventType.WebhookRequestFailed,
+							utilizerId,
+							membershipId,
+							response
+						));
+					}
 				}
-				else
+				catch (Exception ex)
 				{
 					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
 						ErtisAuthEventType.WebhookRequestFailed,
 						utilizerId,
 						membershipId,
-						response
+						ex
 					));
-				}	
+				}
 			}
 		}
 
@@ -212,7 +254,7 @@ namespace ErtisAuth.Infrastructure.Services
 				errorList.Add($"Unknown event type. (Supported events: [{string.Join(", ", Enum.GetNames(typeof(ErtisAuthEventType)))}])");
 			}
 
-			if (model.TryCount < 1 || model.TryCount > 5)
+			if (model.TryCount is < 1 or > 5)
 			{
 				errorList.Add("try_count is a required field (must be in 1..5 range)");
 			}
@@ -277,6 +319,7 @@ namespace ErtisAuth.Infrastructure.Services
 				destination.Status = source.Status;
 			}
 			
+			// ReSharper disable once ConvertIfStatementToNullCoalescingAssignment
 			if (destination.RequestList == null)
 			{
 				destination.RequestList = source.RequestList;
@@ -338,26 +381,16 @@ namespace ErtisAuth.Infrastructure.Services
 			return ErtisAuthException.WebhookNotFound(id);
 		}
 		
-		public Webhook GetWebhookByName(string name, string membershipId)
+		private Webhook GetWebhookByName(string name, string membershipId)
 		{
 			var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
-			if (dto == null)
-			{
-				return null;
-			}
-			
-			return Mapper.Current.Map<WebhookDto, Webhook>(dto);
+			return dto == null ? null : Mapper.Current.Map<WebhookDto, Webhook>(dto);
 		}
 		
-		public async Task<Webhook> GetWebhookByNameAsync(string name, string membershipId)
+		private async Task<Webhook> GetWebhookByNameAsync(string name, string membershipId)
 		{
 			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
-			if (dto == null)
-			{
-				return null;
-			}
-			
-			return Mapper.Current.Map<WebhookDto, Webhook>(dto);
+			return dto == null ? null : Mapper.Current.Map<WebhookDto, Webhook>(dto);
 		}
 		
 		#endregion

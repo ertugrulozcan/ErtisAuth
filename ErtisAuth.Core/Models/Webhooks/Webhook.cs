@@ -39,14 +39,8 @@ namespace ErtisAuth.Core.Models.Webhooks
 		public string Status { get; set; }
 
 		[JsonIgnore]
-		public bool IsActive
-		{
-			get
-			{
-				return this.Status == "active";
-			}
-		}
-		
+		public bool IsActive => this.Status == "active";
+
 		[JsonProperty("requests")]
 		public WebhookRequest[] RequestList { get; set; }
 		

@@ -20,6 +20,9 @@ namespace ErtisAuth.Dto.Models.Webhooks
 		[BsonElement("body")]
 		public BsonDocument Body { get; set; }
 		
+		[BsonElement("body_type")]
+		public string BodyType { get; set; }
+		
 		#endregion
 	}
 }
