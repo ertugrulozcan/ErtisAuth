@@ -66,14 +66,24 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public TModel Get(string id)
 		{
+			if (string.IsNullOrEmpty(id))
+			{
+				return null;
+			}
+			
 			var dto = this.repository.FindOne(id);
-			return Mapper.Current.Map<TDto, TModel>(dto);
+			return dto == null ? null : Mapper.Current.Map<TDto, TModel>(dto);
 		}
 		
 		public async ValueTask<TModel> GetAsync(string id)
 		{
+			if (string.IsNullOrEmpty(id))
+			{
+				return null;
+			}
+			
 			var dto = await this.repository.FindOneAsync(id);
-			return Mapper.Current.Map<TDto, TModel>(dto);
+			return dto == null ? null : Mapper.Current.Map<TDto, TModel>(dto);
 		}
 		
 		public IPaginationCollection<TModel> Get(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null)

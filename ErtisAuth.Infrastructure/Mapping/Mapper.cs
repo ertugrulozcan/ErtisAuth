@@ -97,6 +97,11 @@ namespace ErtisAuth.Infrastructure.Mapping
 			where TIn : class
 			where TOut : class
 		{
+			if (instance == null)
+			{
+				return default;
+			}
+			
 			if (this.CustomMappers.Contains<TIn, TOut>())
 			{
 				var mapperKey = $"{instance.GetType().FullName}_{typeof(TOut).FullName}";
@@ -104,7 +109,7 @@ namespace ErtisAuth.Infrastructure.Mapping
 				return mapper.Map<TIn, TOut>(instance);
 			}
 			
-			return instance == null ? default : this.Implementation.Map<TIn, TOut>(instance);
+			return this.Implementation.Map<TIn, TOut>(instance);
 		}
 		
 		public IEnumerable<TOut> MapCollection<TIn, TOut>(IEnumerable<TIn> collection)
