@@ -1,0 +1,100 @@
+@using ErtisAuth.Hub.Helpers
+@using ErtisAuth.Hub.Constants
+@using ErtisAuth.Hub.Extensions
+@using ErtisAuth.Hub.ViewModels
+@using ErtisAuth.Hub.ViewModels.Users
+@model ErtisAuth.Hub.ViewModels.Users.UserViewModel
+
+@{
+    ViewData["Title"] = "Users";
+}
+
+@inject ErtisAuth.Hub.Configuration.IGoogleMapsApiConfiguration googleMapsApiConfiguration;
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=@googleMapsApiConfiguration.ApiKey" type="text/javascript"></script>
+
+<div class="toolbar" id="kt_toolbar">
+    <div id="kt_toolbar_container" class="container-fluid d-flex flex-stack">
+        <div data-kt-swapper="true" data-kt-swapper-mode="prepend" data-kt-swapper-parent="{default: '#kt_content_container', 'lg': '#kt_toolbar_container'}" class="page-title d-flex align-items-center flex-wrap me-3 mb-5 mb-lg-0">
+            <h1 class="d-flex align-items-center text-dark fw-bolder fs-3 my-1">User Details</h1>
+            <span class="h-20px border-gray-200 border-start mx-4"></span>
+            
+            @{
+                var breadcrumb = BreadcrumbBuilder
+                    .Add("Home", "Index", "Home")
+                    .Add("Users", "Index", "Users")
+                    .Add(Model.Id, "Detail", "Users", new { id = Model.Id });
+            }
+            
+            <partial name="Partials/_Breadcrumb" model="@breadcrumb"/>
+        </div>
+		
+	    <div class="d-flex align-items-center py-1">
+		    <partial name="Partials/_AuthorizedButton" model="@AuthorizedButtonViewModel.SaveButton(Model.Id, "users", "UpdateUserForm")" />
+	    </div>
+    </div>
+</div>
+
+<div class="post d-flex flex-column-fluid" id="kt_post">
+	<div id="kt_content_container" class="container-fluid">
+		<partial name="Partials/_AlertBox" model="Model" />
+		
+		<div class="d-flex flex-column flex-lg-row">
+			<div class="flex-column flex-lg-row-auto w-lg-300px w-xl-400px mb-10">
+				<partial name="_UserSummaryCard"/>
+			</div>
+
+			<div class="flex-lg-row-fluid ms-lg-10">
+				<ul class="nav nav-custom nav-tabs nav-line-tabs nav-line-tabs-2x border-0 fs-5 fw-bold mb-6">
+					<li class="nav-item">
+						<a class="nav-link text-active-primary pb-2 active" data-bs-toggle="tab" href="#kt_user_view_overview_tab">Overview</a>
+					</li>
+
+					<li class="nav-item">
+						<a class="nav-link text-active-primary pb-2" data-kt-countup-tabs="true" data-bs-toggle="tab" href="#kt_user_view_overview_security">Permissions</a>
+					</li>
+
+					<li class="nav-item">
+						<a class="nav-link text-active-primary pb-2" data-bs-toggle="tab" href="#kt_user_view_overview_events_and_logs_tab">Events &amp; Logs</a>
+					</li>
+
+					<li class="nav-item ms-auto">
+						<a href="#" class="btn btn-primary btn-sm" data-kt-menu-trigger="click" data-kt-menu-attach="parent" data-kt-menu-placement="bottom-end">
+							Actions
+							<i class="fas fa-angle-down ms-3"></i>
+						</a>
+
+						<div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg-light-primary fw-bold py-4 w-250px fs-6" data-kt-menu="true">
+							<div class="menu-item px-5">
+								<a href="/memberships/@Model.MembershipId" class="menu-link px-5">User Type Settings</a>
+							</div>
+							@if (this.User.GetClaim(Claims.UserId) == Model.Id)
+							{
+								<div class="menu-item px-5 my-1">
+									<a href="#" class="menu-link px-5" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change password</a>
+								</div>
+							}
+							
+							<div class="menu-item px-5">
+								<partial name="Partials/_DeleteModalButton" model="@AuthorizedButtonViewModel.DeleteModalButton(Model.Id, "users", "user", $"{Model.FirstName} {Model.LastName}", true)" />
+							</div>
+						</div>
+					</li>
+				</ul>
+
+				<div class="tab-content">
+					<!-- Overview -->
+					<partial name="_UserOverviewTab"/>
+
+					<!-- Permissions -->
+					<partial name="_UserPermissionsTab"/>
+
+					<!-- Events -->
+					<partial name="_UserEventsTab"/>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<partial name="Partials/_DeleteModal" model="@Model.GetDeleteViewModel()" />
+<partial name="_ChangePasswordModal" model="new ChangePasswordViewModel()" />

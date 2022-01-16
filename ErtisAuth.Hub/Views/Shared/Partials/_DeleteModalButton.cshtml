@@ -1,0 +1,43 @@
+@using ErtisAuth.Hub.Services.Interfaces
+@using ErtisAuth.Core.Models.Identity
+@using ErtisAuth.Core.Models.Roles
+@using ErtisAuth.Hub.Constants
+@using ErtisAuth.Hub.Extensions
+@model ErtisAuth.Hub.ViewModels.AuthorizedButtonViewModel
+
+@inject IMiddlewareRoleService middlewareRoleService;
+
+@functions
+{
+    bool IsAuthorized()
+    {
+        var objectSegment = string.IsNullOrEmpty(Model.ResourceId) ? RbacSegment.All : new RbacSegment(Model.ResourceId);
+        var rbac = new Rbac(new RbacSegment(this.Context.GetClaim(Claims.UserId)), new RbacSegment(Model.CollectionName), Model.RbacAction, objectSegment);
+        return middlewareRoleService.CheckPermission(rbac, BearerToken.CreateTemp(this.Context.GetClaim(Claims.AccessToken)));
+    }
+}
+
+@if (IsAuthorized())
+{
+    <a href="#" 
+       class="menu-link text-danger px-5"
+       data-bs-toggle="modal" 
+       data-bs-target="#itemDeleteModal"
+       data-pass-id="@Model.ResourceId"
+       data-pass-modal-title="Delete @Model.ResourceName.ToLower().Capitalize()"
+       data-pass-body-title="Delete: @Model.ResourceTitle"
+       data-pass-body-text="This action cannot be undone. This will permanently delete the @Model.ResourceName.ToLower() and remove all linked resources."
+       data-pass-submit-button-text="I understand the consequences, delete this @Model.ResourceName.ToLower()">
+        <i class="bi bi-trash text-danger me-3"></i>
+        Delete @Model.ResourceName.ToLower()
+    </a>
+}
+else if (!Model.HideIfForbidden)
+{
+    <span tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="You do not have sufficient permissions to perform this action">
+        <a href="#" class="menu-link text-danger px-5 disabled">
+            <i class="bi bi-trash text-danger me-3"></i>
+            Delete @Model.ResourceName.ToLower()
+        </a>
+    </span>
+}

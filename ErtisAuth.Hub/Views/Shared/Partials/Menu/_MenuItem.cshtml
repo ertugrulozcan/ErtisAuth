@@ -1,0 +1,170 @@
+@model MenuItem;
+@using Microsoft.AspNetCore.Html
+
+@functions
+{
+    IHtmlContent DrawSvgIcon(string svg)
+    {
+        return !string.IsNullOrEmpty(svg) ? Html.Raw("<span class=\"menu-icon\"><span class=\"svg-icon svg-icon-2\">" + svg + "</span></span>") : Html.Raw(string.Empty);
+    }
+}
+
+@{
+    var isActiveClass = Model.IsActive ? "active" : string.Empty;
+}
+
+@if (!Model.HasSubMenu)
+{
+    <div class="menu-item">
+        @if (Model.HasRawUrl)
+        {
+            <a class="menu-link @isActiveClass" href="@Model.RawUrl">
+                @DrawSvgIcon(Model.IconSvg)
+                <span class="menu-title">@Model.Title</span>
+            </a>
+        }
+        else if (Model.HasAction)
+        {
+            if (Model.HasController)
+            {
+                <a class="menu-link @isActiveClass" href="@Url.Action(Model.Action, Model.Controller)">
+                    @DrawSvgIcon(Model.IconSvg)
+                    <span class="menu-title">@Model.Title</span>
+                </a>
+            }
+            else
+            {
+                <a class="menu-link @isActiveClass" href="@Url.Action(Model.Action)">
+                    @DrawSvgIcon(Model.IconSvg)
+                    <span class="menu-title">@Model.Title</span>
+                </a>
+            }
+        }
+        else
+        {
+            <a class="menu-link @isActiveClass" href="#">
+                @DrawSvgIcon(Model.IconSvg)
+                <span class="menu-title">@Model.Title</span>
+            </a>
+        }
+    </div>
+}
+else
+{
+    <div class="menu-item menu-accordion" data-kt-menu-trigger="click">
+        <span class="menu-link @isActiveClass">
+            @DrawSvgIcon(Model.IconSvg)
+            <span class="menu-title">@Model.Title</span>
+            <span class="menu-arrow"></span>
+        </span>
+        
+        <div class="menu-sub menu-sub-accordion menu-active-bg">
+            @foreach (var subMenu in Model.SubMenuItems)
+            {
+                if (!subMenu.HasSubMenu)
+                {
+                    <div class="menu-item">
+                        @if (subMenu.HasRawUrl)
+                        {
+                            <a class="menu-link" href="@subMenu.RawUrl">
+                                <span class="menu-bullet">
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span class="menu-title">@subMenu.Title</span>
+                            </a>
+                        }
+                        else if (subMenu.HasAction)
+                        {
+                            if (subMenu.HasController)
+                            {
+                                <a class="menu-link" href="@Url.Action(subMenu.Action, subMenu.Controller)">
+                                    <span class="menu-bullet">
+                                        <span class="bullet bullet-dot"></span>
+                                    </span>
+                                    <span class="menu-title">@subMenu.Title</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <a class="menu-link" href="@Url.Action(subMenu.Action)">
+                                    <span class="menu-bullet">
+                                        <span class="bullet bullet-dot"></span>
+                                    </span>
+                                    <span class="menu-title">@subMenu.Title</span>
+                                </a>
+                            }
+                        }
+                        else
+                        {
+                            <a class="menu-link" href="#">
+                                <span class="menu-bullet">
+                                    <span class="bullet bullet-dot"></span>
+                                </span>
+                                <span class="menu-title">@subMenu.Title</span>
+                            </a>   
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                        <span class="menu-link">
+                            <span class="menu-bullet">
+                                <span class="bullet bullet-dot"></span>
+                            </span>
+                            <span class="menu-title">@subMenu.Title</span>
+                            <span class="menu-arrow"></span>
+                        </span>
+                        
+                        <div class="menu-sub menu-sub-accordion menu-active-bg">
+                            @foreach (var subOfSubMenu in subMenu.SubMenuItems)
+                            {
+                                <div class="menu-item">
+                                    @if (subOfSubMenu.HasRawUrl)
+                                    {
+                                        <a class="menu-link" href="@subOfSubMenu.RawUrl">
+                                            <span class="menu-bullet">
+                                                <span class="bullet bullet-dot"></span>
+                                            </span>
+                                            <span class="menu-title">@subOfSubMenu.Title</span>
+                                        </a>
+                                    }
+                                    else if (subOfSubMenu.HasAction)
+                                    {
+                                        if (subOfSubMenu.HasController)
+                                        {
+                                            <a class="menu-link" href="@Url.Action(subOfSubMenu.Action, subOfSubMenu.Controller)">
+                                                <span class="menu-bullet">
+                                                    <span class="bullet bullet-dot"></span>
+                                                </span>
+                                                <span class="menu-title">@subOfSubMenu.Title</span>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a class="menu-link" href="@Url.Action(subOfSubMenu.Action)">
+                                                <span class="menu-bullet">
+                                                    <span class="bullet bullet-dot"></span>
+                                                </span>
+                                                <span class="menu-title">@subOfSubMenu.Title</span>
+                                            </a>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <a class="menu-link" href="#">
+                                            <span class="menu-bullet">
+                                                <span class="bullet bullet-dot"></span>
+                                            </span>
+                                            <span class="menu-title">@subOfSubMenu.Title</span>
+                                        </a>   
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}

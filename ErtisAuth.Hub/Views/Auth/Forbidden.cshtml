@@ -1,0 +1,69 @@
+@using ErtisAuth.Hub.Helpers
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base href="">
+    <title>ErtisAuth - @ViewData["Title"]</title>
+    <meta charset="utf-8" />
+    <meta name="description" content="ErtisAuth Hub" />
+    <meta name="keywords" content="Ertis, ErtisAuth" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" />
+    
+    @Html.Raw(HtmlTag.Css("lib/bootstrap-icons/bootstrap-icons.css"))
+    @Html.Raw(HtmlTag.Css("lib/fontawesome/css/all.css"))
+    @Html.Raw(HtmlTag.Css("css/plugins.bundle.css"))
+    @Html.Raw(HtmlTag.Css("css/style.bundle.css"))
+    @Html.Raw(HtmlTag.Css("css/site.css"))
+</head>
+
+<body id="kt_body" class="header-fixed header-tablet-and-mobile-fixed toolbar-enabled toolbar-fixed aside-enabled aside-fixed" style="background: #f2f3f8;">
+    <div class="d-flex flex-column flex-root py-20">
+        <div>
+            <img src="img/logo.svg" alt="" style="display: block; width: 100%; max-width: 50px; margin: 0 auto;">
+        </div>
+
+        <div class="mt-5" style="display: flex; width: 100%; max-width: 600px; margin: 0 auto; justify-content: center; text-align: center; font-size: 21px;">
+            <span style="font-weight: bolder;">ERTIS</span>
+            <span style="font-weight: lighter;">AUTH</span>
+        </div>
+
+        <div class="mt-15" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <div style="background: #ffffff; border: 1px solid #e1e1e1; max-width: 600px; box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px;">
+                <div class="alert d-flex flex-center flex-column">
+                    <div>
+                        <div class="d-flex py-3 px-5 px-lg-5">
+                            <span>
+                                <i class="bi bi-hourglass-bottom text-info fs-2x"></i>
+                            </span>
+                            <h3 class="fw-bolder mb-3" style="line-height: 27px; margin-left: 8px;">Your session has expired</h3>
+                        </div>
+
+                        <div class="separator separator-dashed border-dark opacity-25 mb-5" style="width: 580px;"></div>
+                        
+                        <div class="text-dark py-2 px-4 px-lg-4">
+                            Your session timed-out or you are not authorized for action
+                            <br/>
+                            Please retry to login. If problem persists, contact your help desk.
+                        </div>
+
+                        <div class="separator separator-dashed border-dark opacity-25 my-5" style="width: 580px;"></div>
+
+                        <div class="d-flex flex-wrap flex-center pt-1 px-5 px-lg-5">
+                            <a href="/" class="btn btn-secondary btn-sm btn-widest"><i class="bi bi-arrow-counterclockwise fs-4 me-2"></i>Login</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <partial name="_Scripts" />
+</body>
+</html>

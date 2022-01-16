@@ -1,0 +1,146 @@
+@model ErtisAuth.Hub.ViewModels.Users.UserCreateViewModel
+
+<div id="createUserModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="createUserModalLabel" aria-hidden="true" data-bs-backdrop="static" style="display: none;">
+	<div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 id="createUserModalLabel" class="modal-title vertical-center-flex">
+					<i class="bi bi-person-plus-fill text-primary fs-2x me-4"></i>
+					<span>Create User</span>
+				</h5>
+	            
+				<div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+					<i class="bi bi-x-lg"></i>
+				</div>
+			</div>
+            
+			<div class="modal-body">
+				<form id="CreateUserForm" method="post" asp-controller="Users" asp-action="Create">
+					<div class="px-6 py-5">
+						<div class="row mb-6">
+							<label class="col-lg-2 col-xl-3 col-form-label fw-bold fs-6">Profile Image</label>
+							<div class="col-lg-10 col-xl-9">
+								<div class="image-input image-input-outline" data-kt-image-input="true">
+									<div class="image-input-wrapper w-100px h-100px" style="background-image: url('/img/user-placeholder.png')"></div>
+                    
+									<label class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow" data-kt-image-input-action="change" data-bs-toggle="tooltip" title="" data-bs-original-title="Change avatar">
+										<i class="bi bi-pencil-fill fs-7"></i>
+                    
+										<input type="file" name="avatar" accept=".png, .jpg, .jpeg">
+										<input type="hidden" name="avatar_remove">
+									</label>
+                    
+									<span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow" data-kt-image-input-action="cancel" data-bs-toggle="tooltip" title="" data-bs-original-title="Cancel avatar">
+										<i class="bi bi-x fs-2"></i>
+									</span>
+                    
+									<span class="btn btn-icon btn-circle btn-active-color-primary w-25px h-25px bg-body shadow" data-kt-image-input-action="remove" data-bs-toggle="tooltip" title="" data-bs-original-title="Remove avatar">
+										<i class="bi bi-x fs-2"></i>
+									</span>
+								</div>
+                    
+								<div class="form-text">Allowed file types: png, jpg, jpeg.</div>
+							</div>
+						</div>
+                    
+						<div class="row mb-6">
+							<label class="col-lg-2 col-xl-3 col-form-label required fw-bold fs-6">Name & Surname</label>
+							<div class="col-lg-10 col-xl-9">
+								<div class="row">
+									<div class="col-lg-6">
+										<input id="createUserForm_firstNameInput" type="text" class="form-control" placeholder="First Name" asp-for="FirstName">
+										<span class="validation-error-span" asp-validation-for="FirstName"></span>
+									</div>
+									<div class="col-lg-6">
+										<input id="createUserForm_lastNameInput" type="text" class="form-control" placeholder="Last Name" asp-for="LastName">
+										<span class="validation-error-span" asp-validation-for="LastName"></span>
+									</div>
+								</div>
+							</div>
+						</div>
+                    
+						<div class="row mb-6">
+							<div class="col-lg-2 col-xl-3">
+								<label class="col-form-label required fw-bold fs-6">Username</label>
+							</div>
+                    
+							<div class="col-lg-10 col-xl-9">
+								<input id="createUserForm_userNameInput" type="text" class="form-control" placeholder="Username" asp-for="Username">
+								<span class="validation-error-span" asp-validation-for="Username"></span>
+							</div>
+						</div>
+                    
+						<div class="row mb-6">
+							<div class="col-lg-2 col-xl-3">
+								<label class="col-form-label required fw-bold fs-6">Email</label>
+							</div>
+                    
+							<div class="col-lg-10 col-xl-9">
+								<input id="createUserForm_emailAddressInput" type="text" class="form-control" placeholder="Email Address" asp-for="EmailAddress">
+								<span class="validation-error-span" asp-validation-for="EmailAddress"></span>
+							</div>
+						</div>
+                    
+						<div class="row mb-6">
+							<div class="col-lg-2 col-xl-3">
+								<label class="col-form-label required fw-bold fs-6">Role</label>
+							</div>
+                    
+							<div class="col-lg-10 col-xl-9">
+								<select class="form-control form-select" id="rolesDropdown" asp-for="Role" asp-items="Model.RoleList"></select>
+							</div>
+						</div>
+                    
+						<partial name="_UserAdditionalProperties"/>
+
+						<div class="row mb-6">
+							<label class="col-lg-2 col-xl-3 col-form-label required fw-bold fs-6">Password</label>
+							<div id="kt_password_meter_control" class="col-lg-10 col-xl-9 pt-3 fv-row" data-kt-password-meter="true">
+								<div class="row">
+									<div class="col-lg-6">
+										<label class="form-label fw-bold fs-6 mb-2 required">
+											New Password
+										</label>
+
+										<div class="position-relative mb-3">
+											<input class="form-control form-control-lg form-control-solid" type="password" placeholder="" autocomplete="off" asp-for="Password" />
+                                                                                    
+											<span class="btn btn-sm btn-icon position-absolute translate-middle top-50 end-0 me-n2" data-kt-password-meter-control="visibility">
+												<i class="bi bi-eye-slash fs-2"></i>
+												<i class="bi bi-eye fs-2 d-none"></i>
+											</span>
+										</div>
+									</div>
+									<div class="col-lg-6">
+										<label class="form-label fw-bold fs-6 mb-2 required">Confirm New Password</label>
+										<input class="form-control form-control-lg form-control-solid" type="password" placeholder="" autocomplete="off" asp-for="PasswordAgain" />
+									</div>
+								</div>
+								
+								<div class="mt-6">
+									<div class="mb-1">
+										<div class="d-flex align-items-center mb-3" data-kt-password-meter-control="highlight">
+											<div class="flex-grow-1 bg-secondary bg-active-success rounded h-5px me-2"></div>
+											<div class="flex-grow-1 bg-secondary bg-active-success rounded h-5px me-2"></div>
+											<div class="flex-grow-1 bg-secondary bg-active-success rounded h-5px me-2"></div>
+											<div class="flex-grow-1 bg-secondary bg-active-success rounded h-5px"></div>
+										</div>
+									</div>
+                                							
+									<div class="text-muted">
+										Use 8 or more characters with a mix of letters, numbers & symbols.
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			
+			<div class="modal-footer">
+				<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+				<button type="submit" class="btn btn-success btn-sm" form="CreateUserForm">Create</button>
+			</div>
+		</div>
+	</div>
+</div>

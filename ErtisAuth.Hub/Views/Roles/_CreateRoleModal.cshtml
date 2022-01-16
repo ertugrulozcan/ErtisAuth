@@ -1,0 +1,29 @@
+@model ErtisAuth.Hub.ViewModels.Roles.RoleCreateViewModel
+
+<div id="createRoleModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="createRoleModalLabel" aria-hidden="true" data-bs-backdrop="static" style="display: none;">
+	<div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 id="createRoleModalLabel" class="modal-title vertical-center-flex">
+					<i class="bi bi-shield-shaded text-primary fs-2x me-4"></i>
+					<span>Create Role</span>
+				</h5>
+	            
+				<div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+					<i class="bi bi-x-lg"></i>
+				</div>
+			</div>
+            
+			<div class="modal-body">
+				<form id="CreateRoleForm" method="post" asp-controller="Roles" asp-action="Create">
+					<partial name="_RoleEditPanel" />
+				</form>
+			</div>
+			
+			<div class="modal-footer">
+				<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+				<button type="submit" class="btn btn-success btn-sm" form="CreateRoleForm">Create</button>
+			</div>
+		</div>
+	</div>
+</div>

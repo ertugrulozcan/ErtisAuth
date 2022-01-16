@@ -1,0 +1,48 @@
+﻿@using ErtisAuth.Hub.Helpers
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base href="">
+    <title>ErtisAuth - @ViewData["Title"]</title>
+    <meta charset="utf-8" />
+    <meta name="description" content="ErtisAuth Hub" />
+    <meta name="keywords" content="Ertis, ErtisAuth" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" />
+    
+    <partial name="_PreStyles" />
+    
+    @Html.Raw(HtmlTag.Css("lib/bootstrap-icons/bootstrap-icons.css"))
+    @Html.Raw(HtmlTag.Css("lib/fontawesome/css/all.css"))
+    @Html.Raw(HtmlTag.Css("css/plugins.bundle.css"))
+    @Html.Raw(HtmlTag.Css("css/style.bundle.css"))
+    @Html.Raw(HtmlTag.Css("css/site.css"))
+</head>
+
+<body id="kt_body" class="header-fixed header-tablet-and-mobile-fixed toolbar-enabled toolbar-fixed aside-enabled aside-fixed">
+    <div class="d-flex flex-column flex-root">
+        <div class="page d-flex flex-row flex-column-fluid">
+            <partial name="Partials/_NavigationMenu" />
+            
+            <div class="wrapper d-flex flex-column flex-row-fluid" id="kt_wrapper">
+                <partial name="_Header"  />
+                
+                <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+                    @RenderBody()
+                </div>
+                
+                <partial name="_Footer" />
+            </div>
+        </div>
+    </div>
+
+    <partial name="Partials/_RightDrawerPanel" />
+    <partial name="Partials/_ScrollToTop" />
+
+    <partial name="_Scripts" />
+    <partial name="_PostScripts" />
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

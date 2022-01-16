@@ -1,0 +1,180 @@
+@using ErtisAuth.Hub.Helpers
+@model ErtisAuth.Hub.ViewModels.Auth.LoginViewModel
+
+@{
+    Layout = null;
+	ViewData["Title"] = "Login";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base href="">
+    <title>ErtisAuth - @ViewData["Title"]</title>
+    <meta charset="utf-8" />
+    <meta name="description" content="ErtisAuth Hub" />
+    <meta name="keywords" content="Ertis, ErtisAuth" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" />
+
+    @Html.Raw(HtmlTag.Css("lib/bootstrap-icons/bootstrap-icons.css"))
+    @Html.Raw(HtmlTag.Css("css/plugins.bundle.css"))
+    @Html.Raw(HtmlTag.Css("css/style.bundle.css"))
+    @Html.Raw(HtmlTag.Css("css/site.css"))
+    
+    @Html.Raw(HtmlTag.Css("lib/huro/css/app.css"))
+	@Html.Raw(HtmlTag.Css("lib/huro/css/main.css"))
+</head>
+
+<body id="kt_body" class="bg-dark">
+	<div id="huro-app" class="app-wrapper">
+        <div class="pageloader is-full"></div>
+        <div class="infraloader is-full is-active"></div>
+        <div class="auth-wrapper">
+            <div class="modern-login">
+                <div class="columns is-gapless is-vcentered">
+                    <div class="column is-6 is-relative">
+                        <div class="top-logo">
+                            <img class="light-image" src="img/logo.svg" alt="">
+                        </div>
+
+                        <div style="display: flex; width: 100%; max-width: 480px; margin: 0 auto; justify-content: center; text-align: center; font-size: 21px;">
+                            <span style="font-weight: bolder;">ERTIS</span>
+                            <span style="font-weight: lighter;">AUTH</span>
+                        </div>
+                                            
+                        <div class="is-form">
+                            <div class="hero-body">
+                                <form id="login-form" class="form w-100" novalidate="novalidate" asp-controller="Auth" asp-action="Login" method="post">
+                                    @{
+                                        var returnUrl = string.Empty;
+                                        if (Context.Request.Query.ContainsKey("return"))
+                                        {
+                                            returnUrl = Context.Request.Query["return"];
+                                        }
+                                    }
+                                    <input id="ReturnUrl" name="ReturnUrl" type="hidden" value="@returnUrl">
+                                
+                                    @Html.HiddenFor(x => x.ClientIP, new {id = "ipAddressHiddenInput"})
+                                    @Html.HiddenFor(x => x.UserAgentRaw, new {id = "userAgentRawHiddenInput"})
+                                                        
+                                    <div class="mb-15">
+                                        <partial name="Partials/_AlertBox" model="Model" />
+                                    </div>
+                    
+                                    <div class="card-inner">
+                                        <div class="field form-group m-b-20">
+                                            <label class="form-label">Username or email</label>
+                                            <div class="control has-icon has-validation">
+                                                <input type="text" class="input form-control" placeholder="Username" autocomplete="off" asp-for="Username">
+                                                <div class="form-icon">
+                                                    <i class="bi bi-person"></i>
+                                                </div>
+                                            </div>
+                                            <span class="validation-error-span" asp-validation-for="Username"></span>
+                                        </div>
+                                                        
+                                        <div class="field form-group">
+                                            <label class="form-label">Password</label>
+                                            <div class="control has-icon has-validation">
+                                                <input type="password" class="input form-control" placeholder="Password" autocomplete="off" asp-for="Password">
+                                                <div class="form-icon">
+                                                    <i class="bi bi-unlock"></i>
+                                                </div>
+                                            </div>
+                                            <span class="validation-error-span" asp-validation-for="Password"></span>
+                                        </div>
+                                    </div>
+                    
+                                    <div class="m-t-40">
+                                        <button id="login-submit" type="submit" class="button h-button is-big is-primary is-bold is-raised" style="width: 100%;">Login</button>
+                                    </div>
+
+                                    <div class="m-t-20" style="display: flex; justify-content: center;">
+                                        <a href="#">Forgot password?</a>
+                                    </div>
+
+                                    <div class="m-t-50" style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999999; font-size: 11px;">
+                                        <span>ERTIS INC</span>
+                                        <span>Copyright © @DateTime.Now.Year</span>
+                                        <span>Version @Program.GetEnvironmentParameter("Version")</span>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <style>
+                            .footer-bar {
+                                position: fixed;
+                                bottom: 0;
+                                width: 50%;
+                                background: #f6f6f6;
+                                border-top: 1px solid #e3e3e3;
+                                padding: 7px 10px 3px 10px;
+                            }
+
+                            .badges-container {
+                                display: flex; 
+                                float: right;
+                            }
+
+                            .ert-badge {
+                                display: flex; 
+                                margin-bottom: 0 !important;
+                            }
+
+                            .ert-badge:not(:last-child) {
+                                margin-right: 8px;
+                            }
+
+                            .ert-badge>.tag {
+                                line-height: 23px !important;
+                                border: 1px solid #dcdcdc;
+                                border-right: 0;
+                            }
+                        </style>
+
+                        <div class="footer-bar">
+                            <div class="badges-container">
+                                <div class="tags has-addons ert-badge">
+                                    <span class="tag">Build Version</span>
+                                    <span class="tag is-solid">@Program.GetEnvironmentParameter("Version")</span>
+                                </div>
+                                <div class="tags has-addons ert-badge">
+                                    <span class="tag">Last Build</span>
+                                    <span class="tag is-solid">@Program.GetEnvironmentParameter("BuildTime")</span>
+                                </div>
+                                <div class="tags has-addons ert-badge">
+                                    <span class="tag">Environment</span>
+                                    <span class="tag is-solid">@Program.GetEnvironmentParameter("Environment")</span>
+                                </div>
+                                <div class="tags has-addons ert-badge">
+                                    <span class="tag">IP</span>
+                                    <span id="ipAddressSpan" class="tag is-solid">@Program.GetEnvironmentParameter("Environment")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="column is-relative is-6 h-hidden-mobile h-hidden-tablet-p" style="border-left: 1px solid #80808055; background: rgb(247,248,249); background: linear-gradient(0deg, rgba(235,235,235,1) 0%, rgba(247,248,249,1) 100%);">
+                        <div class="hero is-fullheight is-image">
+                            <div class="hero-body">
+                                <img src="img/cms-illustration.png" alt="" style="padding: 10px 85px 130px 10px; object-fit: cover;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	
+    <partial name="_Scripts" />
+    @Html.Raw(HtmlTag.Js("lib/jquery-validation/dist/jquery.validate.js"))
+    @Html.Raw(HtmlTag.Js("lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"))
+    @Html.Raw(HtmlTag.Js("lib/huro/js/app.js"))
+    @Html.Raw(HtmlTag.Js("js/authentication/webrtc.js"))
+    @Html.Raw(HtmlTag.Js("js/authentication/user-agent-parser.js"))
+    @Html.Raw(HtmlTag.Js("js/authentication/login.js"))
+</body>
+</html>

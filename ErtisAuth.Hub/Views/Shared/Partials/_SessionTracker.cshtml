@@ -1,0 +1,85 @@
+@if (Context.Items.ContainsKey("RemainingTime") && Context.Items.ContainsKey("TokenValidationTime") && double.TryParse(Context.Items["RemainingTime"].ToString(), out var totalRemainingMilliseconds))
+{
+    <div class="d-flex align-items-sm-center mb-3">
+        <span class="me-6" style="background: #ececf3; padding: 8px 8px 6px 8px; border-radius: 4px;">
+            <i class="fas fa-user-clock fs-5"></i>
+        </span>
+            				
+        <div class="d-flex align-items-center flex-row-fluid flex-wrap">
+            <div class="flex-grow-1 me-2">
+                <a href="#" class="text-gray-800 text-hover-primary fs-6 fw-bolder">Remaining Session Time</a>
+                <span id="remainingTimeSpan" class="text-muted fw-bold d-block fs-7"></span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let countDownDate = Date.parse('@Context.Items["TokenValidationTime"].ToString()');
+        countDownDate += @totalRemainingMilliseconds;
+        countDownDate = new Date(countDownDate);
+        
+        let interval = setInterval(function() {
+            let now = new Date().getTime();
+            let distance = countDownDate - now;
+            
+            let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            let daysPart = '';
+            if (days > 0)
+                daysPart = days + 'd ';
+            
+            let hoursPart = '';
+            if (hours > 0)
+                hoursPart = hours + 'h ';
+            
+            let minutesPart = '';
+            if (minutes > 0)
+                minutesPart = minutes + 'm ';
+            
+            let secondsPart = '';
+            if (seconds > 0)
+                secondsPart = seconds + 's ';
+            
+            document.getElementById("remainingTimeSpan").innerHTML = daysPart + hoursPart + minutesPart + secondsPart;
+            if (distance < 1000 * 60) {
+                showSessionTimeoutWarningModal();
+            }
+            else if (distance < 0) {
+                clearInterval(interval);
+                document.getElementById("remainingTimeSpan").innerHTML = "EXPIRED";
+            }
+        }, 1000);
+        
+        let isWarnedForSessionTimeout = false;
+        function showSessionTimeoutWarningModal() {
+            $('#sessionTimeoutWarningModal').on('show.bs.modal', function (event) {
+                setInterval(function() {
+                    let now = new Date().getTime();
+                    let distance = countDownDate - now;
+                    if (distance > 0) {
+                        let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                        $('#sessionTimeoutRemainingSecondsSpan').html(seconds + 's');
+                        let percent = (seconds * 100 / 60) | 0;
+                        let progressBar = $('#sessionTimeoutProgressBar');
+                        progressBar.css("width", percent + "%");
+                        progressBar.attr('aria-valuenow', percent);   
+                    }
+                }, 1000);
+            });
+            
+            if (!isWarnedForSessionTimeout) {
+                $("#sessionTimeoutWarningModal").modal();
+                isWarnedForSessionTimeout = true;
+            }
+        }
+        
+        function resetSessionTimer(expireTimeSeconds) {
+            countDownDate = Date.now();
+            countDownDate += expireTimeSeconds * 1000;
+            countDownDate = new Date(countDownDate);
+        }
+    </script>
+}

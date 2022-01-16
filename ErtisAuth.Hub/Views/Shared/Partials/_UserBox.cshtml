@@ -1,0 +1,21 @@
+@using ErtisAuth.Hub.Services.Interfaces
+@inject ISessionService sessionService
+@{
+    var sessionUser = sessionService.GetSessionUser();
+}
+
+<div class="d-flex align-items-center ms-1 ms-lg-3">
+	<div id="user_panel_toggle" class="user-box cursor-pointer vertical-center-flex">
+		<div style="margin-right: 10px; margin-top: 6px; text-align: right;">
+			<div class="fw-bolder text-gray-800 text-hover-primary" style="font-size: 1.1em; line-height: 1.1em;">
+				<span>@sessionUser.FullName</span>
+			</div>
+			
+			<span class="text-gray-600">@sessionUser.Username</span>
+		</div>
+
+		<div class="symbol symbol-30px symbol-md-40px">
+			<img src="~/img/user-placeholder.png" alt="user"/>
+		</div>
+	</div>
+</div>

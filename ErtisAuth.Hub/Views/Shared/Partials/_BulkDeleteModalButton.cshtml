@@ -1,0 +1,38 @@
+@using ErtisAuth.Hub.Services.Interfaces
+@using ErtisAuth.Core.Models.Identity
+@using ErtisAuth.Core.Models.Roles
+@using ErtisAuth.Hub.Constants
+@using ErtisAuth.Hub.Extensions
+@inject IMiddlewareRoleService middlewareRoleService;
+
+@model ErtisAuth.Hub.ViewModels.BulkDeleteViewModel
+
+@functions
+{
+    bool IsAuthorized()
+    {
+        var rbac = new Rbac(new RbacSegment(this.Context.GetClaim(Claims.UserId)), new RbacSegment(Model.RbacResourceSlug), Rbac.CrudActionSegments.Delete, RbacSegment.All);
+        return middlewareRoleService.CheckPermission(rbac, BearerToken.CreateTemp(this.Context.GetClaim(Claims.AccessToken)));
+    }
+}
+
+@if (IsAuthorized())
+{
+    <div class="d-flex justify-content-end align-items-center d-none" multi-select-toolbox="delete_selected_container">
+        <div class="fw-bolder me-5">
+            <span class="me-2" multi-select-toolbox="selected_count"></span>
+            Selected
+        </div>
+        <button type="button" class="btn btn-danger" multi-select-toolbox="delete_selected_button" data-bs-toggle="modal" data-bs-target="#bulkDeleteModal">Delete Selected</button>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-end align-items-center d-none" multi-select-toolbox="delete_selected_container">
+        <div class="fw-bolder me-5">
+            <span class="me-2" multi-select-toolbox="selected_count"></span>
+            Selected
+        </div>
+        <button type="button" class="btn btn-danger disabled" multi-select-toolbox="delete_selected_button" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="You do not have sufficient permissions to perform this action">Delete Selected</button>
+    </div>
+}

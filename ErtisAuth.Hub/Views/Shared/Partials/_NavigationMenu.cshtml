@@ -1,0 +1,105 @@
+@using Microsoft.AspNetCore.Html
+@using ErtisAuth.Hub.Helpers
+
+@functions
+{
+    async ValueTask<IHtmlContent> MenuCaption(string title)
+	{
+		return await Html.PartialAsync("Partials/Menu/_MenuCaption", new Dictionary<string, object> {{ "title", title }});
+	}
+	
+	async ValueTask<IHtmlContent> MenuItem(string title, string slug, string icon, string controller, string action, string rawUrl = null, IEnumerable<MenuItem> subMenu = null)
+	{
+		var isActive = false;
+		if (slug != null)
+		{
+			string pageRootSlug = null;
+			if (this.Context?.Request.Path.Value != null)
+			{
+				pageRootSlug = this.Context.Request.Path.Value.Split("/").FirstOrDefault(x => !string.IsNullOrEmpty(x));	
+			}
+
+			if (pageRootSlug != null)
+			{
+				isActive = slug == pageRootSlug;	
+			}
+		}
+		
+		return await Html.PartialAsync("Partials/Menu/_MenuItem", new MenuItem
+		{
+			Title = title,
+			Icon = icon,
+			IsActive = isActive,
+			Controller = controller,
+			Action = action,
+			RawUrl = rawUrl,
+			SubMenuItems = subMenu
+		});
+	}
+
+	IHtmlContent MenuSeparator()
+	{
+		return Html.Raw(@"
+			<div class=""menu-item"">
+				<div class=""menu-content"">
+					<div class=""separator mx-1"" style=""margin-top: 0.4rem!important; margin-bottom: 0.2rem!important;""></div>
+				</div>
+			</div>");
+	}
+
+	/*
+    bool IsAuthorizedMenuItem(string slug)
+    {
+        var rbac = new Rbac(new RbacSegment(this.Context.GetClaim(Claims.UserId)), new RbacSegment(slug), Rbac.GetSegment(Rbac.CrudActions.Read), RbacSegment.All);
+        return middlewareRoleService.CheckPermission(rbac, BearerToken.CreateTemp(this.Context.GetClaim(Claims.AccessToken)));
+    }
+	*/
+}
+
+<div id="kt_aside" class="aside aside-dark aside-hoverable" data-kt-drawer="true" data-kt-drawer-name="aside" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'200px', '300px': '250px'}" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_aside_mobile_toggle">
+	<div class="aside-logo flex-column-auto" id="kt_aside_logo">
+		<a asp-controller="Home" asp-action="Index" class="logo" style="font-size: 1.35em; color: #b7b7b7;">
+			<div style="display: flex;">
+				<span style="font-weight: bolder;">ERTIS</span>
+				<span style="font-weight: lighter;">AUTH</span>
+			</div>
+		</a>
+
+		<div id="kt_aside_toggle" class="btn btn-icon w-auto px-0 btn-active-color-primary aside-toggle" data-kt-toggle="true" data-kt-toggle-state="active" data-kt-toggle-target="body" data-kt-toggle-name="aside-minimize">
+			<span class="svg-icon svg-icon-1 rotate-180">
+				@Html.Raw(SvgIcons.AsideToggle)
+			</span>
+		</div>
+	</div>
+					
+	<div class="aside-menu flex-column-fluid">
+		<div class="hover-scroll-overlay-y my-5 my-lg-5" id="kt_aside_menu_wrapper" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-height="auto" data-kt-scroll-dependencies="#kt_aside_logo, #kt_aside_footer" data-kt-scroll-wrappers="#kt_aside_menu" data-kt-scroll-offset="0">
+			<div class="menu menu-column menu-title-gray-800 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-500" id="#kt_aside_menu" data-kt-menu="true">
+				@await MenuItem("Dashboard", null, "dashboard", "Home", "Index")
+				@MenuSeparator()
+				@await MenuCaption("Auth")
+				@await MenuItem("Users", "users", "users", "Users", "Index")
+				@await MenuItem("Roles", "roles", "roles", "Roles", "Index")
+				@await MenuItem("Applications", "applications", "applications", "Applications", "Index")
+				@await MenuItem("Memberships", "memberships", "memberships", "Memberships", "Index")
+				@await MenuItem("Sessions", "sessions", "sessions", "Sessions", "Index")
+				@await MenuItem("Providers", "providers", "providers", "Providers", "Index")
+				@await MenuItem("Webhooks", "webhooks", "webhooks", "Webhooks", "Index")
+				@await MenuItem("Events", "events", "events", "Events", "Index")
+			</div>
+		</div>
+	</div>
+					
+	<div class="aside-footer flex-column-auto pt-5 pb-7 px-5" id="kt_aside_footer">
+		<a class="btn btn-custom btn-primary w-100">
+			<span class="btn-label">REST API</span>
+			<span class="svg-icon btn-icon svg-icon-2">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+					<path opacity="0.3" d="M19 22H5C4.4 22 4 21.6 4 21V3C4 2.4 4.4 2 5 2H14L20 8V21C20 21.6 19.6 22 19 22ZM15 17C15 16.4 14.6 16 14 16H8C7.4 16 7 16.4 7 17C7 17.6 7.4 18 8 18H14C14.6 18 15 17.6 15 17ZM17 12C17 11.4 16.6 11 16 11H8C7.4 11 7 11.4 7 12C7 12.6 7.4 13 8 13H16C16.6 13 17 12.6 17 12ZM17 7C17 6.4 16.6 6 16 6H8C7.4 6 7 6.4 7 7C7 7.6 7.4 8 8 8H16C16.6 8 17 7.6 17 7Z" fill="black" />
+					<path d="M15 8H20L14 2V7C14 7.6 14.4 8 15 8Z" fill="black" />
+				</svg>
+			</span>
+		</a>
+	</div>
+</div>
+				

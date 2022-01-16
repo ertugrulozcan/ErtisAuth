@@ -1,0 +1,266 @@
+@using ErtisAuth.Hub.Helpers
+@using ErtisAuth.Hub.Extensions
+@model ErtisAuth.Hub.ViewModels.Users.UserViewModel
+
+<div class="tab-pane fade" id="kt_user_view_overview_security" role="tabpanel">
+    <div class="card card-bordered mb-5 mb-xl-10">
+    	<div class="card-header">
+	        <ul class="nav nav-tabs nav-line-tabs nav-stretch fs-6 border-0">
+		        <li class="nav-item">
+			        <a class="nav-link active" data-bs-toggle="tab" href="#basic_ubac_tab">Basic</a>
+		        </li>
+		        <li class="nav-item">
+			        <a class="nav-link" data-bs-toggle="tab" href="#advanced_ubac_tab">Advanced</a>
+		        </li>
+	        </ul>
+
+	        <div class="card-toolbar">
+		        <a href="/roles/@Model.RoleId" target="_blank" class="btn btn-light btn-sm">Go to role settings</a>
+		        <button id="resetToRoleButton" type="button" class="btn btn-light-warning btn-sm ms-4" data-role-id="@Model.RoleId" onClick="resetToRoleSettings()">
+			        <span class="indicator-label">
+				        Reset to role settings
+			        </span>
+			        <span class="indicator-progress">
+				        Please wait... <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+			        </span>
+		        </button>
+	        </div>
+    	</div>
+    	
+    	<div class="card-body p-1">
+    		<div class="tab-content">
+    			<div class="tab-pane fade show active px-7 py-6" id="basic_ubac_tab" role="tabpanel">
+    				<div>
+    					<div>
+    						<div class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10">
+    							<span class="svg-icon svg-icon-2hx svg-icon-primary me-4 mb-5 mb-sm-0">
+    								@Html.Raw(SvgIcons.Info)
+    							</span>
+    							
+    							<div class="d-flex flex-column pe-0 pe-sm-10">
+    								<h5 class="mb-1">Info</h5>
+    								<span>Only permissions covering all users and all resources can be managed from this panel. Please check the advanced tab for the forbidden list and the user-based & resource-based options.</span>
+    							</div>
+    							
+    							<button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+    								<i class="bi bi-x fs-1 text-primary"></i>
+    							</button>
+    						</div>
+                                                    
+    						<table id="basicUserPermissionsTable" class="table table-rounded table-striped table-hover border gy-7 gs-7">
+    							<thead>
+    							<tr>
+    								<th>#</th>
+    								<th>Create</th>
+    								<th>Read</th>
+    								<th>Update</th>
+    								<th>Delete</th>
+    							</tr>
+    							</thead>
+    							<tbody>
+    							@if (Model.UbacTable is { Rows: { } } )
+							    {
+								    foreach (var ubacRow in Model.UbacTable.Rows)
+								    {
+									    var title = ubacRow.ResourceName.Capitalize();
+									    
+									    <tr data-ubac-resource="@ubacRow.ResourceName">
+										    <th scope="row" style="vertical-align: middle;">@title</th>
+										    
+										    @foreach (var toggle in ubacRow.Toggles)
+										    {
+											    <td>
+												    <div class="vertical-center-flex">
+													    <div class="form-check form-switch form-check-custom form-check-solid me-2">
+														    <input class="form-check-input h-20px w-30px ubac-switch" type="checkbox" @toggle.GetAttributes()/>
+													    </div>
+                                            													    
+													    @if (toggle.IsDifferentByRole)
+													    {
+														    <i class="edited-for-user-warn-symbol bi bi-info-circle-fill text-gray-600 text-hover-info fs-4 mt-1-px" data-bs-toggle="tooltip" data-bs-placement="top" title="@toggle.ReasonOfDifference"></i>
+													    }
+													    
+													    @if (toggle.IsAnyConflict)
+                                                        {
+	                                                        <i class="edited-for-user-warn-symbol bi bi-exclamation-triangle-fill text-gray-600 text-hover-danger fs-4 mt-1-px" data-bs-toggle="tooltip" data-bs-placement="top" title="@toggle.ReasonOfConflict"></i>
+                                                        }
+												    </div>
+											    </td>
+										    }
+									    </tr>
+								    }
+							    }
+    							</tbody>
+    						</table>
+    					</div>
+    				</div>
+    			</div>
+            
+    			<div class="tab-pane fade p-4" id="advanced_ubac_tab" role="tabpanel">
+    				<style>
+    					.ubac-table {
+    						border-bottom: 1px solid #eff2f5!important;
+    					}
+    				
+    					.ubac-table>thead>tr>th {
+    						padding: 1.1em 0.9em !important;
+    						font-weight: 600;
+    						border-right: 1px solid #eff2f5!important;
+    					}
+    					
+    					.ubac-table>thead>tr>th:last-child {
+    						width: 40px;
+    						border-right: none !important;
+    					}
+    					
+    					.ubac-table>tbody>tr {
+    						border-top: 1px solid #eff2f5!important;
+    					}
+    					
+    					.ubac-table>tbody>tr>td {
+    						border-right: 1px solid #eff2f5!important;
+    					}
+    					
+    					.ubac-table>tbody>tr>td:first-child {
+    						padding-left: 1.1em !important;
+    					}
+    					
+    					.ubac-table>tbody>tr>td:last-child {
+    						padding: 8px !important;
+    						width: 40px;
+    						border-right: none !important;
+    					}
+    					
+    					.soft-border {
+    						border: 1px solid #eff2f5!important;
+    					}
+    				</style>
+    				
+	                <div class="row m-0 soft-border">
+		                <div class="col-md-6 px-0 border-right-solid-1-gray-200">
+			                <div id="permissionsPortlet" class="card non-box-shadow">
+				                <div class="card-header px-4">
+					                <div class="card-title">
+						                <div class="d-flex align-items-center position-relative my-1">
+							                <h6>Permissions</h6>
+						                </div>
+					                </div>
+    
+					                <div class="card-toolbar">
+						                <button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" onClick="addPermission()">
+							                <i class="fas fa-plus fs-6"></i>
+						                </button>
+					                </div>
+				                </div>
+    
+				                <div class="card-body p-0">
+					                <table id="permissionsTable" class="table table-bordered table-checkable ubac-table">
+						                <thead>
+						                <tr>
+							                <th>Resource</th>
+							                <th>Action</th>
+							                <th>Object</th>
+							                <th class="fit-content"></th>
+						                </tr>
+						                </thead>
+						                <tbody>
+						                @if (Model.UbacTable is { MergedPermissions: { } })
+						                {
+							                foreach (var permissionUbac in Model.UbacTable.MergedPermissions)
+							                {
+								                var css = "";
+								                switch (permissionUbac.Source)
+								                {
+									                case ExtendedUbac.UbacAncestor.User:
+										                css = "ubac-source-user";
+										                break;
+									                case ExtendedUbac.UbacAncestor.Role:
+										                css = "ubac-source-role";
+										                break;
+								                }
+	                                            
+								                <tr class="@css" data-ubac="@permissionUbac.ToString()">
+									                <td contenteditable="true">@permissionUbac.Resource</td>
+									                <td contenteditable="true">@permissionUbac.Action</td>
+									                <td contenteditable="true">@permissionUbac.Object</td>
+									                <td>
+										                <button type="button" class="btn btn-icon-xsm btn-light-danger ubac-remove-button">
+											                <i class="fas fa-times fs-6"></i>
+										                </button>
+									                </td>
+								                </tr>
+							                }
+						                }
+						                </tbody>
+					                </table>
+				                </div>
+			                </div>
+		                </div>
+    
+		                <div class="col-md-6 px-0">
+			                <div id="forbiddenPortlet" class="card non-box-shadow">
+				                <div class="card-header px-4">
+					                <div class="card-title">
+						                <div class="d-flex align-items-center position-relative my-1">
+							                <h6>Forbidden</h6>
+						                </div>
+					                </div>
+    
+					                <div class="card-toolbar">
+						                <button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" onClick="addForbidden()">
+							                <i class="fas fa-plus fs-6"></i>
+						                </button>
+					                </div>
+				                </div>
+    							
+				                <div class="card-body p-0">
+					                <table id="forbiddenTable" class="table table-bordered table-checkable ubac-table">
+						                <thead>
+						                <tr>
+							                <th>Resource</th>
+							                <th>Action</th>
+							                <th>Object</th>
+							                <th class="fit-content"></th>
+						                </tr>
+						                </thead>
+						                <tbody>
+						                @if (Model.UbacTable is { MergedForbiddens: { } })
+						                {
+							                foreach (var forbiddenUbac in Model.UbacTable.MergedForbiddens)
+							                {
+								                var css = "";
+								                switch (forbiddenUbac.Source)
+								                {
+									                case ExtendedUbac.UbacAncestor.User:
+										                css = "ubac-source-user";
+										                break;
+									                case ExtendedUbac.UbacAncestor.Role:
+										                css = "ubac-source-role";
+										                break;
+								                }
+	                                            
+								                <tr class="@css" data-ubac="@forbiddenUbac.ToString()">
+									                <td contenteditable="true">@forbiddenUbac.Resource</td>
+									                <td contenteditable="true">@forbiddenUbac.Action</td>
+									                <td contenteditable="true">@forbiddenUbac.Object</td>
+									                <td>
+										                <button type="button" class="btn btn-icon-xsm btn-light-danger ubac-remove-button">
+											                <i class="fas fa-times fs-6"></i>
+										                </button>
+									                </td>
+								                </tr>
+							                }
+						                }
+						                </tbody>
+					                </table>
+				                </div>
+			                </div>
+		                </div>
+	                </div>
+	                
+	                <span class="from-role-info-span">From role</span>
+                </div>
+    		</div>
+    	</div>
+    </div>
+</div>

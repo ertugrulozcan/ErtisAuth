@@ -1,0 +1,79 @@
+@using ErtisAuth.Hub.Constants
+@using ErtisAuth.Hub.Extensions
+@using ErtisAuth.Hub.Services.Interfaces
+@model ErtisAuth.Hub.ViewModels.Users.UserViewModel
+
+@inject ISessionService sessionService;
+
+<div class="card mb-5 mb-xl-8">
+    <div class="card-body">
+        <div class="d-flex flex-center flex-column py-5">
+            <div class="symbol symbol-100px symbol-circle mb-7">
+                <img src="~/img/user-placeholder.png" alt="image" />
+            </div>
+													        
+            <a href="#" class="fs-3 text-gray-800 text-hover-primary fw-bolder mb-3">@Model.FirstName @Model.LastName</a>
+													        
+            <div class="mb-9">
+                <div class="badge badge-lg badge-light-primary d-inline">@Model.Role</div>
+            </div>
+        </div>
+												        
+        <div class="d-flex flex-stack fs-4 py-3">
+            <div class="fw-bolder">
+                Details
+            </div>
+        </div>
+												        
+        <div class="separator"></div>
+												        
+        <div id="kt_user_view_details" class="collapse show">
+            <div class="pb-5 fs-6">
+                <div class="fw-bolder mt-5">Account ID</div>
+                <div class="text-gray-600">@Model.Id</div>
+														        
+                <div class="fw-bolder mt-5">Username</div>
+                <div class="text-gray-600">
+                    <a href="#" class="text-gray-600 text-hover-primary">@Model.Username</a>
+                </div>
+								
+                <div class="fw-bolder mt-5">Email</div>
+                <div class="text-gray-600">
+                    <a href="#" class="text-gray-600 text-hover-primary">@Model.EmailAddress</a>
+                </div>
+
+                @if (Model.Sys.CreatedAt != null)
+                {
+                    <div class="fw-bolder mt-5">Created At</div>
+                    <div class="text-gray-600">@Model.Sys.CreatedAt</div>    
+                }
+                
+                @if (!string.IsNullOrEmpty(Model.Sys.CreatedBy))
+                {
+                    <div class="fw-bolder mt-5">Created By</div>
+                    <div class="text-gray-600">@Model.Sys.CreatedBy</div>   
+                }
+								
+                @if (Model.Sys.ModifiedAt != null)
+                {
+                    <div class="fw-bolder mt-5">Modified At</div>
+                    <div class="text-gray-600">@Model.Sys.ModifiedAt</div>    
+                }
+                
+                @if (!string.IsNullOrEmpty(Model.Sys.ModifiedBy))
+                {
+                    <div class="fw-bolder mt-5">Modified By</div>
+                    <div class="text-gray-600">@Model.Sys.ModifiedBy</div>   
+                }
+                
+                @if (this.User.GetClaim(Claims.UserId) == Model.Id)
+                {
+                    var sessionUser = sessionService.GetSessionUser();
+                    
+                    <div class="fw-bolder mt-5 mb-2">Token</div>
+                    <textarea class="form-control" style="min-height: 200px; font-size: 12px;" disabled>@sessionUser.AccessToken</textarea>
+                }
+            </div>
+        </div>
+    </div>
+</div>

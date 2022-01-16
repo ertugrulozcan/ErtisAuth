@@ -1,0 +1,16 @@
+@model CustomTypeField
+
+@{
+	var isTrue = Model.Value != null && (bool) Model.Value;
+	var radioButtonCheckedAttribute = isTrue ? "value=\"1\" checked=\"checked\"" : "value=\"0\"";
+}
+
+<div class="vertical-center-flex" style="height: 100%;">
+	<div class="form-check form-switch form-check-custom form-check-solid">
+		<input class="form-check-input" type="checkbox" @radioButtonCheckedAttribute />
+		<label class="form-check-label">
+			@Model.Title
+		</label>
+	</div>
+</div>
+

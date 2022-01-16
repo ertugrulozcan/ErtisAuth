@@ -1,0 +1,243 @@
+@using ErtisAuth.Hub.Extensions
+@using ErtisAuth.Hub.Services.Interfaces
+@model ErtisAuth.Hub.ViewModels.Users.UserViewModel
+
+@inject ISessionService sessionService;
+
+
+<div class="card">
+	<div class="card-header card-header-stretch">
+		<h3 class="card-title">Sessions</h3>
+		<div class="card-toolbar">
+			<ul class="nav nav-tabs nav-line-tabs nav-stretch fs-6 border-0">
+				<li class="nav-item">
+					<a class="nav-link active" data-bs-toggle="tab" href="#active_sessions_tab">Active Sessions</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" data-bs-toggle="tab" href="#revoked_sessions_tab">Revoked Sessions</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<div class="card-body p-4" style="background: #f8f9fa;">
+		<div class="tab-content">
+			<div class="tab-pane fade show active" id="active_sessions_tab" role="tabpanel">
+				@if (Model.ActiveTokens != null && Model.ActiveTokens.Any())
+				{
+					<div>
+						@foreach (var activeToken in Model.ActiveTokens)
+						{
+							var css = "success";
+							TimeSpan remainingTime = default;
+							double percentage = default;
+							int percentageInteger = default;
+							var sessionCode = activeToken.AccessToken.Substring(activeToken.AccessToken.Length - 8, 8).ToUpper();
+				                                        
+							var sessionUser = sessionService.GetSessionUser();
+							var isCurrentSession = activeToken.AccessToken == sessionUser.AccessToken;
+				                                        
+							var isSessionContinues = activeToken.ExpireTime > DateTime.Now;
+							if (isSessionContinues)
+							{
+								var totalLife = activeToken.ExpiresIn;
+								remainingTime = activeToken.ExpireTime - DateTime.Now;
+								percentage = (totalLife - remainingTime.TotalSeconds) * 100.0d / totalLife;
+								percentageInteger = (int) percentage;
+								if (percentage > 75.0d)
+								{
+									css = "warning";
+								}
+								if (percentage > 95.0d)
+								{
+									css = "danger";
+								}
+							}
+							else
+							{
+								css = "danger";
+							}
+				                                        
+							<div class="d-flex position-relative mb-4" style="background: #ffffff; border: 1px dashed #d7d7d7; padding: 24px 26px 24px 10px;">
+								<div class="fw-bold flex-fill ms-5">
+									<div class="d-flex" style="justify-content: space-between;">
+										<div>
+											<div class="fs-7 mb-1">
+												<i class="bi bi-clock-fill text-@css"></i>
+												<span class="fs-7 text-muted text-uppercase">@activeToken.CreatedAt</span>
+											</div>
+
+											<div class="vertical-center-flex">
+												<span class="fs-5 fw-bolder text-dark text-hover-primary me-4" style="line-height: 23px;">Session @sessionCode</span>
+												@if (isCurrentSession)
+												{
+													<span class="badge badge-success">Current Session</span>
+												}
+											</div>
+										</div>
+
+										@if (isSessionContinues)
+										{
+											<div>
+												<a href="/users/revoke-token/@activeToken.UserId/@activeToken.Id" class="btn btn-light-danger btn-sm btn-widest">Logout</a>
+											</div>
+										}
+									</div>
+
+									@if (activeToken.ClientInfo != null && !string.IsNullOrEmpty(activeToken.ClientInfo.IPAddress))
+									{
+										<div class="fs-7 text-muted mt-4 pb-2" style="border-bottom: 1px solid #cccccc">
+											<i class="bi bi-laptop text-primary"></i>
+											<span class="badge badge-light-primary">@activeToken.ClientInfo.IPAddress</span>
+										</div>
+									}
+							                                        
+									@if (activeToken.ClientInfo != null)
+									{
+										if (!string.IsNullOrEmpty(activeToken.ClientInfo.UserAgent))
+										{
+											<small class="raw-user-agent text-info ms-2">@activeToken.ClientInfo.UserAgent</small>
+										}
+	    
+										if (activeToken.ClientInfo.GeoLocation != null)
+										{
+											<div class="d-flex flex-wrap mt-3" style="border-bottom: 1px solid #cccccc">
+												@if (activeToken.ClientInfo.GeoLocation.Location?.Latitude != null && activeToken.ClientInfo.GeoLocation.Location.Longitude != null)
+												{
+													<div class="me-7 mb-3">
+														<div class="fw-bold text-muted fs-8">Location</div>
+														<div class="fs-8 fw-bolder text-gray-700">
+															<button type="button" class="btn btn-link btn-color-dark btn-active-color-primary btn-sm fs-8 p-0" data-bs-toggle="modal" data-bs-target="#showOnMapModal" data-latitude="@activeToken.ClientInfo.GeoLocation.Location?.Latitude.Value" data-longitude="@activeToken.ClientInfo.GeoLocation.Location?.Longitude.Value">
+																<i class="fa fa-map-marker-alt"></i>
+																Show on map
+															</button>
+														</div>
+													</div>
+												}
+			                                                                    
+												<div class="me-7 mb-3">
+													<div class="fw-bold text-muted fs-8">Country</div>
+													<div class="fs-8 fw-bolder text-gray-700">
+														<span class="w-75px">@activeToken.ClientInfo.GeoLocation.Country (@activeToken.ClientInfo.GeoLocation.CountryCode)</span>
+													</div>
+												</div>
+
+												<div class="me-7 mb-3">
+													<div class="fw-bold text-muted fs-8">City</div>
+													<div class="fs-8 fw-bolder text-gray-700">
+														<span class="w-75px">@activeToken.ClientInfo.GeoLocation.City</span>
+													</div>
+												</div>
+
+												<div class="me-7 mb-3">
+													<div class="fw-bold text-muted fs-8">Zip Code</div>
+													<div class="fs-8 fw-bolder text-gray-700">
+														<span class="w-75px">@activeToken.ClientInfo.GeoLocation.PostalCode</span>
+													</div>
+												</div>
+
+												<div class="me-0 mb-3">
+													<div class="fw-bold text-muted fs-8">ISP</div>
+													<div class="fs-8 fw-bolder text-gray-700">
+														<span class="w-75px">@activeToken.ClientInfo.GeoLocation.Isp (@activeToken.ClientInfo.GeoLocation.IspDomain)</span>
+													</div>
+												</div>
+											</div>
+										}
+									}
+							                                        
+									@if (isSessionContinues)
+									{
+										<div class="d-flex flex-column w-100 mt-3">
+											<div class="d-flex flex-stack mb-1">
+												<span class="text-muted me-2 fs-7 fw-bold">@percentage.ToString("F1")%</span>
+												<span class="text-muted fs-8">Remaining @(remainingTime.ToHumanReadableString())</span>
+											</div>
+											<div class="progress h-6px w-100">
+												<div class="progress-bar bg-@css" role="progressbar" style="width: @percentageInteger%" aria-valuenow="@percentageInteger" aria-valuemin="0" aria-valuemax="100"></div>
+											</div>
+										</div>
+									}
+									else
+									{
+										<div class="d-flex flex-column w-100 mt-3">
+											<div class="d-flex flex-stack mb-2">
+												<span class="text-muted me-2 fs-7 fw-bold">Session ended</span>
+											</div>
+											<div class="progress h-6px w-100">
+												<div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+											</div>
+										</div>
+									}
+								</div>
+							</div>
+						}
+					</div>
+				}
+				else
+                {
+	                <div>
+		                No data
+	                </div>
+                }
+			</div>
+	                        
+			<div class="tab-pane fade" id="revoked_sessions_tab" role="tabpanel">
+				@if (Model.RevokedTokens != null && Model.RevokedTokens.Any())
+				{
+					<div class="kt-widget3">
+						@foreach (var revokedToken in Model.RevokedTokens)
+						{
+							<div class="vertical-center-flex mb-3" style="background: #ffffff; border: 1px dashed #d7d7d7; padding: 12px 20px;">
+								<div class="me-5">
+									<i class="bi bi-clock fs-5"></i>
+								</div>
+								<div>
+									<span>
+										@revokedToken.RevokedAt
+									</span><br>
+									<span class="text-muted">
+										@{
+											var elapsed = DateTime.Now - revokedToken.RevokedAt;
+										}
+	            
+										@elapsed.ToHumanReadableString() ago
+									</span>
+								</div>
+							</div>
+						}
+					</div>
+				}
+				else
+                {
+	                <div>
+		                No data
+	                </div>
+                }
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="showOnMapModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="showOnMapModalLabel" aria-hidden="true" style="display: none;">
+	<div class="modal-dialog modal-dialog-centered" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="showOnMapModalLabel">Show on map</h5>
+	            
+				<div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+					<i class="bi bi-x-lg"></i>
+				</div>
+			</div>
+            
+			<div class="modal-body">
+				<div class="row">
+					<div class="col-md-12 modal_body_map">
+						<div id="location-map" class="location-map">
+							<div id="map_canvas" style="width: 600px; height: 400px;"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

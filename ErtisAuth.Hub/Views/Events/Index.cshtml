@@ -1,0 +1,105 @@
+@using ErtisAuth.Hub.Helpers
+@model ErtisAuth.Hub.ViewModels.Events.EventsViewModel
+
+@{
+    ViewData["Title"] = "Events";
+}
+
+<div class="toolbar" id="kt_toolbar">
+	<div id="kt_toolbar_container" class="container-fluid d-flex flex-stack">
+		<div data-kt-swapper="true" data-kt-swapper-mode="prepend" data-kt-swapper-parent="{default: '#kt_content_container', 'lg': '#kt_toolbar_container'}" class="page-title d-flex align-items-center flex-wrap me-3 mb-5 mb-lg-0">
+			<h1 class="d-flex align-items-center text-dark fw-bolder fs-3 my-1">Events</h1>
+			<span class="h-20px border-gray-200 border-start mx-4"></span>
+			
+			@{
+				var breadcrumb = BreadcrumbBuilder
+					.Add("Home", "Index", "Home")
+					.Add("Events", "Index", "Events");
+			}
+			
+			<partial name="Partials/_Breadcrumb" model="@breadcrumb"/>
+		</div>
+		
+		<div class="d-flex align-items-center py-1">
+			<div class="me-4">
+				<a id="filterButton" href="#" class="btn btn-sm btn-widest btn-flex btn-light btn-active-primary fw-bolder" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">
+					<div style="width: 100%;">
+						<span class="svg-icon svg-icon-5 svg-icon-gray-500 me-1">
+							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+								<path d="M19.0759 3H4.72777C3.95892 3 3.47768 3.83148 3.86067 4.49814L8.56967 12.6949C9.17923 13.7559 9.5 14.9582 9.5 16.1819V19.5072C9.5 20.2189 10.2223 20.7028 10.8805 20.432L13.8805 19.1977C14.2553 19.0435 14.5 18.6783 14.5 18.273V13.8372C14.5 12.8089 14.8171 11.8056 15.408 10.964L19.8943 4.57465C20.3596 3.912 19.8856 3 19.0759 3Z" fill="black" />
+							</svg>
+						</span>
+						Filter
+					</div>
+				</a>
+				
+				<div id="eventsFilterMenu" class="menu menu-sub menu-sub-dropdown w-750px w-md-750px" data-kt-menu="true" style="box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px;">
+					<div class="px-7 py-5">
+						<div class="fs-5 text-dark fw-bolder">Filter Options</div>
+					</div>
+					<div class="separator border-gray-200"></div>
+					<div class="px-7 py-5">
+						<div class="mb-10">
+							<div class="row">
+								<div class="col-6">
+									<label class="form-label fw-bold">Event Type</label>
+									<div>
+										<select id="eventTypeFilterDropdown" class="form-select form-select-solid" asp-items="Model.EventTypeFilterList" data-kt-select2="true" data-placeholder="Select option" data-dropdown-parent="#eventsFilterMenu" data-allow-clear="true"></select>
+									</div>
+								</div>
+								<div class="col-6">
+									<label class="form-label fw-bold">Utilizer Type</label>
+									<div>
+										<select id="utilizerTypeFilterDropdown" class="form-select form-select-solid" data-kt-select2="true" data-placeholder="Select option" data-dropdown-parent="#eventsFilterMenu" data-allow-clear="true">
+											<option value="*">All</option>
+											<option value="user" disabled>User</option>
+											<option value="application" disabled>Application</option>
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<div class="mb-10">
+                            <label class="form-label fw-bold">Date Range</label>
+                            <input id="eventsFilterDateRangePicker" class="form-control form-control-solid" placeholder="Pick date range" />
+                        </div>
+            												
+						<div class="d-flex justify-content-end">
+							<button id="eventsFilterResetButton" type="reset" class="btn btn-sm btn-light btn-active-light-primary me-2" data-kt-menu-dismiss="true">Reset</button>
+							<button id="eventsFilterApplyButton" type="submit" class="btn btn-sm btn-primary" data-kt-menu-dismiss="true">Apply</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="post d-flex flex-column-fluid" id="kt_post">
+	<div id="kt_content_container" class="container-fluid">
+		<partial name="Partials/_AlertBox" model="Model" />
+		
+		<div class="card">
+			<div class="card-body narrow-table-container">
+				<table id="events_data_table" class="table table-hover narrow-table align-middle table-row-dashed fs-6 gy-5">
+					<thead>
+					<tr class="text-start text-muted fw-bolder fs-7 text-uppercase gs-0">
+						<th class="w-10px pe-2"></th>
+						<th class="min-w-125px">Id</th>
+						<th class="min-w-125px">Source</th>
+						<th class="min-w-125px">Utilizer</th>
+						<th class="min-w-125px">Event Type</th>
+						<th class="min-w-125px">Event Time</th>
+						<th class="text-end min-w-100px"></th>
+					</tr>
+					</thead>
+
+					<tbody class="text-gray-600 fw-bold">
+
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,51 @@
+@using ErtisAuth.Hub.Helpers
+
+@{
+	ViewData["Title"] = "Providers";
+}
+
+<div class="toolbar" id="kt_toolbar">
+	<div id="kt_toolbar_container" class="container-fluid d-flex flex-stack">
+		<div data-kt-swapper="true" data-kt-swapper-mode="prepend" data-kt-swapper-parent="{default: '#kt_content_container', 'lg': '#kt_toolbar_container'}" class="page-title d-flex align-items-center flex-wrap me-3 mb-5 mb-lg-0">
+			<h1 class="d-flex align-items-center text-dark fw-bolder fs-3 my-1">Providers</h1>
+			<span class="h-20px border-gray-200 border-start mx-4"></span>
+			
+			@{
+				var breadcrumb = BreadcrumbBuilder
+					.Add("Home", "Index", "Home")
+					.Add("Providers", "Index", "Providers");
+			}
+			
+			<partial name="Partials/_Breadcrumb" model="@breadcrumb"/>
+		</div>
+		
+		<div class="d-flex align-items-center py-1">
+			
+		</div>
+	</div>
+</div>
+
+<div class="post d-flex flex-column-fluid" id="kt_post">
+	<div id="kt_content_container" class="container-fluid">
+		<div class="alert bg-light d-flex flex-center flex-column py-10 px-10 px-lg-20 mb-10">
+			<span class="svg-icon svg-icon-5tx svg-icon-danger mb-5">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+					<rect opacity="0.3" x="2" y="2" width="20" height="20" rx="10" fill="black"></rect>
+					<rect x="11" y="14" width="7" height="2" rx="1" transform="rotate(-90 11 14)" fill="black"></rect>
+					<rect x="11" y="17" width="2" height="2" rx="1" transform="rotate(-90 11 17)" fill="black"></rect>
+				</svg>
+			</span>
+			
+			<div class="text-center">
+				<h1 class="fw-bolder mb-5">Coming soon</h1>
+				
+				<div class="separator separator-dashed border-warning opacity-25 mb-5"></div>
+				
+				<div class="mb-9 text-dark">
+					<strong>ErtisAuth</strong> is not supporting the 3rd party authentication providers yet.<br/>
+					Please check our <a href="https://github.com/users/ertugrulozcan/projects/1" target="_blank" class="fw-bolder me-1">Project Board</a> for more information.
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

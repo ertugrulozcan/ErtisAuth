@@ -1,0 +1,74 @@
+@using ErtisAuth.Hub.Helpers
+@model ErtisAuth.Hub.ViewModels.DeleteViewModel
+
+@if (Model != null)
+{
+    <div id="itemDeleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="deleteModalTitle" aria-hidden="true" style="display: none;">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="text-transform: capitalize;">
+                    <h5 id="deleteModalTitle" class="modal-title vertical-center-flex"></h5>
+                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="bi bi-x-lg"></i>
+                    </div>
+                </div>
+                
+                <div class="modal-body">
+                    <p><strong>Are you absolutely sure?</strong></p>
+                    <div class="alert bg-light-danger border border-danger border-dashed d-flex flex-column flex-sm-row w-100 p-5">
+                        <span class="svg-icon svg-icon-2x svg-icon-danger me-4 mb-5 mb-sm-0">
+                            @Html.Raw(SvgIcons.Warning)
+                        </span>
+                        <div class="d-flex vertical-center-flex pe-0">
+                            <strong>Unexpected bad things will happen if you don’t read this!</strong>
+                        </div>
+                    </div>
+
+                    <p id="deleteModalBodyTitle"></p>
+                    
+                    <div class="alert alert-warning bg-warning d-flex align-items-center p-5 mb-10">
+                        <div class="d-flex flex-column">
+                            <h5 class="mb-1 text-dark">Warning</h5>
+                            <span id="deleteModalBodyText"></span>
+                        </div>
+                    </div>
+                    
+
+                    @using (Html.BeginForm(actionName: Model.DeleteActionName, controllerName: Model.ControllerName, routeValues: null, method: FormMethod.Post, antiforgery: false, htmlAttributes: new { id = "delete-form", autocomplete = "off"}))
+                    {
+                        if (Model.IsLocalizedContent)
+                        {
+                            <div class="radio-list" style="margin: 30px 0;">
+                                <label class="radio" style="display: block;">
+                                    <input type="radio" name="deleteOptionRadioButton" checked="checked">
+                                    <span></span>Just delete for <span id="deleteModalLanguageNameSpan"></span>  
+                                </label>
+                            
+                                <label class="radio" style="display: block;">
+                                    <input id="deleteAllRadioButton" type="radio" name="deleteOptionRadioButton">
+                                    <span></span>Delete for all languages
+                                </label>
+                                
+                                <input type="hidden" id="deleteAllInput" asp-for="DeleteAll">
+                            </div>    
+                        }
+                        
+                        <p style="margin-top: 10px;">If you are confirm, please enter your password.</p>
+                        
+                        <input type="hidden" id="deleteModalItemIdInput" asp-for="ItemId">
+                        <input type="hidden" id="deleteModalItemContentIdInput" asp-for="ItemContentId">
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="deleteModalPasswordInput">Password</label>
+                            <input id="deleteModalPasswordInput" type="text" value="" class="form-control" autocomplete="off" style="text-security: disc; -webkit-text-security: disc;" asp-for="Password">
+                        </div>
+                    }
+                </div>
+                
+                <div class="modal-footer">
+                    <button id="deleteModalSubmitButton" type="submit" class="btn btn-danger btn-block disabled" style="width: 100%;" form="delete-form" disabled></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}

@@ -1,0 +1,35 @@
+@using ErtisAuth.Hub.Helpers
+
+@{
+    Layout = null;
+	ViewData["Title"] = "Not Found";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base href="">
+	<title>ErtisAuth - @ViewData["Title"]</title>
+	<meta charset="utf-8" />
+	<meta name="description" content="ErtisAuth Hub" />
+	<meta name="keywords" content="Ertis, ErtisAuth" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" />
+	@Html.Raw(HtmlTag.Css("css/plugins.bundle.css"))
+	@Html.Raw(HtmlTag.Css("css/style.bundle.css"))
+	@Html.Raw(HtmlTag.Css("css/site.css"))
+</head>
+
+<body id="kt_body" class="bg-body">
+	<div class="d-flex flex-column flex-root">
+		<div class="d-flex flex-column flex-center flex-column-fluid p-10">
+			<span style="font-size: 30em; font-weight: 900; opacity: 0.05;">404</span>
+			<h1 class="fw-bold mb-10" style="color: #A3A3C7">Seems there is nothing here</h1>
+			<a class="btn btn-primary" asp-controller="Home" asp-action="Index">Return Home</a>
+		</div>
+	</div>
+		
+	<partial name="_Scripts" />
+</body>
+</html>

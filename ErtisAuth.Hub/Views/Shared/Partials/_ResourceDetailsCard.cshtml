@@ -1,0 +1,46 @@
+@using ErtisAuth.Hub.ViewModels
+@model ErtisAuth.Hub.ViewModels.IHasSysViewModel
+
+<div class="card mb-5 mb-xl-8">
+    <div class="card-header">
+        <div class="card-title">
+            <div class="d-flex align-items-center position-relative my-1">
+                <h6>Details</h6>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <div class="pb-5 fs-6">
+            @if (Model is IHasIdentifierViewModel hasIdentifier)
+            {
+                <div class="text-gray-600">@hasIdentifier.Id</div>   
+            }
+
+            @if (Model.Sys.CreatedAt != null)
+            {
+                <div class="fw-bolder mt-5">Created At</div>
+                <div class="text-gray-600">@Model.Sys.CreatedAt</div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.Sys.CreatedBy))
+            {
+                <div class="fw-bolder mt-5">Created By</div>
+                <div class="text-gray-600">@Model.Sys.CreatedBy</div>
+            }
+
+            @if (Model.Sys.ModifiedAt != null)
+            {
+                <div class="fw-bolder mt-5">Modified At</div>
+                <div class="text-gray-600">@Model.Sys.ModifiedAt</div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.Sys.ModifiedBy))
+            {
+                <div class="fw-bolder mt-5">Modified By</div>
+                <div class="text-gray-600">@Model.Sys.ModifiedBy</div>
+            }
+        </div>
+    </div>
+</div>
+

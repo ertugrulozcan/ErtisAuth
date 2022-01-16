@@ -1,0 +1,130 @@
+@using System.Web
+@model ErtisAuth.Hub.ViewModels.Sessions.SessionsViewModel
+
+@{
+    ViewData["Title"] = "Sessions";
+}
+
+@inject ErtisAuth.Hub.Configuration.IGoogleMapsApiConfiguration googleMapsApiConfiguration;
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=@googleMapsApiConfiguration.ApiKey" type="text/javascript"></script>
+
+<script>
+@{
+	var groupedActiveTokensByCityJson = "{}";
+	if (Model.GroupedActiveTokensByCity != null)
+	{
+	    groupedActiveTokensByCityJson = HttpUtility.JavaScriptStringEncode(Newtonsoft.Json.JsonConvert.SerializeObject(Model.GroupedActiveTokensByCity));
+	}
+}
+
+const groupedActiveTokensByCity = JSON.parse('@Html.Raw(groupedActiveTokensByCityJson)')
+</script>
+
+<div class="no-fixed-toolbar">
+    <div id="main-location-map" style="height: 100%;">
+        <div id="main-map_canvas" style="height: 100%;"></div>
+    </div>
+
+    <div class="sessions-floating-box">
+	    <div class="card" style="height: 100%; overflow-y: scroll;">
+		    <div class="card-header card-header-stretch">
+			    <h3 class="card-title">Sessions</h3>
+			    <div class="card-toolbar">
+				    <ul class="nav nav-tabs nav-line-tabs nav-stretch fs-6 border-0">
+					    <li class="nav-item">
+						    <a class="nav-link active" data-bs-toggle="tab" href="#sessions_users_tab">Users</a>
+					    </li>
+					    <li class="nav-item">
+						    <a class="nav-link" data-bs-toggle="tab" href="#sessions_by_city_tab">Cities</a>
+					    </li>
+					    <li class="nav-item">
+						    <a class="nav-link" data-bs-toggle="tab" href="#sessions_by_country_tab">Countries</a>
+					    </li>
+				    </ul>
+			    </div>
+		    </div>
+		    
+		    <div class="card-body p-0">
+			    <div class="tab-content">
+				    <div class="tab-pane fade show active" id="sessions_users_tab" role="tabpanel">
+					    <div class="marginless_datatable_wrapper">
+						    <table id="user_sessions_data_table" class="table align-middle table-row-dashed no-gutter-datatable fs-6 gy-5" style="margin-top: 0!important;">
+							    <thead style="display:none;"></thead>
+						    </table>
+					    </div>
+				    </div>
+				    
+				    <div class="tab-pane fade" id="sessions_by_city_tab" role="tabpanel">
+					    <table class="table table-row-bordered align-middle gy-4 gs-9">
+						    <thead class="border-bottom border-gray-200 fs-6 text-gray-600 fw-bolder bg-light bg-opacity-75">
+						    <tr>
+							    <td class="min-w-150px">#</td>
+							    <td class="min-w-150px">City</td>
+							    <td class="min-w-250px">User Count</td>
+							    <td></td>
+						    </tr>
+						    </thead>
+						    <tbody class="fw-bold text-gray-600">
+						    @if (Model.GroupedActiveTokensByCity != null && Model.GroupedActiveTokensByCity.Any())
+						    {
+							    var cityOrder = 1;
+							    foreach (var (city, tokens) in Model.GroupedActiveTokensByCity)
+							    {
+								    <tr>
+									    <td>@cityOrder</td>
+									    <td>@city</td>
+									    <td>@tokens.Count</td>
+								    </tr>
+								    
+								    cityOrder += 1;
+							    }
+						    }
+						    else
+						    {
+							    <tr>
+								    <td style="text-align: center;" colspan="4">No data</td>
+							    </tr>
+						    }
+						    </tbody>
+					    </table>
+				    </div>
+				    
+				    <div class="tab-pane fade" id="sessions_by_country_tab" role="tabpanel">
+					    <table class="table table-row-bordered align-middle gy-4 gs-9">
+						    <thead class="border-bottom border-gray-200 fs-6 text-gray-600 fw-bolder bg-light bg-opacity-75">
+						    <tr>
+							    <td class="min-w-150px">#</td>
+							    <td class="min-w-150px">Country</td>
+							    <td class="min-w-250px">User Count</td>
+							    <td></td>
+						    </tr>
+						    </thead>
+						    <tbody class="fw-bold text-gray-600">
+						    @if (Model.GroupedActiveTokensByCountry != null && Model.GroupedActiveTokensByCountry.Any())
+						    {
+							    var countryOrder = 1;
+							    foreach (var (country, tokens) in Model.GroupedActiveTokensByCountry)
+							    {
+								    <tr>
+									    <td>@countryOrder</td>
+									    <td>@country</td>
+									    <td>@tokens.Count</td>
+								    </tr>
+                        								    
+								    countryOrder += 1;
+							    }
+						    }
+						    else
+						    {
+							    <tr>
+								    <td style="text-align: center;" colspan="4">No data</td>
+							    </tr>
+						    }
+						    </tbody>
+					    </table>
+				    </div>
+			    </div>
+		    </div>
+	    </div>
+    </div>
+</div>
