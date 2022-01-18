@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
@@ -37,11 +36,19 @@ namespace ErtisAuth.WebAPI.Controllers
 		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<IActionResult> GetMemberships()
 		{
-			this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
-			this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
+			this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+			this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 
-			var memberships = await this.membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection);
-			return this.Ok(memberships);
+			var getMembershipsResult = await this.membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection);
+			if (getMembershipsResult?.Items != null)
+			{
+				foreach (var membership in getMembershipsResult.Items)
+				{
+					membership.SecretKey = Identity.Cryptography.StringCipher.Encrypt(membership.SecretKey, membership.Id);
+				}
+			}
+			
+			return this.Ok(getMembershipsResult);
 		}
 
 		#endregion
