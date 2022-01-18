@@ -100,6 +100,7 @@ $.extend( $.fn, {
 				// Prevent submit for invalid forms or custom submit handlers
 				if ( validator.cancelSubmit ) {
 					validator.cancelSubmit = false;
+					
 					return handle();
 				}
 				if ( validator.form() ) {
@@ -110,6 +111,10 @@ $.extend( $.fn, {
 					return handle();
 				} else {
 					validator.focusInvalid();
+					if (onSubmitCancelled) {
+						onSubmitCancelled();
+					}
+					
 					return false;
 				}
 			} );

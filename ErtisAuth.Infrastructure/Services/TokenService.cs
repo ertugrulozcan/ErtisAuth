@@ -183,7 +183,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var passwordHash = this.cryptographyService.CalculatePasswordHash(membership, password);
 			if (passwordHash != user.PasswordHash)
 			{
-				throw ErtisAuthException.UsernameOrPasswordIsWrong(username, password);
+				throw ErtisAuthException.UsernameOrPasswordIsWrong();
 			}
 			else
 			{

@@ -175,13 +175,13 @@ namespace ErtisAuth.Core.Models.Roles
 
 		public static class CrudActionSegments
 		{
-			public static readonly RbacSegment Create = new RbacSegment("create");
+			public static readonly RbacSegment Create = new("create");
 			
-			public static readonly RbacSegment Read = new RbacSegment("read");
+			public static readonly RbacSegment Read = new("read");
 			
-			public static readonly RbacSegment Update = new RbacSegment("update");
+			public static readonly RbacSegment Update = new("update");
 			
-			public static readonly RbacSegment Delete = new RbacSegment("delete");
+			public static readonly RbacSegment Delete = new("delete");
 		}
 		
 		public enum CrudActions

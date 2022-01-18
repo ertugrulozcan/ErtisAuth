@@ -12,6 +12,8 @@ using ErtisAuth.Hub.Extensions;
 using ErtisAuth.Hub.Helpers;
 using ErtisAuth.Hub.Services.Interfaces;
 using ErtisAuth.Hub.ViewModels.Auth;
+using ErtisAuth.Sdk.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using IAuthenticationService = ErtisAuth.Sdk.Services.Interfaces.IAuthenticationService;
 
 namespace ErtisAuth.Hub.Controllers
@@ -23,7 +25,6 @@ namespace ErtisAuth.Hub.Controllers
 		private readonly IAuthenticationService authenticationService;
 		private readonly ISessionService sessionService;
 		private readonly IPasswordService passwordService;
-		private readonly ISuperUserOptions superUserOptions;
 
 		#endregion
 		
@@ -35,17 +36,14 @@ namespace ErtisAuth.Hub.Controllers
 		/// <param name="authenticationService"></param>
 		/// <param name="sessionService"></param>
 		/// <param name="passwordService"></param>
-		/// <param name="superUserOptions"></param>
 		public AuthController(
 			IAuthenticationService authenticationService, 
 			ISessionService sessionService,
-			IPasswordService passwordService,
-			ISuperUserOptions superUserOptions)
+			IPasswordService passwordService)
 		{
 			this.authenticationService = authenticationService;
 			this.sessionService = sessionService;
 			this.passwordService = passwordService;
-			this.superUserOptions = superUserOptions;
 		}
 
 		#endregion
@@ -68,28 +66,36 @@ namespace ErtisAuth.Hub.Controllers
         {
             if (this.ModelState.IsValid)
             {
-                var getTokenResult = await this.authenticationService.GetTokenAsync(model.Username?.Trim(), model.Password?.Trim(), ipAddress: model.ClientIP, userAgent: model.UserAgentRaw);
-				if (getTokenResult.IsSuccess)
-				{
-					var loginResult = await this.sessionService.StartSessionAsync(this.HttpContext, getTokenResult.Data);
-					if (loginResult.IsSuccess)
-					{
-						if (!string.IsNullOrEmpty(model.ReturnUrl) && model.ReturnUrl != "/")
-						{
-							return this.Redirect(model.ReturnUrl);
-						}
+	            var serviceScopeFactory = this.HttpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
+	            using (var scope = serviceScopeFactory.CreateScope())
+	            {
+		            var scopedErtisAuthOptions = scope.ServiceProvider.GetRequiredService<IErtisAuthOptions>() as ScopedErtisAuthOptions;
+		            scopedErtisAuthOptions?.SetTemporary(model.ServerUrl, model.MembershipId);
+		            var scopedAuthenticationService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
+		            
+		            var getTokenResult = await scopedAuthenticationService.GetTokenAsync(model.Username?.Trim(), model.Password?.Trim(), ipAddress: model.ClientIP, userAgent: model.UserAgentRaw);
+		            if (getTokenResult.IsSuccess)
+		            {
+			            var loginResult = await this.sessionService.StartSessionAsync(this.HttpContext, model.ServerUrl, model.MembershipId, getTokenResult.Data);
+			            if (loginResult.IsSuccess)
+			            {
+				            if (!string.IsNullOrEmpty(model.ReturnUrl) && model.ReturnUrl != "/")
+				            {
+					            return this.Redirect(model.ReturnUrl);
+				            }
 						
-						return this.RedirectToAction("Index", "Home");
-					}
-					else
-					{
-						model.SetError(loginResult);
-					}
-				}
-				else
-				{
-					model.SetError(getTokenResult);
-				}
+				            return this.RedirectToAction("Index", "Home");
+			            }
+			            else
+			            {
+				            model.SetError(loginResult);
+			            }
+		            }
+		            else
+		            {
+			            model.SetError(getTokenResult);
+		            }
+	            }
             }
             else
             {
@@ -152,6 +158,7 @@ namespace ErtisAuth.Hub.Controllers
 		
 		#region Reset Password
 		
+		/*
 		[HttpGet]
 		[Route("reset-password")]
 		[AllowAnonymous]
@@ -241,6 +248,7 @@ namespace ErtisAuth.Hub.Controllers
 
 			return key;
 		}
+		*/
 
 		#endregion
 		

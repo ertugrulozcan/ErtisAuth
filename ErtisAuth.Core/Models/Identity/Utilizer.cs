@@ -44,7 +44,7 @@ namespace ErtisAuth.Core.Models.Identity
 
 		#region Implicit Operators
 
-		public static implicit operator Utilizer(User user) => new Utilizer
+		public static implicit operator Utilizer(User user) => new()
 		{
 			Id = user.Id,
 			Type = UtilizerType.User,
@@ -55,7 +55,7 @@ namespace ErtisAuth.Core.Models.Identity
 			Forbidden = user.Forbidden
 		};
 		
-		public static implicit operator Utilizer(Application application) => new Utilizer
+		public static implicit operator Utilizer(Application application) => new()
 		{
 			Id = application.Id,
 			Type = UtilizerType.Application,

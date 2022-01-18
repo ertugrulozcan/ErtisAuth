@@ -11,6 +11,6 @@ namespace ErtisAuth.Hub.Services.Interfaces
     {
         SessionUser GetSessionUser();
 
-        Task<IResponseResult<User>> StartSessionAsync(HttpContext httpContext, BearerToken bearerToken);
+        Task<IResponseResult<User>> StartSessionAsync(HttpContext httpContext, string serverUrl, string membershipId, BearerToken bearerToken);
     }
 }

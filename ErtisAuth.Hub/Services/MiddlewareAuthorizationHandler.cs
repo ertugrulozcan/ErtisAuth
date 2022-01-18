@@ -13,6 +13,9 @@ using Microsoft.AspNetCore.Routing.Patterns;
 using ErtisAuth.Hub.Constants;
 using ErtisAuth.Hub.Extensions;
 using ErtisAuth.Hub.ViewModels.Auth;
+using ErtisAuth.Sdk.Configuration;
+using ErtisAuth.Sdk.Exceptions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ErtisAuth.Hub.Services
 {
@@ -56,12 +59,19 @@ namespace ErtisAuth.Hub.Services
 		
 		protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, ErtisAuthAuthorizationRequirement requirement)
 		{
+			var httpContext = httpContextAccessor.HttpContext;
+			if (httpContext == null)
+			{
+				context.Fail();
+				return;
+			}
+			
 			try
 			{
-				var httpContext = httpContextAccessor.HttpContext;
-				if (httpContext == null)
+				var ertisAuthOptions = httpContext.RequestServices.GetRequiredService<IErtisAuthOptions>();
+				if (ertisAuthOptions == null || string.IsNullOrEmpty(ertisAuthOptions.BaseUrl) || string.IsNullOrEmpty(ertisAuthOptions.MembershipId))
 				{
-					context.Fail();
+					context.Fail();	
 					return;
 				}
 				
@@ -77,7 +87,10 @@ namespace ErtisAuth.Hub.Services
 				{
 					if (TryExtractEndpointRbacFromAuthorizationContext(context, out var rbac))
 					{
-						var isPermitted = await this.roleService.CheckPermissionAsync(rbac.ToString(), BearerToken.CreateTemp(context.GetAccessToken()));
+						var isPermitted = await this.roleService.CheckPermissionAsync(
+							rbac.ToString(),
+							BearerToken.CreateTemp(context.GetAccessToken()));
+						
 						if (!isPermitted)
 						{
 							httpContext.Response.StatusCode = 403;
@@ -88,7 +101,7 @@ namespace ErtisAuth.Hub.Services
 							return;
 						}
 					}
-					
+
 					context.Succeed(requirement);
 					SetSessionTime(httpContext, response);
 				}
@@ -98,9 +111,14 @@ namespace ErtisAuth.Hub.Services
 					{
 						httpContext.Response.Cookies.Delete(cookie);
 					}
-					
-					context.Fail();	
+
+					context.Fail();
 				}
+			}
+			catch (ServerConfigurationException)
+			{
+				httpContext.Response.Redirect("/connect");
+				context.Fail();	
 			}
 			catch (Exception ex)
 			{

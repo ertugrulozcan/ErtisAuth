@@ -7,6 +7,12 @@ namespace ErtisAuth.Hub.ViewModels.Auth
         #region Properties
 
         [Required]
+        public string ServerUrl { get; set; }
+        
+        [Required]
+        public string MembershipId { get; set; }
+        
+        [Required]
         public string Username { get; set; }
 		
         [Required]

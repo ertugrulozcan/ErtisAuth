@@ -110,13 +110,23 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			foreach (var implementation in implementations)
 			{
 				var baseInterface = interfaces.FirstOrDefault(x => x.IsAssignableFrom(implementation));
-				if (baseInterface != null)
+				if (baseInterface?.GetCustomAttributes(typeof(ServiceLifetimeAttribute), true).FirstOrDefault() is ServiceLifetimeAttribute serviceLifetimeAttribute)
 				{
-					services.AddSingleton(baseInterface, implementation);
-					
-					var interfaceName = baseInterface.Name;
-					var serviceName = implementation.Name;
-					Console.WriteLine($"{interfaceName} resolved as {serviceName}.");
+					// ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+					switch (serviceLifetimeAttribute.Lifetime)
+					{
+						case ServiceLifetime.Singleton:
+							services.AddSingleton(baseInterface, implementation);
+							break;
+						case ServiceLifetime.Scoped:
+							services.AddScoped(baseInterface, implementation);
+							break;
+						case ServiceLifetime.Transient:
+							services.AddTransient(baseInterface, implementation);
+							break;
+					}
+
+					Console.WriteLine($"{baseInterface.Name} resolved as {implementation.Name}");
 				}
 			}
 		}

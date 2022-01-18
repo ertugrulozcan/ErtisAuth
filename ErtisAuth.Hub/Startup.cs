@@ -2,13 +2,10 @@ using ErtisAuth.Hub.Configuration;
 using ErtisAuth.Hub.Extensions;
 using ErtisAuth.Hub.Services;
 using ErtisAuth.Hub.Services.Interfaces;
-using ErtisAuth.Extensions.AspNetCore;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -76,35 +73,9 @@ namespace ErtisAuth.Hub
             });
             
             // ErtisAuth
-            services.AddErtisAuth(x =>
-            {
-                x.SetDefaultAuthenticationHandler = false;
-                x.SetDefaultAuthorizationHandler = false;
-            });
-            
-            // SuperUserOptions
-            services.Configure<SuperUserOptions>(this.Configuration.GetSection("ErtisAuth"));
-            services.AddSingleton<ISuperUserOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<SuperUserOptions>>().Value);
+            services.AddErtisAuthHub();
+            services.AddScoped<IAuthorizationHandler, MiddlewareAuthorizationHandler>();
 
-            services.AddSingleton<IAuthorizationHandler, MiddlewareAuthorizationHandler>();
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme,
-                    options =>
-                    {
-                        options.LoginPath = new PathString("/login");
-                        options.LogoutPath = new PathString("/logout");
-                        options.AccessDeniedPath = new PathString("/unauthorized");
-                        options.ReturnUrlParameter = Constants.SchemaConstants.ReturnUrlParameter;
-                    });
-
-            // Authorization
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy(
-                    ErtisAuth.Extensions.AspNetCore.Constants.Schemes.ErtisAuthAuthorizationSchemeName,
-                    policy => policy.AddRequirements(new ErtisAuthAuthorizationRequirement()));
-            });
-            
             services
                 .AddControllersWithViews()
                 .AddNewtonsoftJson()

@@ -5,9 +5,10 @@ function initPageLoader() {
     pageloader.length && (pageloader.toggleClass("is-active"), $(window).on("load", (function() {
         let e = setTimeout((function() {
             pageloader.toggleClass("is-active"), $(".infraloader").toggleClass("is-active"), clearTimeout(e), setTimeout((function() {
-                $(".rounded-hero").addClass("is-active")
+                $(".rounded-hero").addClass("is-active");
             }), 350)
-        }), 700)
+        }), 700);
+        $(".infraloader").removeClass("is-active");
     })))
 }
 
@@ -33,12 +34,17 @@ function updateLoginButtonState() {
     let usernameInput = $("#Username");
     let passwordInput = $("#Password");
     let loginButton = $("#login-submit");
-    if (usernameInput.val().length == 0 || passwordInput.val().length == 0) {
+    if (usernameInput.val().length === 0 || passwordInput.val().length === 0) {
         loginButton.addClass('is-disabled');
     }
     else {
         loginButton.removeClass('is-disabled');
     }
+}
+
+function onSubmitCancelled() {
+    let loginButton = $("#login-submit");
+    loginButton.removeClass("is-loading");
 }
 
 initPageLoader();

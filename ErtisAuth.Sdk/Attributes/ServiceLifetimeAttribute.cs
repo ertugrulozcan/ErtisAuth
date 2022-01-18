@@ -8,7 +8,7 @@ namespace ErtisAuth.Sdk.Attributes
     {
         #region Fields
 
-        private ServiceLifetime serviceLifetime; 
+        public ServiceLifetime Lifetime { get; } 
 
         #endregion
 
@@ -20,7 +20,7 @@ namespace ErtisAuth.Sdk.Attributes
         /// <param name="serviceLifetime"></param>
         public ServiceLifetimeAttribute(ServiceLifetime serviceLifetime)
         {
-            this.serviceLifetime = serviceLifetime;
+            this.Lifetime = serviceLifetime;
         }
 
         #endregion

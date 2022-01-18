@@ -45,7 +45,7 @@
                         </div>
                                             
                         <div class="is-form">
-                            <div class="hero-body">
+                            <div class="hero-body" style="padding-top: 10px !important;">
                                 <form id="login-form" class="form w-100" novalidate="novalidate" asp-controller="Auth" asp-action="Login" method="post">
                                     @{
                                         var returnUrl = string.Empty;
@@ -58,41 +58,180 @@
                                 
                                     @Html.HiddenFor(x => x.ClientIP, new {id = "ipAddressHiddenInput"})
                                     @Html.HiddenFor(x => x.UserAgentRaw, new {id = "userAgentRawHiddenInput"})
+                                    @Html.HiddenFor(x => x.ServerUrl, new {id = "ServerUrlHiddenInput"})
+                                    @Html.HiddenFor(x => x.MembershipId, new {id = "MembershipIdHiddenInput"})
                                                         
                                     <div class="mb-15">
                                         <partial name="Partials/_AlertBox" model="Model" />
                                     </div>
                     
-                                    <div class="card-inner">
-                                        <div class="field form-group m-b-20">
-                                            <label class="form-label">Username or email</label>
-                                            <div class="control has-icon has-validation">
-                                                <input type="text" class="input form-control" placeholder="Username" autocomplete="off" asp-for="Username">
-                                                <div class="form-icon">
-                                                    <i class="bi bi-person"></i>
+                                    <div id="mainPanel" class="card-inner">
+                                        <div id="loginPanel">
+                                            <div class="field form-group m-b-10">
+                                                <label style="width: 100%; text-align: center; line-height: 20px;">Select a server</label>
+                                            </div>
+
+                                            <div class="field form-group">
+                                                <div class="control has-icons-left">
+                                                    <div class="select" style="width: 100%; height: 38px;">
+                                                        <select id="serversDropdown" style="width: 100%; padding-left: 3em; height: inherit;">
+                                                            <option value="" disabled selected>Select a server</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="icon is-small is-left" style="margin: 2px 0 0 4px;">
+                                                        <i class="fas fa-plug"></i>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <span class="validation-error-span" asp-validation-for="Username"></span>
-                                        </div>
-                                                        
-                                        <div class="field form-group">
-                                            <label class="form-label">Password</label>
-                                            <div class="control has-icon has-validation">
-                                                <input type="password" class="input form-control" placeholder="Password" autocomplete="off" asp-for="Password">
-                                                <div class="form-icon">
-                                                    <i class="bi bi-unlock"></i>
+
+                                            <div class="field form-group">
+                                                <label style="width: 100%; text-align: center; line-height: 20px;">or</label>
+                                            </div>
+
+                                            <div class="field form-group">
+                                                <button id="connectServerButton" type="button" class="button h-button is-big is-primary is-outlined is-bold is-raised"
+                                                    style="width: 100%; font-size: 0.9rem; height: 41px; border: 1px dashed #671cc9;">
+                                                    <i class="fa fa-plug" style="font-size: 1.2rem; margin-right: 7px;"></i>
+                                                    Connect a server
+                                                </button>
+                                            </div>
+
+                                            <hr class="m-t-30 m-b-30" />
+
+                                            <div id="signInPanel">
+                                                <div class="field form-group m-b-20">
+                                                    <label class="form-label">Username or email</label>
+                                                    <div class="control has-icon has-validation">
+                                                        <input type="text" class="input form-control" placeholder="Username" autocomplete="off" asp-for="Username">
+                                                        <div class="form-icon">
+                                                            <i class="bi bi-person"></i>
+                                                        </div>
+                                                    </div>
+                                                    <span class="validation-error-span" asp-validation-for="Username"></span>
+                                                </div>
+
+                                                <div class="field form-group">
+                                                    <label class="form-label">Password</label>
+                                                    <div class="control has-icon has-validation">
+                                                        <input type="password" class="input form-control" placeholder="Password" autocomplete="off" asp-for="Password">
+                                                        <div class="form-icon">
+                                                            <i class="bi bi-unlock"></i>
+                                                        </div>
+                                                    </div>
+                                                    <span class="validation-error-span" asp-validation-for="Password"></span>
+                                                </div>
+
+                                                <div class="m-t-40">
+                                                    <button id="login-submit" type="submit" class="button h-button is-big is-primary is-bold is-raised" style="width: 100%;">Login</button>
+                                                </div>
+
+                                                <div class="m-t-20" style="display: flex; justify-content: center;">
+                                                    <a href="#">Forgot password?</a>
+                                                </div>
+
+                                                <div class="m-t-10" style="display: flex; justify-content: center;">
+                                                    <a id="manageServersButton" href="#">Manage servers</a>
                                                 </div>
                                             </div>
-                                            <span class="validation-error-span" asp-validation-for="Password"></span>
                                         </div>
-                                    </div>
-                    
-                                    <div class="m-t-40">
-                                        <button id="login-submit" type="submit" class="button h-button is-big is-primary is-bold is-raised" style="width: 100%;">Login</button>
+
+                                        <div id="connectNewServerPanel">
+                                            <h2 class="title is-5 is-narrow muted-grey m-b-15" style="text-align: center;">Connect to server</h2>
+                                            
+                                            <div class="field form-group m-b-20">
+                                                <label class="form-label">Server</label>
+                                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                                    <div style="width: 100%;">
+                                                        <div class="control has-icon has-validation">
+                                                            <input id="serverUrlInput" type="text" class="input form-control" placeholder="Server Url" autocomplete="off">
+                                                            <div class="form-icon">
+                                                                <i class="bi bi-hdd-network"></i>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div style="margin-left: 6px;">
+                                                        <button id="connectButton" type="button" class="button h-action is-hoverable is-elevated" style="height: 38px;"> Connect</button>
+                                                    </div>
+                                                </div>
+                                                <span id="serverConnectionErrorSpan" class="validation-error-span"></span>
+                                            </div>
+
+                                            <div id="membershipSelectionContainer" class="field form-group m-b-30">
+                                                <label class="form-label">Membership</label>
+                                                <div class="field">
+                                                    <div class="control has-icons-left">
+                                                        <div class="select" style="width: 100%; height: 38px;">
+                                                            <select id="membershipsDropdown" style="width: 100%; padding-left: 3em; height: inherit;">
+                                                                
+                                                            </select>
+                                                        </div>
+                                                        <div class="icon is-small is-left" style="margin: 2px 0 0 4px;">
+                                                            <i class="fas fa-home"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="field form-group m-b-20">
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <button id="connectNewServer_CancelButton" type="button" class="button is-light w-100">Cancel</button>
+                                                    </div>
+                                                    <div class="col">
+                                                        <button id="connectNewServer_SaveButton" type="button" class="button is-primary is-outlined is-hoverable w-100">Save</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div class="m-t-20" style="display: flex; justify-content: center;">
-                                        <a href="#">Forgot password?</a>
+                                    <div id="manageServersPanel" class="card-inner">
+                                        <h2 class="title is-5 is-narrow muted-grey m-b-15" style="text-align: center;">Manage Servers</h2>
+
+                                        <div>
+                                            <div id="manageServersTable" class="flex-table">
+                                                <div class="flex-table-item">
+                                                    <div class="flex-table-cell is-bold" data-th="Company">
+                                                        <span class="dark-text" style="font-size: 1.1rem;">ertiscms</span>
+                                                    </div>
+                                                    
+                                                    <div class="flex-table-cell" data-th="Status">
+                                                        <span>fiko</span>
+                                                    </div>
+
+                                                    <div class="flex-table-cell cell-end" data-th="Actions">
+                                                        <div class="dropdown is-spaced is-dots is-right dropdown-trigger is-pushed-mobile">
+                                                            <div class="is-trigger" aria-haspopup="true">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-more-vertical"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                                                            </div>
+                                                            <div class="dropdown-menu" role="menu">
+                                                                <div class="dropdown-content">
+                                                                    <a href="#" class="dropdown-item is-media">
+                                                                        <div class="icon">
+                                                                            <i class="lnil lnil-trash-can-alt"></i>
+                                                                        </div>
+                                                                        <div class="meta">
+                                                                            <span>Remove</span>
+                                                                            <span>Remove from list</span>
+                                                                        </div>
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="field form-group m-t-20 m-b-20">
+                                            <button id="manageServers_ReturnButton" type="button" class="button h-button w-100">
+                                                <span class="icon">
+                                                    <i class="bi bi-arrow-counterclockwise" style="font-size: 1.2rem; color: #000000; margin-top: 2px;"></i>
+                                                </span>
+                                                <span>Return</span>
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div class="m-t-50" style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999999; font-size: 11px;">
@@ -170,11 +309,15 @@
     </div>
 	
     <partial name="_Scripts" />
-    @Html.Raw(HtmlTag.Js("lib/jquery-validation/dist/jquery.validate.js"))
-    @Html.Raw(HtmlTag.Js("lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"))
+    
     @Html.Raw(HtmlTag.Js("lib/huro/js/app.js"))
+    @Html.Raw(HtmlTag.Js("lib/huro/js/functions.js"))
+    @Html.Raw(HtmlTag.Js("lib/huro/js/main.js"))
     @Html.Raw(HtmlTag.Js("js/authentication/webrtc.js"))
     @Html.Raw(HtmlTag.Js("js/authentication/user-agent-parser.js"))
+    @Html.Raw(HtmlTag.Js("lib/jquery-validation/dist/jquery.validate.js"))
+    @Html.Raw(HtmlTag.Js("lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"))
     @Html.Raw(HtmlTag.Js("js/authentication/login.js"))
+    @Html.Raw(HtmlTag.Js("js/authentication/server.js"))
 </body>
 </html>

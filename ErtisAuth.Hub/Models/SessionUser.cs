@@ -16,11 +16,11 @@ namespace ErtisAuth.Hub.Models
 		
 		public string LastName { get; }
 		
-		public string PhotoUrl { get; }
-		
 		public string Role { get; }
 		
 		public string MembershipId { get; }
+
+		public string MembershipName { get; }
 		
 		public string AccessToken { get; }
 		
@@ -50,9 +50,9 @@ namespace ErtisAuth.Hub.Models
 		/// <param name="email"></param>
 		/// <param name="firstName"></param>
 		/// <param name="lastName"></param>
-		/// <param name="photoUrl"></param>
 		/// <param name="role"></param>
 		/// <param name="membershipId"></param>
+		/// <param name="membershipName"></param>
 		/// <param name="accessToken"></param>
 		/// <param name="refreshToken"></param>
 		public SessionUser(
@@ -61,9 +61,9 @@ namespace ErtisAuth.Hub.Models
 			string email,
 			string firstName,
 			string lastName,
-			string photoUrl,
 			string role,
 			string membershipId,
+			string membershipName,
 			string accessToken,
 			string refreshToken)
 		{
@@ -72,9 +72,9 @@ namespace ErtisAuth.Hub.Models
 			this.Email = email;
 			this.FirstName = firstName;
 			this.LastName = lastName;
-			this.PhotoUrl = photoUrl;
 			this.Role = role;
 			this.MembershipId = membershipId;
+			this.MembershipName = membershipName;
 			this.AccessToken = accessToken;
 			this.RefreshToken = refreshToken;
 		}

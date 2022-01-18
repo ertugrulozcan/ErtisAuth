@@ -2,6 +2,7 @@ using ErtisAuth.Core.Models.Identity;
 
 namespace ErtisAuth.Hub.Configuration
 {
+    /*
     public interface ISuperUserOptions
     {
         #region Properties
@@ -27,4 +28,5 @@ namespace ErtisAuth.Hub.Configuration
 
         #endregion
     }
+    */
 }

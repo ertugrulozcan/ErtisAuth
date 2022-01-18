@@ -132,7 +132,7 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.NotFound, $"User not found in db by given {parameterName}: <{field}>", "UserNotFound");
 		}
 		
-		public static ErtisAuthException UsernameOrPasswordIsWrong(string username, string password)
+		public static ErtisAuthException UsernameOrPasswordIsWrong()
 		{
 			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Username or password is wrong", "UsernameOrPasswordIsWrong");
 		}
