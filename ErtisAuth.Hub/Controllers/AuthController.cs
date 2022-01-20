@@ -1,8 +1,6 @@
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Web;
-using ErtisAuth.Hub.Configuration;
+using ErtisAuth.Core.Models.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +22,6 @@ namespace ErtisAuth.Hub.Controllers
 
 		private readonly IAuthenticationService authenticationService;
 		private readonly ISessionService sessionService;
-		private readonly IPasswordService passwordService;
 
 		#endregion
 		
@@ -35,15 +32,10 @@ namespace ErtisAuth.Hub.Controllers
 		/// </summary>
 		/// <param name="authenticationService"></param>
 		/// <param name="sessionService"></param>
-		/// <param name="passwordService"></param>
-		public AuthController(
-			IAuthenticationService authenticationService, 
-			ISessionService sessionService,
-			IPasswordService passwordService)
+		public AuthController(IAuthenticationService authenticationService, ISessionService sessionService)
 		{
 			this.authenticationService = authenticationService;
 			this.sessionService = sessionService;
-			this.passwordService = passwordService;
 		}
 
 		#endregion
@@ -156,35 +148,14 @@ namespace ErtisAuth.Hub.Controllers
 
 		#endregion
 		
-		#region Reset Password
+		#region Set Password
 		
-		/*
 		[HttpGet]
-		[Route("reset-password")]
+		[Route("set-password")]
 		[AllowAnonymous]
-		public IActionResult ResetPassword([FromQuery] string token)
+		public IActionResult SetPassword([FromQuery] string token)
 		{
-			if (string.IsNullOrEmpty(token))
-			{
-				return this.RedirectToAction("Index", "Home");
-			}
-
-			var viewModel = new ResetPasswordViewModel();
-			var resetPasswordTokenWithEmail = this.GetResetPasswordToken(token);
-			if (string.IsNullOrEmpty(resetPasswordTokenWithEmail))
-			{
-				viewModel.IsSuccess = false;
-				viewModel.ErrorMessage = "Your reset password token has expired or invalid, please again reset your password";
-			}
-			else
-			{
-				viewModel.IsSuccess = true;
-				viewModel.ResetPasswordToken = token;
-				var emailAddress = resetPasswordTokenWithEmail.Substring(0, resetPasswordTokenWithEmail.IndexOf(':'));
-				viewModel.EmailAddress = emailAddress;
-			}
-
-			return this.View(viewModel);
+			return this.View(ResetPasswordViewModel.Parse(token));
 		}
 		
 		[HttpPost]
@@ -205,16 +176,20 @@ namespace ErtisAuth.Hub.Controllers
 				model.ErrorMessage = "Password and confirm password fields does not match";
 				return this.View(model);
 			}
-
-			var resetPasswordTokenWithEmail = this.GetResetPasswordToken(model.ResetPasswordToken);
-			if (!string.IsNullOrEmpty(resetPasswordTokenWithEmail))
+			
+			var serviceScopeFactory = this.HttpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
+			using (var scope = serviceScopeFactory.CreateScope())
 			{
-				var resetPasswordToken = resetPasswordTokenWithEmail.Substring(resetPasswordTokenWithEmail.IndexOf(':') + 1);
-				var basicToken = this.superUserOptions.BasicToken;
-				var setPasswordResponse = await this.passwordService.SetPasswordAsync(model.EmailAddress, model.NewPassword, resetPasswordToken, basicToken);
+				var scopedErtisAuthOptions = scope.ServiceProvider.GetRequiredService<IErtisAuthOptions>() as ScopedErtisAuthOptions;
+				scopedErtisAuthOptions?.SetTemporary(model.ServerUrl, model.MembershipId);
+				var scopedPasswordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
+				
+				var basicToken = new BasicToken($"ertisauth_server:{model.SecretKey}");
+				var setPasswordResponse = await scopedPasswordService.SetPasswordAsync(model.EmailAddress, model.NewPassword, model.ResetPasswordToken, basicToken);
 				if (setPasswordResponse.IsSuccess)
 				{
 					model.IsSuccess = true;
+					model.SuccessMessage = "Password changed";
 				}
 				else if (ErrorHelper.TryGetError(setPasswordResponse, out var error))
 				{
@@ -226,29 +201,10 @@ namespace ErtisAuth.Hub.Controllers
 					model.IsSuccess = false;
 					model.ErrorMessage = setPasswordResponse.Message;
 				}
-			}
-			else
-			{
-				model.IsSuccess = false;
-				model.ErrorMessage = "Your reset password token has expired or invalid, please again reset your password";
-			}
 
-			return this.View(model);
+				return this.View(model);
+			}
 		}
-
-		private string GetResetPasswordToken(string key)
-		{
-			if (!string.IsNullOrEmpty(key))
-			{
-				string resetPasswordTokenWithEmail = HttpUtility.UrlDecode(key, Encoding.UTF8);
-				resetPasswordTokenWithEmail = resetPasswordTokenWithEmail.TrimStart('"');
-				resetPasswordTokenWithEmail = resetPasswordTokenWithEmail.TrimEnd('"');
-				return resetPasswordTokenWithEmail;
-			}
-
-			return key;
-		}
-		*/
 
 		#endregion
 		

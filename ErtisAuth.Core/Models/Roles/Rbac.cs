@@ -105,6 +105,18 @@ namespace ErtisAuth.Core.Models.Roles
 			}
 		}
 		
+		public static RbacSegment GetSegment(CrudActions action)
+		{
+			return action switch
+			{
+				CrudActions.Create => CrudActionSegments.Create,
+				CrudActions.Read => CrudActionSegments.Read,
+				CrudActions.Update => CrudActionSegments.Update,
+				CrudActions.Delete => CrudActionSegments.Delete,
+				_ => new RbacSegment(action.ToString())
+			};
+		}
+		
 		public static bool operator ==(Rbac rbac1, Rbac rbac2)
 		{
 			return AreEquals(rbac1, rbac2);
@@ -153,25 +165,20 @@ namespace ErtisAuth.Core.Models.Roles
 		}
 
 		#endregion
+
+		#region Enums
+
+		public enum CrudActions
+		{
+			Create,
+			Read,
+			Update,
+			Delete
+		}
+
+		#endregion
 		
 		#region Helper Classes
-
-		public static class ReservedRoles
-		{
-			public const string Administrator = "admin";
-		}
-
-		public static RbacSegment GetSegment(CrudActions action)
-		{
-			return action switch
-			{
-				CrudActions.Create => CrudActionSegments.Create,
-				CrudActions.Read => CrudActionSegments.Read,
-				CrudActions.Update => CrudActionSegments.Update,
-				CrudActions.Delete => CrudActionSegments.Delete,
-				_ => new RbacSegment(action.ToString())
-			};
-		}
 
 		public static class CrudActionSegments
 		{
@@ -184,14 +191,6 @@ namespace ErtisAuth.Core.Models.Roles
 			public static readonly RbacSegment Delete = new("delete");
 		}
 		
-		public enum CrudActions
-		{
-			Create,
-			Read,
-			Update,
-			Delete
-		}
-
 		#endregion
 	}
 }

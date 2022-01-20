@@ -8,5 +8,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		Application GetById(string id);
 		
 		ValueTask<Application> GetByIdAsync(string id);
+
+		bool IsSystemReservedApplication(Application application);
 	}
 }

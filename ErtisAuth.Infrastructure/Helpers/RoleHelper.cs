@@ -5,6 +5,8 @@ namespace ErtisAuth.Infrastructure.Helpers
 {
 	internal static class RoleHelper
 	{
+		#region Methods
+
 		internal static IEnumerable<string> AssertAdminPermissionsForReservedResources()
 		{
 			string[] reservedResources = {
@@ -39,5 +41,7 @@ namespace ErtisAuth.Infrastructure.Helpers
 
 			return permissions;
 		}
+
+		#endregion
 	}
 }

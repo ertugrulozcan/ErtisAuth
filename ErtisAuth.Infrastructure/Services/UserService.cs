@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,9 +8,9 @@ using Ertis.Security.Cryptography;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
-using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Helpers;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
@@ -243,6 +244,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return !errors.Any();
 		}
 
+		[SuppressMessage("ReSharper", "ConvertIfStatementToNullCoalescingAssignment")]
 		protected override void Overwrite(User destination, User source)
 		{
 			destination.Id = source.Id;
@@ -407,12 +409,12 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<UserDto, UserWithPasswordHash>(dto);
 		}
 		
-		private bool IsValidEmail(string email)
+		private bool IsValidEmail(string emailAddress)
 		{
 			try 
 			{
-				var addr = new System.Net.Mail.MailAddress(email);
-				return addr.Address == email;
+				var email = new System.Net.Mail.MailAddress(emailAddress);
+				return email.Address == emailAddress;
 			}
 			catch 
 			{
@@ -535,7 +537,7 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.UserNotFound(usernameOrEmailAddress, "username or email_address");
 			}
 
-			if (utilizer.Role == Rbac.ReservedRoles.Administrator || utilizer.Id == user.Id)
+			if (utilizer.Role is ReservedRoles.Administrator or ReservedRoles.Server || utilizer.Id == user.Id)
 			{
 				var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership);
 				tokenClaims.AddClaim("token_type", "reset_token");
@@ -585,7 +587,7 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.UserNotFound(usernameOrEmailAddress, "username or email_address");
 			}
 
-			if (utilizer.Role == Rbac.ReservedRoles.Administrator || utilizer.Id == user.Id)
+			if (utilizer.Role is ReservedRoles.Administrator or ReservedRoles.Server || utilizer.Id == user.Id)
 			{
 				if (this.jwtService.TryDecodeToken(resetToken, out var securityToken))
 				{

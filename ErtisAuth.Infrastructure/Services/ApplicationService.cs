@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Users;
+using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Events.EventArgs;
@@ -20,6 +23,29 @@ namespace ErtisAuth.Infrastructure.Services
 
 		private readonly IRoleService roleService;
 		private readonly IEventService eventService;
+
+		#endregion
+		
+		#region Fields
+
+		private Application serverApplication;
+
+		#endregion
+		
+		#region Properties
+
+		private Application ServerApplication
+		{
+			get
+			{
+				return this.serverApplication ??= new Application
+				{
+					Id = "ertisauth_server",
+					Name = "ertisauth_server",
+					Role = ReservedRoles.Server
+				};
+			}
+		}
 
 		#endregion
 		
@@ -157,6 +183,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return !errors.Any();
 		}
 
+		[SuppressMessage("ReSharper", "ConvertIfStatementToNullCoalescingAssignment")]
 		protected override void Overwrite(Application destination, Application source)
 		{
 			destination.Id = source.Id;
@@ -191,6 +218,11 @@ namespace ErtisAuth.Infrastructure.Services
 
 		protected override bool IsAlreadyExist(Application model, string membershipId, Application exclude = default)
 		{
+			if (model.Name == this.ServerApplication.Name)
+			{
+				return true;
+			}
+			
 			if (exclude == null)
 			{
 				return this.GetApplicationByName(model.Name, membershipId) != null;	
@@ -211,6 +243,11 @@ namespace ErtisAuth.Infrastructure.Services
 
 		protected override async Task<bool> IsAlreadyExistAsync(Application model, string membershipId, Application exclude = default)
 		{
+			if (model.Name == this.ServerApplication.Name)
+			{
+				return true;
+			}
+			
 			if (exclude == null)
 			{
 				return await this.GetApplicationByNameAsync(model.Name, membershipId) != null;	
@@ -241,18 +278,33 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public Application GetById(string id)
 		{
+			if (id == this.ServerApplication.Id)
+			{
+				return this.ServerApplication;
+			}
+			
 			var dto = this.repository.FindOne(x => x.Id == id);
 			return Mapper.Current.Map<ApplicationDto, Application>(dto);
 		}
 
 		public async ValueTask<Application> GetByIdAsync(string id)
 		{
+			if (id == this.ServerApplication.Id)
+			{
+				return this.ServerApplication;
+			}
+			
 			var dto = await this.repository.FindOneAsync(x => x.Id == id);
 			return Mapper.Current.Map<ApplicationDto, Application>(dto);
 		}
 		
 		private Application GetApplicationByName(string name, string membershipId)
 		{
+			if (name == this.ServerApplication.Name)
+			{
+				return this.ServerApplication;
+			}
+			
 			var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
 			if (dto == null)
 			{
@@ -264,6 +316,11 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private async Task<Application> GetApplicationByNameAsync(string name, string membershipId)
 		{
+			if (name == this.ServerApplication.Name)
+			{
+				return this.ServerApplication;
+			}
+			
 			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
 			if (dto == null)
 			{
@@ -271,6 +328,16 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			return Mapper.Current.Map<ApplicationDto, Application>(dto);
+		}
+
+		public bool IsSystemReservedApplication(Application application)
+		{
+			if (application != null)
+			{
+				return this.ServerApplication.Id == application.Id && this.ServerApplication.Name == application.Name;
+			}
+
+			return false;
 		}
 
 		#endregion

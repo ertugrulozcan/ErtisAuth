@@ -79,7 +79,7 @@
                                                         </select>
                                                     </div>
                                                     <div class="icon is-small is-left" style="margin: 2px 0 0 4px;">
-                                                        <i class="fas fa-plug"></i>
+                                                        <i class="fas fa-server"></i>
                                                     </div>
                                                 </div>
                                             </div>
@@ -126,7 +126,7 @@
                                                 </div>
 
                                                 <div class="m-t-20" style="display: flex; justify-content: center;">
-                                                    <a href="#">Forgot password?</a>
+                                                    <a id="forgotPasswordButton" href="#">Forgot password?</a>
                                                 </div>
 
                                                 <div class="m-t-10" style="display: flex; justify-content: center;">
@@ -191,36 +191,7 @@
 
                                         <div>
                                             <div id="manageServersTable" class="flex-table">
-                                                <div class="flex-table-item">
-                                                    <div class="flex-table-cell is-bold" data-th="Company">
-                                                        <span class="dark-text" style="font-size: 1.1rem;">ertiscms</span>
-                                                    </div>
-                                                    
-                                                    <div class="flex-table-cell" data-th="Status">
-                                                        <span>fiko</span>
-                                                    </div>
-
-                                                    <div class="flex-table-cell cell-end" data-th="Actions">
-                                                        <div class="dropdown is-spaced is-dots is-right dropdown-trigger is-pushed-mobile">
-                                                            <div class="is-trigger" aria-haspopup="true">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-more-vertical"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-                                                            </div>
-                                                            <div class="dropdown-menu" role="menu">
-                                                                <div class="dropdown-content">
-                                                                    <a href="#" class="dropdown-item is-media">
-                                                                        <div class="icon">
-                                                                            <i class="lnil lnil-trash-can-alt"></i>
-                                                                        </div>
-                                                                        <div class="meta">
-                                                                            <span>Remove</span>
-                                                                            <span>Remove from list</span>
-                                                                        </div>
-                                                                    </a>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                
                                             </div>
                                         </div>
 
@@ -231,6 +202,35 @@
                                                 </span>
                                                 <span>Return</span>
                                             </button>
+                                        </div>
+                                    </div>
+
+                                    <div id="forgotPasswordPanel">
+                                        <h2 class="title is-5 is-narrow muted-grey m-b-15" style="text-align: center;">Forgot Password ?</h2>
+
+                                        <span>Please enter your email to reset your password. We will send you a secure link to change your password.</span>
+
+                                        <div class="field form-group m-t-30 m-b-20">
+                                            <label class="form-label">Email Address</label>
+                                            <div class="control has-icon has-validation">
+                                                <input id="forgotPasswordEmailInput" type="email" class="input form-control" placeholder="Email Address" autocomplete="off">
+                                                <div class="form-icon">
+                                                    <i class="bi bi-at"></i>
+                                                </div>
+                                            </div>
+                                            <span id="forgotPasswordErrorSpan" class="validation-error-span"></span>
+                                            <span id="forgotPasswordSuccessSpan" class="validation-error-span" style="color: green !important;"></span>
+                                        </div>
+
+                                        <div class="field form-group m-b-20">
+                                            <div class="row">
+                                                <div class="col">
+                                                    <button id="forgotPassword_CancelButton" type="button" class="button is-light w-100">Cancel</button>
+                                                </div>
+                                                <div class="col">
+                                                    <button id="forgotPassword_SubmitButton" type="button" class="button is-primary is-outlined is-hoverable w-100">Submit</button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -317,7 +317,7 @@
     @Html.Raw(HtmlTag.Js("js/authentication/user-agent-parser.js"))
     @Html.Raw(HtmlTag.Js("lib/jquery-validation/dist/jquery.validate.js"))
     @Html.Raw(HtmlTag.Js("lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"))
-    @Html.Raw(HtmlTag.Js("js/authentication/login.js"))
     @Html.Raw(HtmlTag.Js("js/authentication/server.js"))
+    @Html.Raw(HtmlTag.Js("js/authentication/login.js"))
 </body>
 </html>

@@ -8,6 +8,7 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Infrastructure.Helpers;
 
@@ -83,7 +84,7 @@ namespace ErtisAuth.Infrastructure.Services
 			// Utilizer
 			var utilizer = new Utilizer
 			{
-				Role = Rbac.ReservedRoles.Administrator,
+				Role = ReservedRoles.Administrator,
 				Type = Utilizer.UtilizerType.System,
 				MembershipId = membership.Id
 			};
@@ -91,7 +92,7 @@ namespace ErtisAuth.Infrastructure.Services
 			// 2. Role
 			var adminRole = await this.roleService.CreateAsync(utilizer, membership.Id, new Role
 			{
-				Name = Rbac.ReservedRoles.Administrator,
+				Name = ReservedRoles.Administrator,
 				Description = "Administrator",
 				MembershipId = membership.Id,
 				Permissions = RoleHelper.AssertAdminPermissionsForReservedResources()

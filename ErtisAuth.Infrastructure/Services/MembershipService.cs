@@ -8,6 +8,7 @@ using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Memberships;
+using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services
 {
@@ -187,6 +188,32 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 
 			return cumulativeList.Take(limit);
+		}
+
+		#endregion
+
+		#region Read Methods
+
+		public Membership GetBySecretKey(string secretKey)
+		{
+			var dto = this.repository.FindOne(x => x.SecretKey == secretKey);
+			if (dto == null)
+			{
+				return null;
+			}
+
+			return Mapper.Current.Map<MembershipDto, Membership>(dto);
+		}
+
+		public async Task<Membership> GetBySecretKeyAsync(string secretKey)
+		{
+			var dto = await this.repository.FindOneAsync(x => x.SecretKey == secretKey);
+			if (dto == null)
+			{
+				return null;
+			}
+
+			return Mapper.Current.Map<MembershipDto, Membership>(dto);
 		}
 
 		#endregion

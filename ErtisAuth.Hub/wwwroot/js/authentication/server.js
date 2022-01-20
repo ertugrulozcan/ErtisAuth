@@ -156,8 +156,9 @@ function switchToConnectPanel() {
 }
 
 function switchToManageServersPanel() {
-    $('#mainPanel').hide();
     $('#manageServersPanel').show();
+    $('#mainPanel').hide();
+    $('#forgotPasswordPanel').hide();
 
     $('#manageServersTable>.flex-table-item').each(function() {
         $(this).remove();
@@ -212,6 +213,7 @@ function switchToManageServersPanel() {
 function switchToMainPanel() {
     $('#mainPanel').show();
     $('#manageServersPanel').hide();
+    $('#forgotPasswordPanel').hide();
 
     updateLoginPanel();
 }
@@ -318,7 +320,8 @@ function initServerConnectionPanel() {
                             let server = {
                                 url: serverUrl,
                                 name: selectedMembership.name,
-                                membership_id: selectedMembership._id
+                                membership_id: selectedMembership._id,
+                                secretKey: selectedMembership.secret_key
                             };
 
                             addServer(server);

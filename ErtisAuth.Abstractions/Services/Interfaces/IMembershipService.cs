@@ -18,5 +18,9 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 			string sortField = null, 
 			SortDirection? sortDirection = null,
 			IDictionary<string, bool> selectFields = null);
+
+		Membership GetBySecretKey(string secretKey);
+		
+		Task<Membership> GetBySecretKeyAsync(string secretKey);
 	}
 }

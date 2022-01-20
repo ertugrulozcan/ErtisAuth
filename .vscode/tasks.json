@@ -2,7 +2,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "build",
+			"label": "ertisauth_hub.build",
 			"command": "dotnet",
 			"type": "process",
 			"args": [
@@ -14,7 +14,7 @@
 			"problemMatcher": "$msCompile"
 		},
 		{
-			"label": "publish",
+			"label": "ertisauth_hub.publish",
 			"command": "dotnet",
 			"type": "process",
 			"args": [
@@ -26,13 +26,50 @@
 			"problemMatcher": "$msCompile"
 		},
 		{
-			"label": "watch",
+			"label": "ertisauth_hub.watch",
 			"command": "dotnet",
 			"type": "process",
 			"args": [
 				"watch",
 				"run",
 				"${workspaceFolder}/ErtisAuth.Hub/ErtisAuth.Hub.csproj",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "ertisauth_api.build",
+			"command": "dotnet",
+			"type": "process",
+			"args": [
+				"build",
+				"${workspaceFolder}/ErtisAuth.WebAPI/ErtisAuth.WebAPI.csproj",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "ertisauth_api.publish",
+			"command": "dotnet",
+			"type": "process",
+			"args": [
+				"publish",
+				"${workspaceFolder}/ErtisAuth.WebAPI/ErtisAuth.WebAPI.csproj",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "ertisauth_api.watch",
+			"command": "dotnet",
+			"type": "process",
+			"args": [
+				"watch",
+				"run",
+				"${workspaceFolder}/ErtisAuth.WebAPI/ErtisAuth.WebAPI.csproj",
 				"/property:GenerateFullPaths=true",
 				"/consoleloggerparameters:NoSummary"
 			],

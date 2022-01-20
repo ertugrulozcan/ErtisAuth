@@ -407,6 +407,8 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 
 			var applicationId = parts[0];
+			var secret = parts[1];
+
 			var application = await this.applicationService.GetByIdAsync(applicationId);
 			if (application == null)
 			{
@@ -416,10 +418,29 @@ namespace ErtisAuth.Infrastructure.Services
 			var membership = await this.membershipService.GetAsync(application.MembershipId);
 			if (membership == null)
 			{
-				throw ErtisAuthException.MembershipNotFound(application.MembershipId);
+				if (this.applicationService.IsSystemReservedApplication(application)) 
+				{
+					membership = await this.membershipService.GetBySecretKeyAsync(secret);
+					var onTheFlyApplication = new Application
+					{
+						Id = application.Id,
+						Name = application.Name,
+						Role = application.Role,
+						Permissions = application.Permissions,
+						Forbidden = application.Forbidden,
+						Sys = application.Sys,
+						MembershipId = membership.Id
+					};
+
+					application = onTheFlyApplication;
+				}
+
+				if (membership == null)
+				{
+					throw ErtisAuthException.MembershipNotFound(application.MembershipId);
+				}
 			}
 
-			var secret = parts[1];
 			if (membership.SecretKey != secret)
 			{
 				throw ErtisAuthException.ApplicationSecretMismatch();

@@ -1,4 +1,6 @@
+using System.Linq;
 using System.Threading.Tasks;
+using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
@@ -42,13 +44,19 @@ namespace ErtisAuth.WebAPI.Controllers
 			var getMembershipsResult = await this.membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection);
 			if (getMembershipsResult?.Items != null)
 			{
-				foreach (var membership in getMembershipsResult.Items)
+				return this.Ok(new PaginationCollection<dynamic>
 				{
-					membership.SecretKey = Identity.Cryptography.StringCipher.Encrypt(membership.SecretKey, membership.Id);
-				}
+					Count = getMembershipsResult.Count,
+					Items = getMembershipsResult.Items.Select(x => new
+					{
+						_id = x.Id,
+						name = x.Name,
+						secret_key = Identity.Cryptography.StringCipher.Encrypt(x.SecretKey, x.Id)
+					})
+				});
 			}
-			
-			return this.Ok(getMembershipsResult);
+
+			return NotFound();
 		}
 
 		#endregion

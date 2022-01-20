@@ -34,7 +34,7 @@ namespace ErtisAuth.Hub.Controllers.API
         #endregion
 		
         #region Services
-		
+        
         private readonly IUserService userService;
 
         #endregion

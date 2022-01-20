@@ -9,13 +9,16 @@ namespace ErtisAuth.Identity.Cryptography
     public static class StringCipher
     {
         #region Constants
+        
+        // ReSharper disable once IdentifierTypo
+        private const int BLOCKSIZE = 128;
+        
+        // ReSharper disable once IdentifierTypo
+        private const int CHUNKSIZE = BLOCKSIZE / 8;
 
-        // This constant is used to determine the key-size of the encryption algorithm in bits.
-        // We divide this by 8 within the code below to get the equivalent number of bytes.
-        private const int KeySize = 256;
-
-        // This constant determines the number of iterations for the password bytes generation function.
-        private const int DerivationIterations = 1000;
+        private const int ITERATION_COUNT = 1000;
+        
+        private static readonly Encoding ENCODING = Encoding.ASCII;
 
         #endregion
         
@@ -28,17 +31,15 @@ namespace ErtisAuth.Identity.Cryptography
                 return plainText;
             }
             
-            // Salt and IV is randomly generated each time, but is prepended to encrypted cipher text
-            // so that the same Salt and IV values can be used when decrypting.  
-            var saltStringBytes = Generate256BitsOfRandomEntropy();
-            var ivStringBytes = Generate256BitsOfRandomEntropy();
-            var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
-            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, DerivationIterations))
+            var saltStringBytes = GenerateRandomEntropy();
+            var ivStringBytes = GenerateRandomEntropy();
+            var plainTextBytes = ENCODING.GetBytes(plainText);
+            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, ITERATION_COUNT))
             {
-                var keyBytes = password.GetBytes(KeySize / 8);
+                var keyBytes = password.GetBytes(CHUNKSIZE);
                 using (var symmetricKey = new RijndaelManaged())
                 {
-                    symmetricKey.BlockSize = 256;
+                    symmetricKey.BlockSize = BLOCKSIZE;
                     symmetricKey.Mode = CipherMode.CBC;
                     symmetricKey.Padding = PaddingMode.PKCS7;
                     using (var encryptor = symmetricKey.CreateEncryptor(keyBytes, ivStringBytes))
@@ -50,13 +51,15 @@ namespace ErtisAuth.Identity.Cryptography
                                 cryptoStream.Write(plainTextBytes, 0, plainTextBytes.Length);
                                 cryptoStream.FlushFinalBlock();
                                 
-                                // Create the final bytes as a concatenation of the random salt bytes, the random iv bytes and the cipher bytes.
                                 var cipherTextBytes = saltStringBytes;
                                 cipherTextBytes = cipherTextBytes.Concat(ivStringBytes).ToArray();
                                 cipherTextBytes = cipherTextBytes.Concat(memoryStream.ToArray()).ToArray();
                                 memoryStream.Close();
                                 cryptoStream.Close();
-                                return Convert.ToBase64String(cipherTextBytes);
+                                
+                                var encrypted = Convert.ToBase64String(cipherTextBytes);
+                                var encoded = Encode(encrypted);
+                                return encoded;
                             }
                         }
                     }
@@ -71,25 +74,19 @@ namespace ErtisAuth.Identity.Cryptography
                 return cipherText;
             }
             
-            // Get the complete stream of bytes that represent:
-            // [32 bytes of Salt] + [32 bytes of IV] + [n bytes of CipherText]
+            cipherText = Decode(cipherText);
+            
             var cipherTextBytesWithSaltAndIv = Convert.FromBase64String(cipherText);
-            
-            // Get the salt bytes by extracting the first 32 bytes from the supplied cipherText bytes.
-            var saltStringBytes = cipherTextBytesWithSaltAndIv.Take(KeySize / 8).ToArray();
-            
-            // Get the IV bytes by extracting the next 32 bytes from the supplied cipherText bytes.
-            var ivStringBytes = cipherTextBytesWithSaltAndIv.Skip(KeySize / 8).Take(KeySize / 8).ToArray();
-            
-            // Get the actual cipher text bytes by removing the first 64 bytes from the cipherText string.
-            var cipherTextBytes = cipherTextBytesWithSaltAndIv.Skip((KeySize / 8) * 2).Take(cipherTextBytesWithSaltAndIv.Length - ((KeySize / 8) * 2)).ToArray();
+            var saltStringBytes = cipherTextBytesWithSaltAndIv.Take(CHUNKSIZE).ToArray();
+            var ivStringBytes = cipherTextBytesWithSaltAndIv.Skip(CHUNKSIZE).Take(CHUNKSIZE).ToArray();
+            var cipherTextBytes = cipherTextBytesWithSaltAndIv.Skip(CHUNKSIZE * 2).Take(cipherTextBytesWithSaltAndIv.Length - CHUNKSIZE * 2).ToArray();
 
-            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, DerivationIterations))
+            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, ITERATION_COUNT))
             {
-                var keyBytes = password.GetBytes(KeySize / 8);
+                var keyBytes = password.GetBytes(CHUNKSIZE);
                 using (var symmetricKey = new RijndaelManaged())
                 {
-                    symmetricKey.BlockSize = 256;
+                    symmetricKey.BlockSize = BLOCKSIZE;
                     symmetricKey.Mode = CipherMode.CBC;
                     symmetricKey.Padding = PaddingMode.PKCS7;
                     using (var decryptTransform = symmetricKey.CreateDecryptor(keyBytes, ivStringBytes))
@@ -102,7 +99,9 @@ namespace ErtisAuth.Identity.Cryptography
                                 var decryptedByteCount = cryptoStream.Read(plainTextBytes, 0, plainTextBytes.Length);
                                 memoryStream.Close();
                                 cryptoStream.Close();
-                                return Encoding.UTF8.GetString(plainTextBytes, 0, decryptedByteCount);
+                                
+                                var decrypted = ENCODING.GetString(plainTextBytes, 0, decryptedByteCount);
+                                return decrypted;
                             }
                         }
                     }
@@ -110,15 +109,74 @@ namespace ErtisAuth.Identity.Cryptography
             }
         }
 
-        private static byte[] Generate256BitsOfRandomEntropy()
+        private static byte[] GenerateRandomEntropy()
         {
-            var randomBytes = new byte[32]; // 32 Bytes will give us 256 bits.
+            var randomBytes = new byte[CHUNKSIZE];
             using (var rngCsp = new RNGCryptoServiceProvider())
             {
-                // Fill the array with cryptographically secure random bytes.
                 rngCsp.GetBytes(randomBytes);
             }
+            
             return randomBytes;
+        }
+        
+        private static string Encode(string str)
+        {
+            var stringBuilder = new StringBuilder();
+            foreach (var c in str)
+            {
+                if (char.IsDigit(c) || char.IsLetter(c))
+                {
+                    stringBuilder.Append(c);
+                }
+                else
+                {
+                    var ascii = (int) c;
+                    stringBuilder.Append($"${ascii}$");
+                }
+            }
+
+            return stringBuilder.ToString();
+        }
+        
+        private static string Decode(string str)
+        {
+            var stringBuilder = new StringBuilder();
+            for (var i = 0; i < str.Length; i++)
+            {
+                var c = str[i];
+                if (c == '$')
+                {
+                    var number = string.Empty;
+                    do
+                    {
+                        i++;
+                        c = str[i];
+
+                        if (c != '$')
+                        {
+                            number += c;   
+                        }
+                    } 
+                    while (c != '$');
+
+                    if (int.TryParse(number, out var ascii))
+                    {
+                        c = (char) ascii;
+                        stringBuilder.Append(c);
+                    }
+                    else
+                    {
+                        throw new CryptographicException("Encoded message contains non-ascii blocks!");
+                    }
+                }
+                else
+                {
+                    stringBuilder.Append(c);
+                }
+            }
+
+            return stringBuilder.ToString();
         }
 
         #endregion
