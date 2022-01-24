@@ -15,7 +15,6 @@ using ErtisAuth.Hub.Extensions;
 using ErtisAuth.Hub.Models;
 using ErtisAuth.Hub.Models.DataTables;
 using Ertis.MongoDB.Queries;
-using IMongoQueryable = Ertis.MongoDB.Queries.IQueryable;
 
 namespace ErtisAuth.Hub.Controllers.API
 {
@@ -178,7 +177,7 @@ namespace ErtisAuth.Hub.Controllers.API
 			};
 		}
 
-		private IMongoQueryable GetFilterQuery()
+		private IQuery GetFilterQuery()
 		{
 			string utilizerIdFilter = null;
 			if (this.Request.Query.ContainsKey("utilizer_id"))
@@ -200,53 +199,57 @@ namespace ErtisAuth.Hub.Controllers.API
 				}
 			}
 
-			DateTime? eventTimeStartDateFilter = null;
+			DateTime? startTime = null;
 			if (this.Request.Query.ContainsKey("start_date"))
 			{
 				if (long.TryParse(this.Request.Query["start_date"].ToString(), out var filterStartDateTimeStamp) && filterStartDateTimeStamp > 0)
 				{
 					var dateTimeOffset = DateTimeOffset.FromUnixTimeMilliseconds(filterStartDateTimeStamp).ToLocalTime();
-					eventTimeStartDateFilter = dateTimeOffset.DateTime;
+					startTime = dateTimeOffset.DateTime;
 				}
 			}
 				
-			DateTime? eventTimeEndDateFilter = null;
+			DateTime? endTime = null;
 			if (this.Request.Query.ContainsKey("end_date"))
 			{
 				if (long.TryParse(this.Request.Query["end_date"].ToString(), out var filterEndDateTimeStamp) && filterEndDateTimeStamp > 0)
 				{
 					var dateTimeOffset = DateTimeOffset.FromUnixTimeMilliseconds(filterEndDateTimeStamp).ToLocalTime();
-					eventTimeEndDateFilter = dateTimeOffset.DateTime;
+					endTime = dateTimeOffset.DateTime;
 				}
 			}
 
 			var queries = new List<IQuery>();
 			if (utilizerIdFilter != null)
 			{
-				queries.Add(new Query("utilizer_id", utilizerIdFilter));
+				queries.Add(QueryBuilder.Equals("utilizer_id", utilizerIdFilter));
 			}
 			
 			if (eventTypeFilter != null)
 			{
-				queries.Add(new Query("event_type", eventTypeFilter));
+				queries.Add(QueryBuilder.Equals("event_type", eventTypeFilter));
 			}
 
-			if (eventTimeStartDateFilter != null && eventTimeEndDateFilter != null)
+			if (startTime != null && endTime != null)
 			{
-				var query1 = new Query("$gte", eventTimeStartDateFilter.Value.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
-				var query2 = new Query("$lte", eventTimeEndDateFilter.Value.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
-				queries.Add(new Query("event_time", QueryBuilder.Combine(query1, query2)));
+				IQuery[] eventTimeQueries =
+				{
+					QueryBuilder.GreaterThanOrEqual(startTime.Value),
+					QueryBuilder.LessThanOrEqual(endTime.Value)
+				};
+            
+				queries.Add(QueryBuilder.Where("event_time", eventTimeQueries));
 			}
-			else if (eventTimeStartDateFilter != null)
+			else if (startTime != null)
 			{
-				queries.Add(QueryBuilder.GreaterThanOrEqual("event_time", eventTimeStartDateFilter.Value.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")));
+				queries.Add(QueryBuilder.GreaterThanOrEqual("event_time", startTime.Value));
 			}
-			else if (eventTimeEndDateFilter != null)
+			else if (endTime != null)
 			{
-				queries.Add(QueryBuilder.LessThanOrEqual("event_time", eventTimeEndDateFilter.Value.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")));
+				queries.Add(QueryBuilder.LessThanOrEqual("event_time", endTime.Value));
 			}
 			
-			return queries.Any() ? QueryBuilder.Where(queries.ToArray()) : null;
+			return queries.Any() ? QueryBuilder.Where(queries) : null;
 		}
 
 		#endregion

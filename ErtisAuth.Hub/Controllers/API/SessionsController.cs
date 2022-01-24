@@ -65,7 +65,7 @@ namespace ErtisAuth.Hub.Controllers.API
                 var membershipId = this.GetClaim(Claims.MembershipId);
                 var membership = await this.membershipService.GetMembershipAsync(membershipId, token);
                 var tokenExpireTime = TimeSpan.FromSeconds(membership.Data.ExpiresIn);
-                var query = QueryBuilder.GreaterThanOrEqual("created_at", DateTime.Now.Subtract(tokenExpireTime).ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
+                var query = QueryBuilder.GreaterThanOrEqual("created_at", DateTime.Now.Subtract(tokenExpireTime));
                 var getActiveTokensResponse = await this.activeTokensService.QueryAsync(token, query.ToString(), skip, limit, true, orderBy, sortDirection);
                 if (getActiveTokensResponse.IsSuccess)
                 {

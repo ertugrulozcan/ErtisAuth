@@ -134,16 +134,25 @@ namespace ErtisAuth.Hub.Controllers
 		[AllowAnonymous]
 		public async Task<IActionResult> Forbidden()
 		{
-			var meResponse = await this.authenticationService.WhoAmIAsync(this.GetBearerToken());
-			if (meResponse.IsSuccess)
+			var serviceScopeFactory = this.HttpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
+			using (var scope = serviceScopeFactory.CreateScope())
 			{
-				return this.RedirectToAction("Forbidden", "Error");
+				if (scope.ServiceProvider.GetService<IErtisAuthOptions>() is ScopedErtisAuthOptions scopedErtisAuthOptions)
+				{
+					if (!string.IsNullOrEmpty(scopedErtisAuthOptions.BaseUrl) && !string.IsNullOrEmpty(scopedErtisAuthOptions.MembershipId))
+					{
+						var scopedAuthenticationService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
+						var meResponse = await scopedAuthenticationService.WhoAmIAsync(this.GetBearerToken());
+						if (meResponse.IsSuccess)
+						{
+							return this.RedirectToAction("Forbidden", "Error");
+						}	
+					}
+				}
 			}
-			else
-			{
-				this.ClearAllCookies();
-				return this.View();
-			}
+			
+			this.ClearAllCookies();
+			return this.View();
 		}
 
 		#endregion

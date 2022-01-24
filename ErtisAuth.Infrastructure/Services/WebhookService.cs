@@ -61,14 +61,15 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			try
 			{
-				var query = QueryBuilder.Where(new QueryGroup
+				IQuery[] expressions = 
 				{
-					new Query("status", "active"),
-					new Query("membership_id", ertisAuthEvent.MembershipId),
-					new Query("event", ertisAuthEvent.EventType.ToString())
-				});
-			
-				var webhooksDynamicCollection = this.Query(query.Value.ToString());
+					QueryBuilder.Equals("status", "active"),
+					QueryBuilder.Equals("membership_id", ertisAuthEvent.MembershipId),
+					QueryBuilder.Equals("event", ertisAuthEvent.EventType.ToString())
+				};
+				
+				var query = QueryBuilder.Where(expressions);
+				var webhooksDynamicCollection = this.Query(query.ToString());
 				var webhooks = JsonConvert.DeserializeObject<PaginationCollection<Webhook>>(JsonConvert.SerializeObject(webhooksDynamicCollection));
 				if (webhooks != null)
 				{
