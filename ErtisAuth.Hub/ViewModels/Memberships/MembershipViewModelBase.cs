@@ -30,9 +30,14 @@ namespace ErtisAuth.Hub.ViewModels.Memberships
         [Required]
         public string DefaultEncoding { get; set; }
         
+        [Required]
+        public string DefaultLanguage { get; set; }
+
         public List<SelectListItem> HashAlgorithmList { get; set; }
 		
         public List<SelectListItem> EncodingList { get; set; }
+        
+        public List<SelectListItem> LanguageList { get; set; }
 		
         public UserType UserType { get; set; }
         

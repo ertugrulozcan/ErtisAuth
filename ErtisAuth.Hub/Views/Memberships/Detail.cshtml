@@ -93,6 +93,12 @@
 					            <select class="form-control form-select" id="encodingsDropdown" asp-for="DefaultEncoding" asp-items="Model.EncodingList"></select>
 					            <span class="validation-error-span" asp-validation-for="DefaultEncoding"></span>
 				            </div>
+				            
+				            <div class="mb-5">
+					            <label class="form-label required">Default Language</label>
+					            <select class="form-control form-select" id="languageDropdown" asp-for="DefaultLanguage" asp-items="Model.LanguageList"></select>
+					            <span class="validation-error-span" asp-validation-for="DefaultLanguage"></span>
+				            </div>
 			            </form>
 		            </div>
 	            </div>

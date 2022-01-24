@@ -28,6 +28,9 @@ namespace ErtisAuth.Dto.Models.Memberships
 		[BsonElement("encoding")]
 		public string DefaultEncoding { get; set; }
 		
+		[BsonElement("default_language")]
+		public string DefaultLanguage { get; set; }
+		
 		[BsonElement("user_type")]
 		public UserTypeDto UserType { get; set; }
 

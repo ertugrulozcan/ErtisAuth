@@ -159,13 +159,13 @@ namespace ErtisAuth.Tests.Mocks.Services
 			}
 		}
 
-		public IPaginationCollection<Role> Search(string keyword, int? skip = null, int? limit = null, bool? withCount = null,
+		public IPaginationCollection<Role> Search(string membershipId, string keyword, int? skip = null, int? limit = null, bool? withCount = null,
 			string sortField = null, SortDirection? sortDirection = null)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ValueTask<IPaginationCollection<Role>> SearchAsync(string keyword, int? skip = null, int? limit = null, bool? withCount = null,
+		public ValueTask<IPaginationCollection<Role>> SearchAsync(string membershipId, string keyword, int? skip = null, int? limit = null, bool? withCount = null,
 			string sortField = null, SortDirection? sortDirection = null)
 		{
 			throw new NotImplementedException();

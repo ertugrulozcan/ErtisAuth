@@ -45,6 +45,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		ValueTask<IPaginationCollection<TModel>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
 		
 		IPaginationCollection<TModel> Search(
+			string membershipId, 
 			string keyword, 
 			int? skip = null, 
 			int? limit = null,
@@ -53,6 +54,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 			SortDirection? sortDirection = null);
 		
 		ValueTask<IPaginationCollection<TModel>> SearchAsync(
+			string membershipId, 
 			string keyword, 
 			int? skip = null, 
 			int? limit = null,

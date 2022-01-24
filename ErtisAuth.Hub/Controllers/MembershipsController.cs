@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Ertis.MongoDB.Queries;
 using ErtisAuth.Hub.Constants;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
@@ -124,9 +125,11 @@ namespace ErtisAuth.Hub.Controllers
 				ExpiresIn = 43200,
 				RefreshTokenExpiresIn = 86400,
 				DefaultEncoding = DefaultEncoding,
+				DefaultLanguage = TextSearchLanguage.None.ISO6391Code,
 				HashAlgorithm = DefaultHashAlgorithm,
 				HashAlgorithmList = hashAlgorithms.Select(x => new SelectListItem(x, x)).ToList(),
 				EncodingList = encodings.Select(x => new SelectListItem(x.DisplayName, x.Name)).ToList(),
+				LanguageList = TextSearchLanguage.All.Select(x => new SelectListItem(x.Name, x.ISO6391Code)).ToList().ToList()
 			};
 			
 			return model;
@@ -160,8 +163,10 @@ namespace ErtisAuth.Hub.Controllers
 					SecretKey = getMembershipResponse.Data.SecretKey,
 					HashAlgorithm = getMembershipResponse.Data.HashAlgorithm,
 					DefaultEncoding = getMembershipResponse.Data.DefaultEncoding,
+					DefaultLanguage = getMembershipResponse.Data.DefaultLanguage,
 					HashAlgorithmList = hashAlgorithms.Select(x => new SelectListItem(x, x)).ToList(),
 					EncodingList = encodings.Select(x => new SelectListItem(x.DisplayName, x.Name)).ToList(),
+					LanguageList = TextSearchLanguage.All.Select(x => new SelectListItem(x.Name, x.ISO6391Code)).ToList().ToList(),
 					UserType = getMembershipResponse.Data.UserType,
 					Sys = getMembershipResponse.Data.Sys,
 				};
@@ -261,6 +266,7 @@ namespace ErtisAuth.Hub.Controllers
 					SecretKey = model.SecretKey,
 					HashAlgorithm = model.HashAlgorithm,
 					DefaultEncoding = model.DefaultEncoding,
+					DefaultLanguage = model.DefaultLanguage
 					//UserType = userType
 				};
 

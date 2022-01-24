@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Data.Models;
+using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services.Interfaces;
@@ -138,13 +139,14 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public IPaginationCollection<TModel> Search(
 			string keyword,
+			TextSearchOptions options = null,
 			int? skip = null,
 			int? limit = null,
 			bool? withCount = null,
 			string sortField = null,
 			SortDirection? sortDirection = null)
 		{
-			var paginatedDtoCollection = this.repository.Search(keyword, skip, limit, withCount, sortField, sortDirection);
+			var paginatedDtoCollection = this.repository.Search(keyword, options, skip, limit, withCount, sortField, sortDirection);
 			if (paginatedDtoCollection?.Items != null)
 			{
 				return new PaginationCollection<TModel>
@@ -161,13 +163,14 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public async ValueTask<IPaginationCollection<TModel>> SearchAsync(
 			string keyword,
+			TextSearchOptions options = null,
 			int? skip = null,
 			int? limit = null,
 			bool? withCount = null,
 			string sortField = null,
 			SortDirection? sortDirection = null)
 		{
-			var paginatedDtoCollection = await this.repository.SearchAsync(keyword, skip, limit, withCount, sortField, sortDirection);
+			var paginatedDtoCollection = await this.repository.SearchAsync(keyword, options, skip, limit, withCount, sortField, sortDirection);
 			if (paginatedDtoCollection?.Items != null)
 			{
 				return new PaginationCollection<TModel>

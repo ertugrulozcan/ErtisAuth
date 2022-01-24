@@ -9,4 +9,8 @@
       <ProjectReference Include="..\ErtisAuth.Events\ErtisAuth.Events.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Ertis.MongoDB.Queries" Version="5.0.2" />
+    </ItemGroup>
+
 </Project>

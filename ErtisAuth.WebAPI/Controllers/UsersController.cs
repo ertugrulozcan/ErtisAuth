@@ -155,7 +155,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 			this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 			
-			return this.Ok(await this.userService.SearchAsync(keyword, skip, limit, withCount, orderBy, sortDirection));
+			return this.Ok(await this.userService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection));
 		}
 		
 		#endregion

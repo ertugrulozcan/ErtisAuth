@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Data.Models;
+using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services.Interfaces;
@@ -175,6 +176,7 @@ namespace ErtisAuth.Infrastructure.Services
 		#region Search Methods
 
 		public IPaginationCollection<TModel> Search(
+			string membershipId, 
 			string keyword,
 			int? skip = null,
 			int? limit = null,
@@ -182,7 +184,26 @@ namespace ErtisAuth.Infrastructure.Services
 			string sortField = null,
 			SortDirection? sortDirection = null)
 		{
-			var paginatedDtoCollection = this.repository.Search(keyword, skip, limit, withCount, sortField, sortDirection);
+			var membership = this.membershipService.Get(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+			
+			var textSearchLanguage = TextSearchLanguage.None;
+			if (!string.IsNullOrEmpty(membership.DefaultLanguage) && TextSearchLanguage.All.Any(x => x.ISO6391Code == membership.DefaultLanguage))
+			{
+				textSearchLanguage = TextSearchLanguage.All.FirstOrDefault(x => x.ISO6391Code == membership.DefaultLanguage);
+			}
+
+			var textSearchOptions = new TextSearchOptions
+			{
+				Language = textSearchLanguage,
+				IsCaseSensitive = true,
+				IsDiacriticSensitive = true
+			};
+			
+			var paginatedDtoCollection = this.repository.Search(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection);
 			if (paginatedDtoCollection?.Items != null)
 			{
 				return new PaginationCollection<TModel>
@@ -198,6 +219,7 @@ namespace ErtisAuth.Infrastructure.Services
 		}
 
 		public async ValueTask<IPaginationCollection<TModel>> SearchAsync(
+			string membershipId, 
 			string keyword,
 			int? skip = null,
 			int? limit = null,
@@ -205,7 +227,26 @@ namespace ErtisAuth.Infrastructure.Services
 			string sortField = null,
 			SortDirection? sortDirection = null)
 		{
-			var paginatedDtoCollection = await this.repository.SearchAsync(keyword, skip, limit, withCount, sortField, sortDirection);
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+
+			var textSearchLanguage = TextSearchLanguage.None;
+			if (!string.IsNullOrEmpty(membership.DefaultLanguage) && TextSearchLanguage.All.Any(x => x.ISO6391Code == membership.DefaultLanguage))
+			{
+				textSearchLanguage = TextSearchLanguage.All.FirstOrDefault(x => x.ISO6391Code == membership.DefaultLanguage);
+			}
+
+			var textSearchOptions = new TextSearchOptions
+			{
+				Language = textSearchLanguage,
+				IsCaseSensitive = true,
+				IsDiacriticSensitive = true
+			};
+			
+			var paginatedDtoCollection = await this.repository.SearchAsync(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection);
 			if (paginatedDtoCollection?.Items != null)
 			{
 				return new PaginationCollection<TModel>
