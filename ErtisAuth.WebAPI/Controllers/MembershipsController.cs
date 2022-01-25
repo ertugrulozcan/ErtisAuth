@@ -4,7 +4,6 @@ using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
-using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Identity.Attributes;
 using ErtisAuth.Extensions.Authorization.Annotations;
@@ -46,18 +45,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[RbacAction(Rbac.CrudActions.Create)]
 		public async Task<IActionResult> Create([FromBody] CreateMembershipFormModel model)
 		{
-			var membershipModel = new Membership
-			{
-				Name = model.Name,
-				ExpiresIn = model.ExpiresIn,
-				RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
-				SecretKey = model.SecretKey,
-				HashAlgorithm = model.HashAlgorithm,
-				DefaultEncoding = model.DefaultEncoding,
-				UserType = model.UserType
-			};
-			
-			var membership = await this.membershipService.CreateAsync(membershipModel);
+			var membership = await this.membershipService.CreateAsync(model.ToMembership());
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{membership.Id}", membership);
 		}
 		
@@ -133,15 +121,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[RbacAction(Rbac.CrudActions.Update)]
 		public async Task<IActionResult> Update([FromRoute] string id, [FromBody] UpdateMembershipFormModel model)
 		{
-			var membershipModel = new Membership
-			{
-				Id = id,
-				ExpiresIn = model.ExpiresIn,
-				RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
-				UserType = model.UserType
-			};
-			
-			var user = await this.membershipService.UpdateAsync(membershipModel);
+			var user = await this.membershipService.UpdateAsync(model.ToMembership(id));
 			return this.Ok(user);
 		}
 

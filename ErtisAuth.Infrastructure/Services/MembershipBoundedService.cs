@@ -200,7 +200,7 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				Language = textSearchLanguage,
 				IsCaseSensitive = true,
-				IsDiacriticSensitive = true
+				IsDiacriticSensitive = false
 			};
 			
 			var paginatedDtoCollection = this.repository.Search(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection);
@@ -243,7 +243,7 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				Language = textSearchLanguage,
 				IsCaseSensitive = true,
-				IsDiacriticSensitive = true
+				IsDiacriticSensitive = false
 			};
 			
 			var paginatedDtoCollection = await this.repository.SearchAsync(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection);

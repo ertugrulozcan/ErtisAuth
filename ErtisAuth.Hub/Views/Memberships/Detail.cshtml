@@ -46,6 +46,7 @@
 		            <div class="card-body">
 			            <form id="UpdateMembershipForm" method="post" asp-controller="Memberships" asp-action="Update">
 				            @Html.HiddenFor(x => x.Id)
+							@Html.HiddenFor(x => x.SecretKey)
                         
 				            <div class="mb-5">
 					            <label class="form-label required">Name</label>
