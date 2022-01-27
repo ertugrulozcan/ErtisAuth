@@ -81,6 +81,7 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IApplicationRepository, ApplicationRepository>();
 			services.AddSingleton<IRoleRepository, RoleRepository>();
 			services.AddSingleton<IWebhookRepository, WebhookRepository>();
+			services.AddSingleton<IMailHookRepository, MailHookRepository>();
 			services.AddSingleton<IProviderRepository, ProviderRepository>();
 			services.AddSingleton<IActiveTokensRepository, ActiveTokensRepository>();
 			services.AddSingleton<IRevokedTokensRepository, RevokedTokensRepository>();
@@ -99,6 +100,7 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IRoleService, RoleService>();
 			services.AddSingleton<IProviderService, ProviderService>();
 			services.AddSingleton<IWebhookService, WebhookService>();
+			services.AddSingleton<IMailHookService, MailHookService>();
 			services.AddSingleton<IEventService, EventService>();
 			services.AddSingleton<IMigrationService, MigrationService>();
 			

@@ -4,6 +4,7 @@ using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.GeoLocation;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Models.Roles;
@@ -13,6 +14,7 @@ using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Dto.Models.Events;
 using ErtisAuth.Dto.Models.GeoLocation;
 using ErtisAuth.Dto.Models.Identity;
+using ErtisAuth.Dto.Models.Mailing;
 using ErtisAuth.Dto.Models.Memberships;
 using ErtisAuth.Dto.Models.Providers;
 using ErtisAuth.Dto.Models.Resources;
@@ -86,7 +88,9 @@ namespace ErtisAuth.Infrastructure.Mapping
 				.Add(new CustomMapper<UserWithPasswordHash, UserDto>((model) => model.ToDto()))
 				.Add(new CustomMapper<UserDto, UserWithPasswordHash>((dto) => new UserWithPasswordHash(dto.ToModel()) { PasswordHash = dto.PasswordHash }))
 				.Add(new CustomMapper<Webhook, WebhookDto>((model) => model.ToDto()))
-				.Add(new CustomMapper<WebhookDto, Webhook>((dto) => dto.ToModel()));
+				.Add(new CustomMapper<WebhookDto, Webhook>((dto) => dto.ToModel()))
+				.Add(new CustomMapper<MailHook, MailHookDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<MailHookDto, MailHook>((dto) => dto.ToModel()));
 		}
 
 		#endregion

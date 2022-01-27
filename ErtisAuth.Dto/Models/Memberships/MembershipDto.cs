@@ -33,6 +33,9 @@ namespace ErtisAuth.Dto.Models.Memberships
 		
 		[BsonElement("user_type")]
 		public UserTypeDto UserType { get; set; }
+		
+		[BsonElement("mail_settings")]
+		public MembershipMailSettingsDto MailSettings { get; set; }
 
 		[BsonElement("sys")]
 		public SysModelDto Sys { get; set; }

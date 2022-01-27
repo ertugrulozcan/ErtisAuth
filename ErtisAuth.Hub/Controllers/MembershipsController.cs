@@ -15,6 +15,7 @@ using ErtisAuth.Hub.Extensions;
 using ErtisAuth.Hub.ViewModels;
 using ErtisAuth.Hub.ViewModels.Memberships;
 using Ertis.Security.Cryptography;
+using ErtisAuth.Core.Models.Mailing;
 
 namespace ErtisAuth.Hub.Controllers
 {
@@ -25,14 +26,15 @@ namespace ErtisAuth.Hub.Controllers
 	{
 		#region Constants
 
-		private static readonly string DefaultEncoding = ErtisAuth.Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName;
-		private static readonly string DefaultHashAlgorithm = ErtisAuth.Core.Constants.Defaults.DEFAULT_HASH_ALGORITHM.ToString().Replace('_', '-');
+		private static readonly string DefaultEncoding = Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName;
+		private static readonly string DefaultHashAlgorithm = Core.Constants.Defaults.DEFAULT_HASH_ALGORITHM.ToString().Replace('_', '-');
 
 		#endregion
 		
 		#region Services
 
 		private readonly IMembershipService membershipService;
+		private readonly IMailHookService mailHookService;
 		private readonly IAuthenticationService authenticationService;
 
 		#endregion
@@ -43,10 +45,12 @@ namespace ErtisAuth.Hub.Controllers
 		/// Constructor
 		/// </summary>
 		/// <param name="membershipService"></param>
+		/// <param name="mailHookService"></param>
 		/// <param name="authenticationService"></param>
-		public MembershipsController(IMembershipService membershipService, IAuthenticationService authenticationService)
+		public MembershipsController(IMembershipService membershipService, IMailHookService mailHookService, IAuthenticationService authenticationService)
 		{
 			this.membershipService = membershipService;
+			this.mailHookService = mailHookService;
 			this.authenticationService = authenticationService;
 		}
 
@@ -146,7 +150,13 @@ namespace ErtisAuth.Hub.Controllers
 			{
 				return this.RedirectToAction("Index");
 			}
-			
+
+			var viewModel = await this.GetDetailViewModelAsync(id);
+			return View(viewModel);
+		}
+
+		private async Task<MembershipViewModel> GetDetailViewModelAsync(string id)
+		{
 			var token = this.GetBearerToken();
 			var getMembershipResponse = await this.membershipService.GetMembershipAsync(id, token);
 			if (getMembershipResponse.IsSuccess)
@@ -181,17 +191,16 @@ namespace ErtisAuth.Hub.Controllers
 					viewModel.Errors = routedModel.Errors;
 				}
 					
-				return View(viewModel);
+				return viewModel;
 			}
 			else
 			{
 				var viewModel = new MembershipViewModel();
 				viewModel.SetError(getMembershipResponse);
-
-				return View(viewModel);
+				return viewModel;
 			}
 		}
-
+		
 		#endregion
 
 		#region Update
@@ -330,6 +339,167 @@ namespace ErtisAuth.Hub.Controllers
 			}
 			
 			return this.RedirectToAction("Index");
+		}
+
+		#endregion
+		
+		#region Email Settings
+
+		[HttpGet("{id}/mail-settings")]
+		public async Task<IActionResult> MailSettings(string id)
+		{
+			if (string.IsNullOrEmpty(id))
+			{
+				return this.RedirectToAction("Index");
+			}
+			
+			var token = this.GetBearerToken();
+			var viewModel = await this.GetDetailViewModelAsync(id);
+			
+			var getMailHooksResponse = await this.mailHookService.GetAsync(token);
+			if (getMailHooksResponse.IsSuccess)
+			{
+				var mailHooks = getMailHooksResponse.Data.Items;
+				viewModel.MailHooks = mailHooks;
+			}
+			
+			return View(viewModel);
+		}
+
+		#endregion
+		
+		#region Create MailHook
+
+		[HttpPost("create-mailhook")]
+		[RbacAction(Rbac.CrudActions.Create)]
+		public async Task<IActionResult> CreateMailHook([FromForm] MailHookCreateViewModel model)
+		{
+			if (this.ModelState.IsValid)
+			{
+				var token = this.GetBearerToken();
+				var mailHook = new MailHook
+				{
+					Name = model.Name,
+					Description = model.Description,
+					Event = model.EventType,
+					Status = model.IsActive ? "active" : "passive",
+					MailTemplate = model.MailTemplate,
+					MembershipId = model.MembershipId
+				};
+				
+				var createMailHookResponse = await this.mailHookService.CreateAsync(mailHook, token);
+				if (createMailHookResponse.IsSuccess)
+				{
+					model.IsSuccess = true;
+					model.SuccessMessage = "Mailhook created";
+					this.SetRedirectionParameter(new SerializableViewModel(model));
+					return this.RedirectToAction("MailSettings", routeValues: new { id = createMailHookResponse.Data.MembershipId });
+				}
+				else
+				{
+					model.SetError(createMailHookResponse);
+					this.SetRedirectionParameter(new SerializableViewModel(model));
+					return this.RedirectToAction("MailSettings", routeValues: new { id = model.MembershipId });
+				}
+			}
+			else
+			{
+				model.IsSuccess = false;
+				model.Errors = this.ModelState.Values.SelectMany(x => x.Errors.Select(y => y.ErrorMessage));
+			}
+			
+			this.SetRedirectionParameter(new SerializableViewModel(model));
+			return this.RedirectToAction("MailSettings", routeValues: new { id = model.MembershipId });
+		}
+		
+		#endregion
+
+		#region MailHook Detail
+
+		[HttpGet("{membershipId}/mail-settings/{id}")]
+		public async Task<IActionResult> MailHookDetail([FromRoute] string membershipId, [FromRoute] string id)
+		{
+			if (string.IsNullOrEmpty(id))
+			{
+				return this.RedirectToAction("Index");
+			}
+
+			var token = this.GetBearerToken();
+			var getMailHookResponse = await this.mailHookService.GetAsync(id, token);
+			if (getMailHookResponse.IsSuccess)
+			{
+				var viewModel = new MailHookViewModel
+				{
+					Id = getMailHookResponse.Data.Id,
+					Name = getMailHookResponse.Data.Name,
+					Description = getMailHookResponse.Data.Description,
+					EventType = getMailHookResponse.Data.Event,
+					IsActive = getMailHookResponse.Data.IsActive,
+					MailTemplate = getMailHookResponse.Data.MailTemplate,
+					MembershipId = getMailHookResponse.Data.MembershipId,
+					Sys = getMailHookResponse.Data.Sys
+				};
+
+				var routedModel = this.GetRedirectionParameter<SerializableViewModel>();
+				if (routedModel != null)
+				{
+					viewModel.IsSuccess = routedModel.IsSuccess;
+					viewModel.ErrorMessage = routedModel.ErrorMessage;
+					viewModel.SuccessMessage = routedModel.SuccessMessage;
+					viewModel.Error = routedModel.Error;
+					viewModel.Errors = routedModel.Errors;
+				}
+					
+				return View(viewModel);
+			}
+			else
+			{
+				var viewModel = new MailHookViewModel();
+				viewModel.SetError(getMailHookResponse);
+				return View(viewModel);
+			}
+		}
+
+		#endregion
+		
+		#region MailHook Update
+
+		[HttpPost("update-mailhook")]
+		[RbacAction(Rbac.CrudActions.Update)]
+		public async Task<IActionResult> MailHookUpdate([FromForm] MailHookViewModel model)
+		{
+			if (this.ModelState.IsValid)
+			{
+				var mailHook = new MailHook
+				{
+					Id = model.Id,
+					Name = model.Name,
+					Description = model.Description,
+					Event = model.EventType,
+					Status = model.IsActive ? "active" : "passive",
+					MailTemplate = model.MailTemplate,
+					MembershipId = model.MembershipId
+				};
+
+				var updateMailHookResponse = await this.mailHookService.UpdateAsync(mailHook, this.GetBearerToken());
+				if (updateMailHookResponse.IsSuccess)
+				{
+					model.IsSuccess = true;
+					model.SuccessMessage = "Mailhook updated";
+				}
+				else
+				{
+					model.SetError(updateMailHookResponse);
+				}
+			}
+			else
+			{
+				model.IsSuccess = false;
+				model.Errors = this.ModelState.Values.SelectMany(x => x.Errors.Select(y => y.ErrorMessage));
+			}
+
+			this.SetRedirectionParameter(new SerializableViewModel(model));
+			return this.RedirectToAction("MailHookDetail", routeValues: new { membershipId = model.MembershipId, id = model.Id });
 		}
 
 		#endregion

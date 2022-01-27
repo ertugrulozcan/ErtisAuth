@@ -1,9 +1,11 @@
 using System.Linq;
 using Ertis.Core.Models.Resources;
+using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Dto.Extensions;
+using ErtisAuth.Dto.Models.Mailing;
 using ErtisAuth.Dto.Models.Memberships;
 using ErtisAuth.Dto.Models.Resources;
 using ErtisAuth.Dto.Models.Users;
@@ -56,6 +58,7 @@ namespace ErtisAuth.Infrastructure.Extensions
                 SecretKey = dto.SecretKey,
                 RefreshTokenExpiresIn = dto.RefreshTokenExpiresIn,
                 UserType = dto.UserType?.ToModel(),
+                MailSettings = dto.MailSettings?.ToModel(),
                 Sys = dto.Sys?.ToModel()
             };
         }
@@ -73,6 +76,7 @@ namespace ErtisAuth.Infrastructure.Extensions
                 SecretKey = model.SecretKey,
                 RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
                 UserType = model.UserType?.ToDto(),
+                MailSettings = model.MailSettings?.ToDto(),
                 Sys = model.Sys?.ToDto()
             };
         }
@@ -226,6 +230,80 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Method = model.Method,
                 Headers = model.Headers,
                 Body = body
+            };
+        }
+
+        #endregion
+        
+        #region Mailing
+
+        public static MailHook ToModel(this MailHookDto dto)
+        {
+            return new MailHook
+            {
+                Id = dto.Id,
+                Name = dto.Name,
+                Description = dto.Description,
+                Event = dto.Event,
+                Status = dto.Status,
+                MailTemplate = dto.MailTemplate,
+                MembershipId = dto.MembershipId,
+                Sys = dto.Sys?.ToModel()
+            };
+        }
+        
+        public static MailHookDto ToDto(this MailHook model)
+        {
+            return new MailHookDto
+            {
+                Id = model.Id,
+                Name = model.Name,
+                Description = model.Description,
+                Event = model.Event,
+                Status = model.Status,
+                MailTemplate = model.MailTemplate,
+                MembershipId = model.MembershipId,
+                Sys = model.Sys?.ToDto()
+            };
+        }
+        
+        public static MembershipMailSettings ToModel(this MembershipMailSettingsDto dto)
+        {
+            return new MembershipMailSettings
+            {
+                SmtpServer = dto.SmtpServer?.ToModel()
+            };
+        }
+        
+        public static MembershipMailSettingsDto ToDto(this MembershipMailSettings model)
+        {
+            return new MembershipMailSettingsDto
+            {
+                SmtpServer = model.SmtpServer?.ToDto()
+            };
+        }
+        
+        public static SmtpServer ToModel(this SmtpServerDto dto)
+        {
+            return new SmtpServer
+            {
+                Host = dto.Host,
+                Port = dto.Port,
+                TlsEnabled = dto.TlsEnabled,
+                Username = dto.Username,
+                Password = dto.Password
+            };
+        }
+        
+        public static SmtpServerDto ToDto(this SmtpServer model)
+        {
+            return new SmtpServerDto
+            {
+                Host = model.Host,
+                Port = model.Port,
+                TlsEnabled = model.TlsEnabled,
+                Username = model.Username,
+                Password = model.Password
             };
         }
 

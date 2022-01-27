@@ -1,43 +1,12 @@
 "use strict";
 
-let wwwroot = '';
-const monacoEditorInstances = {};
 const headersTable = document.getElementById('headersTable');
 
-let isInitializedMonacoEditor = false;
-function initMonacoEditor(elementId) {
-    if (isInitializedMonacoEditor) {
-        return;
-    }
-
-    require.config({ paths: { 'vs': wwwroot + 'lib/monaco-editor/vs' }});
-    let json = document.getElementById('request_body_json_input').value;
-    let lines = json.split('\n');
-    
-    require(["vs/editor/editor.main"], function () {
-        let editor = monaco.editor.create(document.getElementById(elementId), {
-            value: lines.join('\n'),
-            language: 'json',
-            theme: 'vs',
-            quickSuggestions: { other: true, comments: true, strings: true },
-            minimap: {
-                enabled: false
-            }
-        });
-
-        editor.getModel().onDidChangeContent((event) => {
-            let requestBody = editor.getValue();
-            document.getElementById('request_body_json_input').value = requestBody;
-        });
-
-        monacoEditorInstances[elementId] = editor;
-    });
-
-    isInitializedMonacoEditor = true;
-}
-
 function initWebhookRequestBody(elementId) {
-    initMonacoEditor(elementId);
+    let json = document.getElementById('request_body_json_input').value;
+    initMonacoEditor(elementId, 'json', '../', json, function(code) {
+        document.getElementById('request_body_json_input').value = code;
+    });
 
     $('input[type="radio"][name="body_name"]').change(function() {
         let monacoEditorContainer = $('#webhookRequestBodyEditor');

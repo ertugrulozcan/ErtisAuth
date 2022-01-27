@@ -1,0 +1,287 @@
+@model ErtisAuth.Hub.ViewModels.Memberships.MailHookCreateViewModel
+
+<style>
+	.modal:nth-of-type(even) {
+        z-index: 1052 !important;
+    }
+    .modal-backdrop.show:nth-of-type(even) {
+        z-index: 1051 !important;
+    }
+</style>
+
+<div id="createMailHookModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="createMailHookModalLabel" aria-hidden="true" data-bs-backdrop="static" style="display: none;">
+	<div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 id="createMailHookModalLabel" class="modal-title vertical-center-flex">
+					<i class="bi bi-bank2 text-primary fs-2x me-4"></i>
+					<span>Create Mailhook</span>
+				</h5>
+	            
+				<div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+					<i class="bi bi-x-lg"></i>
+				</div>
+			</div>
+            
+			<div class="modal-body">
+				<div class="stepper stepper-pills stepper-column d-flex flex-column flex-xl-row flex-row-fluid" id="kt_modal_create_app_stepper" style="justify-content: space-between;">
+					<div class="d-flex justify-content-center justify-content-xl-start flex-row-auto w-100 w-xl-200px">
+						<div class="stepper-nav ps-lg-10 pt-lg-5">
+							<div class="stepper-item current" data-kt-stepper-element="nav">
+								<div class="stepper-line w-30px"></div>
+                						
+								<div class="stepper-icon w-30px h-30px">
+									<i class="stepper-check fas fa-check"></i>
+									<span class="stepper-number fs-6">1</span>
+								</div>
+                						
+								<div class="stepper-label">
+									<h4 class="stepper-title fs-6 mt-2-px mb-0">Set Details</h4>
+									<div class="stepper-desc fs-8">Basic informations</div>
+								</div>
+							</div>
+					        
+							<div class="stepper-item" data-kt-stepper-element="nav">
+								<div class="stepper-line w-30px"></div>
+                						
+								<div class="stepper-icon w-30px h-30px">
+									<i class="stepper-check fas fa-check"></i>
+									<span class="stepper-number fs-6">2</span>
+								</div>
+                						
+								<div class="stepper-label">
+									<h4 class="stepper-title fs-6 mt-2-px mb-0">Mail Template</h4>
+									<div class="stepper-desc fs-8">Set Mail Design</div>
+								</div>
+							</div>
+					        
+							<div class="stepper-item" data-kt-stepper-element="nav">
+								<div class="stepper-line w-30px"></div>
+                                            						
+								<div class="stepper-icon w-30px h-30px">
+									<i class="stepper-check fas fa-check"></i>
+									<span class="stepper-number fs-6">3</span>
+								</div>
+                                            						
+								<div class="stepper-label">
+									<h4 class="stepper-title fs-6 mt-2-px mb-0">Complete</h4>
+									<div class="stepper-desc fs-8">Preview & Summary</div>
+								</div>
+							</div>
+						</div>
+					</div>
+			        
+					<form id="CreateMailHookForm" class="w-100" method="post" asp-controller="Memberships" asp-action="CreateMailHook">
+						@Html.HiddenFor(x => x.MembershipId)
+						@Html.HiddenFor(x => x.MailTemplate, new { @id = "mail_template_html_input" })
+						
+						<div class="w-100 pe-10" style="padding-left: 10rem !important;">
+							<div class="current" data-kt-stepper-element="content" style="flex-flow: column;">
+								<div class="w-100">
+									<div class="row mb-6">
+										<div class="col-lg-2 col-xl-3">
+											<label class="col-form-label required fw-bold fs-6">Name</label>
+										</div>
+                                                            
+										<div class="col-lg-10 col-xl-9">
+											<input id="createMailHookForm_NameInput" type="text" class="form-control" placeholder="Name" asp-for="Name">
+											<span class="validation-error-span" asp-validation-for="Name"></span>
+										</div>
+									</div>
+                                                            
+									<div class="row mb-6">
+										<div class="col-lg-2 col-xl-3">
+											<label class="col-form-label fw-bold fs-6">Description</label>
+										</div>
+                                                            
+										<div class="col-lg-10 col-xl-9">
+											<input id="createMailHookForm_DescriptionInput" type="text" class="form-control" placeholder="Description" asp-for="Description">
+											<span class="validation-error-span" asp-validation-for="Description"></span>
+										</div>
+									</div>
+                                                            
+									<div class="row mb-6">
+										<div class="col-lg-2 col-xl-3">
+											<label class="col-form-label required fw-bold fs-6">Event Type</label>
+										</div>
+                                                            
+										<div class="col-lg-10 col-xl-9">
+											<select id="eventTypesDropdown" class="form-control form-select" asp-for="EventType" asp-items="Model.EventTypeList"></select>
+											<span class="validation-error-span" asp-validation-for="EventType"></span>
+										</div>
+									</div>
+                                                            
+									<div class="form-check form-switch form-check-custom form-check-solid mb-10">
+										<div class="col-lg-2 col-xl-3">
+											<label class="col-form-label fw-bold fs-6">Is Active</label>
+										</div>
+                                                            
+										<div class="col-lg-10 col-xl-9">
+											<div class="vertical-center-flex">
+												@Html.CheckBoxFor(m => m.IsActive, new {@id = "isActiveCheckBox", @class = "form-check-input"})
+												<label class="form-check-label">
+													Is Active
+												</label>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+                                                                
+							<div data-kt-stepper-element="content">
+								<div class="w-100">
+									<div style="display: flex; align-items: end; justify-content: space-between; padding-bottom: 0.75rem;">
+										<h4 style="margin-bottom: 0.2rem;">Mail Templates</h4>
+									</div>
+							        
+									<div class="row" style="margin-bottom: 3rem;">
+										<style>
+											.btn.btn-outline.btn-outline-dashed.btn-outline-default {
+                                                padding: 6px;
+                                                border-width: 1px;
+                                                border-style: dashed;
+                                                color: #7e8299;
+                                                border-color: #e4e6ef;
+												border-radius: 8px;
+												opacity: 0.8;
+                                            }
+                                            
+                                            .btn.btn-outline.btn-outline-dashed.btn-outline-default:hover:not(.btn-active) {
+                                            	padding: 6px;
+                                            	border-width: 1px;
+                                            	border-style: dashed;
+                                            	border-radius: 8px;
+                                            	opacity: 0.9;
+											} 
+										
+											.btn-check:active + .btn.btn-outline.btn-outline-dashed.btn-outline-default, 
+											.btn-check:checked + .btn.btn-outline.btn-outline-dashed.btn-outline-default, 
+											.btn.btn-outline.btn-outline-dashed.btn-outline-default.active, 
+											.btn.btn-outline.btn-outline-dashed.btn-outline-default.show, 
+											.btn.btn-outline.btn-outline-dashed.btn-outline-default:active:not(.btn-active), 
+											.btn.btn-outline.btn-outline-dashed.btn-outline-default:focus:not(.btn-active), 
+											.show > .btn.btn-outline.btn-outline-dashed.btn-outline-default {
+												padding: 4px; 
+												border-width: 3px; 
+												border-style: solid; 
+												border-radius: 8px;
+												opacity: 1;
+											}
+										</style>
+										
+										<div class="col-lg-3">
+											<div>
+												<input id="blank_template_radio_button" type="radio" class="btn-check mail-template-radio-button" name="mail_templates_radio_buttons" value="blank" checked="checked"/>
+												<label class="card btn btn-outline btn-outline-dashed btn-outline-default radio-card" for="blank_template_radio_button">
+													<div class="card-body p-0">
+														<img alt="img" class="rounded" style="height: 150px; width: 100%;" src="~/img/blank-mail-template-ss.png">
+													</div>
+												</label>
+
+												<span style="width: -webkit-fill-available; text-align: center; display: inline-block; font-weight: 600; margin-top: 0.3rem;">Blank Template</span>
+											</div>
+										</div>
+
+										<div class="col-lg-3">
+											<div>
+												<input id="reset_password_template_radio_button" type="radio" class="btn-check mail-template-radio-button" name="mail_templates_radio_buttons" value="reset-password"/>
+												<label class="card btn btn-outline btn-outline-dashed btn-outline-default radio-card" for="reset_password_template_radio_button">
+													<div class="card-body p-0">
+														<img alt="img" class="rounded" style="height: 150px; width: 100%;" src="~/img/reset-password-ss.png">
+													</div>
+												</label>
+                                            
+												<span style="width: -webkit-fill-available; text-align: center; display: inline-block; font-weight: 600; margin-top: 0.3rem;">Reset Password Mail</span>
+											</div>
+										</div>
+
+										<div class="col-lg-3">
+
+										</div>
+
+										<div class="col-lg-3">
+
+										</div>
+									</div>
+
+									<div style="display: flex; align-items: end; justify-content: space-between;">
+										<h6>Edit as Html</h6>
+									</div>
+									
+									<div id="mailHookRequestBodyEditor" style="width: 100%; height: 400px; margin: 0; padding: 0; overflow: hidden; border: 1px solid #afb2b5!important;"></div>
+								</div>
+							</div>
+                                        							
+							<div data-kt-stepper-element="content">
+								<div class="w-100">
+									<div class="row">
+                                    	<div class="col-lg-2 col-xl-3 left-column">
+                                    		<label class="fw-bold fs-6">Name</label>
+                                    	</div>
+
+                                    	<div class="col-lg-10 col-xl-9 vertical-center-flex right-column">
+                                    		<span id="createMailHookSummary_Name"></span>
+                                    	</div>
+                                    </div>
+                                    
+                                    <div class="separator my-5"></div>
+
+                                    <div class="row">
+                                    	<div class="col-lg-2 col-xl-3 left-column">
+                                    		<label class="fw-bold fs-6">Description</label>
+                                    	</div>
+
+                                    	<div class="col-lg-10 col-xl-9 vertical-center-flex right-column">
+                                    		<span id="createMailHookSummary_Description"></span>
+                                    	</div>
+                                    </div>
+
+                                    <div class="separator my-5"></div>
+                                    
+                                    <div class="row">
+                                    	<div class="col-lg-2 col-xl-3 left-column">
+                                    		<label class="fw-bold fs-6">Event Type</label>
+                                    	</div>
+
+                                    	<div class="col-lg-10 col-xl-9 vertical-center-flex right-column">
+                                    		<span id="createMailHookSummary_EventType"></span>
+                                    	</div>
+                                    </div>
+
+                                    <div class="separator my-5"></div>
+
+									<div class="row">
+										<div class="col-lg-2 col-xl-3 left-column">
+											<label class="fw-bold fs-6">Is Active</label>
+										</div>
+                                    
+										<div class="col-lg-10 col-xl-9 vertical-center-flex right-column">
+											<span id="createMailHookSummary_IsActive"></span>
+										</div>
+									</div>
+									
+									<div class="separator my-5"></div>
+									
+									<div style="display: flex; align-items: end; justify-content: space-between; margin-top: 30px;">
+										<h6>Preview</h6>
+									</div>
+
+									<div style="padding: 5px 5px 0px 5px; border: 1px dashed #787980;">
+										<iframe id="mailTemplatePreviewFrame" style="width: 100%; height: 520px;"></iframe>
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+			
+			<div class="modal-footer">
+				<button type="button" class="btn btn-light btn-sm btn-wide" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-light-primary btn-sm btn-wide stepper-previous">Previous</button>
+				<button type="button" class="btn btn-primary btn-sm btn-wide stepper-next">Next</button>
+				<button type="submit" class="btn btn-success btn-sm btn-wide stepper-finish" form="CreateMailHookForm">Create</button>
+			</div>
+		</div>
+	</div>
+</div>

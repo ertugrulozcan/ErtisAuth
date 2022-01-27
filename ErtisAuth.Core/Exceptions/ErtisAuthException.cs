@@ -236,6 +236,20 @@ namespace ErtisAuth.Core.Exceptions
 
 		#endregion
 		
+		#region MailHook Exceptions
+
+		public static ErtisAuthException MailHookNotFound(string id)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"Mail hook not found in db by given _id: <{id}>", "MailHookNotFound");
+		}
+		
+		public static ErtisAuthException MailHookWithSameNameAlreadyExists(string name)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"The mail hook with same name is already exists ({name})", "MailHookWithSameNameAlreadyExists");
+		}
+
+		#endregion
+		
 		#region Event Exceptions
 
 		public static ErtisAuthException EventNotFound(string eventId)

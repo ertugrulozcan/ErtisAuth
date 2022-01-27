@@ -125,9 +125,9 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private async void ExecuteWebhookAsync(Webhook webhook, string utilizerId, string membershipId, object document, object prior)
 		{
-			await Task.Run(() =>
+			if (webhook.IsActive)
 			{
-				if (webhook.IsActive)
+				await Task.Run(() =>
 				{
 					var tryCount = webhook.TryCount > 0 ? webhook.TryCount : 1;
 					foreach (var webhookRequest in webhook.RequestList)
@@ -141,9 +141,9 @@ namespace ErtisAuth.Infrastructure.Services
 							Console.WriteLine("Webhook execution occured an exception");
 							Console.WriteLine(ex);
 						}
-					}	
-				}
-			});
+					}
+				});
+			}
 		}
 		
 		private async void ExecuteWebhookRequestAsync(WebhookRequest webhookRequest, string utilizerId, string membershipId, object document, object prior, int tryCount)

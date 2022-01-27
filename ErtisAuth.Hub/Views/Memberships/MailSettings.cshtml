@@ -1,0 +1,213 @@
+@using ErtisAuth.Hub.Helpers
+@using ErtisAuth.Hub.ViewModels
+@using ErtisAuth.Hub.ViewModels.Memberships
+@model ErtisAuth.Hub.ViewModels.Memberships.MembershipViewModel
+
+@{
+    ViewData["Title"] = "Membership Email Settings";
+}
+
+<div class="toolbar" id="kt_toolbar">
+    <div id="kt_toolbar_container" class="container-fluid d-flex flex-stack">
+        <div data-kt-swapper="true" data-kt-swapper-mode="prepend" data-kt-swapper-parent="{default: '#kt_content_container', 'lg': '#kt_toolbar_container'}" class="page-title d-flex align-items-center flex-wrap me-3 mb-5 mb-lg-0">
+            <h1 class="d-flex align-items-center text-dark fw-bolder fs-3 my-1">Email Settings</h1>
+            <span class="h-20px border-gray-200 border-start mx-4"></span>
+            
+            @{
+                var breadcrumb = BreadcrumbBuilder
+                    .Add("Home", "Index", "Home")
+                    .Add("Memberships", "Index", "Memberships")
+                    .Add(Model.Id, "Detail", "Memberships", new { id = Model.Id })
+	                .Add("Email Settings", "MailSettings", "Memberships", new { id = Model.Id });
+            }
+            
+            <partial name="Partials/_Breadcrumb" model="@breadcrumb"/>
+        </div>
+		
+        <div class="d-flex align-items-center py-1">
+            <partial name="Partials/_AuthorizedButton" model="@AuthorizedButtonViewModel.SaveButton(Model.Id, "memberships", "UpdateMembershipForm")" />
+        </div>
+    </div>
+</div>
+
+<div class="post d-flex flex-column-fluid" id="kt_post">
+	<div id="kt_content_container" class="container-fluid">
+		<partial name="Partials/_AlertBox" model="Model" />
+        
+		<div class="d-flex flex-column flex-lg-row">
+			<div class="flex-column flex-lg-row-auto w-lg-300px w-xl-400px me-10">
+				<div class="card card-bordered mb-5 mb-xl-10">
+					<div class="card-header">
+						<div class="card-title">
+							<div class="d-flex align-items-center position-relative my-1">
+								<h4>SMTP Server Settings</h4>
+							</div>
+						</div>
+					</div>
+                                                    
+					<div class="card-body">
+						<form id="UpdateMembershipForm" method="post" asp-controller="Memberships" asp-action="Update">
+							@Html.HiddenFor(x => x.Id)
+							@Html.HiddenFor(x => x.Name)
+							@Html.HiddenFor(x => x.ExpiresIn)
+							@Html.HiddenFor(x => x.RefreshTokenExpiresIn)
+							@Html.HiddenFor(x => x.SecretKey)
+							@Html.HiddenFor(x => x.HashAlgorithm)
+							@Html.HiddenFor(x => x.DefaultEncoding)
+							@Html.HiddenFor(x => x.DefaultLanguage)
+                                        
+							<div class="mb-5">
+								<label class="form-label required">Host</label>
+								<input type="text" class="form-control" placeholder="Host" asp-for="MailSettings.SmtpServer.Host">
+								<span class="validation-error-span" asp-validation-for="MailSettings.SmtpServer.Host"></span>
+							</div>
+                                                                                
+							<div class="mb-10">
+								<label class="form-label required">Port</label>
+								<input type="number" class="form-control" placeholder="Port" asp-for="MailSettings.SmtpServer.Port" />
+								<span class="validation-error-span" asp-validation-for="MailSettings.SmtpServer.Port"></span>
+							</div>
+                                                            						        
+							<div class="vertical-center-flex mb-10" style="height: 100%;">
+								<div class="form-check form-switch form-check-custom form-check-solid">
+									<input class="form-check-input" type="checkbox" asp-for="MailSettings.SmtpServer.TlsEnabled" />
+									<label class="form-check-label">
+										TLS Enabled
+									</label>
+								</div>
+							</div>
+                                                            						        
+							<div class="mb-5">
+								<label class="form-label required">Username</label>
+								<input type="text" class="form-control" placeholder="Username" asp-for="MailSettings.SmtpServer.Username">
+								<span class="validation-error-span" asp-validation-for="MailSettings.SmtpServer.Username"></span>
+							</div>
+                                                            						        
+							<div class="mb-5">
+								<label class="form-label required">Password</label>
+								<input class="form-control form-control-lg form-control-solid" type="password" placeholder="Password" autocomplete="off" asp-for="MailSettings.SmtpServer.Password"/>
+								<span class="validation-error-span" asp-validation-for="MailSettings.SmtpServer.Password"></span>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+	        
+			<div class="flex-lg-row-fluid">
+				<div class="card card-xl-stretch mb-5 mb-xl-8">
+					<div class="card-header border-0 pt-5">
+						<h3 class="card-title align-items-start flex-column">
+							<span class="card-label fw-bolder fs-3 mb-1">Mailhooks</span>
+							<span class="text-muted mt-1 fw-bold fs-7"></span>
+						</h3>
+						
+						<div class="card-toolbar">
+							<button class="btn btn-sm btn-light btn-active-primary" data-bs-toggle="modal" data-bs-target="#createMailHookModal">
+								<span class="svg-icon svg-icon-3">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+										<rect opacity="0.5" x="11.364" y="20.364" width="16" height="2" rx="1" transform="rotate(-90 11.364 20.364)" fill="black" />
+										<rect x="4.36396" y="11.364" width="16" height="2" rx="1" fill="black" />
+									</svg>
+								</span>
+								New Mailhook
+							</button>
+						</div>
+					</div>
+					
+					<div class="card-body py-3">
+						<div class="table-responsive">
+							@if (Model.MailHooks != null && Model.MailHooks.Any())
+							{
+								<table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4">
+									<thead>
+									<tr class="fw-bolder text-muted">
+										<th class="min-w-150px">Name</th>
+										<th class="min-w-140px">Event</th>
+										<th class="min-w-120px">Status</th>
+										<th class="min-w-100px text-end"></th>
+									</tr>
+									</thead>
+
+									<tbody>
+									@foreach (var mailHook in Model.MailHooks)
+									{
+										<tr>
+											<td>
+												<div class="d-flex align-items-center">
+													<div class="d-flex justify-content-start flex-column">
+														<span class="text-dark fw-bolder fs-6">@mailHook.Name</span>
+														<span class="text-muted fw-bold text-muted d-block fs-7">@mailHook.Id</span>
+													</div>
+												</div>
+											</td>
+											<td>
+												<span class="text-dark fw-bolder d-block fs-6">@mailHook.Event</span>
+												<span class="text-muted fw-bold text-muted d-block fs-7">@mailHook.Description</span>
+											</td>
+											<td class="text-end">
+												<div class="d-flex flex-column w-100 me-2">
+													@if (mailHook.IsActive)
+													{
+														<span class="badge badge-light-success">@mailHook.Status</span>
+													}
+													else
+													{
+														<span class="badge badge-light-danger">@mailHook.Status</span>
+													}
+												</div>
+											</td>
+											<td>
+												<div class="d-flex justify-content-end flex-shrink-0">
+													<label data-bs-toggle="tooltip" data-bs-placement="top" data-bs-trigger="hover" title="Edit">
+														<a class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1" asp-controller="Memberships" asp-action="MailHookDetail" asp-route-membershipId="@mailHook.MembershipId" asp-route-id="@mailHook.Id">
+															<span class="svg-icon svg-icon-3">
+																<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+																	<path opacity="0.3" d="M21.4 8.35303L19.241 10.511L13.485 4.755L15.643 2.59595C16.0248 2.21423 16.5426 1.99988 17.0825 1.99988C17.6224 1.99988 18.1402 2.21423 18.522 2.59595L21.4 5.474C21.7817 5.85581 21.9962 6.37355 21.9962 6.91345C21.9962 7.45335 21.7817 7.97122 21.4 8.35303ZM3.68699 21.932L9.88699 19.865L4.13099 14.109L2.06399 20.309C1.98815 20.5354 1.97703 20.7787 2.03189 21.0111C2.08674 21.2436 2.2054 21.4561 2.37449 21.6248C2.54359 21.7934 2.75641 21.9115 2.989 21.9658C3.22158 22.0201 3.4647 22.0084 3.69099 21.932H3.68699Z" fill="black"/>
+																	<path d="M5.574 21.3L3.692 21.928C3.46591 22.0032 3.22334 22.0141 2.99144 21.9594C2.75954 21.9046 2.54744 21.7864 2.3789 21.6179C2.21036 21.4495 2.09202 21.2375 2.03711 21.0056C1.9822 20.7737 1.99289 20.5312 2.06799 20.3051L2.696 18.422L5.574 21.3ZM4.13499 14.105L9.891 19.861L19.245 10.507L13.489 4.75098L4.13499 14.105Z" fill="black"/>
+																</svg>
+															</span>
+														</a>
+													</label>
+													
+													<label data-bs-toggle="tooltip" data-bs-placement="top" data-bs-trigger="hover" title="Delete">
+														<a href="#"
+														   class="btn btn-icon btn-bg-light btn-active-color-danger btn-sm"
+														   data-bs-toggle="modal"
+														   data-bs-target="#itemDeleteModal"
+														   data-pass-id="@mailHook.Id"
+														   data-pass-modal-title="Delete Mailhook"
+														   data-pass-body-title="Delete: @mailHook.Name"
+														   data-pass-body-text="This action cannot be undone. This will permanently delete the @mailHook.Name and remove all linked resources."
+														   data-pass-submit-button-text="I understand the consequences, delete this mailhook">
+															<span class="svg-icon svg-icon-3">
+																<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+																	<path d="M5 9C5 8.44772 5.44772 8 6 8H18C18.5523 8 19 8.44772 19 9V18C19 19.6569 17.6569 21 16 21H8C6.34315 21 5 19.6569 5 18V9Z" fill="black"/>
+																	<path opacity="0.5" d="M5 5C5 4.44772 5.44772 4 6 4H18C18.5523 4 19 4.44772 19 5V5C19 5.55228 18.5523 6 18 6H6C5.44772 6 5 5.55228 5 5V5Z" fill="black"/>
+																	<path opacity="0.5" d="M9 4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V4H9V4Z" fill="black"/>
+																</svg>
+															</span>
+														</a>
+													</label>
+												</div>
+											</td>
+										</tr>
+									}
+									</tbody>
+								</table>
+							}
+							else
+							{
+								<div style="padding: 10px 0 20px 0">
+									<span>No data</span>
+								</div>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<partial name="_CreateMailHookModal" model="new MailHookCreateViewModel() { MembershipId = Model.Id }" />
+<partial name="Partials/_DeleteModal" model="@Model.GetMailHookDeleteViewModel()" />

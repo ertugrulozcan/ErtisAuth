@@ -1,0 +1,136 @@
+@using ErtisAuth.Hub.Helpers
+@using ErtisAuth.Hub.ViewModels
+@model ErtisAuth.Hub.ViewModels.Memberships.MailHookViewModel
+
+@{
+    ViewData["Title"] = "Mailhooks";
+}
+
+<div class="toolbar" id="kt_toolbar">
+    <div id="kt_toolbar_container" class="container-fluid d-flex flex-stack">
+        <div data-kt-swapper="true" data-kt-swapper-mode="prepend" data-kt-swapper-parent="{default: '#kt_content_container', 'lg': '#kt_toolbar_container'}" class="page-title d-flex align-items-center flex-wrap me-3 mb-5 mb-lg-0">
+            <h1 class="d-flex align-items-center text-dark fw-bolder fs-3 my-1">Mailhook - @Model.Name</h1>
+            <span class="h-20px border-gray-200 border-start mx-4"></span>
+            
+            @{
+                var breadcrumb = BreadcrumbBuilder
+                    .Add("Home", "Index", "Home")
+                    .Add("Memberships", "Index", "Memberships")
+                    .Add(Model.MembershipId, "Detail", "Memberships", new { id = Model.MembershipId })
+	                .Add("Email Settings", "MailSettings", "Memberships", new { id = Model.MembershipId })
+	                .Add(Model.Id, "MailhookDetail", "Memberships", new { id = Model.Id });
+            }
+            
+            <partial name="Partials/_Breadcrumb" model="@breadcrumb"/>
+        </div>
+		
+	    <div class="d-flex align-items-center py-1">
+		    <partial name="Partials/_AuthorizedButton" model="@AuthorizedButtonViewModel.SaveButton(Model.Id, "mailhooks", "UpdateMailHookForm")"/>
+	    </div>
+    </div>
+</div>
+
+<div class="post d-flex flex-column-fluid" id="kt_post">
+	<div id="kt_content_container" class="container-fluid">
+        <partial name="Partials/_AlertBox" model="Model" />
+        
+        <div class="d-flex flex-column flex-lg-row">
+	        <div class="flex-lg-row-fluid me-10">
+		        <div class="card card-bordered mb-5 mb-xl-10">
+			        <div class="card-header">
+				        <div class="card-title">
+					        <div class="d-flex align-items-center position-relative my-1">
+						        <h4>Mailhook Info</h4>
+					        </div>
+				        </div>
+			        </div>
+                                    
+			        <div class="card-body">
+				        <form id="UpdateMailHookForm" method="post" asp-controller="Memberships" asp-action="MailHookUpdate">
+					        @Html.HiddenFor(x => x.Id)
+					        @Html.HiddenFor(x => x.MembershipId)
+							@Html.HiddenFor(x => x.MailTemplate, new { @id = "mail_template_html_input" })
+					        
+					        <div class="row mb-6">
+						        <div class="col-lg-2 col-xl-3">
+							        <label class="col-form-label required fw-bold fs-6">Name</label>
+						        </div>
+                                                                                        
+						        <div class="col-lg-10 col-xl-9">
+							        <input id="createMailHookForm_NameInput" type="text" class="form-control" placeholder="Name" asp-for="Name">
+							        <span class="validation-error-span" asp-validation-for="Name"></span>
+						        </div>
+					        </div>
+
+					        <div class="row mb-6">
+						        <div class="col-lg-2 col-xl-3">
+							        <label class="col-form-label fw-bold fs-6">Description</label>
+						        </div>
+                                                                                        
+						        <div class="col-lg-10 col-xl-9">
+							        <input id="createMailHookForm_DescriptionInput" type="text" class="form-control" placeholder="Description" asp-for="Description">
+							        <span class="validation-error-span" asp-validation-for="Description"></span>
+						        </div>
+					        </div>
+                                                                                        
+					        <div class="row mb-6">
+						        <div class="col-lg-2 col-xl-3">
+							        <label class="col-form-label required fw-bold fs-6">Event Type</label>
+						        </div>
+                                                                                        
+						        <div class="col-lg-10 col-xl-9">
+							        <select id="eventTypesDropdown" class="form-control form-select" asp-for="EventType" asp-items="Model.EventTypeList"></select>
+							        <span class="validation-error-span" asp-validation-for="EventType"></span>
+						        </div>
+					        </div>
+                                                                                        
+					        <div class="form-check form-switch form-check-custom form-check-solid mb-10">
+						        <div class="col-lg-2 col-xl-3">
+							        <label class="col-form-label fw-bold fs-6">Is Active</label>
+						        </div>
+                                                                                        
+						        <div class="col-lg-10 col-xl-9">
+							        <div class="vertical-center-flex ps-2">
+								        @Html.CheckBoxFor(m => m.IsActive, new {@id = "isActiveCheckBox", @class = "form-check-input"})
+								        <label class="form-check-label">
+									        Is Active
+								        </label>
+							        </div>
+						        </div>
+					        </div>
+				        </form>
+			        </div>
+		        </div>
+	        </div>
+	        
+	        <div class="flex-column flex-lg-row-auto w-lg-300px w-xl-400px">
+		        <partial name="Partials/_ResourceDetailsCard"/>
+	        </div>
+        </div>
+        
+        <div class="card card-xl-stretch mb-5 mb-xl-8">
+	        <div class="card-header border-0 pt-5">
+		        <h3 class="card-title align-items-start flex-column">
+			        <span class="card-label fw-bolder fs-3 mb-1">Mail Template</span>
+			        <span class="text-muted mt-1 fw-bold fs-7"></span>
+		        </h3>
+        						
+		        <div class="card-toolbar">
+			        
+		        </div>
+	        </div>
+        					
+	        <div class="card-body py-3" style="padding-bottom: 30px !important;">
+		        <div class="row">
+			        <div class="col-lg">
+				        <div id="mailHookRequestBodyEditor" style="width: 100%; height: 640px; margin: 0; padding: 0; overflow: hidden; border: 1px solid #afb2b5!important;"></div>
+			        </div>
+                	        
+			        <div class="col-lg">
+				        <iframe id="mailTemplatePreviewFrame" style="width: 100%; height: 640px;"></iframe>
+			        </div>
+		        </div>
+	        </div>
+        </div>
+	</div>
+</div>

@@ -1,46 +1,59 @@
 @using ErtisAuth.Hub.ViewModels
 @model ErtisAuth.Hub.ViewModels.IHasSysViewModel
 
-<div class="card mb-5 mb-xl-8">
-    <div class="card-header">
-        <div class="card-title">
-            <div class="d-flex align-items-center position-relative my-1">
-                <h6>Details</h6>
-            </div>
-        </div>
-    </div>
-    
-    <div class="card-body">
-        <div class="pb-5 fs-6">
-            @if (Model is IHasIdentifierViewModel hasIdentifier)
+<div class="card card-flush pt-3 mb-0" 
+     data-kt-sticky="true" 
+     data-kt-sticky-name="subscription-summary" 
+     data-kt-sticky-offset="{default: false, lg: '200px'}" 
+     data-kt-sticky-width="{lg: '250px', xl: '300px'}" 
+     data-kt-sticky-left="auto" 
+     data-kt-sticky-top="150px" 
+     data-kt-sticky-animation="false" 
+     data-kt-sticky-zindex="95">
+	<div class="card-header">
+		<div class="card-title">
+			<h4>Details</h4>
+		</div>
+	</div>
+	
+	<div class="card-body pt-0">
+		<div class="mb-7">
+			@if (Model is IHasIdentifierViewModel hasIdentifier)
             {
-                <div class="text-gray-600">@hasIdentifier.Id</div>   
+	            <span class="fw-bold text-gray-600 text-hover-primary">@hasIdentifier.Id</span>
             }
-
-            @if (Model.Sys.CreatedAt != null)
+		</div>
+		
+		<div class="separator separator-dashed mb-7"></div>
+		
+		<div class="mb-7">
+			@if (Model.Sys.CreatedAt != null)
             {
-                <div class="fw-bolder mt-5">Created At</div>
+                <h6 class="fw-bolder mt-5">Created At</h6>
                 <div class="text-gray-600">@Model.Sys.CreatedAt</div>
             }
 
             @if (!string.IsNullOrEmpty(Model.Sys.CreatedBy))
             {
-                <div class="fw-bolder mt-5">Created By</div>
+                <h6 class="fw-bolder mt-5">Created By</h6>
                 <div class="text-gray-600">@Model.Sys.CreatedBy</div>
             }
-
-            @if (Model.Sys.ModifiedAt != null)
+		</div>
+		
+		<div class="separator separator-dashed mb-7"></div>
+		
+		<div class="mb-10">
+			@if (Model.Sys.ModifiedAt != null)
             {
-                <div class="fw-bolder mt-5">Modified At</div>
+                <h6 class="fw-bolder mt-5">Modified At</h6>
                 <div class="text-gray-600">@Model.Sys.ModifiedAt</div>
             }
 
             @if (!string.IsNullOrEmpty(Model.Sys.ModifiedBy))
             {
-                <div class="fw-bolder mt-5">Modified By</div>
+                <h6 class="fw-bolder mt-5">Modified By</h6>
                 <div class="text-gray-600">@Model.Sys.ModifiedBy</div>
             }
-        </div>
-    </div>
+		</div>
+	</div>
 </div>
-

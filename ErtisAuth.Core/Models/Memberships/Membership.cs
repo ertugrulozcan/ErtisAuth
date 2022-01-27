@@ -32,6 +32,9 @@ namespace ErtisAuth.Core.Models.Memberships
 		[JsonProperty("user_type")]
 		public UserType UserType { get; set; }
 		
+		[JsonProperty("mail_settings")]
+		public MembershipMailSettings MailSettings { get; set; }
+
 		[JsonProperty("sys")]
 		public SysModel Sys { get; set; }
 		
