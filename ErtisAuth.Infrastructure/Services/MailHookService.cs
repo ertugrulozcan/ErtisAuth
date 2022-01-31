@@ -17,6 +17,13 @@ namespace ErtisAuth.Infrastructure.Services
 {
     public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDto>, IMailHookService
     {
+	    #region Services
+
+	    private readonly IUserService userService;
+	    private readonly IMailService mailService;
+
+	    #endregion
+	    
         #region Constructors
 
 		/// <summary>
@@ -24,12 +31,18 @@ namespace ErtisAuth.Infrastructure.Services
 		/// </summary>
 		/// <param name="membershipService"></param>
 		/// <param name="eventService"></param>
+		/// <param name="userService"></param>
+		/// <param name="mailService"></param>
 		/// <param name="mailHookRepository"></param>
 		public MailHookService(
 			IMembershipService membershipService, 
 			IEventService eventService,
+			IUserService userService,
+			IMailService mailService,
 			IMailHookRepository mailHookRepository) : base(membershipService, mailHookRepository)
 		{
+			this.userService = userService;
+			this.mailService = mailService;
 			eventService.EventFired += EventServiceOnEventFired;
 		}
 
@@ -69,25 +82,43 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Methods
 		
-		private async void SendHookMailAsync(MailHook mailHook, ErtisAuthEvent ertisAuthEvent)
+		private async void SendHookMailAsync(MailHook mailHook, IErtisAuthEvent ertisAuthEvent)
 		{
 			if (mailHook.IsActive)
 			{
-				await Task.Run(() =>
+				var membership = await this.membershipService.GetAsync(mailHook.MembershipId);
+				if (membership?.MailSettings?.SmtpServer != null)
 				{
-					try
+					var user = await this.userService.GetAsync(membership.Id, ertisAuthEvent.UtilizerId);
+					if (user != null)
 					{
-						
+						await Task.Run(async () =>
+						{
+							try
+							{
+								var formatter = new Ertis.TemplateEngine.Formatter();
+								var mailBody = formatter.Format(mailHook.MailTemplate, ertisAuthEvent);
+								await this.mailService.SendMailAsync(
+									membership.MailSettings.SmtpServer,
+									mailHook.FromName,
+									mailHook.FromAddress,
+									$"{user.FirstName} {user.LastName}",
+									user.EmailAddress,
+									mailHook.MailSubject,
+									mailBody
+								);
+							}
+							catch (Exception ex)
+							{
+								Console.WriteLine("Hook mail could not sent!");
+								Console.WriteLine(ex);
+							}
+						});	
 					}
-					catch (Exception ex)
-					{
-						Console.WriteLine("Hook mail could not sent!");
-						Console.WriteLine(ex);
-					}
-				});		
+				}
 			}
 		}
-		
+
 		protected override bool ValidateModel(MailHook model, out IEnumerable<string> errors)
 		{
 			var errorList = new List<string>();
@@ -154,9 +185,24 @@ namespace ErtisAuth.Infrastructure.Services
 				destination.Status = source.Status;
 			}
 			
+			if (string.IsNullOrEmpty(destination.MailSubject))
+			{
+				destination.MailSubject = source.MailSubject;
+			}
+			
 			if (string.IsNullOrEmpty(destination.MailTemplate))
 			{
 				destination.MailTemplate = source.MailTemplate;
+			}
+			
+			if (string.IsNullOrEmpty(destination.FromName))
+			{
+				destination.FromName = source.FromName;
+			}
+			
+			if (string.IsNullOrEmpty(destination.FromAddress))
+			{
+				destination.FromAddress = source.FromAddress;
 			}
 		}
 		

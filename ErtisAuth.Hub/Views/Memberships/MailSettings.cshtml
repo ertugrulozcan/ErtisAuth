@@ -79,13 +79,13 @@
                                                             						        
 							<div class="mb-5">
 								<label class="form-label required">Username</label>
-								<input type="text" class="form-control" placeholder="Username" asp-for="MailSettings.SmtpServer.Username">
+								<input type="text" class="form-control" placeholder="Username" autocomplete="off" asp-for="MailSettings.SmtpServer.Username">
 								<span class="validation-error-span" asp-validation-for="MailSettings.SmtpServer.Username"></span>
 							</div>
                                                             						        
 							<div class="mb-5">
 								<label class="form-label required">Password</label>
-								<input class="form-control form-control-lg form-control-solid" type="password" placeholder="Password" autocomplete="off" asp-for="MailSettings.SmtpServer.Password"/>
+								<input class="form-control form-control-lg form-control-solid" type="password" placeholder="Password" autocomplete="off" value="@Model.MailSettings.SmtpServer.Password" asp-for="MailSettings.SmtpServer.Password"/>
 								<span class="validation-error-span" asp-validation-for="MailSettings.SmtpServer.Password"></span>
 							</div>
 						</form>

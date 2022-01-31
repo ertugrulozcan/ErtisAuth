@@ -98,6 +98,39 @@
 							        </div>
 						        </div>
 					        </div>
+					        
+					        <div class="row mb-6">
+						        <div class="col-lg-2 col-xl-3">
+							        <label class="col-form-label required fw-bold fs-6">From Display Name</label>
+						        </div>
+                                                                                                                    
+						        <div class="col-lg-10 col-xl-9">
+							        <input id="createMailHookForm_SenderNameInput" type="text" class="form-control" placeholder="Name" asp-for="FromName">
+							        <span class="validation-error-span" asp-validation-for="FromName"></span>
+						        </div>
+					        </div>
+					        
+					        <div class="row mb-6">
+						        <div class="col-lg-2 col-xl-3">
+							        <label class="col-form-label required fw-bold fs-6">From Email Address</label>
+						        </div>
+                                                                                                                    
+						        <div class="col-lg-10 col-xl-9">
+							        <input id="createMailHookForm_SenderAddressInput" type="email" class="form-control" placeholder="Email Address" asp-for="FromAddress">
+							        <span class="validation-error-span" asp-validation-for="FromAddress"></span>
+						        </div>
+					        </div>
+					        
+					        <div class="row mb-6">
+						        <div class="col-lg-2 col-xl-3">
+							        <label class="col-form-label required fw-bold fs-6">Mail Subject</label>
+						        </div>
+                                                                                                                                                
+						        <div class="col-lg-10 col-xl-9">
+							        <input id="createMailHookForm_MailSubjectInput" type="text" class="form-control" placeholder="Subject" asp-for="MailSubject">
+							        <span class="validation-error-span" asp-validation-for="MailSubject"></span>
+						        </div>
+					        </div>
 				        </form>
 			        </div>
 		        </div>

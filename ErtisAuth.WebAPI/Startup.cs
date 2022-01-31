@@ -101,6 +101,7 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IProviderService, ProviderService>();
 			services.AddSingleton<IWebhookService, WebhookService>();
 			services.AddSingleton<IMailHookService, MailHookService>();
+			services.AddSingleton<IMailService, MailService>();
 			services.AddSingleton<IEventService, EventService>();
 			services.AddSingleton<IMigrationService, MigrationService>();
 			
@@ -212,6 +213,7 @@ namespace ErtisAuth.WebAPI
 			serviceProvider.GetRequiredService<IRoleService>();
 			serviceProvider.GetRequiredService<IProviderService>();
 			serviceProvider.GetRequiredService<IWebhookService>();
+			serviceProvider.GetRequiredService<IMailHookService>();
 		}
 
 		#endregion

@@ -259,7 +259,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		public async Task<IActionResult> ResetPassword([FromRoute] string membershipId, [FromBody] ResetPasswordFormModel model)
 		{
 			var utilizer = this.GetUtilizer();
-			var resetPasswordToken = await this.userService.ResetPasswordAsync(utilizer, membershipId, model.UsernameOrEmailAddress);
+			var resetPasswordToken = await this.userService.ResetPasswordAsync(utilizer, membershipId, model.EmailAddress, model.Server, model.Host);
 			return this.Ok(resetPasswordToken);
 		}
 		

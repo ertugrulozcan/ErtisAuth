@@ -18,9 +18,9 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		
 		ValueTask<User> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword);
 
-		ResetPasswordToken ResetPassword(Utilizer utilizer, string membershipId, string usernameOrEmailAddress);
+		ResetPasswordToken ResetPassword(Utilizer utilizer, string membershipId, string emailAddress, string server, string host);
 		
-		ValueTask<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string usernameOrEmailAddress);
+		ValueTask<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host);
 		
 		void SetPassword(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password);
 		

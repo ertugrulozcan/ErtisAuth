@@ -127,13 +127,41 @@
 									</div>
 								</div>
 							</div>
-                                                                
+							
 							<div data-kt-stepper-element="content">
 								<div class="w-100">
 									<div style="display: flex; align-items: end; justify-content: space-between; padding-bottom: 0.75rem;">
-										<h4 style="margin-bottom: 0.2rem;">Mail Templates</h4>
+										<h4 style="margin-bottom: 0.2rem;">Sender</h4>
 									</div>
-							        
+
+									<div class="row" style="margin-bottom: 3rem;">
+										<div class="row mb-6">
+											<div class="col-lg-2 col-xl-3">
+												<label class="col-form-label required fw-bold fs-6">Display Name</label>
+											</div>
+                                                                                                    
+											<div class="col-lg-10 col-xl-9">
+												<input id="createMailHookForm_SenderNameInput" type="text" class="form-control" placeholder="Name" asp-for="FromName">
+												<span class="validation-error-span" asp-validation-for="FromName"></span>
+											</div>
+										</div>
+										
+										<div class="row mb-6">
+											<div class="col-lg-2 col-xl-3">
+												<label class="col-form-label required fw-bold fs-6">Email Address</label>
+											</div>
+                                                                                                    
+											<div class="col-lg-10 col-xl-9">
+												<input id="createMailHookForm_SenderAddressInput" type="email" class="form-control" placeholder="Email Address" asp-for="FromAddress">
+												<span class="validation-error-span" asp-validation-for="FromAddress"></span>
+											</div>
+										</div>
+									</div>
+									
+									<div style="display: flex; align-items: end; justify-content: space-between; padding-bottom: 0.75rem;">
+										<h4 style="margin-bottom: 0.2rem;">Mail Template</h4>
+									</div>
+
 									<div class="row" style="margin-bottom: 3rem;">
 										<style>
 											.btn.btn-outline.btn-outline-dashed.btn-outline-default {
@@ -168,7 +196,7 @@
 												opacity: 1;
 											}
 										</style>
-										
+
 										<div class="col-lg-3">
 											<div>
 												<input id="blank_template_radio_button" type="radio" class="btn-check mail-template-radio-button" name="mail_templates_radio_buttons" value="blank" checked="checked"/>
@@ -190,7 +218,7 @@
 														<img alt="img" class="rounded" style="height: 150px; width: 100%;" src="~/img/reset-password-ss.png">
 													</div>
 												</label>
-                                            
+
 												<span style="width: -webkit-fill-available; text-align: center; display: inline-block; font-weight: 600; margin-top: 0.3rem;">Reset Password Mail</span>
 											</div>
 										</div>
@@ -204,10 +232,21 @@
 										</div>
 									</div>
 
+									<div class="row mb-6">
+										<div class="col-lg-2 col-xl-3">
+											<label class="col-form-label required fw-bold fs-6">Mail Subject</label>
+										</div>
+                                                                                                                                                                                
+										<div class="col-lg-10 col-xl-9">
+											<input id="createMailHookForm_MailSubjectInput" type="text" class="form-control" placeholder="Subject" asp-for="MailSubject">
+											<span class="validation-error-span" asp-validation-for="MailSubject"></span>
+										</div>
+									</div>
+									
 									<div style="display: flex; align-items: end; justify-content: space-between;">
 										<h6>Edit as Html</h6>
 									</div>
-									
+
 									<div id="mailHookRequestBodyEditor" style="width: 100%; height: 400px; margin: 0; padding: 0; overflow: hidden; border: 1px solid #afb2b5!important;"></div>
 								</div>
 							</div>
@@ -257,6 +296,42 @@
                                     
 										<div class="col-lg-10 col-xl-9 vertical-center-flex right-column">
 											<span id="createMailHookSummary_IsActive"></span>
+										</div>
+									</div>
+									
+									<div class="separator my-5"></div>
+									
+									<div class="row">
+										<div class="col-lg-2 col-xl-3 left-column">
+											<label class="fw-bold fs-6">From Display Name</label>
+										</div>
+                                    
+										<div class="col-lg-10 col-xl-9 vertical-center-flex right-column">
+											<span id="createMailHookSummary_SenderName"></span>
+										</div>
+									</div>
+									
+									<div class="separator my-5"></div>
+									
+									<div class="row">
+										<div class="col-lg-2 col-xl-3 left-column">
+											<label class="fw-bold fs-6">From Email Address</label>
+										</div>
+                                    
+										<div class="col-lg-10 col-xl-9 vertical-center-flex right-column">
+											<span id="createMailHookSummary_SenderAddress"></span>
+										</div>
+									</div>
+									
+									<div class="separator my-5"></div>
+									
+									<div class="row">
+										<div class="col-lg-2 col-xl-3 left-column">
+											<label class="fw-bold fs-6">Mail Subject</label>
+										</div>
+                                                                        
+										<div class="col-lg-10 col-xl-9 vertical-center-flex right-column">
+											<span id="createMailHookSummary_MailSubject"></span>
 										</div>
 									</div>
 									

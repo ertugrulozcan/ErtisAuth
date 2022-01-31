@@ -29,6 +29,9 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		[JsonProperty("default_language")]
 		public string DefaultLanguage { get; set; }
 		
+		[JsonProperty("mail_settings")]
+		public MembershipMailSettings MailSettings { get; set; }
+		
 		[JsonProperty("user_type")]
 		public UserType UserType { get; set; }
 		
@@ -48,7 +51,8 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 				HashAlgorithm = this.HashAlgorithm,
 				DefaultEncoding = this.DefaultEncoding,
 				DefaultLanguage = this.DefaultLanguage,
-				UserType = this.UserType
+				MailSettings = this.MailSettings,
+				UserType = this.UserType,
 			};
 		}
 

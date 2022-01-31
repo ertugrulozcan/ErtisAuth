@@ -59,7 +59,7 @@ namespace ErtisAuth.Hub.Controllers.API
 		            
 		            var secretKey = Identity.Cryptography.StringCipher.Decrypt(forgotPasswordRequest.EncryptedSecretKey, forgotPasswordRequest.MembershipId);
 		            var basicToken = new BasicToken($"ertisauth_server:{secretKey}");
-		            var resetPasswordResponse = await scopedPasswordService.ResetPasswordAsync(forgotPasswordRequest.EmailAddress, basicToken);
+		            var resetPasswordResponse = await scopedPasswordService.ResetPasswordAsync(forgotPasswordRequest.EmailAddress, forgotPasswordRequest.ServerUrl, forgotPasswordRequest.ClearHost, basicToken);
 		            if (resetPasswordResponse.IsSuccess)
 		            {
 			            var encryptedResetPasswordToken = Identity.Cryptography.StringCipher.Encrypt(resetPasswordResponse.Data.Token, forgotPasswordRequest.MembershipId);

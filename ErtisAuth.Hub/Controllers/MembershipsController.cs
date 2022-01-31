@@ -178,6 +178,7 @@ namespace ErtisAuth.Hub.Controllers
 					EncodingList = encodings.Select(x => new SelectListItem(x.DisplayName, x.Name)).ToList(),
 					LanguageList = TextSearchLanguage.All.Select(x => new SelectListItem(x.Name, x.ISO6391Code)).ToList().ToList(),
 					UserType = getMembershipResponse.Data.UserType,
+					MailSettings = getMembershipResponse.Data.MailSettings,
 					Sys = getMembershipResponse.Data.Sys,
 				};
 
@@ -275,7 +276,8 @@ namespace ErtisAuth.Hub.Controllers
 					SecretKey = model.SecretKey,
 					HashAlgorithm = model.HashAlgorithm,
 					DefaultEncoding = model.DefaultEncoding,
-					DefaultLanguage = model.DefaultLanguage
+					DefaultLanguage = model.DefaultLanguage,
+					MailSettings = model.MailSettings
 					//UserType = userType
 				};
 
@@ -368,7 +370,7 @@ namespace ErtisAuth.Hub.Controllers
 
 		#endregion
 		
-		#region Create MailHook
+		#region MailHook Create
 
 		[HttpPost("create-mailhook")]
 		[RbacAction(Rbac.CrudActions.Create)]
@@ -383,7 +385,10 @@ namespace ErtisAuth.Hub.Controllers
 					Description = model.Description,
 					Event = model.EventType,
 					Status = model.IsActive ? "active" : "passive",
+					MailSubject = model.MailSubject,
 					MailTemplate = model.MailTemplate,
+					FromName = model.FromName,
+					FromAddress = model.FromAddress,
 					MembershipId = model.MembershipId
 				};
 				
@@ -435,7 +440,10 @@ namespace ErtisAuth.Hub.Controllers
 					Description = getMailHookResponse.Data.Description,
 					EventType = getMailHookResponse.Data.Event,
 					IsActive = getMailHookResponse.Data.IsActive,
+					MailSubject = getMailHookResponse.Data.MailSubject,
 					MailTemplate = getMailHookResponse.Data.MailTemplate,
+					FromName = getMailHookResponse.Data.FromName,
+					FromAddress = getMailHookResponse.Data.FromAddress,
 					MembershipId = getMailHookResponse.Data.MembershipId,
 					Sys = getMailHookResponse.Data.Sys
 				};
@@ -477,7 +485,10 @@ namespace ErtisAuth.Hub.Controllers
 					Description = model.Description,
 					Event = model.EventType,
 					Status = model.IsActive ? "active" : "passive",
+					MailSubject = model.MailSubject,
 					MailTemplate = model.MailTemplate,
+					FromName = model.FromName,
+					FromAddress = model.FromAddress,
 					MembershipId = model.MembershipId
 				};
 
@@ -500,6 +511,67 @@ namespace ErtisAuth.Hub.Controllers
 
 			this.SetRedirectionParameter(new SerializableViewModel(model));
 			return this.RedirectToAction("MailHookDetail", routeValues: new { membershipId = model.MembershipId, id = model.Id });
+		}
+
+		#endregion
+		
+		#region MailHook Delete
+
+		[HttpPost("delete-mailhook")]
+		[RbacAction(Rbac.CrudActions.Delete)]
+		public async Task<IActionResult> DeleteMailHook([FromForm]DeleteViewModel deleteModel)
+		{
+			string membershipId = null;
+			if (this.ModelState.IsValid)
+			{
+				var username = this.GetClaim(Claims.Username);
+				var getTokenResponse = await this.authenticationService.GetTokenAsync(username, deleteModel.Password);
+				if (getTokenResponse.IsSuccess)
+				{
+					var token = this.GetBearerToken();
+					var getMailhookResponse = await this.mailHookService.GetAsync(deleteModel.ItemId, token);
+					if (getMailhookResponse.IsSuccess)
+					{
+						membershipId = getMailhookResponse.Data.MembershipId;
+						var deleteResponse = await this.mailHookService.DeleteAsync(deleteModel.ItemId, token);
+						if (deleteResponse.IsSuccess)
+						{
+							this.SetRedirectionParameter(new SerializableViewModel
+							{
+								IsSuccess = true,
+								SuccessMessage = "Mailhook deleted"
+							});
+						}
+						else
+						{
+							var model = new SerializableViewModel();
+							model.SetError(deleteResponse);
+							this.SetRedirectionParameter(model);
+						}
+					}
+					else
+					{
+						var model = new SerializableViewModel();
+						model.SetError(getMailhookResponse);
+						this.SetRedirectionParameter(model);
+					}
+				}
+				else
+				{
+					var model = new SerializableViewModel();
+					model.SetError(getTokenResponse);
+					this.SetRedirectionParameter(model);
+				}
+			}
+
+			if (string.IsNullOrEmpty(membershipId))
+			{
+				return this.RedirectToAction("Index");	
+			}
+			else
+			{
+				return this.RedirectToAction("MailSettings", routeValues: new { id = membershipId });	
+			}
 		}
 
 		#endregion

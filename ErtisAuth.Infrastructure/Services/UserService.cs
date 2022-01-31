@@ -510,14 +510,14 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Forgot Password
 
-		public ResetPasswordToken ResetPassword(Utilizer utilizer, string membershipId, string usernameOrEmailAddress)
+		public ResetPasswordToken ResetPassword(Utilizer utilizer, string membershipId, string emailAddress, string server, string host)
 		{
-			return this.ResetPasswordAsync(utilizer, membershipId, usernameOrEmailAddress).ConfigureAwait(false).GetAwaiter().GetResult();
+			return this.ResetPasswordAsync(utilizer, membershipId, emailAddress, server, host).ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 
-		public async ValueTask<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string usernameOrEmailAddress)
+		public async ValueTask<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host)
 		{
-			if (string.IsNullOrEmpty(usernameOrEmailAddress))
+			if (string.IsNullOrEmpty(emailAddress))
 			{
 				throw ErtisAuthException.ValidationError(new []
 				{
@@ -531,10 +531,10 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 
-			var user = await this.GetUserWithPasswordAsync(usernameOrEmailAddress, usernameOrEmailAddress, membershipId);
+			var user = await this.GetUserWithPasswordAsync(emailAddress, emailAddress, membershipId);
 			if (user == null)
 			{
-				throw ErtisAuthException.UserNotFound(usernameOrEmailAddress, "username or email_address");
+				throw ErtisAuthException.UserNotFound(emailAddress, "email_address");
 			}
 
 			if (utilizer.Role is ReservedRoles.Administrator or ReservedRoles.Server || utilizer.Id == user.Id)
@@ -543,12 +543,28 @@ namespace ErtisAuth.Infrastructure.Services
 				tokenClaims.AddClaim("token_type", "reset_token");
 				var resetToken = this.jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
 				var resetPasswordToken = new ResetPasswordToken(resetToken, TimeSpan.FromHours(1));
+
+				var resetPasswordLink = GenerateResetPasswordTokenMailLink(
+					emailAddress, 
+					resetPasswordToken.Token, 
+					membershipId,
+					membership.SecretKey, 
+					server, 
+					host);
+
+				var eventPayload = new
+				{
+					resetPasswordToken,
+					resetPasswordLink,
+					user,
+					membership
+				};
 				
 				await this.eventService.FireEventAsync(this, new ErtisAuthEvent
 				{
 					EventType = ErtisAuthEventType.UserPasswordReset,
 					UtilizerId = user.Id,
-					Document = resetPasswordToken,
+					Document = eventPayload,
 					MembershipId = membershipId
 				});
 
@@ -558,6 +574,26 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				throw ErtisAuthException.AccessDenied("Unauthorized access");
 			}
+		}
+
+		private static string GenerateResetPasswordTokenMailLink(string emailAddress, string resetPasswordToken, string membershipId, string secretKey, string serverUrl, string host)
+		{
+			var encryptedResetPasswordToken = Identity.Cryptography.StringCipher.Encrypt(resetPasswordToken, membershipId);
+			var encryptedSecretKey = Identity.Cryptography.StringCipher.Encrypt(secretKey, membershipId);
+			var payloadDictionary = new Dictionary<string, string>
+			{
+				{ "emailAddress", emailAddress },
+				{ "encryptedSecretKey", encryptedSecretKey },
+				{ "serverUrl", serverUrl },
+				{ "membershipId", membershipId },
+				{ "encryptedResetPasswordToken", encryptedResetPasswordToken },
+			};
+
+			var encodedPayload = Identity.Cryptography.StringCipher.Encrypt(string.Join('&', payloadDictionary.Select(x => $"{x.Key}={x.Value}")), membershipId);
+			var resetPasswordPayload = $"{membershipId}:{encodedPayload}";
+			var urlEncodedPayload = System.Web.HttpUtility.UrlEncode(resetPasswordPayload, Encoding.ASCII);
+			var resetPasswordLink = $"https://{host}/set-password?token={urlEncodedPayload}";
+			return resetPasswordLink;
 		}
 
 		public void SetPassword(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password)

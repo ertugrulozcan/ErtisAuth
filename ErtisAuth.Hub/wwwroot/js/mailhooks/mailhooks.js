@@ -90,6 +90,9 @@ function initCreateMailHookStepper() {
         $('#createMailHookSummary_Description').text($('#createMailHookForm_DescriptionInput').val());
         $('#createMailHookSummary_EventType').text($('#eventTypesDropdown').find(":selected").text());
         $('#createMailHookSummary_IsActive').text($('#isActiveCheckBox').is(":checked"));
+        $('#createMailHookSummary_SenderName').text($('#createMailHookForm_SenderNameInput').val());
+        $('#createMailHookSummary_SenderAddress').text($('#createMailHookForm_SenderAddressInput').val());
+        $('#createMailHookSummary_MailSubject').text($('#createMailHookForm_MailSubjectInput').val());
     }
 
     nextButton.on('click', function () {

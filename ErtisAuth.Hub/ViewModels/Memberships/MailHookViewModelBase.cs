@@ -31,7 +31,16 @@ namespace ErtisAuth.Hub.ViewModels.Memberships
         public bool IsActive { get; set; }
         
         [Required]
+        public string MailSubject { get; set; }
+        
+        [Required]
         public string MailTemplate { get; set; }
+
+        [Required]
+        public string FromName { get; set; }
+        
+        [Required]
+        public string FromAddress { get; set; }
         
         [Required]
         public string MembershipId { get; set; }

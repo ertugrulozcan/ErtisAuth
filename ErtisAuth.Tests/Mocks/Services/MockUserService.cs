@@ -312,12 +312,12 @@ namespace ErtisAuth.Tests.Mocks.Services
 			throw new NotImplementedException();
 		}
 
-		public ResetPasswordToken ResetPassword(Utilizer utilizer, string membershipId, string usernameOrEmailAddress)
+		public ResetPasswordToken ResetPassword(Utilizer utilizer, string membershipId, string emailAddress, string server, string host)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ValueTask<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string usernameOrEmailAddress)
+		public ValueTask<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host)
 		{
 			throw new NotImplementedException();
 		}

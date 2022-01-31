@@ -39,16 +39,21 @@ namespace ErtisAuth.Sdk.Services
 				new JsonRequestBody(new { password = newPassword }));
 		}
 
-		public IResponseResult<ResetPasswordToken> ResetPassword(string emailAddress, TokenBase token) => this.ResetPasswordAsync(emailAddress, token).ConfigureAwait(false).GetAwaiter().GetResult();
+		public IResponseResult<ResetPasswordToken> ResetPassword(string emailAddress, string server, string host, TokenBase token) => this.ResetPasswordAsync(emailAddress, server, host, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress, TokenBase token)
+		public async Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress, string server, string host, TokenBase token)
 		{
 			return await this.ExecuteRequestAsync<ResetPasswordToken>(
 				HttpMethod.Post, 
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/users/reset-password", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(new { email_address = emailAddress }));
+				new JsonRequestBody(new
+				{
+					email_address = emailAddress,
+					server,
+					host
+				}));
 		}
 
 		public IResponseResult SetPassword(string email, string password, string resetToken, TokenBase token) => this.SetPasswordAsync(email, password, resetToken, token).ConfigureAwait(false).GetAwaiter().GetResult();

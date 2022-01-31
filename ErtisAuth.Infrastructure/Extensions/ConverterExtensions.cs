@@ -246,7 +246,10 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Description = dto.Description,
                 Event = dto.Event,
                 Status = dto.Status,
+                MailSubject = dto.MailSubject,
                 MailTemplate = dto.MailTemplate,
+                FromName = dto.FromName,
+                FromAddress = dto.FromAddress,
                 MembershipId = dto.MembershipId,
                 Sys = dto.Sys?.ToModel()
             };
@@ -261,7 +264,10 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Description = model.Description,
                 Event = model.Event,
                 Status = model.Status,
+                MailSubject = model.MailSubject,
                 MailTemplate = model.MailTemplate,
+                FromName = model.FromName,
+                FromAddress = model.FromAddress,
                 MembershipId = model.MembershipId,
                 Sys = model.Sys?.ToDto()
             };
