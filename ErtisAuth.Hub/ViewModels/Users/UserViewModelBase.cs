@@ -11,17 +11,19 @@ namespace ErtisAuth.Hub.ViewModels.Users
     {
         #region Properties
         
-        [Required]
+        [Required(ErrorMessage = "First name is required.")]
         public string FirstName { get; set; }
 		
-        [Required]
+        [Required(ErrorMessage = "Last name is required.")]
         public string LastName { get; set; }
 		
-        [Required]
+        [Required(ErrorMessage = "Username is required.")]
+        [MinLength(3, ErrorMessage = "The username field's minimum length must be of 3 characters")]
+        [RegularExpression("^[A-Za-z].(\\S*)", ErrorMessage = "The username can not starts with a digit and can not contains space and its minimum length must be of 3 characters.")]
         public string Username { get; set; }
 		
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Email Address is required.")]
+        [EmailAddress(ErrorMessage = "The value is not a valid email address")]
         public string EmailAddress { get; set; }
 		
         public string RoleId { get; set; }

@@ -124,8 +124,14 @@ function initTable(tableId, apiEndpoint) {
             orderData: [ 5 ],
             render: function(data, type, full, meta) {
                 let user = convertToUser(full);
-                return `` +
-                    `<div class="badge badge-light-primary fw-bolder">` + user.role + `</div>`;
+                if (user.role === 'admin') {
+                    return `` +
+                        `<div class="badge badge-light-primary fw-bolder">` + user.role + `</div>`;    
+                }
+                else {
+                    return `` +
+                        `<div class="badge badge-secondary fw-bolder">` + user.role + `</div>`;
+                }
             }
         },
         {

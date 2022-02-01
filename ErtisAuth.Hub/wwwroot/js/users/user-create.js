@@ -7,6 +7,23 @@ function onSubmit(event) {
         form,
         {
             fields: {
+                'createUserForm_emailAddressInput': {
+                    validators: {
+                        emailAddress: {
+                            message: 'The value is not a valid email address'
+                        }
+                    }
+                },
+                'createUserForm_userNameInput': {
+                    validators: {
+                        callback: {
+                            message: 'The username is required. Username can not starts with a digit and can not contains space',
+                            callback: function (input) {
+                                return input.value && input.value !== '' && !(/^\d+$/.test(input.value.charAt(0)));
+                            },
+                        }
+                    }
+                },
                 'Password': {
                     validators: {
                         notEmpty: {
@@ -60,11 +77,12 @@ function onSubmit(event) {
     }
 }
 
-function clearForm() {
+function resetForm() {
     $('#createUserForm_firstNameInput').val('');
     $('#createUserForm_lastNameInput').val('');
     $('#createUserForm_userNameInput').val('');
     $('#createUserForm_emailAddressInput').val('');
+    $('#rolesDropdown>option:eq(0)').prop('selected', true);
     $('#Password').val('');
     $('#PasswordAgain').val('');
 
@@ -73,10 +91,42 @@ function clearForm() {
     passwordMeter.reset();
 }
 
+
+function setAutoFillUsername() {
+    let firstName = '';
+    let lastName = '';
+    
+    function setUsername() {
+        let username = '';
+        if (firstName === '' && lastName === '')
+            username = '';
+        else if (firstName === '')
+            username = slugify(lastName, true);
+        else if (lastName === '')
+            username = slugify(firstName, true);
+        else
+            username = slugify(firstName, true) + '.' + slugify(lastName, true);
+
+        $('#createUserForm_userNameInput').val(username);
+    }
+    
+    $('#createUserForm_firstNameInput').on('input', function() {
+        firstName = $(this).val();
+        setUsername();
+    });
+
+    $('#createUserForm_lastNameInput').on('input', function() {
+        lastName = $(this).val();
+        setUsername();
+    });
+}
+
 jQuery(document).ready(function() {
     $('#createUserModal').on('show.bs.modal', function (event) {
-        clearForm();
+        resetForm();
     });
+    
+    setAutoFillUsername();
     
     form.addEventListener('submit', onSubmit);
 });
