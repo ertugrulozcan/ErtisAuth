@@ -1,11 +1,11 @@
 using System.Threading.Tasks;
-using ErtisAuth.Abstractions.Services.Interfaces;
-using ErtisAuth.Core.Models.Mailing;
+using ErtisAuth.Extensions.Mailkit.Models;
+using ErtisAuth.Extensions.Mailkit.Services.Interfaces;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 
-namespace ErtisAuth.Infrastructure.Services
+namespace ErtisAuth.Extensions.Mailkit.Services
 {
     public class MailService : IMailService
     {

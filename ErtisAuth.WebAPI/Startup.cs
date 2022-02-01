@@ -8,6 +8,7 @@ using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Extensions.Authorization.Constants;
+using ErtisAuth.Extensions.Mailkit.Extensions;
 using ErtisAuth.Extensions.Quartz.Extensions;
 using ErtisAuth.Identity.Jwt.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
@@ -101,7 +102,6 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IProviderService, ProviderService>();
 			services.AddSingleton<IWebhookService, WebhookService>();
 			services.AddSingleton<IMailHookService, MailHookService>();
-			services.AddSingleton<IMailService, MailService>();
 			services.AddSingleton<IEventService, EventService>();
 			services.AddSingleton<IMigrationService, MigrationService>();
 			
@@ -109,6 +109,9 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
 			services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
 			
+			// Mailkit
+			services.AddMailkit();
+
 			// GeoLocation Tracking
 			services.Configure<GeoLocationOptions>(this.Configuration.GetSection("GeoLocationTracking"));
 			services.AddSingleton<IGeoLocationOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<GeoLocationOptions>>().Value);

@@ -10,7 +10,6 @@
       <PackageReference Include="Ertis.Net" Version="5.1.4" />
       <PackageReference Include="Ertis.Security" Version="5.1.2" />
       <PackageReference Include="Ertis.TemplateEngine" Version="5.0.0" />
-      <PackageReference Include="MailKit" Version="3.1.0" />
       <PackageReference Include="Mapster" Version="7.2.0" />
       <PackageReference Include="MongoDB.Driver" Version="2.13.2" />
       <PackageReference Include="TinyMapper" Version="3.0.3" />

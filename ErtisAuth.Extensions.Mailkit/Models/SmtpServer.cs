@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace ErtisAuth.Core.Models.Mailing
+namespace ErtisAuth.Extensions.Mailkit.Models
 {
     public class SmtpServer
     {

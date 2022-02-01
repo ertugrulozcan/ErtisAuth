@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using ErtisAuth.Extensions.Authorization.Annotations;
+using ErtisAuth.Extensions.Mailkit.Extensions;
+using ErtisAuth.Extensions.Mailkit.Models;
 using ErtisAuth.Sdk.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using ErtisAuth.Hub.Constants;
@@ -86,6 +88,24 @@ namespace ErtisAuth.Hub.Controllers.API
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
+                return this.StatusCode(500, ex.Message);
+            }
+        }
+
+        #endregion
+
+        #region MailSettings
+
+        [HttpPost("smtp-server/test-connection")]
+        public async Task<IActionResult> TestSmtpServerConnectionAsync([FromBody] SmtpServer server)
+        {
+            try
+            {
+                await server.TestConnectionAsync();
+                return this.Ok();
+            }
+            catch (Exception ex)
+            {
                 return this.StatusCode(500, ex.Message);
             }
         }

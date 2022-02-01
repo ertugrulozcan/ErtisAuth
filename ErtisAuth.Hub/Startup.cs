@@ -3,6 +3,7 @@ using ErtisAuth.Hub.Extensions;
 using ErtisAuth.Hub.Services;
 using ErtisAuth.Hub.Services.Interfaces;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.Mailkit.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -47,6 +48,9 @@ namespace ErtisAuth.Hub
 
             // Middleware Services
             services.AddScoped<IMiddlewareRoleService, MiddlewareRoleService>();
+            
+            // Mailkit
+            services.AddMailkit();
             
             // Google Maps
             services.Configure<GoogleMapsApiConfiguration>(this.Configuration.GetSection("GoogleMaps"));

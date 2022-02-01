@@ -1,4 +1,4 @@
-using ErtisAuth.Core.Models.Mailing;
+using ErtisAuth.Extensions.Mailkit.Models;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Memberships

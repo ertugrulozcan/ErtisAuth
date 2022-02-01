@@ -130,4 +130,56 @@ KTUtil.onDOMContentLoaded((function() {
             }
         })
     });
+    
+    $('#testConnectionButton').click(function() {
+        let testConnectionButton = $(this);
+        testConnectionButton.attr("data-kt-indicator", "on");
+        testConnectionButton.attr("disabled", "disabled");
+
+        let host = $('#smtpServerSettingsHostInput').val();
+        let port = parseInt($('#smtpServerSettingsPortInput').val());
+        let tlsEnabled = $('#smtpServerSettingsTlsEnabledInput').is(":checked");
+        let username = $('#smtpServerSettingsUsernameInput').val();
+        let password = $('#smtpServerSettingsPasswordInput').val();
+        
+        $.ajax({
+            contentType: 'application/json',
+            data: JSON.stringify({
+                "host": host,
+                "port": port,
+                "tls_enabled": tlsEnabled,
+                "username": username,
+                "password": password
+            }),
+            success: function (data) {
+                Swal.fire({
+                    title: 'Connection Test Success',
+                    text: 'Successfully connected to smtp server',
+                    icon: "success",
+                    showCancelButton: false,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Ok'
+                });
+
+                testConnectionButton.removeAttr("data-kt-indicator");
+                testConnectionButton.removeAttr("disabled");
+            },
+            error: function (param1, param2, param3) {
+                Swal.fire({
+                    title: 'Connection Test Failed',
+                    text: param1.responseText,
+                    icon: "error",
+                    showCancelButton: false,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Ok'
+                });
+
+                testConnectionButton.removeAttr("data-kt-indicator");
+                testConnectionButton.removeAttr("disabled");
+            },
+            processData: false,
+            type: 'POST',
+            url: '/api/memberships/smtp-server/test-connection'
+        });
+    })
 }));

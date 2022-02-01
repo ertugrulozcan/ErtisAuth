@@ -58,19 +58,19 @@
                                         
 							<div class="mb-5">
 								<label class="form-label required">Host</label>
-								<input type="text" class="form-control" placeholder="Host" asp-for="MailSettings.SmtpServer.Host">
+								<input id="smtpServerSettingsHostInput" type="text" class="form-control" placeholder="Host" asp-for="MailSettings.SmtpServer.Host">
 								<span class="validation-error-span" asp-validation-for="MailSettings.SmtpServer.Host"></span>
 							</div>
                                                                                 
 							<div class="mb-10">
 								<label class="form-label required">Port</label>
-								<input type="number" class="form-control" placeholder="Port" asp-for="MailSettings.SmtpServer.Port" />
+								<input id="smtpServerSettingsPortInput" type="number" class="form-control" placeholder="Port" asp-for="MailSettings.SmtpServer.Port" />
 								<span class="validation-error-span" asp-validation-for="MailSettings.SmtpServer.Port"></span>
 							</div>
                                                             						        
 							<div class="vertical-center-flex mb-10" style="height: 100%;">
 								<div class="form-check form-switch form-check-custom form-check-solid">
-									<input class="form-check-input" type="checkbox" asp-for="MailSettings.SmtpServer.TlsEnabled" />
+									<input id="smtpServerSettingsTlsEnabledInput" class="form-check-input" type="checkbox" asp-for="MailSettings.SmtpServer.TlsEnabled" />
 									<label class="form-check-label">
 										TLS Enabled
 									</label>
@@ -79,16 +79,34 @@
                                                             						        
 							<div class="mb-5">
 								<label class="form-label required">Username</label>
-								<input type="text" class="form-control" placeholder="Username" autocomplete="off" asp-for="MailSettings.SmtpServer.Username">
+								<input id="smtpServerSettingsUsernameInput" type="text" class="form-control" placeholder="Username" autocomplete="off" asp-for="MailSettings.SmtpServer.Username">
 								<span class="validation-error-span" asp-validation-for="MailSettings.SmtpServer.Username"></span>
 							</div>
                                                             						        
 							<div class="mb-5">
 								<label class="form-label required">Password</label>
-								<input class="form-control form-control-lg form-control-solid" type="password" placeholder="Password" autocomplete="off" value="@Model.MailSettings.SmtpServer.Password" asp-for="MailSettings.SmtpServer.Password"/>
+								<input id="smtpServerSettingsPasswordInput" class="form-control form-control-lg form-control-solid" type="password" placeholder="Password" autocomplete="off" value="@Model.MailSettings.SmtpServer.Password" asp-for="MailSettings.SmtpServer.Password"/>
 								<span class="validation-error-span" asp-validation-for="MailSettings.SmtpServer.Password"></span>
 							</div>
 						</form>
+					</div>
+					
+					<div class="card-footer">
+						<div class="d-flex" style="justify-content: space-between;">
+							<div>
+								
+							</div>
+							<div>
+								<button id="testConnectionButton" class="btn btn-sm btn-light-primary">
+									<span class="indicator-label">
+										Test Connection
+									</span>
+									<span class="indicator-progress">
+										Please wait... <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+									</span>
+								</button>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>

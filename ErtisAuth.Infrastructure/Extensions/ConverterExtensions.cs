@@ -10,6 +10,7 @@ using ErtisAuth.Dto.Models.Memberships;
 using ErtisAuth.Dto.Models.Resources;
 using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Dto.Models.Webhooks;
+using ErtisAuth.Extensions.Mailkit.Models;
 using MongoDB.Bson;
 using Newtonsoft.Json;
 

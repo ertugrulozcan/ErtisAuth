@@ -11,6 +11,7 @@ using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Mailing;
+using ErtisAuth.Extensions.Mailkit.Services.Interfaces;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Infrastructure.Services

@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
-using ErtisAuth.Core.Models.Mailing;
+using ErtisAuth.Extensions.Mailkit.Models;
 
-namespace ErtisAuth.Abstractions.Services.Interfaces
+namespace ErtisAuth.Extensions.Mailkit.Services.Interfaces
 {
     public interface IMailService
     {
