@@ -19,19 +19,23 @@ namespace ErtisAuth.Extensions.Http.Extensions
             
 			// Resource
 			var rbacResourceSegment = RbacSegment.All;
-			var resourceMetadata = endpoint?.Metadata?.FirstOrDefault(x => x.GetType() == typeof(RbacResourceAttribute));
+			var resourceMetadata = endpoint?.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacResourceAttribute));
 			if (resourceMetadata is RbacResourceAttribute rbacResourceAttribute)
 			{
 				rbacResourceSegment = rbacResourceAttribute.ResourceSegment;
 			}
 			else if (endpoint is RouteEndpoint routeEndpoint)
 			{
-				rbacResourceSegment = new RbacSegment(routeEndpoint.RoutePattern.RawText.Split('/').Last());
+				var routePath = routeEndpoint.RoutePattern.RawText;
+				if (!string.IsNullOrEmpty(routePath))
+				{
+					rbacResourceSegment = new RbacSegment(routePath.Split('/').Last());	
+				}
 			}
             
 			// Action
 			var rbacActionSegment = RbacSegment.All;
-			var actionMetadata = endpoint?.Metadata?.FirstOrDefault(x => x.GetType() == typeof(RbacActionAttribute));
+			var actionMetadata = endpoint?.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacActionAttribute));
 			if (actionMetadata is RbacActionAttribute rbacActionAttribute)
 			{
 				rbacActionSegment = rbacActionAttribute.ActionSegment;
@@ -39,14 +43,17 @@ namespace ErtisAuth.Extensions.Http.Extensions
             
 			// Object
 			var rbacObjectSegment = RbacSegment.All;
-			var objectMetadata = endpoint?.Metadata?.FirstOrDefault(x => x.GetType() == typeof(RbacObjectAttribute));
+			var objectMetadata = endpoint?.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacObjectAttribute));
 			var routeData = httpContext.GetRouteData();
-			if (routeData?.Values != null && objectMetadata is RbacObjectAttribute rbacObjectAttribute)
+			if (objectMetadata is RbacObjectAttribute rbacObjectAttribute)
 			{
-				if (routeData.Values.ContainsKey(rbacObjectAttribute.RouteParameterName))
+				if (routeData.Values.ContainsKey(rbacObjectAttribute.ObjectSegment.Value))
 				{
-					var rbacObject = routeData.Values[rbacObjectAttribute.RouteParameterName];
-					rbacObjectSegment = new RbacSegment(rbacObject.ToString());
+					var rbacObject = routeData.Values[rbacObjectAttribute.ObjectSegment.Value];
+					if (rbacObject != null)
+					{
+						rbacObjectSegment = new RbacSegment(rbacObject.ToString());	
+					}
 				}
 			}
 

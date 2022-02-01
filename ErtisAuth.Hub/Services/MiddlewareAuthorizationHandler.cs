@@ -106,6 +106,7 @@ namespace ErtisAuth.Hub.Services
 				}
 				else
 				{
+					// The access token could not verified by auth server !!
 					foreach (var cookie in httpContext.Request.Cookies.Keys)
 					{
 						httpContext.Response.Cookies.Delete(cookie);
@@ -156,6 +157,28 @@ namespace ErtisAuth.Hub.Services
 				
 					// Object
 					var rbacObjectSegment = RbacSegment.All;
+					if (routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacObjectAttribute)) is RbacObjectAttribute rbacObjectAttribute)
+					{
+						rbacObjectSegment = rbacObjectAttribute.ObjectSegment;
+						var objectSegmentValue = rbacObjectSegment.Value.Trim();
+						if (objectSegmentValue.Length > 2 && objectSegmentValue.StartsWith('{') && objectSegmentValue.EndsWith('}'))
+						{
+							var routeParameterName = objectSegmentValue.Substring(1, objectSegmentValue.Length - 2);
+							var routeParameter = routeEndpoint.RoutePattern.Parameters.FirstOrDefault(x => x.Name == routeParameterName);
+							if (routeParameter != null && httpContext.Request.RouteValues.ContainsKey(routeParameter.Name))
+							{
+								var routeParameterValue = httpContext.Request.RouteValues[routeParameter.Name]?.ToString();
+								if (!string.IsNullOrEmpty(routeParameterValue))
+								{
+									rbacObjectSegment = new RbacSegment(routeParameterValue);
+								}
+							}
+						}
+						else
+						{
+							rbacObjectSegment = new RbacSegment(objectSegmentValue);
+						}
+					}
 				
 					if (!string.IsNullOrEmpty(slug))
 					{

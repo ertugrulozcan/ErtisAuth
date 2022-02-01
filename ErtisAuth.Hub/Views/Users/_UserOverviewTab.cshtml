@@ -11,7 +11,7 @@
 		</div>
 								
 		<div class="card-body p-9">
-			<form id="UpdateUserForm" method="post" asp-controller="Users" asp-action="Update">
+			<form id="UpdateUserForm" method="post" asp-controller="Users" asp-action="Update" asp-route-id="@Model.Id">
 				@Html.HiddenFor(x => x.Id)
 				@Html.HiddenFor(x => x.MembershipId)
 				@Html.HiddenFor(x => x.RoleId)

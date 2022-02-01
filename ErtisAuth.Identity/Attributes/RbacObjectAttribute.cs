@@ -1,4 +1,5 @@
 using System;
+using ErtisAuth.Core.Models.Roles;
 
 namespace ErtisAuth.Identity.Attributes
 {
@@ -7,7 +8,7 @@ namespace ErtisAuth.Identity.Attributes
 	{
 		#region Properties
 
-		public string RouteParameterName { get; }
+		public RbacSegment ObjectSegment { get; }
 
 		#endregion
 		
@@ -16,10 +17,10 @@ namespace ErtisAuth.Identity.Attributes
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="routeParameter"></param>
-		public RbacObjectAttribute(string routeParameter)
+		/// <param name="objectName"></param>
+		public RbacObjectAttribute(string objectName)
 		{
-			this.RouteParameterName = routeParameter;
+			this.ObjectSegment = new RbacSegment(objectName);
 		}
 
 		#endregion

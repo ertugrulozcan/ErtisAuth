@@ -290,9 +290,10 @@ namespace ErtisAuth.Hub.Controllers
 		
 		#region Update
 
-		[HttpPost]
+		[HttpPost("{id}")]
 		[RbacAction(Rbac.CrudActions.Update)]
-		public async Task<IActionResult> Update([FromForm] UserViewModel model)
+		[RbacObject("{id}")]
+		public async Task<IActionResult> Update([FromRoute] string id, [FromForm] UserViewModel model)
 		{
 			if (this.ModelState.IsValid)
 			{
