@@ -1,23 +1,7 @@
-@using ErtisAuth.Hub.Services.Interfaces
-@using ErtisAuth.Core.Models.Identity
-@using ErtisAuth.Core.Models.Roles
-@using ErtisAuth.Hub.Constants
 @using ErtisAuth.Hub.Extensions
 @model ErtisAuth.Hub.ViewModels.AuthorizedButtonViewModel
 
-@inject IMiddlewareRoleService middlewareRoleService;
-
-@functions
-{
-    bool IsAuthorized()
-    {
-        var objectSegment = string.IsNullOrEmpty(Model.ResourceId) ? RbacSegment.All : new RbacSegment(Model.ResourceId);
-        var rbac = new Rbac(new RbacSegment(this.Context.GetClaim(Claims.UserId)), new RbacSegment(Model.CollectionName), Model.RbacAction, objectSegment);
-        return middlewareRoleService.CheckPermission(rbac, BearerToken.CreateTemp(this.Context.GetClaim(Claims.AccessToken)));
-    }
-}
-
-@if (IsAuthorized())
+@if (this.IsAuthorizedAction(Model.CollectionName, Model.RbacAction, Model.ResourceId))
 {
     <a href="#" 
        class="menu-link text-danger px-5"

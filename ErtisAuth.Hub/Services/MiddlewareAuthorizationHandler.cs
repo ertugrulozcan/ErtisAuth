@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing.Patterns;
 using ErtisAuth.Hub.Constants;
 using ErtisAuth.Hub.Extensions;
-using ErtisAuth.Hub.ViewModels.Auth;
 using ErtisAuth.Sdk.Configuration;
 using ErtisAuth.Sdk.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
@@ -95,8 +94,8 @@ namespace ErtisAuth.Hub.Services
 						{
 							httpContext.Response.StatusCode = 403;
 							httpContext.Response.Headers.Add("Authorization", context.GetAccessToken());
+							httpContext.Response.Cookies.Append("rbac", rbac.ToString());
 							httpContext.Response.Redirect($"/unauthorized");
-							ForbiddenRbacTrace.Push(httpContext.GetClaim(Claims.UserId), rbac.ToString());
 
 							return;
 						}
@@ -129,36 +128,40 @@ namespace ErtisAuth.Hub.Services
 		
 		private static bool TryExtractEndpointRbacFromAuthorizationContext(AuthorizationHandlerContext context, out Rbac rbac)
 		{
-			if (context.Resource is Microsoft.AspNetCore.Routing.RouteEndpoint routeEndpoint)
+			if (context.Resource is HttpContext httpContext)
 			{
-				// Subject
-				var rbacSubjectSegment = new RbacSegment(context.GetClaim(Claims.UserId));
+				var endpoint = httpContext.GetEndpoint();
+				if (endpoint is Microsoft.AspNetCore.Routing.RouteEndpoint routeEndpoint)
+				{
+					// Subject
+					var rbacSubjectSegment = new RbacSegment(context.GetClaim(Claims.UserId));
 					
-				// Resource
-				string slug = null;
-				if (routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacResourceAttribute)) is RbacResourceAttribute rbacResourceAttribute)
-				{
-					slug = rbacResourceAttribute.ResourceSegment.Slug;
-				}
-				else if (TryExtractFirstSlugSegmentFromRouteEndpoint(routeEndpoint, out var routePatternPartSlug))
-				{
-					slug = routePatternPartSlug;
-				}
+					// Resource
+					string slug = null;
+					if (routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacResourceAttribute)) is RbacResourceAttribute rbacResourceAttribute)
+					{
+						slug = rbacResourceAttribute.ResourceSegment.Slug;
+					}
+					else if (TryExtractFirstSlugSegmentFromRouteEndpoint(routeEndpoint, out var routePatternPartSlug))
+					{
+						slug = routePatternPartSlug;
+					}
 
-				// Action
-				var rbacActionSegment = Rbac.GetSegment(Rbac.CrudActions.Read);
-				if (routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacActionAttribute)) is RbacActionAttribute rbacActionAttribute)
-				{
-					rbacActionSegment = rbacActionAttribute.ActionSegment;
-				}
+					// Action
+					var rbacActionSegment = Rbac.GetSegment(Rbac.CrudActions.Read);
+					if (routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacActionAttribute)) is RbacActionAttribute rbacActionAttribute)
+					{
+						rbacActionSegment = rbacActionAttribute.ActionSegment;
+					}
 				
-				// Object
-				var rbacObjectSegment = RbacSegment.All;
+					// Object
+					var rbacObjectSegment = RbacSegment.All;
 				
-				if (!string.IsNullOrEmpty(slug))
-				{
-					rbac = new Rbac(rbacSubjectSegment, new RbacSegment(slug), rbacActionSegment, rbacObjectSegment);
-					return true;
+					if (!string.IsNullOrEmpty(slug))
+					{
+						rbac = new Rbac(rbacSubjectSegment, new RbacSegment(slug), rbacActionSegment, rbacObjectSegment);
+						return true;
+					}
 				}
 			}
 

@@ -11,14 +11,21 @@
 
 @{
     var isActiveClass = Model.IsActive ? "active" : string.Empty;
+    var isDisabledClass = Model.IsDisabled ? "disabled" : string.Empty;
+
+    var menuItemAttributes = string.Empty;
+    if (Model.IsDisabled)
+    {
+        menuItemAttributes = " data-bs-toggle=\"tooltip\" data-bs-placement=\"bottom\" title=\"You do not have sufficient permissions to access this page\"";
+    }
 }
 
 @if (!Model.HasSubMenu)
 {
-    <div class="menu-item">
+    <div class="menu-item" @Html.Raw(menuItemAttributes)>
         @if (Model.HasRawUrl)
         {
-            <a class="menu-link @isActiveClass" href="@Model.RawUrl">
+            <a class="menu-link @isActiveClass @isDisabledClass" href="@Model.RawUrl">
                 @DrawSvgIcon(Model.IconSvg)
                 <span class="menu-title">@Model.Title</span>
             </a>
@@ -27,14 +34,21 @@
         {
             if (Model.HasController)
             {
-                <a class="menu-link @isActiveClass" href="@Url.Action(Model.Action, Model.Controller)">
+                <a class="menu-link @isActiveClass @isDisabledClass" href="@Url.Action(Model.Action, Model.Controller)">
+                    @DrawSvgIcon(Model.IconSvg)
+                    <span class="menu-title">@Model.Title</span>
+                </a>
+            }
+            else if (Model.HasAction)
+            {
+                <a class="menu-link @isActiveClass @isDisabledClass" href="@Url.Action(Model.Action)">
                     @DrawSvgIcon(Model.IconSvg)
                     <span class="menu-title">@Model.Title</span>
                 </a>
             }
             else
             {
-                <a class="menu-link @isActiveClass" href="@Url.Action(Model.Action)">
+                <a class="menu-link @isActiveClass @isDisabledClass">
                     @DrawSvgIcon(Model.IconSvg)
                     <span class="menu-title">@Model.Title</span>
                 </a>
@@ -42,7 +56,7 @@
         }
         else
         {
-            <a class="menu-link @isActiveClass" href="#">
+            <a class="menu-link @isActiveClass @isDisabledClass" href="#">
                 @DrawSvgIcon(Model.IconSvg)
                 <span class="menu-title">@Model.Title</span>
             </a>
@@ -51,8 +65,8 @@
 }
 else
 {
-    <div class="menu-item menu-accordion" data-kt-menu-trigger="click">
-        <span class="menu-link @isActiveClass">
+    <div class="menu-item menu-accordion" data-kt-menu-trigger="click" @Html.Raw(menuItemAttributes)>
+        <span class="menu-link @isActiveClass @isDisabledClass">
             @DrawSvgIcon(Model.IconSvg)
             <span class="menu-title">@Model.Title</span>
             <span class="menu-arrow"></span>

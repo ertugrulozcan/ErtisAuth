@@ -141,6 +141,7 @@ namespace ErtisAuth.Hub.Controllers
 			{
 				new Rbac(RbacSegment.All, new RbacSegment("users"), Rbac.CrudActionSegments.Read, RbacSegment.All),
 				new Rbac(RbacSegment.All, new RbacSegment("roles"), Rbac.CrudActionSegments.Read, RbacSegment.All),
+				new Rbac(RbacSegment.All, new RbacSegment("memberships"), Rbac.CrudActionSegments.Read, RbacSegment.All),
 				new Rbac(RbacSegment.All, new RbacSegment("tokens"), Rbac.CrudActionSegments.Create, RbacSegment.All),
 				new Rbac(RbacSegment.All, new RbacSegment("tokens"), Rbac.CrudActionSegments.Read, RbacSegment.All)
 			};

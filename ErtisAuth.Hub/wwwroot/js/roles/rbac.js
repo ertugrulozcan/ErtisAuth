@@ -153,6 +153,9 @@ let onRbacSwitchChanged = function(rbac, oldValue, newValue) {
         if (rbac === '*.roles.read.*') {
             resourceActionPair = 'Roles read';
         }
+        else if (rbac === '*.memberships.read.*') {
+            resourceActionPair = 'Membership read';
+        }
         else if (rbac === '*.tokens.read.*') {
             resourceActionPair = 'Tokens read';
         }

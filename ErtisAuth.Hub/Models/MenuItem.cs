@@ -16,6 +16,8 @@ namespace ErtisAuth.Hub.Models
 
         public bool IsActive { get; set; }
         
+        public bool IsDisabled { get; set; }
+        
         public string Controller { get; set; }
 
         public bool HasController => !string.IsNullOrEmpty(this.Controller);

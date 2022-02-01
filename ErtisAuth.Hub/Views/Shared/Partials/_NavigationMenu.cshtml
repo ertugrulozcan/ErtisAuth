@@ -1,14 +1,16 @@
 @using Microsoft.AspNetCore.Html
 @using ErtisAuth.Hub.Helpers
+@using ErtisAuth.Hub.Extensions
+@using ErtisAuth.Core.Models.Roles
 
 @functions
 {
-    async ValueTask<IHtmlContent> MenuCaption(string title)
+	async ValueTask<IHtmlContent> MenuCaption(string title)
 	{
 		return await Html.PartialAsync("Partials/Menu/_MenuCaption", new Dictionary<string, object> {{ "title", title }});
 	}
 	
-	async ValueTask<IHtmlContent> MenuItem(string title, string slug, string icon, string controller, string action, string rawUrl = null, IEnumerable<MenuItem> subMenu = null)
+	async ValueTask<IHtmlContent> MenuItem(string title, string slug, string rbacResource, string icon, string controller, string action, string rawUrl = null, IEnumerable<MenuItem> subMenu = null)
 	{
 		var isActive = false;
 		if (slug != null)
@@ -25,14 +27,21 @@
 			}
 		}
 		
+		var isDisabled = false;
+		if (!string.IsNullOrEmpty(rbacResource))
+		{
+			isDisabled = !this.IsAuthorizedAction(rbacResource, Rbac.CrudActionSegments.Read, RbacSegment.All);	
+		}
+		
 		return await Html.PartialAsync("Partials/Menu/_MenuItem", new MenuItem
 		{
 			Title = title,
 			Icon = icon,
 			IsActive = isActive,
-			Controller = controller,
-			Action = action,
-			RawUrl = rawUrl,
+			IsDisabled = isDisabled,
+			Controller = isDisabled ? null : controller,
+			Action = isDisabled ? null : action,
+			RawUrl = isDisabled ? null : rawUrl,
 			SubMenuItems = subMenu
 		});
 	}
@@ -46,15 +55,18 @@
 				</div>
 			</div>");
 	}
-
-	/*
-    bool IsAuthorizedMenuItem(string slug)
-    {
-        var rbac = new Rbac(new RbacSegment(this.Context.GetClaim(Claims.UserId)), new RbacSegment(slug), Rbac.GetSegment(Rbac.CrudActions.Read), RbacSegment.All);
-        return middlewareRoleService.CheckPermission(rbac, BearerToken.CreateTemp(this.Context.GetClaim(Claims.AccessToken)));
-    }
-	*/
 }
+
+<style>
+	.aside-dark .menu .menu-item .menu-link.disabled {
+        transition: color .2s ease,background-color .2s ease;
+        background-color: #22232c;
+    }
+    
+    .aside-dark .menu .menu-item .menu-link.disabled .menu-title {
+		color: #454545;
+	}
+</style>
 
 <div id="kt_aside" class="aside aside-dark aside-hoverable" data-kt-drawer="true" data-kt-drawer-name="aside" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'200px', '300px': '250px'}" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_aside_mobile_toggle">
 	<div class="aside-logo flex-column-auto" id="kt_aside_logo">
@@ -75,17 +87,17 @@
 	<div class="aside-menu flex-column-fluid">
 		<div class="hover-scroll-overlay-y my-5 my-lg-5" id="kt_aside_menu_wrapper" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-height="auto" data-kt-scroll-dependencies="#kt_aside_logo, #kt_aside_footer" data-kt-scroll-wrappers="#kt_aside_menu" data-kt-scroll-offset="0">
 			<div class="menu menu-column menu-title-gray-800 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-500" id="#kt_aside_menu" data-kt-menu="true">
-				@await MenuItem("Dashboard", null, "dashboard", "Home", "Index")
+				@await MenuItem("Dashboard", null, null, "dashboard", "Home", "Index")
 				@MenuSeparator()
 				@await MenuCaption("Auth")
-				@await MenuItem("Users", "users", "users", "Users", "Index")
-				@await MenuItem("Roles", "roles", "roles", "Roles", "Index")
-				@await MenuItem("Applications", "applications", "applications", "Applications", "Index")
-				@await MenuItem("Memberships", "memberships", "memberships", "Memberships", "Index")
-				@await MenuItem("Sessions", "sessions", "sessions", "Sessions", "Index")
-				@await MenuItem("Providers", "providers", "providers", "Providers", "Index")
-				@await MenuItem("Webhooks", "webhooks", "webhooks", "Webhooks", "Index")
-				@await MenuItem("Events", "events", "events", "Events", "Index")
+				@await MenuItem("Users", "users", "users", "users", "Users", "Index")
+				@await MenuItem("Roles", "roles", "roles", "roles", "Roles", "Index")
+				@await MenuItem("Applications", "applications", "applications", "applications", "Applications", "Index")
+				@await MenuItem("Memberships", "memberships", "memberships", "memberships", "Memberships", "Index")
+				@await MenuItem("Sessions", "sessions", null, "sessions", "Sessions", "Index")
+				@await MenuItem("Providers", "providers", "providers", "providers", "Providers", "Index")
+				@await MenuItem("Webhooks", "webhooks", "webhooks", "webhooks", "Webhooks", "Index")
+				@await MenuItem("Events", "events", "events", "events", "Events", "Index")
 			</div>
 		</div>
 	</div>

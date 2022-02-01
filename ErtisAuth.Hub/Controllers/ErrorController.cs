@@ -51,7 +51,7 @@ namespace ErtisAuth.Hub.Controllers
             var userId = this.HttpContext.GetClaim(Claims.UserId);
             if (!string.IsNullOrEmpty(userId))
             {
-                var rbac = ForbiddenRbacTrace.Pop(userId);
+                var rbac = this.Request.Cookies.ContainsKey("rbac") ? this.Request.Cookies["rbac"]?.ToString() : null;
                 return this.View(new ForbiddenViewModel { Rbac = rbac });
             }
             else

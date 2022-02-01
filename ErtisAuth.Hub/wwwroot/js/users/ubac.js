@@ -150,6 +150,9 @@ let onUbacSwitchChanged = function(ubac, oldValue, newValue) {
         if (ubac === 'roles.read.*') {
             resourceActionPair = 'Roles read';
         }
+        else if (ubac === '*.memberships.read.*') {
+            resourceActionPair = 'Membership read';
+        }
         else if (ubac === 'tokens.read.*') {
             resourceActionPair = 'Tokens read';
         }
