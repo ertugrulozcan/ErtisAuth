@@ -51,8 +51,9 @@ namespace ErtisAuth.Hub.Controllers
             var userId = this.HttpContext.GetClaim(Claims.UserId);
             if (!string.IsNullOrEmpty(userId))
             {
-                var rbac = this.Request.Cookies.ContainsKey("rbac") ? this.Request.Cookies["rbac"]?.ToString() : null;
-                return this.View(new ForbiddenViewModel { Rbac = rbac });
+                var rbac = this.Request.Cookies.ContainsKey("rbac") ? this.Request.Cookies["rbac"] : null;
+                var referer = this.Request.Headers.ContainsKey("Referer") ? this.Request.Headers["Referer"].ToString() : null;
+                return this.View(new ForbiddenViewModel { Rbac = rbac, Referer = referer });
             }
             else
             {

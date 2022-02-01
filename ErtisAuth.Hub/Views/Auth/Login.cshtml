@@ -54,12 +54,12 @@
                                             returnUrl = Context.Request.Query["return"];
                                         }
                                     }
-                                    <input id="ReturnUrl" name="ReturnUrl" type="hidden" value="@returnUrl">
                                 
-                                    @Html.HiddenFor(x => x.ClientIP, new {id = "ipAddressHiddenInput"})
-                                    @Html.HiddenFor(x => x.UserAgentRaw, new {id = "userAgentRawHiddenInput"})
-                                    @Html.HiddenFor(x => x.ServerUrl, new {id = "ServerUrlHiddenInput"})
-                                    @Html.HiddenFor(x => x.MembershipId, new {id = "MembershipIdHiddenInput"})
+                                    @Html.HiddenFor(x => x.ClientIP, new { id = "ipAddressHiddenInput" })
+                                    @Html.HiddenFor(x => x.UserAgentRaw, new { id = "userAgentRawHiddenInput" })
+                                    @Html.HiddenFor(x => x.ServerUrl, new { id = "ServerUrlHiddenInput" })
+                                    @Html.HiddenFor(x => x.MembershipId, new { id = "MembershipIdHiddenInput" })
+                                    @Html.HiddenFor(x => x.ReturnUrl, new { value=returnUrl })
                                                         
                                     <div class="mb-15">
                                         <partial name="Partials/_AlertBox" model="Model" />
@@ -90,7 +90,7 @@
 
                                             <div class="field form-group">
                                                 <button id="connectServerButton" type="button" class="button h-button is-big is-primary is-outlined is-bold is-raised"
-                                                    style="width: 100%; font-size: 0.9rem; height: 41px; border: 1px dashed #671cc9;">
+                                                        style="width: 100%; font-size: 0.9rem; height: 41px; border: 1px dashed #671cc9;">
                                                     <i class="fa fa-plug" style="font-size: 1.2rem; margin-right: 7px;"></i>
                                                     Connect a server
                                                 </button>
@@ -134,112 +134,112 @@
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div id="connectNewServerPanel">
-                                            <h2 class="title is-5 is-narrow muted-grey m-b-15" style="text-align: center;">Connect to server</h2>
-                                            
-                                            <div class="field form-group m-b-20">
-                                                <label class="form-label">Server</label>
-                                                <div style="display: flex; align-items: center; justify-content: space-between;">
-                                                    <div style="width: 100%;">
-                                                        <div class="control has-icon has-validation">
-                                                            <input id="serverUrlInput" type="text" class="input form-control" placeholder="Server Url" autocomplete="off">
-                                                            <div class="form-icon">
-                                                                <i class="bi bi-hdd-network"></i>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div style="margin-left: 6px;">
-                                                        <button id="connectButton" type="button" class="button h-action is-hoverable is-elevated" style="height: 38px;"> Connect</button>
-                                                    </div>
-                                                </div>
-                                                <span id="serverConnectionErrorSpan" class="validation-error-span"></span>
-                                            </div>
-
-                                            <div id="membershipSelectionContainer" class="field form-group m-b-30">
-                                                <label class="form-label">Membership</label>
-                                                <div class="field">
-                                                    <div class="control has-icons-left">
-                                                        <div class="select" style="width: 100%; height: 38px;">
-                                                            <select id="membershipsDropdown" style="width: 100%; padding-left: 3em; height: inherit;">
-                                                                
-                                                            </select>
-                                                        </div>
-                                                        <div class="icon is-small is-left" style="margin: 2px 0 0 4px;">
-                                                            <i class="fas fa-home"></i>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="field form-group m-b-20">
-                                                <div class="row">
-                                                    <div class="col">
-                                                        <button id="connectNewServer_CancelButton" type="button" class="button is-light w-100">Cancel</button>
-                                                    </div>
-                                                    <div class="col">
-                                                        <button id="connectNewServer_SaveButton" type="button" class="button is-primary is-outlined is-hoverable w-100">Save</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div id="manageServersPanel" class="card-inner">
-                                        <h2 class="title is-5 is-narrow muted-grey m-b-15" style="text-align: center;">Manage Servers</h2>
-
-                                        <div>
-                                            <div id="manageServersTable" class="flex-table">
-                                                
-                                            </div>
-                                        </div>
-
-                                        <div class="field form-group m-t-20 m-b-20">
-                                            <button id="manageServers_ReturnButton" type="button" class="button h-button w-100">
-                                                <span class="icon">
-                                                    <i class="bi bi-arrow-counterclockwise" style="font-size: 1.2rem; color: #000000; margin-top: 2px;"></i>
-                                                </span>
-                                                <span>Return</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div id="forgotPasswordPanel">
-                                        <h2 class="title is-5 is-narrow muted-grey m-b-15" style="text-align: center;">Forgot Password ?</h2>
-
-                                        <span>Please enter your email to reset your password. We will send you a secure link to change your password.</span>
-
-                                        <div class="field form-group m-t-30 m-b-20">
-                                            <label class="form-label">Email Address</label>
-                                            <div class="control has-icon has-validation">
-                                                <input id="forgotPasswordEmailInput" type="email" class="input form-control" placeholder="Email Address" autocomplete="off">
-                                                <div class="form-icon">
-                                                    <i class="bi bi-at"></i>
-                                                </div>
-                                            </div>
-                                            <span id="forgotPasswordErrorSpan" class="validation-error-span"></span>
-                                            <span id="forgotPasswordSuccessSpan" class="validation-error-span" style="color: green !important;"></span>
-                                        </div>
-
-                                        <div class="field form-group m-b-20">
-                                            <div class="row">
-                                                <div class="col">
-                                                    <button id="forgotPassword_CancelButton" type="button" class="button is-light w-100">Cancel</button>
-                                                </div>
-                                                <div class="col">
-                                                    <button id="forgotPassword_SubmitButton" type="button" class="button is-primary is-outlined is-hoverable w-100">Submit</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="m-t-50" style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999999; font-size: 11px;">
-                                        <span>ERTIS INC</span>
-                                        <span>Copyright © @DateTime.Now.Year</span>
-                                        <span>Version @Program.GetEnvironmentParameter("Version")</span>
                                     </div>
                                 </form>
+                                
+                                <div id="connectNewServerPanel">
+                                    <h2 class="title is-5 is-narrow muted-grey m-b-15" style="text-align: center;">Connect to server</h2>
+                                                                            
+                                    <div class="field form-group m-b-20">
+                                        <label class="form-label">Server</label>
+                                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                                            <div style="width: 100%;">
+                                                <div class="control has-icon has-validation">
+                                                    <input id="serverUrlInput" type="url" class="input form-control" placeholder="Server Url" autocomplete="off">
+                                                    <div class="form-icon">
+                                                        <i class="bi bi-hdd-network"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                
+                                            <div style="margin-left: 6px;">
+                                                <button id="connectButton" type="button" class="button h-action is-hoverable is-elevated" style="height: 38px;"> Connect</button>
+                                            </div>
+                                        </div>
+                                        <span id="serverConnectionErrorSpan" class="validation-error-span"></span>
+                                    </div>
+                                
+                                    <div id="membershipSelectionContainer" class="field form-group m-b-30">
+                                        <label class="form-label">Membership</label>
+                                        <div class="field">
+                                            <div class="control has-icons-left">
+                                                <div class="select" style="width: 100%; height: 38px;">
+                                                    <select id="membershipsDropdown" style="width: 100%; padding-left: 3em; height: inherit;">
+                                                                                                
+                                                    </select>
+                                                </div>
+                                                <div class="icon is-small is-left" style="margin: 2px 0 0 4px;">
+                                                    <i class="fas fa-home"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="field form-group m-b-20">
+                                        <div class="row">
+                                            <div class="col">
+                                                <button id="connectNewServer_CancelButton" type="button" class="button is-light w-100">Cancel</button>
+                                            </div>
+                                            <div class="col">
+                                                <button id="connectNewServer_SaveButton" type="button" class="button is-primary is-outlined is-hoverable w-100">Save</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="manageServersPanel" class="card-inner">
+                                    <h2 class="title is-5 is-narrow muted-grey m-b-15" style="text-align: center;">Manage Servers</h2>
+                                
+                                    <div>
+                                        <div id="manageServersTable" class="flex-table">
+                                                                                
+                                        </div>
+                                    </div>
+                                
+                                    <div class="field form-group m-t-20 m-b-20">
+                                        <button id="manageServers_ReturnButton" type="button" class="button h-button w-100">
+                                            <span class="icon">
+                                                <i class="bi bi-arrow-counterclockwise" style="font-size: 1.2rem; color: #000000; margin-top: 2px;"></i>
+                                            </span>
+                                            <span>Return</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="forgotPasswordPanel">
+                                    <h2 class="title is-5 is-narrow muted-grey m-b-15" style="text-align: center;">Forgot Password ?</h2>
+                                
+                                    <span>Please enter your email to reset your password. We will send you a secure link to change your password.</span>
+                                
+                                    <div class="field form-group m-t-30 m-b-20">
+                                        <label class="form-label">Email Address</label>
+                                        <div class="control has-icon has-validation">
+                                            <input id="forgotPasswordEmailInput" type="email" class="input form-control" placeholder="Email Address" autocomplete="off">
+                                            <div class="form-icon">
+                                                <i class="bi bi-at"></i>
+                                            </div>
+                                        </div>
+                                        <span id="forgotPasswordErrorSpan" class="validation-error-span"></span>
+                                        <span id="forgotPasswordSuccessSpan" class="validation-error-span" style="color: green !important;"></span>
+                                    </div>
+                                
+                                    <div class="field form-group m-b-20">
+                                        <div class="row">
+                                            <div class="col">
+                                                <button id="forgotPassword_CancelButton" type="button" class="button is-light w-100">Cancel</button>
+                                            </div>
+                                            <div class="col">
+                                                <button id="forgotPassword_SubmitButton" type="button" class="button is-primary is-outlined is-hoverable w-100">Submit</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="m-t-50" style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999999; font-size: 11px;">
+                                    <span>ERTIS INC</span>
+                                    <span>Copyright © @DateTime.Now.Year</span>
+                                    <span>Version @Program.GetEnvironmentParameter("Version")</span>
+                                </div>
                             </div>
                         </div>
 

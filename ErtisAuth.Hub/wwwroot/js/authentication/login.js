@@ -182,4 +182,12 @@ jQuery(document).ready(function() {
     $('#forgotPassword_SubmitButton').click(function () {
         resetPasswordSubmit();
     });
+
+    let serverUrlInput = document.getElementById("serverUrlInput");
+    serverUrlInput.addEventListener("keyup", function(event) {
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            document.getElementById("connectButton").click();
+        }
+    });
 });

@@ -5,6 +5,8 @@ namespace ErtisAuth.Hub.ViewModels.Auth
         #region Properties
 
         public string Rbac { get; set; }
+        
+        public string Referer { get; set; }
 
         #endregion
     }

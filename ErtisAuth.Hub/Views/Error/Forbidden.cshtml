@@ -1,8 +1,33 @@
+@using ErtisAuth.Core.Models.Roles
 @model ErtisAuth.Hub.ViewModels.Auth.ForbiddenViewModel
 
 @{
     ViewData["Title"] = "Forbidden";
 }
+
+<style>
+    .rbac-segment-span {
+        
+    }
+    
+    .rbac-segment-span:hover {
+        font-weight: bold;
+        cursor: grab;
+    }
+    
+    .dark-tooltip .tooltip-arrow {
+        
+    }
+    
+    .dark-tooltip .tooltip-arrow:before {
+        border-bottom-color: #212121;
+    }
+    
+    .dark-tooltip .tooltip-inner {
+        background: #212121;
+        color: white;
+    }
+</style>
 
 <div class="post d-flex flex-column-fluid" style="margin-top: -50px;">
     <div id="kt_content_container" class="container-fluid">
@@ -20,11 +45,23 @@
 
                     @if (!string.IsNullOrEmpty(Model.Rbac))
                     {
+                        var rbac = Rbac.Parse(Model.Rbac);
+                        
                         <div style="margin-top: 38px;">
                             <h5>You are missing at least one of the following required permissions:</h5>
-                            <span>@Model.Rbac</span>
+                            <span class="rbac-segment-span" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="dark-tooltip" title="Subject">@rbac.Subject</span> .
+                            <span class="rbac-segment-span" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="dark-tooltip" title="Resource">@rbac.Resource</span> .
+                            <span class="rbac-segment-span" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="dark-tooltip" title="Action">@rbac.Action</span> .
+                            <span class="rbac-segment-span" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="dark-tooltip" title="Object">@rbac.Object</span>
 
                             <p style="margin-top: 18px;">Check that the resource is valid and you have permissions to access it.</p>
+                            
+                            @if (!string.IsNullOrEmpty(Model.Referer))
+                            {
+                                <div class="mt-10">
+                                    <a href="@Model.Referer" class="btn btn-sm btn-secondary"><i class="bi bi-arrow-return-left fs-4 me-2"></i> Return</a>
+                                </div>
+                            }
                         </div>
                     }
                 </div>
