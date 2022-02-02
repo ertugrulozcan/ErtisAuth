@@ -314,6 +314,7 @@ namespace ErtisAuth.Hub.Controllers
 				"events",
 				"providers",
 				"webhooks",
+				"mailhooks",
 				"tokens"
 			};
 			

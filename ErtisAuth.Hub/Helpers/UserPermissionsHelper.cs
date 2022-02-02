@@ -56,6 +56,7 @@ namespace ErtisAuth.Hub.Helpers
 				"events",
 				"providers",
 				"webhooks",
+				"mailhooks",
 				"tokens"
 			};
 			

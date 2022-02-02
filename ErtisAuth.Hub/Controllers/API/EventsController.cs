@@ -73,8 +73,6 @@ namespace ErtisAuth.Hub.Controllers.API
 				var token = this.GetBearerToken();
 				var query = this.GetFilterQuery();
 				
-				Console.WriteLine($"Requested: events/_query (skip: {skip}, limit: {limit}, order_by: '{orderBy}', sort_direction: {sortDirection}, search_keyword: '{searchKeyword}')");
-				
 				IResponseResult<IPaginationCollection<ErtisAuthEventLog>> getEventsResponse;
 				if (query == null)
 				{
