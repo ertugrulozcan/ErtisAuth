@@ -201,9 +201,10 @@ namespace ErtisAuth.WebAPI.Controllers
 			var role = await this.roleService.GetAsync(membershipId, id);
 			if (role != null)
 			{
+				var utilizer = this.GetUtilizer();
 				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
 				{
-					if (this.accessControlService.HasPermission(role, rbac, this.GetUtilizer()))
+					if (this.accessControlService.HasPermission(role, rbac, utilizer))
 					{
 						return this.Ok();
 					}
@@ -233,7 +234,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
 				{
-					if (this.accessControlService.HasPermission(role, rbac, this.GetUtilizer()))
+					if (this.accessControlService.HasPermission(role, rbac, utilizer))
 					{
 						return this.Ok();
 					}

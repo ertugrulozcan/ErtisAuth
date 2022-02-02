@@ -8,6 +8,7 @@ using ErtisAuth.Extensions.Authorization.Extensions;
 using ErtisAuth.WebAPI.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ErtisAuth.WebAPI.Extensions
 {
@@ -63,7 +64,29 @@ namespace ErtisAuth.WebAPI.Extensions
 			var utilizerIdentity = claimUser.Identities.FirstOrDefault(x => x.NameClaimType == "Utilizer");
 			if (utilizerIdentity != null)
 			{
-				return utilizerIdentity.ConvertToUtilizer();
+				var utilizerSampling = utilizerIdentity.ConvertToUtilizer();
+				
+				// ReSharper disable once ConvertIfStatementToSwitchStatement
+				if (utilizerSampling.Type == Utilizer.UtilizerType.User)
+				{
+					var userService = controller.HttpContext.RequestServices.GetService<IUserService>();
+					if (userService != null)
+					{
+						Utilizer user = userService.Get(utilizerSampling.MembershipId, utilizerSampling.Id);
+						return user;
+					}
+				}
+				else if (utilizerSampling.Type == Utilizer.UtilizerType.Application)
+				{
+					var applicationService = controller.HttpContext.RequestServices.GetService<IApplicationService>();
+					if (applicationService != null)
+					{
+						Utilizer application = applicationService.Get(utilizerSampling.MembershipId, utilizerSampling.Id);
+						return application;
+					}
+				}
+
+				return utilizerSampling;
 			}
 
 			return new Utilizer();
