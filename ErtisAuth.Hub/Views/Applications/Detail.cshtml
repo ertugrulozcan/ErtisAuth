@@ -1,9 +1,15 @@
 @using ErtisAuth.Hub.Helpers
 @using ErtisAuth.Hub.ViewModels
+@using ErtisAuth.Core.Models.Roles
+@using ErtisAuth.Hub.Extensions
 @model ErtisAuth.Hub.ViewModels.Applications.ApplicationViewModel
 
 @{
     ViewData["Title"] = "Applications";
+}
+
+@{
+	var isPermittedForUpdate = this.IsAuthorizedAction("applications", Rbac.CrudActionSegments.Update, new RbacSegment(Model.Id));
 }
 
 <div class="toolbar" id="kt_toolbar">
@@ -23,7 +29,7 @@
         </div>
 		
         <div class="d-flex align-items-center py-1">
-            <partial name="Partials/_AuthorizedButton" model="@AuthorizedButtonViewModel.SaveButton(Model.Id, "applications", "UpdateApplicationForm")" />
+            <partial name="Partials/_AuthorizedButton" model="@AuthorizedButton.SaveButton("UpdateApplicationForm", "applications", Model.Id)" />
         </div>
     </div>
 </div>
@@ -47,17 +53,34 @@
 			            <form id="UpdateApplicationForm" method="post" asp-controller="Applications" asp-action="Update">
 				            @Html.HiddenFor(x => x.Id)
                         
-				            <div class="mb-10">
-					            <label class="form-label required">Name</label>
-					            <input id="createApplicationForm_NameInput" type="text" class="form-control" placeholder="Name" asp-for="Name">
-					            <span class="validation-error-span" asp-validation-for="Name"></span>
-				            </div>
+				            @if (isPermittedForUpdate)
+				            {
+					            <div class="mb-10">
+						            <label class="form-label required">Name</label>
+						            <input id="createApplicationForm_NameInput" type="text" class="form-control" placeholder="Name" asp-for="Name">
+						            <span class="validation-error-span" asp-validation-for="Name"></span>
+					            </div>
 
-				            <div class="mb-10">
-					            <label class="form-label required">Role</label>
-					            <select class="form-control form-select" id="rolesDropdown" asp-for="Role" asp-items="Model.RoleList"></select>
-					            <span class="validation-error-span" asp-validation-for="Role"></span>		                    
-				            </div>
+					            <div class="mb-10">
+						            <label class="form-label required">Role</label>
+						            <select class="form-control form-select" id="rolesDropdown" asp-for="Role" asp-items="Model.RoleList"></select>
+						            <span class="validation-error-span" asp-validation-for="Role"></span>		                    
+					            </div>
+				            }
+				            else
+				            {
+					            <div class="mb-10">
+						            <label class="form-label required">Name</label>
+						            <input id="createApplicationForm_NameInput" type="text" class="form-control" placeholder="Name" asp-for="Name" disabled>
+						            <span class="validation-error-span" asp-validation-for="Name"></span>
+					            </div>
+
+					            <div class="mb-10">
+						            <label class="form-label required">Role</label>
+						            <select class="form-control form-select" id="rolesDropdown" asp-for="Role" asp-items="Model.RoleList" disabled></select>
+						            <span class="validation-error-span" asp-validation-for="Role"></span>		                    
+					            </div>   
+				            }
 			            </form>
 
 			            <div class="mb-10">

@@ -144,6 +144,7 @@ namespace ErtisAuth.Hub.Controllers
 		#region Detail
 
 		[HttpGet("{id}")]
+		[RbacObject("{id}")]
 		public async Task<IActionResult> Detail(string id)
 		{
 			if (string.IsNullOrEmpty(id))

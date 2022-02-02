@@ -1,19 +1,19 @@
 @using ErtisAuth.Hub.Extensions
-@model ErtisAuth.Hub.ViewModels.AuthorizedButtonViewModel
+@model ErtisAuth.Hub.ViewModels.AuthorizedDeleteModalButtonViewModel
 
-@if (this.IsAuthorizedAction(Model.CollectionName, Model.RbacAction, Model.ResourceId))
+@if (this.IsAuthorizedAction(Model.Rbac))
 {
     <a href="#" 
        class="menu-link text-danger px-5"
        data-bs-toggle="modal" 
        data-bs-target="#itemDeleteModal"
-       data-pass-id="@Model.ResourceId"
-       data-pass-modal-title="Delete @Model.ResourceName.ToLower().Capitalize()"
-       data-pass-body-title="Delete: @Model.ResourceTitle"
-       data-pass-body-text="This action cannot be undone. This will permanently delete the @Model.ResourceName.ToLower() and remove all linked resources."
-       data-pass-submit-button-text="I understand the consequences, delete this @Model.ResourceName.ToLower()">
+       data-pass-id="@Model.ItemId"
+       data-pass-modal-title="Delete @Model.ItemTypeName.ToLower().Capitalize()"
+       data-pass-body-title="Delete: @Model.ItemName"
+       data-pass-body-text="This action cannot be undone. This will permanently delete the @Model.ItemTypeName.ToLower() and remove all linked resources."
+       data-pass-submit-button-text="I understand the consequences, delete this @Model.ItemTypeName.ToLower()">
         <i class="bi bi-trash text-danger me-3"></i>
-        Delete @Model.ResourceName.ToLower()
+        Delete @Model.ItemTypeName.ToLower()
     </a>
 }
 else if (!Model.HideIfForbidden)
@@ -21,7 +21,7 @@ else if (!Model.HideIfForbidden)
     <span tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="You do not have sufficient permissions to perform this action">
         <a href="#" class="menu-link text-danger px-5 disabled">
             <i class="bi bi-trash text-danger me-3"></i>
-            Delete @Model.ResourceName.ToLower()
+            Delete @Model.ItemTypeName.ToLower()
         </a>
     </span>
 }

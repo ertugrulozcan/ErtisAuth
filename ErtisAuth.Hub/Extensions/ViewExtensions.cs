@@ -80,6 +80,25 @@ namespace ErtisAuth.Hub.Extensions
 
             return false;
         }
+        
+        public static bool IsAuthorizedAction(this RazorPage page, Rbac rbac)
+        {
+            var userId = page.Context.GetClaim(Claims.UserId);
+            var accessToken = page.Context.GetClaim(Claims.AccessToken);
+            
+            if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(accessToken))
+            {
+                var middlewareRoleService = page.Context.RequestServices.GetService<IMiddlewareRoleService>();
+                if (middlewareRoleService != null)
+                {
+                    var subjectSegment = new RbacSegment(userId);
+                    rbac = new Rbac(subjectSegment, rbac.Resource, rbac.Action, rbac.Object);
+                    return middlewareRoleService.CheckPermission(rbac, BearerToken.CreateTemp(accessToken));   
+                }
+            }
+
+            return false;
+        }
 
         #endregion
     }

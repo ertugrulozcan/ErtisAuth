@@ -1,9 +1,15 @@
 @using ErtisAuth.Hub.Helpers
 @using ErtisAuth.Hub.ViewModels
+@using ErtisAuth.Core.Models.Roles
+@using ErtisAuth.Hub.Extensions
 @model ErtisAuth.Hub.ViewModels.Memberships.MembershipViewModel
 
 @{
     ViewData["Title"] = "Memberships";
+}
+
+@{
+	var isPermittedForUpdate = this.IsAuthorizedAction("memberships", Rbac.CrudActionSegments.Update, new RbacSegment(Model.Id));
 }
 
 <div class="toolbar" id="kt_toolbar">
@@ -28,7 +34,7 @@
 			    Email Settings
 		    </a>
 		    
-		    <partial name="Partials/_AuthorizedButton" model="@AuthorizedButtonViewModel.SaveButton(Model.Id, "memberships", "UpdateMembershipForm")"/>
+		    <partial name="Partials/_AuthorizedButton" model="@AuthorizedButton.SaveButton("UpdateMembershipForm", "memberships", Model.Id)" />
 	    </div>
     </div>
 </div>
@@ -53,58 +59,116 @@
 					        @Html.HiddenFor(x => x.Id)
 					        @Html.HiddenFor(x => x.SecretKey)
 					        
-					        <div class="mb-5">
-						        <label class="form-label required">Name</label>
-						        <input type="text" class="form-control" placeholder="Name" asp-for="Name">
-						        <span class="validation-error-span" asp-validation-for="Name"></span>
-					        </div>
-                                                                
-					        <div class="mb-5">
-						        <label class="form-label required">Expires In</label>
-						        <div class="input-group">
-							        <input type="number" class="form-control" placeholder="Expires In" asp-for="ExpiresIn"/>
-							        <span class="input-group-text">seconds</span>
+					        @if (isPermittedForUpdate)
+					        {
+						        <div class="mb-5">
+							        <label class="form-label required">Name</label>
+							        <input type="text" class="form-control" placeholder="Name" asp-for="Name">
+							        <span class="validation-error-span" asp-validation-for="Name"></span>
 						        </div>
-						        <span class="validation-error-span" asp-validation-for="ExpiresIn"></span>
-					        </div>
-                                                                
-					        <div class="mb-5">
-						        <label class="form-label required">Refresh Token Expires In</label>
-						        <div class="input-group">
-							        <input type="number" class="form-control" placeholder="Refresh Token Expires In" asp-for="RefreshTokenExpiresIn"/>
-							        <span class="input-group-text">seconds</span>
-						        </div>
-						        <span class="validation-error-span" asp-validation-for="RefreshTokenExpiresIn"></span>
-					        </div>
-                                                                
-					        <div class="mb-5">
-						        <label class="form-label required">Secret Key</label>
-						        <div class="input-group">
-							        <input id="membershipSecretKeyInput" type="text" class="form-control" placeholder="Secret Key" asp-for="SecretKey" disabled/>
-							        <div class="input-group-append">
-								        <button class="btn btn-white" type="button" onClick="generateRandomSecretKey()">Generate</button>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Expires In</label>
+							        <div class="input-group">
+								        <input type="number" class="form-control" placeholder="Expires In" asp-for="ExpiresIn"/>
+								        <span class="input-group-text">seconds</span>
 							        </div>
+							        <span class="validation-error-span" asp-validation-for="ExpiresIn"></span>
 						        </div>
-						        <span class="validation-error-span" asp-validation-for="SecretKey"></span>
-					        </div>
-                                                                
-					        <div class="mb-5">
-						        <label class="form-label required">Hash Algorithm</label>
-						        <select class="form-control form-select" id="hashAlgorithmDropdown" asp-for="HashAlgorithm" asp-items="Model.HashAlgorithmList"></select>
-						        <span class="validation-error-span" asp-validation-for="HashAlgorithm"></span>
-					        </div>
-                                                                
-					        <div class="mb-5">
-						        <label class="form-label required">Encoding</label>
-						        <select class="form-control form-select" id="encodingsDropdown" asp-for="DefaultEncoding" asp-items="Model.EncodingList"></select>
-						        <span class="validation-error-span" asp-validation-for="DefaultEncoding"></span>
-					        </div>
-                                                                
-					        <div class="mb-5">
-						        <label class="form-label required">Default Language</label>
-						        <select class="form-control form-select" id="languageDropdown" asp-for="DefaultLanguage" asp-items="Model.LanguageList"></select>
-						        <span class="validation-error-span" asp-validation-for="DefaultLanguage"></span>
-					        </div>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Refresh Token Expires In</label>
+							        <div class="input-group">
+								        <input type="number" class="form-control" placeholder="Refresh Token Expires In" asp-for="RefreshTokenExpiresIn"/>
+								        <span class="input-group-text">seconds</span>
+							        </div>
+							        <span class="validation-error-span" asp-validation-for="RefreshTokenExpiresIn"></span>
+						        </div>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Secret Key</label>
+							        <div class="input-group">
+								        <input id="membershipSecretKeyInput" type="text" class="form-control" placeholder="Secret Key" asp-for="SecretKey" disabled/>
+								        <div class="input-group-append">
+									        <button class="btn btn-white" type="button" onClick="generateRandomSecretKey()">Generate</button>
+								        </div>
+							        </div>
+							        <span class="validation-error-span" asp-validation-for="SecretKey"></span>
+						        </div>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Hash Algorithm</label>
+							        <select class="form-control form-select" id="hashAlgorithmDropdown" asp-for="HashAlgorithm" asp-items="Model.HashAlgorithmList"></select>
+							        <span class="validation-error-span" asp-validation-for="HashAlgorithm"></span>
+						        </div>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Encoding</label>
+							        <select class="form-control form-select" id="encodingsDropdown" asp-for="DefaultEncoding" asp-items="Model.EncodingList"></select>
+							        <span class="validation-error-span" asp-validation-for="DefaultEncoding"></span>
+						        </div>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Default Language</label>
+							        <select class="form-control form-select" id="languageDropdown" asp-for="DefaultLanguage" asp-items="Model.LanguageList"></select>
+							        <span class="validation-error-span" asp-validation-for="DefaultLanguage"></span>
+						        </div>
+					        }
+					        else
+					        {
+						        <div class="mb-5">
+							        <label class="form-label required">Name</label>
+							        <input type="text" class="form-control" placeholder="Name" asp-for="Name" disabled>
+							        <span class="validation-error-span" asp-validation-for="Name"></span>
+						        </div>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Expires In</label>
+							        <div class="input-group">
+								        <input type="number" class="form-control" placeholder="Expires In" asp-for="ExpiresIn" disabled/>
+								        <span class="input-group-text">seconds</span>
+							        </div>
+							        <span class="validation-error-span" asp-validation-for="ExpiresIn"></span>
+						        </div>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Refresh Token Expires In</label>
+							        <div class="input-group">
+								        <input type="number" class="form-control" placeholder="Refresh Token Expires In" asp-for="RefreshTokenExpiresIn" disabled/>
+								        <span class="input-group-text">seconds</span>
+							        </div>
+							        <span class="validation-error-span" asp-validation-for="RefreshTokenExpiresIn"></span>
+						        </div>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Secret Key</label>
+							        <div class="input-group">
+								        <input id="membershipSecretKeyInput" type="text" class="form-control" placeholder="Secret Key" asp-for="SecretKey" disabled/>
+								        <div class="input-group-append">
+									        <button class="btn btn-white" type="button" onClick="generateRandomSecretKey()">Generate</button>
+								        </div>
+							        </div>
+							        <span class="validation-error-span" asp-validation-for="SecretKey"></span>
+						        </div>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Hash Algorithm</label>
+							        <select class="form-control form-select" id="hashAlgorithmDropdown" asp-for="HashAlgorithm" asp-items="Model.HashAlgorithmList" disabled></select>
+							        <span class="validation-error-span" asp-validation-for="HashAlgorithm"></span>
+						        </div>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Encoding</label>
+							        <select class="form-control form-select" id="encodingsDropdown" asp-for="DefaultEncoding" asp-items="Model.EncodingList" disabled></select>
+							        <span class="validation-error-span" asp-validation-for="DefaultEncoding"></span>
+						        </div>
+	                                                                
+						        <div class="mb-5">
+							        <label class="form-label required">Default Language</label>
+							        <select class="form-control form-select" id="languageDropdown" asp-for="DefaultLanguage" asp-items="Model.LanguageList" disabled></select>
+							        <span class="validation-error-span" asp-validation-for="DefaultLanguage"></span>
+						        </div>
+					        }
 				        </form>
 			        </div>
 		        </div>

@@ -22,7 +22,7 @@ function initTable(tableId, apiEndpoint) {
             title: 'Id',
             searchable: false,
             orderable: true,
-            orderData: [ 0 ],
+            orderData: [ 1 ],
             visible: true,
             render: function(data, type, full, meta) {
                 let event = convertToEvent(full);
@@ -35,7 +35,7 @@ function initTable(tableId, apiEndpoint) {
             title: 'Event Type',
             searchable: false,
             orderable: true,
-            orderData: [ 1 ],
+            orderData: [ 2 ],
             render: function(data, type, full, meta) {
                 let event = convertToEvent(full);
                 return event.event_type;
@@ -46,10 +46,32 @@ function initTable(tableId, apiEndpoint) {
             title: 'Event Time',
             searchable: false,
             orderable: true,
-            orderData: [ 2 ],
+            orderData: [ 3 ],
             render: function(data, type, full, meta) {
                 let event = convertToEvent(full);
                 return event.event_time;
+            }
+        },
+        {
+            targets: 4,
+            title: 'Utilizer Type',
+            searchable: false,
+            orderable: false,
+            visible: false,
+            render: function(data, type, full, meta) {
+                let event = convertToEvent(full);
+                return event.utilizer_type;
+            }
+        },
+        {
+            targets: 5,
+            title: 'Utilizer Id',
+            searchable: false,
+            orderable: false,
+            visible: false,
+            render: function(data, type, full, meta) {
+                let event = convertToEvent(full);
+                return event.utilizer_id;
             }
         },
         {
@@ -93,7 +115,7 @@ function initTable(tableId, apiEndpoint) {
         responsive: false,
         lengthMenu: [ 10, 25, 50, 75, 100 ],
         displayStart: 0,
-        order: [[3, 'asc']],
+        order: [[3, 'desc']],
         searchDelay: 600,
         columnDefs: columnDefinitions,
         ajax: {

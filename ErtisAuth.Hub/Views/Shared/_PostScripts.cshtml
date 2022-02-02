@@ -104,7 +104,7 @@ else if (Context.Request.Path.Value.StartsWith("/memberships/") && Context.Reque
     @Html.Raw(HtmlTag.Js("js/mailhooks/mailhooks.js"))
     @Html.Raw(HtmlTag.Js("js/delete-modal.js"))
 }
-else if (Context.Request.Path.Value.StartsWith("/memberships/") && Context.Request.Path.Value.Contains("/mail-settings/"))
+else if (Context.Request.Path.Value.StartsWith("/memberships/") && Context.Request.Path.Value.Contains("/mailhooks/"))
 {
     @Html.Raw(HtmlTag.Js("lib/jquery-validation/dist/jquery.validate.js"))
     @Html.Raw(HtmlTag.Js("lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"))

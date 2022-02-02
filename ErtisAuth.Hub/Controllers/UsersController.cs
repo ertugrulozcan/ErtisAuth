@@ -112,14 +112,14 @@ namespace ErtisAuth.Hub.Controllers
 					var getActiveTokensResponse = await this.userService.GetActiveTokensAsync(id, token);
 					if (getActiveTokensResponse.IsSuccess)
 					{
-						activeTokens = getActiveTokensResponse.Data.Items;
+						activeTokens = getActiveTokensResponse.Data.Items.OrderByDescending(x => x.CreatedAt);
 					}
 					
 					IEnumerable<RevokedToken> revokedTokens = null;
 					var getRevokedTokensResponse = await this.userService.GetRevokedTokensAsync(id, token);
 					if (getRevokedTokensResponse.IsSuccess)
 					{
-						revokedTokens = getRevokedTokensResponse.Data.Items;
+						revokedTokens = getRevokedTokensResponse.Data.Items.OrderByDescending(x => x.RevokedAt);
 					}
 
 					var roleList = getRolesResponse.Data.Items.ToList();

@@ -76,7 +76,7 @@
         </div>
 		
         <div class="d-flex align-items-center py-1">
-            <partial name="Partials/_AuthorizedButton" model="@AuthorizedButtonViewModel.SaveButton(Model.Id, "roles", "UpdateRoleForm")" />
+            <partial name="Partials/_AuthorizedButton" model="@AuthorizedButton.SaveButton("UpdateRoleForm", "roles", Model.Id)" />
         </div>
     </div>
 </div>

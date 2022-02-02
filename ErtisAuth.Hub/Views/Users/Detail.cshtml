@@ -29,7 +29,7 @@
         </div>
 		
 	    <div class="d-flex align-items-center py-1">
-		    <partial name="Partials/_AuthorizedButton" model="@AuthorizedButtonViewModel.SaveButton(Model.Id, "users", "UpdateUserForm")" />
+		    <partial name="Partials/_AuthorizedButton" model="@AuthorizedButton.SaveButton("UpdateUserForm", "users", Model.Id)" />
 	    </div>
     </div>
 </div>
@@ -75,7 +75,7 @@
 							}
 							
 							<div class="menu-item px-5">
-								<partial name="Partials/_DeleteModalButton" model="@AuthorizedButtonViewModel.DeleteModalButton(Model.Id, "users", "user", $"{Model.FirstName} {Model.LastName}", true)" />
+								<partial name="Partials/_DeleteModalButton" model="@AuthorizedButton.DeleteModalButton(Model.Id, $"{Model.FirstName} {Model.LastName}", "user", "users", Model.Id)" />
 							</div>
 						</div>
 					</li>

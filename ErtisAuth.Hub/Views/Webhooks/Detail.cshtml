@@ -22,9 +22,9 @@
             <partial name="Partials/_Breadcrumb" model="@breadcrumb"/>
         </div>
 		
-        <div class="d-flex align-items-center py-1">
-            <partial name="Partials/_AuthorizedButton" model="@AuthorizedButtonViewModel.SaveButton(Model.Id, "webhooks", "UpdateWebhookForm")" />
-        </div>
+	    <div class="d-flex align-items-center py-1">
+		    <partial name="Partials/_AuthorizedButton" model="@AuthorizedButton.SaveButton("UpdateWebhookForm", "webhooks", Model.Id)" />
+	    </div>
     </div>
 </div>
 

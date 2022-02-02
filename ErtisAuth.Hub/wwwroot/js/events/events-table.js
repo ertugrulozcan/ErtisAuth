@@ -2,12 +2,12 @@
 
 function convertToEvent(full) {
     return {
-        id: full[0],
-        utilizer_type: full[1],
-        utilizer_id: full[2],
-        utilizer_name: full[3],
-        event_type: full[4],
-        event_time: full[5]
+        utilizer_type: full[0],
+        id: full[1],
+        event_type: full[2],
+        event_time: full[3],
+        utilizer_id: full[4],
+        utilizer_name: full[5],
     };
 }
 

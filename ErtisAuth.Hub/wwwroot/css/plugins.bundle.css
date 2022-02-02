@@ -23315,7 +23315,7 @@ div.dataTables_wrapper div.dataTables_processing {
     margin: 0 !important;
     width: auto;
     padding: 1rem 2rem !important;
-    transform: translateX(-50%) translateY(-50%);
+    /*transform: translateX(-50%) translateY(-50%);*/
 }
 .dropzone {
     min-height: auto;

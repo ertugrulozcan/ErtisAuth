@@ -1,7 +1,16 @@
 @using ErtisAuth.Hub.Extensions
 @using ErtisAuth.Hub.Helpers
 @using ErtisAuth.Core.Models.Roles
+@using ErtisAuth.Hub.ViewModels.Roles
 @model ErtisAuth.Hub.ViewModels.Roles.RoleViewModelBase
+
+@{
+	bool? isPermittedForRoleUpdate = null; 
+	if (Model is RoleViewModel roleViewModel)
+	{
+		isPermittedForRoleUpdate = this.IsAuthorizedAction("roles", Rbac.CrudActionSegments.Update, new RbacSegment(roleViewModel.Id));	
+	}
+}
 
 @Html.HiddenFor(x => x.Json, new { @id = "json_payload_input" })
 					
@@ -16,16 +25,32 @@
 	
 	<div class="card-body">
 		<div class="row">
-			<div class="col-lg-6">
-				<label class="form-label required">Name</label>
-				<input id="createRoleForm_NameInput" type="text" class="form-control" placeholder="Name" asp-for="Name">
-				<span class="validation-error-span" asp-validation-for="Name"></span>
-			</div>
-			<div class="col-lg-6">
-				<label class="form-label">Description</label>
-				<input id="createRoleForm_DescriptionInput" type="text" class="form-control" placeholder="Description" asp-for="Description">
-				<span class="validation-error-span" asp-validation-for="Description"></span>
-			</div>
+			@if (isPermittedForRoleUpdate != null && !isPermittedForRoleUpdate.Value)
+			{
+				<div class="col-lg-6">
+					<label class="form-label required">Name</label>
+					<input id="createRoleForm_NameInput" type="text" class="form-control" placeholder="Name" asp-for="Name" disabled>
+					<span class="validation-error-span" asp-validation-for="Name"></span>
+				</div>
+				<div class="col-lg-6">
+					<label class="form-label">Description</label>
+					<input id="createRoleForm_DescriptionInput" type="text" class="form-control" placeholder="Description" asp-for="Description" disabled>
+					<span class="validation-error-span" asp-validation-for="Description"></span>
+				</div>
+			}
+			else
+			{
+				<div class="col-lg-6">
+					<label class="form-label required">Name</label>
+					<input id="createRoleForm_NameInput" type="text" class="form-control" placeholder="Name" asp-for="Name">
+					<span class="validation-error-span" asp-validation-for="Name"></span>
+				</div>
+				<div class="col-lg-6">
+					<label class="form-label">Description</label>
+					<input id="createRoleForm_DescriptionInput" type="text" class="form-control" placeholder="Description" asp-for="Description">
+					<span class="validation-error-span" asp-validation-for="Description"></span>
+				</div>	
+			}
 		</div>
 	</div>
 </div>
@@ -47,21 +72,41 @@
 			<div class="tab-pane fade show active px-7 py-6" id="basic_roles_tab" role="tabpanel">
 				<div>
 					<div>
-						<div class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10">
-							<span class="svg-icon svg-icon-2hx svg-icon-primary me-4 mb-5 mb-sm-0">
-								@Html.Raw(SvgIcons.Info)
-							</span>
-							
-							<div class="d-flex flex-column pe-0 pe-sm-10">
-								<h5 class="mb-1">Info</h5>
-								<span>Only permissions covering all users and all resources can be managed from this panel. Please check the advanced tab for the forbidden list and the user-based & resource-based options.</span>
+						@if (isPermittedForRoleUpdate != null && !isPermittedForRoleUpdate.Value)
+						{
+							<div class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10">
+								<span class="svg-icon svg-icon-2hx svg-icon-primary me-4 mb-5 mb-sm-0">
+									@Html.Raw(SvgIcons.Warning)
+								</span>
+
+								<div class="d-flex flex-column pe-0 pe-sm-10">
+									<h5 class="mb-1">Authorization Required</h5>
+									<span>You do not have sufficient permissions to edit/update permission settings. You must have to <strong>roles.update</strong> permission.</span>
+								</div>
+
+								<button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+									<i class="bi bi-x fs-1 text-primary"></i>
+								</button>
 							</div>
-							
-							<button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
-								<i class="bi bi-x fs-1 text-primary"></i>
-							</button>
-						</div>
-                                                
+						}
+						else
+						{
+							<div class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10">
+								<span class="svg-icon svg-icon-2hx svg-icon-primary me-4 mb-5 mb-sm-0">
+									@Html.Raw(SvgIcons.Info)
+								</span>
+
+								<div class="d-flex flex-column pe-0 pe-sm-10">
+									<h5 class="mb-1">Info</h5>
+									<span>Only permissions covering all users and all resources can be managed from this panel. Please check the advanced tab for the forbidden list and the user-based & resource-based options.</span>
+								</div>
+
+								<button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+									<i class="bi bi-x fs-1 text-primary"></i>
+								</button>
+							</div>	
+						}
+
 						<table id="basicRoleManagementTable" class="table table-rounded table-striped table-hover border gy-7 gs-7">
 							<thead>
 							<tr>
@@ -75,6 +120,8 @@
 							<tbody>
 							@if (Model.PermissionsForBasicTab != null)
 							{
+								var disabledAttribute = (isPermittedForRoleUpdate != null && !isPermittedForRoleUpdate.Value) ? " disabled" : string.Empty;
+								
 								foreach (var (resource, rbacSegments) in Model.PermissionsForBasicTab)
 								{
 									var title = resource.Value.Capitalize();
@@ -89,7 +136,7 @@
 												$" data-rbac=*.{resource.Value}.update.*",
 												$" data-rbac=*.{resource.Value}.delete.*",
 											};
-											
+
 											const string checkedToggleAttributeValue = " checked=checked value=1";
 											if (rbacSegments.Any(x => x.Action.Slug == Rbac.CrudActionSegments.Create.Slug))
 											{
@@ -116,7 +163,7 @@
 										{
 											<td>
 												<div class="form-check form-switch form-check-custom form-check-solid me-10">
-													<input class="form-check-input h-20px w-30px role-switch" type="checkbox" @toggleAttribute />
+													<input class="form-check-input h-20px w-30px role-switch" type="checkbox" @toggleAttribute @disabledAttribute />
 												</div>
 											</td>
 										}
@@ -169,6 +216,32 @@
 					}
 				</style>
 				
+				@{
+	                var contentEditableAttributeValue = "true";
+	                var deleteButtonDisabledAttribute = string.Empty;
+
+					if (isPermittedForRoleUpdate != null && !isPermittedForRoleUpdate.Value)
+					{
+						contentEditableAttributeValue = "false";
+						deleteButtonDisabledAttribute = " disabled";
+						
+						<div class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10">
+							<span class="svg-icon svg-icon-2hx svg-icon-primary me-4 mb-5 mb-sm-0">
+								@Html.Raw(SvgIcons.Warning)
+							</span>
+
+							<div class="d-flex flex-column pe-0 pe-sm-10">
+								<h5 class="mb-1">Authorization Required</h5>
+								<span>You do not have sufficient permissions to edit/update permission settings. You must have to <strong>roles.update</strong> permission.</span>
+							</div>
+
+							<button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+								<i class="bi bi-x fs-1 text-primary"></i>
+							</button>
+						</div>
+					}
+                }
+				
 				<div class="row m-0 soft-border">
 					<div class="col-md-6 px-0 border-right-solid-1-gray-200">
 						<div id="permissionsPortlet" class="card non-box-shadow">
@@ -180,9 +253,18 @@
 								</div>
 
 								<div class="card-toolbar">
-									<button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" onClick="addPermission()">
-										<i class="fas fa-plus fs-6"></i>
-									</button>
+									@if (isPermittedForRoleUpdate != null && !isPermittedForRoleUpdate.Value)
+									{
+										<button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" disabled>
+											<i class="fas fa-plus fs-6"></i>
+										</button>
+									}
+									else
+									{
+										<button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" onClick="addPermission()">
+											<i class="fas fa-plus fs-6"></i>
+										</button>	
+									}
 								</div>
 							</div>
 
@@ -203,12 +285,12 @@
 										foreach (var permissionRbac in Model.Permissions)
 										{
 											<tr data-rbac="@permissionRbac.ToString()">
-												<td contenteditable="true">@permissionRbac.Subject</td>
-												<td contenteditable="true">@permissionRbac.Resource</td>
-												<td contenteditable="true">@permissionRbac.Action</td>
-												<td contenteditable="true">@permissionRbac.Object</td>
+												<td contenteditable="@contentEditableAttributeValue">@permissionRbac.Subject</td>
+												<td contenteditable="@contentEditableAttributeValue">@permissionRbac.Resource</td>
+												<td contenteditable="@contentEditableAttributeValue">@permissionRbac.Action</td>
+												<td contenteditable="@contentEditableAttributeValue">@permissionRbac.Object</td>
 												<td>
-													<button type="button" class="btn btn-icon-xsm btn-light-danger rbac-remove-button">
+													<button type="button" class="btn btn-icon-xsm btn-light-danger rbac-remove-button" @deleteButtonDisabledAttribute>
 														<i class="fas fa-times fs-6"></i>
 													</button>
 												</td>
@@ -231,9 +313,18 @@
 								</div>
 
 								<div class="card-toolbar">
-									<button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" onClick="addForbidden()">
-										<i class="fas fa-plus fs-6"></i>
-									</button>
+									@if (isPermittedForRoleUpdate != null && !isPermittedForRoleUpdate.Value)
+                                    {
+	                                    <button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" disabled>
+		                                    <i class="fas fa-plus fs-6"></i>
+	                                    </button>
+                                    }
+                                    else
+                                    {
+	                                    <button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" onClick="addForbidden()">
+		                                    <i class="fas fa-plus fs-6"></i>
+	                                    </button>	
+                                    }
 								</div>
 							</div>
 							
@@ -254,12 +345,12 @@
 										foreach (var forbiddenRbac in Model.Forbidden)
 										{
 											<tr data-rbac="@forbiddenRbac.ToString()">
-												<td contenteditable="true">@forbiddenRbac.Subject</td>
-												<td contenteditable="true">@forbiddenRbac.Resource</td>
-												<td contenteditable="true">@forbiddenRbac.Action</td>
-												<td contenteditable="true">@forbiddenRbac.Object</td>
+												<td contenteditable="@contentEditableAttributeValue">@forbiddenRbac.Subject</td>
+												<td contenteditable="@contentEditableAttributeValue">@forbiddenRbac.Resource</td>
+												<td contenteditable="@contentEditableAttributeValue">@forbiddenRbac.Action</td>
+												<td contenteditable="@contentEditableAttributeValue">@forbiddenRbac.Object</td>
 												<td>
-													<button type="button" class="btn btn-icon-xsm btn-light-danger rbac-remove-button">
+													<button type="button" class="btn btn-icon-xsm btn-light-danger rbac-remove-button" @deleteButtonDisabledAttribute>
 														<i class="fas fa-times fs-6"></i>
 													</button>
 												</td>

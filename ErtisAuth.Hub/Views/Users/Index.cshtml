@@ -26,7 +26,7 @@
 		</div>
 		
 		<div class="d-flex align-items-center py-1">
-			<partial name="Partials/_AuthorizedButton" model="@AuthorizedButtonViewModel.CreateButton("users", "Create User", "createUserModal")" />
+			<partial name="Partials/_AuthorizedButton" model="@AuthorizedButton.CreateButton("createUserModal", "users")" />
 		</div>
 	</div>
 </div>
@@ -42,7 +42,7 @@
 						<span class="svg-icon svg-icon-1 position-absolute ms-6">
 							@Html.Raw(SvgIcons.Search)
 						</span>
-						<input id="usersTableSearchBox" type="search" class="form-control form-control-solid w-250px ps-14" placeholder="Search user" aria-controls="users_data_table" />
+						<input id="usersTableSearchBox" type="search" class="form-control form-control-solid w-400px ps-14" placeholder="Search user" aria-controls="users_data_table" />
 					</div>
 				</div>
 

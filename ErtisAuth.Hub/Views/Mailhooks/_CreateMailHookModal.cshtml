@@ -71,7 +71,7 @@
 						</div>
 					</div>
 			        
-					<form id="CreateMailHookForm" class="w-100" method="post" asp-controller="Memberships" asp-action="CreateMailHook">
+					<form id="CreateMailHookForm" class="w-100" method="post" asp-controller="Mailhooks" asp-action="Create">
 						@Html.HiddenFor(x => x.MembershipId)
 						@Html.HiddenFor(x => x.MailTemplate, new { @id = "mail_template_html_input" })
 						

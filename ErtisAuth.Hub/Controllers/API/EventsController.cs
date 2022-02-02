@@ -26,14 +26,14 @@ namespace ErtisAuth.Hub.Controllers.API
 
 		private readonly string[] Columns = 
 		{
-			"_id",
 			"utilizer_type",
-			"utilizer_id",
-			"name",
+			"_id",
 			"event_type",
-			"event_time"
+			"event_time",
+			"utilizer_id",
+			"utilizer_name",
 		};  
-
+		
 		#endregion
 		
 		#region Services
@@ -72,6 +72,8 @@ namespace ErtisAuth.Hub.Controllers.API
 
 				var token = this.GetBearerToken();
 				var query = this.GetFilterQuery();
+				
+				Console.WriteLine($"Requested: events/_query (skip: {skip}, limit: {limit}, order_by: '{orderBy}', sort_direction: {sortDirection}, search_keyword: '{searchKeyword}')");
 				
 				IResponseResult<IPaginationCollection<ErtisAuthEventLog>> getEventsResponse;
 				if (query == null)
@@ -129,12 +131,12 @@ namespace ErtisAuth.Hub.Controllers.API
 				var ertisAuthEvent = events[i];
 				var columns = new object[]
 				{
-					ertisAuthEvent.Id,
 					utilizerInfo.UtilizerType,
+					ertisAuthEvent.Id,
+					ertisAuthEvent.EventType,
+					ertisAuthEvent.EventTime.ToString("dd MMM yyyy HH:mm", CultureInfo.GetCultureInfo("en-US")),
 					utilizerInfo.Id,
 					utilizerInfo.Name,
-					ertisAuthEvent.EventType,
-					ertisAuthEvent.EventTime.ToString("dd MMM yyyy HH:mm", CultureInfo.GetCultureInfo("en-US"))
 				};
 				
 				table.Add(columns);

@@ -98,6 +98,13 @@ div.dataTables_wrapper div.dataTables_processing {
     background-color: #1e1e2d !important;
     color: #ffffff !important;
     min-width: 300px !important;
+    display: block;
+    position: absolute;
+    width: 400px;
+    top: calc(50% - 4rem);
+    left: calc(50% - 200px);
+    text-align: center;
+    padding: 3rem 2rem !important;
 }
 
 .sessions-floating-box {

@@ -1,6 +1,11 @@
 @using ErtisAuth.Hub.Helpers
 @using ErtisAuth.Hub.Extensions
+@using ErtisAuth.Core.Models.Roles
 @model ErtisAuth.Hub.ViewModels.Users.UserViewModel
+
+@{
+	var isPermittedForRoleUpdate = this.IsAuthorizedAction("roles", Rbac.CrudActionSegments.Update, new RbacSegment(Model.RoleId));
+}
 
 <div class="tab-pane fade" id="kt_user_view_overview_security" role="tabpanel">
     <div class="card card-bordered mb-5 mb-xl-10">
@@ -16,14 +21,18 @@
 
 	        <div class="card-toolbar">
 		        <a href="/roles/@Model.RoleId" target="_blank" class="btn btn-light btn-sm">Go to role settings</a>
-		        <button id="resetToRoleButton" type="button" class="btn btn-light-warning btn-sm ms-4" data-role-id="@Model.RoleId" onClick="resetToRoleSettings()">
-			        <span class="indicator-label">
-				        Reset to role settings
-			        </span>
-			        <span class="indicator-progress">
-				        Please wait... <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
-			        </span>
-		        </button>
+		        
+		        @if (isPermittedForRoleUpdate)
+		        {
+			        <button id="resetToRoleButton" type="button" class="btn btn-light-warning btn-sm ms-4" data-role-id="@Model.RoleId" onClick="resetToRoleSettings()">
+				        <span class="indicator-label">
+					        Reset to role settings
+				        </span>
+				        <span class="indicator-progress">
+					        Please wait... <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+				        </span>
+			        </button>   
+		        }
 	        </div>
     	</div>
     	
@@ -31,68 +40,89 @@
     		<div class="tab-content">
     			<div class="tab-pane fade show active px-7 py-6" id="basic_ubac_tab" role="tabpanel">
     				<div>
-    					<div>
-    						<div class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10">
-    							<span class="svg-icon svg-icon-2hx svg-icon-primary me-4 mb-5 mb-sm-0">
-    								@Html.Raw(SvgIcons.Info)
-    							</span>
-    							
-    							<div class="d-flex flex-column pe-0 pe-sm-10">
-    								<h5 class="mb-1">Info</h5>
-    								<span>Only permissions covering all users and all resources can be managed from this panel. Please check the advanced tab for the forbidden list and the user-based & resource-based options.</span>
-    							</div>
-    							
-    							<button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
-    								<i class="bi bi-x fs-1 text-primary"></i>
-    							</button>
-    						</div>
-                                                    
-    						<table id="basicUserPermissionsTable" class="table table-rounded table-striped table-hover border gy-7 gs-7">
-    							<thead>
-    							<tr>
-    								<th>#</th>
-    								<th>Create</th>
-    								<th>Read</th>
-    								<th>Update</th>
-    								<th>Delete</th>
-    							</tr>
-    							</thead>
-    							<tbody>
-    							@if (Model.UbacTable is { Rows: { } } )
-							    {
-								    foreach (var ubacRow in Model.UbacTable.Rows)
-								    {
-									    var title = ubacRow.ResourceName.Capitalize();
-									    
-									    <tr data-ubac-resource="@ubacRow.ResourceName">
-										    <th scope="row" style="vertical-align: middle;">@title</th>
-										    
-										    @foreach (var toggle in ubacRow.Toggles)
-										    {
-											    <td>
-												    <div class="vertical-center-flex">
-													    <div class="form-check form-switch form-check-custom form-check-solid me-2">
-														    <input class="form-check-input h-20px w-30px ubac-switch" type="checkbox" @toggle.GetAttributes()/>
-													    </div>
-                                            													    
-													    @if (toggle.IsDifferentByRole)
-													    {
-														    <i class="edited-for-user-warn-symbol bi bi-info-circle-fill text-gray-600 text-hover-info fs-4 mt-1-px" data-bs-toggle="tooltip" data-bs-placement="top" title="@toggle.ReasonOfDifference"></i>
-													    }
-													    
-													    @if (toggle.IsAnyConflict)
-                                                        {
-	                                                        <i class="edited-for-user-warn-symbol bi bi-exclamation-triangle-fill text-gray-600 text-hover-danger fs-4 mt-1-px" data-bs-toggle="tooltip" data-bs-placement="top" title="@toggle.ReasonOfConflict"></i>
-                                                        }
-												    </div>
-											    </td>
-										    }
-									    </tr>
-								    }
-							    }
-    							</tbody>
-    						</table>
-    					</div>
+	                    <div>
+		                    @if (isPermittedForRoleUpdate)
+                            {
+	                            <div class="alert alert-dismissible bg-light-primary border border-primary border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10">
+		                            <span class="svg-icon svg-icon-2hx svg-icon-primary me-4 mb-5 mb-sm-0">
+			                            @Html.Raw(SvgIcons.Info)
+		                            </span>
+
+		                            <div class="d-flex flex-column pe-0 pe-sm-10">
+			                            <h5 class="mb-1">Info</h5>
+			                            <span>Only permissions covering all users and all resources can be managed from this panel. Please check the advanced tab for the forbidden list and the user-based & resource-based options.</span>
+		                            </div>
+
+		                            <button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+			                            <i class="bi bi-x fs-1 text-primary"></i>
+		                            </button>
+	                            </div>
+                            }
+                            else
+                            {
+	                            <div class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10">
+		                            <span class="svg-icon svg-icon-2hx svg-icon-primary me-4 mb-5 mb-sm-0">
+			                            @Html.Raw(SvgIcons.Warning)
+		                            </span>
+
+		                            <div class="d-flex flex-column pe-0 pe-sm-10">
+			                            <h5 class="mb-1">Authorization Required</h5>
+			                            <span>You do not have sufficient permissions to edit/update permission settings. You must have to <strong>roles.update</strong> permission.</span>
+		                            </div>
+
+		                            <button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+			                            <i class="bi bi-x fs-1 text-primary"></i>
+		                            </button>
+	                            </div>
+                            }
+		                    
+		                    <table id="basicUserPermissionsTable" class="table table-rounded table-striped table-hover border gy-7 gs-7">
+			                    <thead>
+			                    <tr>
+				                    <th>#</th>
+				                    <th>Create</th>
+				                    <th>Read</th>
+				                    <th>Update</th>
+				                    <th>Delete</th>
+			                    </tr>
+			                    </thead>
+			                    <tbody>
+			                    @if (Model.UbacTable is { Rows: { } })
+			                    {
+				                    var disabledAttribute = isPermittedForRoleUpdate ? string.Empty : " disabled";
+				                    foreach (var ubacRow in Model.UbacTable.Rows)
+				                    {
+					                    var title = ubacRow.ResourceName.Capitalize();
+
+					                    <tr data-ubac-resource="@ubacRow.ResourceName">
+						                    <th scope="row" style="vertical-align: middle;">@title</th>
+
+						                    @foreach (var toggle in ubacRow.Toggles)
+						                    {
+							                    <td>
+								                    <div class="vertical-center-flex">
+									                    <div class="form-check form-switch form-check-custom form-check-solid me-2">
+										                    <input class="form-check-input h-20px w-30px ubac-switch" type="checkbox" @toggle.GetAttributes() @disabledAttribute/>
+									                    </div>
+
+									                    @if (toggle.IsDifferentByRole)
+									                    {
+										                    <i class="edited-for-user-warn-symbol bi bi-info-circle-fill text-gray-600 text-hover-info fs-4 mt-1-px" data-bs-toggle="tooltip" data-bs-placement="top" title="@toggle.ReasonOfDifference"></i>
+									                    }
+
+									                    @if (toggle.IsAnyConflict)
+									                    {
+										                    <i class="edited-for-user-warn-symbol bi bi-exclamation-triangle-fill text-gray-600 text-hover-danger fs-4 mt-1-px" data-bs-toggle="tooltip" data-bs-placement="top" title="@toggle.ReasonOfConflict"></i>
+									                    }
+								                    </div>
+							                    </td>
+						                    }
+					                    </tr>
+				                    }
+			                    }
+			                    </tbody>
+		                    </table>
+	                    </div>
     				</div>
     			</div>
             
@@ -136,6 +166,29 @@
     					}
     				</style>
     				
+	                @{
+		                var contentEditableAttributeValue = isPermittedForRoleUpdate ? "true" : "false";
+		                var deleteButtonDisabledAttribute = isPermittedForRoleUpdate ? string.Empty : " disabled";
+	                }
+	                
+	                @if (!isPermittedForRoleUpdate)
+	                {
+	                    <div class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10">
+	                        <span class="svg-icon svg-icon-2hx svg-icon-primary me-4 mb-5 mb-sm-0">
+	                            @Html.Raw(SvgIcons.Warning)
+	                        </span>
+
+	                        <div class="d-flex flex-column pe-0 pe-sm-10">
+	                            <h5 class="mb-1">Authorization Required</h5>
+	                            <span>You do not have sufficient permissions to edit/update permission settings. You must have to <strong>roles.update</strong> permission.</span>
+	                        </div>
+
+	                        <button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+	                            <i class="bi bi-x fs-1 text-primary"></i>
+	                        </button>
+	                    </div>
+	                }
+	                
 	                <div class="row m-0 soft-border">
 		                <div class="col-md-6 px-0 border-right-solid-1-gray-200">
 			                <div id="permissionsPortlet" class="card non-box-shadow">
@@ -147,9 +200,18 @@
 					                </div>
     
 					                <div class="card-toolbar">
-						                <button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" onClick="addPermission()">
-							                <i class="fas fa-plus fs-6"></i>
-						                </button>
+						                @if (isPermittedForRoleUpdate)
+						                {
+							                <button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" onClick="addPermission()">
+								                <i class="fas fa-plus fs-6"></i>
+							                </button>
+						                }
+						                else
+						                {
+							                <button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" disabled>
+								                <i class="fas fa-plus fs-6"></i>
+							                </button>
+						                }
 					                </div>
 				                </div>
     
@@ -180,11 +242,11 @@
 								                }
 	                                            
 								                <tr class="@css" data-ubac="@permissionUbac.ToString()">
-									                <td contenteditable="true">@permissionUbac.Resource</td>
-									                <td contenteditable="true">@permissionUbac.Action</td>
-									                <td contenteditable="true">@permissionUbac.Object</td>
+									                <td contenteditable="@contentEditableAttributeValue">@permissionUbac.Resource</td>
+									                <td contenteditable="@contentEditableAttributeValue">@permissionUbac.Action</td>
+									                <td contenteditable="@contentEditableAttributeValue">@permissionUbac.Object</td>
 									                <td>
-										                <button type="button" class="btn btn-icon-xsm btn-light-danger ubac-remove-button">
+										                <button type="button" class="btn btn-icon-xsm btn-light-danger ubac-remove-button" @deleteButtonDisabledAttribute>
 											                <i class="fas fa-times fs-6"></i>
 										                </button>
 									                </td>
@@ -207,9 +269,18 @@
 					                </div>
     
 					                <div class="card-toolbar">
-						                <button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" onClick="addForbidden()">
-							                <i class="fas fa-plus fs-6"></i>
-						                </button>
+						                @if (isPermittedForRoleUpdate)
+						                {
+							                <button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" onClick="addForbidden()">
+								                <i class="fas fa-plus fs-6"></i>
+							                </button>
+						                }
+						                else
+						                {
+							                <button type="button" class="btn btn-icon-sm btn-light btn-active-primary table-add" disabled>
+								                <i class="fas fa-plus fs-6"></i>
+							                </button>   
+						                }
 					                </div>
 				                </div>
     							
@@ -240,11 +311,11 @@
 								                }
 	                                            
 								                <tr class="@css" data-ubac="@forbiddenUbac.ToString()">
-									                <td contenteditable="true">@forbiddenUbac.Resource</td>
-									                <td contenteditable="true">@forbiddenUbac.Action</td>
-									                <td contenteditable="true">@forbiddenUbac.Object</td>
+									                <td contenteditable="@contentEditableAttributeValue">@forbiddenUbac.Resource</td>
+									                <td contenteditable="@contentEditableAttributeValue">@forbiddenUbac.Action</td>
+									                <td contenteditable="@contentEditableAttributeValue">@forbiddenUbac.Object</td>
 									                <td>
-										                <button type="button" class="btn btn-icon-xsm btn-light-danger ubac-remove-button">
+										                <button type="button" class="btn btn-icon-xsm btn-light-danger ubac-remove-button" @deleteButtonDisabledAttribute>
 											                <i class="fas fa-times fs-6"></i>
 										                </button>
 									                </td>

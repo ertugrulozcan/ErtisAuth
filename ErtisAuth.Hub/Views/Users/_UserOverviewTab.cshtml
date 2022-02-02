@@ -1,4 +1,10 @@
+@using ErtisAuth.Core.Models.Roles
+@using ErtisAuth.Hub.Extensions
 @model ErtisAuth.Hub.ViewModels.Users.UserViewModel
+
+@{
+	var isPermittedForUpdate = this.IsAuthorizedAction("users", Rbac.CrudActionSegments.Update, new RbacSegment(Model.Id));
+}
 
 <div class="tab-pane fade show active" id="kt_user_view_overview_tab" role="tabpanel">
 	<div class="card mb-6 mb-xl-9">
@@ -47,16 +53,33 @@
 
 				<div class="row mb-6">
 					<label class="col-lg-2 col-xl-3 col-form-label required fw-bold fs-6">Name & Surname</label>
-					<div class="col-lg-10 col-xl-9">
-						<div class="row">
-							<div class="col-lg-6 fv-row fv-plugins-icon-container">
-								<input type="text" class="form-control" placeholder="First Name" asp-for="FirstName">
-							</div>
-							<div class="col-lg-6 fv-row fv-plugins-icon-container">
-								<input type="text" class="form-control" placeholder="Last Name" asp-for="LastName">
+					
+					@if (isPermittedForUpdate)
+					{
+						<div class="col-lg-10 col-xl-9">
+							<div class="row">
+								<div class="col-lg-6 fv-row fv-plugins-icon-container">
+									<input type="text" class="form-control" placeholder="First Name" asp-for="FirstName">
+								</div>
+								<div class="col-lg-6 fv-row fv-plugins-icon-container">
+									<input type="text" class="form-control" placeholder="Last Name" asp-for="LastName">
+								</div>
 							</div>
 						</div>
-					</div>
+					}
+					else
+					{
+						<div class="col-lg-10 col-xl-9">
+							<div class="row">
+								<div class="col-lg-6 fv-row fv-plugins-icon-container">
+									<input type="text" class="form-control" placeholder="First Name" asp-for="FirstName" disabled>
+								</div>
+								<div class="col-lg-6 fv-row fv-plugins-icon-container">
+									<input type="text" class="form-control" placeholder="Last Name" asp-for="LastName" disabled>
+								</div>
+							</div>
+						</div>
+					}
 				</div>
 
 				<div class="row mb-6">
@@ -91,7 +114,14 @@
 					</div>
 
 					<div class="col-lg-10 col-xl-9">
-						<select class="form-control form-select" id="rolesDropdown" asp-for="Role" asp-items="Model.RoleList"></select>
+						@if (isPermittedForUpdate)
+                        {
+	                        <select class="form-control form-select" id="rolesDropdown" asp-for="Role" asp-items="Model.RoleList"></select>
+                        }
+                        else
+                        {
+	                        <select class="form-control form-select" id="rolesDropdown" asp-for="Role" asp-items="Model.RoleList" disabled></select>	
+                        }
 					</div>
 				</div>
 

@@ -1,62 +1,98 @@
 @using ErtisAuth.Hub.Extensions
-@model ErtisAuth.Hub.ViewModels.AuthorizedButtonViewModel
+@using ErtisAuth.Hub.ViewModels
+@model ErtisAuth.Hub.ViewModels.IAuthorizedButtonViewModel
 
 @{
-    var css = "btn btn-" + Model.CssClass;
-    if (Model.IsSmall)
+    AuthorizedButtonStyleOptions styleOptions = null;
+    if (Model is IStylizedAuthorizedButton stylizedAuthorizedButton)
     {
-        css += " btn-sm";
+        styleOptions = stylizedAuthorizedButton.StyleOptions;
     }
-    
-    if (Model.IsWidest)
+
+    var css = "btn";
+    if (styleOptions != null)
     {
-        css += " btn-widest";
+        if (!string.IsNullOrEmpty(styleOptions.CssClass))
+        {
+            css += " btn-" + styleOptions.CssClass;    
+        }
+        
+        if (styleOptions.IsSmall)
+        {
+            css += " btn-sm";
+        }
+    
+        if (styleOptions.IsWidest)
+        {
+            css += " btn-widest";
+        }
     }
 }
 
-@if (this.IsAuthorizedAction(Model.CollectionName, Model.RbacAction, Model.ResourceId))
+@if (this.IsAuthorizedAction(Model.Rbac))
 {
-    if (!string.IsNullOrEmpty(Model.ModalId))
+    switch (Model)
     {
-        <button type="button" class="@css" data-bs-toggle="modal" data-bs-target="#@Model.ModalId">
-            @if (!string.IsNullOrEmpty(Model.BootstrapIcon))
-            {
-                <i class="bi bi-@Model.BootstrapIcon"></i>
-            }
+        case AuthorizedCustomButtonViewModel customButtonViewModel:
+        {
+            <button type="submit" class="@css">
+                @if (!string.IsNullOrEmpty(styleOptions?.BootstrapIcon))
+                {
+                    <i class="bi bi-@styleOptions.BootstrapIcon"></i>
+                }
         
-            @Model.Text
-        </button>
-    }
-    else if (!string.IsNullOrEmpty(Model.FormId))
-    {
-        <button type="submit" class="@css" form="@Model.FormId">
-            @if (!string.IsNullOrEmpty(Model.BootstrapIcon))
+                @customButtonViewModel.Text
+            </button>
+            break;
+        }
+        case AuthorizedFormButtonViewModel formButtonViewModel:
+        {
+            if (!string.IsNullOrEmpty(formButtonViewModel.FormId))
             {
-                <i class="bi bi-@Model.BootstrapIcon"></i>
-            }
+                <button type="submit" class="@css" form="@formButtonViewModel.FormId">
+                    @if (!string.IsNullOrEmpty(styleOptions?.BootstrapIcon))
+                    {
+                        <i class="bi bi-@styleOptions.BootstrapIcon"></i>
+                    }
         
-            @Model.Text
-        </button>
-    }
-    else
-    {
-        <button type="submit" class="@css">
-            @if (!string.IsNullOrEmpty(Model.BootstrapIcon))
+                    @formButtonViewModel.Text
+                </button>
+            }
+            break;
+        }
+        case AuthorizedModalButtonViewModel modalButtonViewModel:
+        {
+            if (!string.IsNullOrEmpty(modalButtonViewModel.ModalId))
             {
-                <i class="bi bi-@Model.BootstrapIcon"></i>
-            }
+                <button type="button" class="@css" data-bs-toggle="modal" data-bs-target="#@modalButtonViewModel.ModalId">
+                    @if (!string.IsNullOrEmpty(styleOptions?.BootstrapIcon))
+                    {
+                        <i class="bi bi-@styleOptions.BootstrapIcon"></i>
+                    }
         
-            @Model.Text
-        </button>   
+                    @modalButtonViewModel.Text
+                </button>
+            }
+            break;
+        }
+        default:
+        {
+            <div>
+                <span data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-content="Unknown authorized button type!">
+                    <i class="fas fa-exclamation-circle fs-6 text-danger"></i>
+                </span>
+            </div>
+            break;   
+        }
     }
 }
 else if (!Model.HideIfForbidden)
 {
     <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="You do not have sufficient permissions to perform this action">
         <button type="button" class="@css" style="pointer-events: none;" disabled>
-            @if (!string.IsNullOrEmpty(Model.BootstrapIcon))
+            @if (!string.IsNullOrEmpty(styleOptions?.BootstrapIcon))
             {
-                <i class="bi bi-@Model.BootstrapIcon"></i>
+                <i class="bi bi-@styleOptions.BootstrapIcon"></i>
             }
                 
             @Model.Text
