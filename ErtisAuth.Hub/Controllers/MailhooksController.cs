@@ -8,7 +8,7 @@ using ErtisAuth.Sdk.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using ErtisAuth.Hub.Extensions;
 using ErtisAuth.Hub.ViewModels;
-using ErtisAuth.Hub.ViewModels.Memberships;
+using ErtisAuth.Hub.ViewModels.Mailhooks;
 using ErtisAuth.Core.Models.Mailing;
 
 namespace ErtisAuth.Hub.Controllers

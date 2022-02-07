@@ -1,0 +1,62 @@
+@using ErtisAuth.Hub.Helpers
+@using ErtisAuth.Hub.ViewModels
+@model ErtisAuth.Hub.ViewModels.UserTypes.UserTypeViewModel
+
+@{
+    ViewData["Title"] = "User Type";
+}
+
+<div class="toolbar" id="kt_toolbar">
+    <div id="kt_toolbar_container" class="container-fluid d-flex flex-stack">
+        <div data-kt-swapper="true" data-kt-swapper-mode="prepend" data-kt-swapper-parent="{default: '#kt_content_container', 'lg': '#kt_toolbar_container'}" class="page-title d-flex align-items-center flex-wrap me-3 mb-5 mb-lg-0">
+            <h1 class="d-flex align-items-center text-dark fw-bolder fs-3 my-1">Membership Details</h1>
+            <span class="h-20px border-gray-200 border-start mx-4"></span>
+            
+            @{
+                var breadcrumb = BreadcrumbBuilder
+                    .Add("Home", "Index", "Home")
+                    .Add("Memberships", "Index", "Memberships")
+                    .Add(Model.Membership.Id, "Detail", "Memberships", new { id = Model.Membership.Id })
+	                .Add("User Type", "Detail", "UserTypes", new { membershipId = Model.Membership.Id });
+            }
+            
+            <partial name="Partials/_Breadcrumb" model="@breadcrumb"/>
+        </div>
+		
+	    <div class="d-flex align-items-center py-1">
+		    <partial name="Partials/_AuthorizedButton" model="@AuthorizedButton.SaveButton("UpdateUserTypeForm", "memberships", Model.Membership.Id)" />
+	    </div>
+    </div>
+</div>
+
+<div class="post d-flex flex-column-fluid" id="kt_post">
+	<div id="kt_content_container" class="container-fluid">
+        <partial name="Partials/_AlertBox" model="Model" />
+        
+        <div class="d-flex flex-column flex-lg-row">
+	        <div class="flex-lg-row-fluid me-10">
+		        <div class="card card-bordered mb-5 mb-xl-10">
+			        <div class="card-header">
+				        <div class="card-title">
+					        <div class="d-flex align-items-center position-relative my-1">
+						        <h4>User Type Properties</h4>
+					        </div>
+				        </div>
+			        </div>
+                                    
+			        <div class="card-body">
+				        <form id="UpdateUserTypeForm" method="post" asp-controller="UserTypes" asp-action="Update">
+					        @Html.HiddenFor(x => x.Membership.Id)
+					        
+					        
+				        </form>
+			        </div>
+		        </div>
+	        </div>
+	        
+	        <div class="flex-column flex-lg-row-auto w-lg-300px w-xl-400px">
+		        <partial name="Partials/_ResourceDetailsCard"/>
+	        </div>
+        </div>
+	</div>
+</div>

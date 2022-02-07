@@ -212,61 +212,14 @@ namespace ErtisAuth.Hub.Controllers
 		{
 			if (this.ModelState.IsValid)
 			{
-				/*
-				UserType userType = null;
-				if (model.UserType != null && !string.IsNullOrEmpty(model.UserTypeJson))
+				var token = this.GetBearerToken();
+				Membership currentMembership = null;
+				var getMembershipResponse = await this.membershipService.GetMembershipAsync(model.Id, token);
+				if (getMembershipResponse.IsSuccess)
 				{
-					var userTypeDefinitionsObject = Newtonsoft.Json.JsonConvert.DeserializeObject<IEnumerable<UserTypePayload>>(model.UserTypeJson);
-					if (userTypeDefinitionsObject != null)
-					{
-						var userTypeDefinitions = userTypeDefinitionsObject.ToArray();
-						var expandoObject = new ExpandoObject();
-						var expandoObjectDictionary = (ICollection<KeyValuePair<string, object>>)expandoObject;
-						var propertiesDictionary = userTypeDefinitions.ToDictionary<UserTypePayload, string, object>(
-							userTypeDefinition => userTypeDefinition.Name, 
-							userTypeDefinition => new
-							{
-								type = userTypeDefinition.Type, 
-								title = userTypeDefinition.Title, 
-								description = userTypeDefinition.Description
-							});
-
-						foreach (var pair in propertiesDictionary)
-						{
-							expandoObjectDictionary.Add(pair);
-						}
-
-						dynamic properties = expandoObject;
-						
-						userType = new UserType
-						{
-							Title = model.UserType.Title,
-							Description = model.UserType.Description,
-							Properties = properties,
-							RequiredFields = userTypeDefinitions.Where(x => x.IsRequired).Select(x => x.Name).ToArray()
-						};
-					}
+					currentMembership = getMembershipResponse.Data;
 				}
-				else if (model.UserType == null && !string.IsNullOrEmpty(model.NewUserTypeName))
-				{
-					userType = new UserType
-					{
-						Title = model.NewUserTypeName,
-						Description = model.NewUserTypeDescription,
-						Properties = new
-						{
-							type = new
-							{
-								type = "string",
-								title = "User Type",
-								description = "Custom User Type"
-							}
-						},
-						RequiredFields = Array.Empty<string>()
-					};
-				}
-				*/
-
+				
 				var membership = new Membership
 				{
 					Id = model.Id,
@@ -277,11 +230,11 @@ namespace ErtisAuth.Hub.Controllers
 					HashAlgorithm = model.HashAlgorithm,
 					DefaultEncoding = model.DefaultEncoding,
 					DefaultLanguage = model.DefaultLanguage,
-					MailSettings = model.MailSettings
-					//UserType = userType
+					MailSettings = model.MailSettings,
+					UserType = currentMembership?.UserType
 				};
 
-				var updateMembershipResponse = await this.membershipService.UpdateMembershipAsync(membership, this.GetBearerToken());
+				var updateMembershipResponse = await this.membershipService.UpdateMembershipAsync(membership, token);
 				if (updateMembershipResponse.IsSuccess)
 				{
 					model.IsSuccess = true;

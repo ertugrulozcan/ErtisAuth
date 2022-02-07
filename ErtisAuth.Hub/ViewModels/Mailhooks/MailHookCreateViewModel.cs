@@ -1,4 +1,4 @@
-namespace ErtisAuth.Hub.ViewModels.Memberships
+namespace ErtisAuth.Hub.ViewModels.Mailhooks
 {
     public class MailHookCreateViewModel : MailHookViewModelBase
     {

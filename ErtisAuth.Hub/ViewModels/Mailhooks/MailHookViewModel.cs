@@ -1,6 +1,6 @@
 using Ertis.Core.Models.Resources;
 
-namespace ErtisAuth.Hub.ViewModels.Memberships
+namespace ErtisAuth.Hub.ViewModels.Mailhooks
 {
     public class MailHookViewModel : MailHookViewModelBase, IHasIdentifierViewModel, IHasSysViewModel
     {

@@ -5,7 +5,7 @@ using System.Linq;
 using ErtisAuth.Core.Models.Events;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace ErtisAuth.Hub.ViewModels.Memberships
+namespace ErtisAuth.Hub.ViewModels.Mailhooks
 {
     public class MailHookViewModelBase : ViewModelBase
     {
