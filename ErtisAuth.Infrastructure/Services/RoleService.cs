@@ -57,7 +57,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		private void Initialize()
 		{
-			this.InitializeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+			this.InitializeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 		
 		private async ValueTask InitializeAsync()
@@ -220,36 +220,15 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		protected override bool IsAlreadyExist(Role model, string membershipId, Role exclude = default)
-		{
-			if (ReservedRoles.ToArray().Contains(model.Name.ToLower()))
-			{
-				return true;
-			}
-			
-			if (exclude == null)
-			{
-				return this.GetByName(model.Name, membershipId) != null;	
-			}
-			else
-			{
-				var current = this.GetByName(model.Name, membershipId);
-				if (current != null)
-				{
-					return current.Name != exclude.Name;	
-				}
-				else
-				{
-					return false;
-				}
-			}
-		}
+		protected override bool IsAlreadyExist(Role model, string membershipId, Role exclude = default) =>
+			this.IsAlreadyExistAsync(model, membershipId, exclude).ConfigureAwait(false).GetAwaiter().GetResult();
 
 		protected override async Task<bool> IsAlreadyExistAsync(Role model, string membershipId, Role exclude = default)
 		{
 			if (ReservedRoles.ToArray().Contains(model.Name.ToLower()))
 			{
-				return true;
+				var currentRole = await this.GetByNameAsync(model.Name, membershipId);
+				return currentRole != null;
 			}
 			
 			if (exclude == null)

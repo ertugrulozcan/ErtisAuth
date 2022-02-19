@@ -90,14 +90,23 @@ namespace ErtisAuth.Infrastructure.Services
 			};
 			
 			// 2. Role
-			var adminRole = await this.roleService.CreateAsync(utilizer, membership.Id, new Role
+			Role adminRole;
+			var currentAdminRole = await this.roleService.GetByNameAsync(ReservedRoles.Administrator, membership.Id);
+			if (currentAdminRole == null)
 			{
-				Name = ReservedRoles.Administrator,
-				Description = "Administrator",
-				MembershipId = membership.Id,
-				Permissions = RoleHelper.AssertAdminPermissionsForReservedResources()
-			});
-			
+				adminRole = await this.roleService.CreateAsync(utilizer, membership.Id, new Role
+				{
+					Name = ReservedRoles.Administrator,
+					Description = "Administrator",
+					MembershipId = membership.Id,
+					Permissions = RoleHelper.AssertAdminPermissionsForReservedResources()
+				});
+			}
+			else
+			{
+				adminRole = currentAdminRole;
+			}
+
 			// 3. User (admin)
 			var adminUser = await this.userService.CreateAsync(utilizer, membership.Id, new UserWithPasswordHash
 			{
