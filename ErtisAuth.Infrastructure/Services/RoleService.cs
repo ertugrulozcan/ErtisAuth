@@ -225,12 +225,6 @@ namespace ErtisAuth.Infrastructure.Services
 
 		protected override async Task<bool> IsAlreadyExistAsync(Role model, string membershipId, Role exclude = default)
 		{
-			if (ReservedRoles.ToArray().Contains(model.Name.ToLower()))
-			{
-				var currentRole = await this.GetByNameAsync(model.Name, membershipId);
-				return currentRole != null;
-			}
-			
 			if (exclude == null)
 			{
 				return await this.GetByNameAsync(model.Name, membershipId) != null;	
