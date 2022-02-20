@@ -69,7 +69,7 @@ namespace ErtisAuth.Hub.Controllers
 
 		[HttpPost]
 		[RbacAction(Rbac.CrudActions.Update)]
-		public async Task<IActionResult> Update([FromForm] UserTypeViewModel model)
+		public IActionResult Update([FromForm] UserTypeViewModel model)
 		{
             return this.RedirectToAction("Detail", routeValues: new { membershipId = model.Membership.Id });
 		}
