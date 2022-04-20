@@ -64,6 +64,8 @@ namespace ErtisAuth.WebAPI
 
 		public void ConfigureServices(IServiceCollection services)
 		{
+			Program.SetEnvironmentParameter("Version", this.Configuration.GetValue<string>("Version"));
+			
 			services.Configure<DatabaseSettings>(this.Configuration.GetSection("Database"));
 			services.AddSingleton<IDatabaseSettings>(serviceProvider =>
 			{
