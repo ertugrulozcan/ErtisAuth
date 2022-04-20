@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
         <PackageId>ErtisAuth.Extensions.AspNetCore</PackageId>
-        <PackageVersion>5.2.3</PackageVersion>
+        <PackageVersion>5.2.4</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Extensions.AspNetCore</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -13,13 +13,13 @@
         <Title>ErtisAuth.Extensions.AspNetCore</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>5.2.3</AssemblyVersion>
-        <FileVersion>5.2.3</FileVersion>
+        <AssemblyVersion>5.2.4</AssemblyVersion>
+        <FileVersion>5.2.4</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.2.0" />
-      <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="5.0.11" />
+      <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="5.0.16" />
     </ItemGroup>
 
     <ItemGroup>

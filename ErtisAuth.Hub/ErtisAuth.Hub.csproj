@@ -7,9 +7,9 @@
     <ItemGroup>
       <PackageReference Include="Ertis.CMS.Core" Version="5.0.0" />
       <PackageReference Include="Ertis.CMS.Dynamics" Version="5.0.0" />
-      <PackageReference Include="Ertis.MongoDB.Queries" Version="5.0.2" />
-      <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.13" />
-      <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.13" />
+      <PackageReference Include="Ertis.MongoDB.Queries" Version="5.0.6" />
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.16" />
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.16" />
       <PackageReference Include="NWebsec.AspNetCore.Middleware" Version="3.0.0" />
     </ItemGroup>
 
