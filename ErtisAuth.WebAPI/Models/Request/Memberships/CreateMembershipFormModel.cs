@@ -28,10 +28,7 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		
 		[JsonProperty("default_language")]
 		public string DefaultLanguage { get; set; }
-		
-		[JsonProperty("user_type")]
-		public UserType UserType { get; set; }
-		
+
 		#endregion
 
 		#region Methods
@@ -47,7 +44,6 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 				HashAlgorithm = this.HashAlgorithm,
 				DefaultEncoding = this.DefaultEncoding,
 				DefaultLanguage = this.DefaultLanguage,
-				UserType = this.UserType
 			};
 		}
 

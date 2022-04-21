@@ -177,7 +177,6 @@ namespace ErtisAuth.Hub.Controllers
 					HashAlgorithmList = hashAlgorithms.Select(x => new SelectListItem(x, x)).ToList(),
 					EncodingList = encodings.Select(x => new SelectListItem(x.DisplayName, x.Name)).ToList(),
 					LanguageList = TextSearchLanguage.All.Select(x => new SelectListItem(x.Name, x.ISO6391Code)).ToList().ToList(),
-					UserType = getMembershipResponse.Data.UserType,
 					MailSettings = getMembershipResponse.Data.MailSettings,
 					Sys = getMembershipResponse.Data.Sys,
 				};
@@ -231,7 +230,6 @@ namespace ErtisAuth.Hub.Controllers
 					DefaultEncoding = model.DefaultEncoding,
 					DefaultLanguage = model.DefaultLanguage,
 					MailSettings = model.MailSettings,
-					UserType = currentMembership?.UserType
 				};
 
 				var updateMembershipResponse = await this.membershipService.UpdateMembershipAsync(membership, token);

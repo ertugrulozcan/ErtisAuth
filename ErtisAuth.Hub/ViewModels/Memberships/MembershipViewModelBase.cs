@@ -38,8 +38,6 @@ namespace ErtisAuth.Hub.ViewModels.Memberships
         public List<SelectListItem> EncodingList { get; set; }
         
         public List<SelectListItem> LanguageList { get; set; }
-		
-        public UserType UserType { get; set; }
         
         #endregion
     }

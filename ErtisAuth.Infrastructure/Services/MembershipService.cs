@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -67,18 +66,6 @@ namespace ErtisAuth.Infrastructure.Services
 				errorList.Add("secret_key is a required field");
 			}
 
-			if (model.UserType != null)
-			{
-				try
-				{
-					model.UserType.Validate();
-				}
-				catch (Exception ex)
-				{
-					errorList.Add(ex.Message);
-				}
-			}
-			
 			errors = errorList;
 			return !errors.Any();
 		}

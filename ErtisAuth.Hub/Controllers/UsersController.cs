@@ -16,7 +16,6 @@ using ErtisAuth.Hub.Helpers;
 using ErtisAuth.Hub.Models;
 using ErtisAuth.Hub.ViewModels;
 using ErtisAuth.Hub.ViewModels.Users;
-using ErtisAuth.Sdk.Configuration;
 
 namespace ErtisAuth.Hub.Controllers
 {
@@ -27,10 +26,8 @@ namespace ErtisAuth.Hub.Controllers
 	{
 		#region Services
 
-		private readonly IErtisAuthOptions ertisAuthOptions;
 		private readonly IUserService userService;
 		private readonly IRoleService roleService;
-		private readonly IMembershipService membershipService;
 		private readonly IAuthenticationService authenticationService;
 		private readonly IPasswordService passwordService;
 
@@ -41,24 +38,18 @@ namespace ErtisAuth.Hub.Controllers
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="ertisAuthOptions"></param>
 		/// <param name="userService"></param>
 		/// <param name="roleService"></param>
-		/// <param name="membershipService"></param>
 		/// <param name="authenticationService"></param>
 		/// <param name="passwordService"></param>
 		public UsersController(
-			IErtisAuthOptions ertisAuthOptions,
 			IUserService userService, 
 			IRoleService roleService, 
-			IMembershipService membershipService,
 			IAuthenticationService authenticationService, 
 			IPasswordService passwordService) : base(authenticationService, userService)
 		{
-			this.ertisAuthOptions = ertisAuthOptions;
 			this.userService = userService;
 			this.roleService = roleService;
-			this.membershipService = membershipService;
 			this.authenticationService = authenticationService;
 			this.passwordService = passwordService;
 		}
@@ -104,7 +95,6 @@ namespace ErtisAuth.Hub.Controllers
 			var getUserResponse = await this.userService.GetAsync(id, token);
 			if (getUserResponse.IsSuccess)
 			{
-				var getMembershipResponse = await this.membershipService.GetMembershipAsync(getUserResponse.Data.MembershipId, token);
 				var getRolesResponse = await this.roleService.GetAsync(token);
 				if (getRolesResponse.IsSuccess)
 				{
@@ -155,8 +145,6 @@ namespace ErtisAuth.Hub.Controllers
 							Selected = x.Name == getUserResponse.Data.Role
 						}).ToList(),
 						UbacTable = ubacTable,
-						UserType = getMembershipResponse.Data.UserType,
-						AdditionalProperties = getUserResponse.Data.AdditionalProperties
 					};
 
 					var routedModel = this.GetRedirectionParameter<SerializableViewModel>();
@@ -276,13 +264,7 @@ namespace ErtisAuth.Hub.Controllers
 				model.IsSuccess = false;
 				model.ErrorMessage = "Role list could not fetched!";
 			}
-			
-			var getMembershipResponse = await this.membershipService.GetMembershipAsync(this.ertisAuthOptions.MembershipId, token);
-			if (getMembershipResponse.IsSuccess)
-			{
-				model.UserType = getMembershipResponse.Data.UserType;
-			}
-			
+
 			return model;
 		}
 
@@ -321,7 +303,6 @@ namespace ErtisAuth.Hub.Controllers
 					EmailAddress = model.EmailAddress,
 					Role = model.Role,
 					MembershipId = model.MembershipId,
-					AdditionalProperties = model.AdditionalProperties,
 					Permissions = permissions,
 					Forbidden = forbiddens
 				};

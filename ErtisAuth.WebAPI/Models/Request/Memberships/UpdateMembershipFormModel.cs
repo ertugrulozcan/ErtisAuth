@@ -32,9 +32,6 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		[JsonProperty("mail_settings")]
 		public MembershipMailSettings MailSettings { get; set; }
 		
-		[JsonProperty("user_type")]
-		public UserType UserType { get; set; }
-		
 		#endregion
 		
 		#region Methods
@@ -52,7 +49,6 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 				DefaultEncoding = this.DefaultEncoding,
 				DefaultLanguage = this.DefaultLanguage,
 				MailSettings = this.MailSettings,
-				UserType = this.UserType,
 			};
 		}
 

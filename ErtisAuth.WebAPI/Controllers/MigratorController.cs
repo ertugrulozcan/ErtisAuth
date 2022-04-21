@@ -62,7 +62,6 @@ namespace ErtisAuth.WebAPI.Controllers
 				HashAlgorithm = model.Membership.HashAlgorithm,
 				DefaultEncoding = model.Membership.DefaultEncoding,
 				SecretKey = model.Membership.SecretKey,
-				UserType = model.Membership.UserType
 			};
 			
 			var user = new UserWithPasswordHash
@@ -74,8 +73,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				PasswordHash = model.User.Password,
 				Role = model.User.Role,
 				Forbidden = model.User.Forbidden,
-				Permissions = model.User.Permissions,
-				AdditionalProperties = model.User.AdditionalProperties
+				Permissions = model.User.Permissions
 			};
 
 			Application application = null;

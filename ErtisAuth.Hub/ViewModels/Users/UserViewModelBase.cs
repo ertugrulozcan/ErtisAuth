@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 
 namespace ErtisAuth.Hub.ViewModels.Users
 {
-    public abstract class UserViewModelBase : ViewModelBase, IHasUserTypeUserViewModel
+    public abstract class UserViewModelBase : ViewModelBase
     {
         #region Properties
         
@@ -34,10 +34,6 @@ namespace ErtisAuth.Hub.ViewModels.Users
 
         public List<SelectListItem> RoleList { get; set; }
 
-        public UserType UserType { get; set; }
-		
-        public dynamic AdditionalProperties { get; set; }
-        
         public string UbacJson { get; set; }
         
         #endregion

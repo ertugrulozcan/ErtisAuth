@@ -29,9 +29,6 @@ namespace ErtisAuth.Core.Models.Memberships
 		[JsonProperty("default_language")]
 		public string DefaultLanguage { get; set; }
 
-		[JsonProperty("user_type")]
-		public UserType UserType { get; set; }
-		
 		[JsonProperty("mail_settings")]
 		public MembershipMailSettings MailSettings { get; set; }
 

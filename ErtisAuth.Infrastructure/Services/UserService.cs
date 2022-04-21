@@ -16,8 +16,6 @@ using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Schema;
 
 namespace ErtisAuth.Infrastructure.Services
 {
@@ -163,36 +161,6 @@ namespace ErtisAuth.Infrastructure.Services
 				}
 			}
 
-			if (model.AdditionalProperties != null)
-			{
-				var membership = this.membershipService.Get(model.MembershipId);
-				if (membership == null)
-				{
-					throw ErtisAuthException.MembershipNotFound(model.MembershipId);
-				}
-			
-				if (membership.UserType != null)
-				{
-					try
-					{
-						var schema = membership.UserType.ConvertToJSchema();
-						if (model.AdditionalProperties is JObject jObject)
-						{
-							jObject.Validate(schema);
-						}
-						else
-						{
-							jObject = JObject.FromObject(model.AdditionalProperties);
-							jObject.Validate(schema);	
-						}
-					}
-					catch (Exception ex)
-					{
-						throw ErtisAuthException.UserTypeValidationException(ex.Message);
-					}
-				}
-			}
-			
 			try
 			{
 				var permissionList = new List<Ubac>();
@@ -289,11 +257,6 @@ namespace ErtisAuth.Infrastructure.Services
 			if (destination.Forbidden == null)
 			{
 				destination.Forbidden = source.Forbidden;
-			}
-			
-			if (destination.AdditionalProperties == null)
-			{
-				destination.AdditionalProperties = source.AdditionalProperties;
 			}
 			
 			if (destination is UserWithPasswordHash destinationWithPassword)

@@ -43,10 +43,7 @@ namespace ErtisAuth.Dto.Models.Users
 		
 		[BsonElement("sys")]
 		public SysModelDto Sys { get; set; }
-		
-		[BsonElement("additional_properties")]
-		public BsonDocument AdditionalProperties { get; set; }
-		
+
 		#endregion
 	}
 }

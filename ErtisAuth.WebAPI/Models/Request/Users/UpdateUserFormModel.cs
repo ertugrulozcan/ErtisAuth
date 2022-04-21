@@ -21,10 +21,7 @@ namespace ErtisAuth.WebAPI.Models.Request.Users
 		
 		[JsonProperty("role")]
 		public string Role { get; set; }
-		
-		[JsonProperty("additional_properties")]
-		public dynamic AdditionalProperties { get; set; }
-		
+
 		[JsonProperty("permissions")]
 		public IEnumerable<string> Permissions { get; set; }
 		

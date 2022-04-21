@@ -12,7 +12,6 @@ using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Dto.Models.Webhooks;
 using ErtisAuth.Extensions.Mailkit.Models;
 using MongoDB.Bson;
-using Newtonsoft.Json;
 
 namespace ErtisAuth.Infrastructure.Extensions
 {
@@ -58,7 +57,6 @@ namespace ErtisAuth.Infrastructure.Extensions
                 ExpiresIn = dto.ExpiresIn,
                 SecretKey = dto.SecretKey,
                 RefreshTokenExpiresIn = dto.RefreshTokenExpiresIn,
-                UserType = dto.UserType?.ToModel(),
                 MailSettings = dto.MailSettings?.ToModel(),
                 Sys = dto.Sys?.ToModel()
             };
@@ -76,7 +74,6 @@ namespace ErtisAuth.Infrastructure.Extensions
                 ExpiresIn = model.ExpiresIn,
                 SecretKey = model.SecretKey,
                 RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
-                UserType = model.UserType?.ToDto(),
                 MailSettings = model.MailSettings?.ToDto(),
                 Sys = model.Sys?.ToDto()
             };
@@ -98,7 +95,6 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Role = dto.Role,
                 Forbidden = dto.Forbidden,
                 Permissions = dto.Permissions,
-                AdditionalProperties = dto.AdditionalProperties?.ToDynamicObject(),
                 MembershipId = dto.MembershipId,
                 Sys = dto.Sys?.ToModel()
             };
@@ -106,13 +102,6 @@ namespace ErtisAuth.Infrastructure.Extensions
         
         public static UserDto ToDto(this User model)
         {
-            BsonDocument additionalProperties = null;
-            if (model.AdditionalProperties != null)
-            {
-                string documentJson = JsonConvert.SerializeObject(model.AdditionalProperties);
-                additionalProperties = BsonDocument.Parse(documentJson);
-            }
-            
             return new UserDto
             {
                 Id = model.Id,
@@ -123,7 +112,6 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Role = model.Role,
                 Forbidden = model.Forbidden,
                 Permissions = model.Permissions,
-                AdditionalProperties = additionalProperties,
                 MembershipId = model.MembershipId,
                 Sys = model.Sys?.ToDto()
             };
@@ -134,36 +122,6 @@ namespace ErtisAuth.Infrastructure.Extensions
             var dto = (model as User).ToDto();
             dto.PasswordHash = model.PasswordHash;
             return dto;
-        }
-
-        #endregion
-        
-        #region UserType
-
-        public static UserType ToModel(this UserTypeDto dto)
-        {
-            return new UserType
-            {
-                Title = dto.Title,
-                Description = dto.Description,
-                Properties = dto.Properties?.ToDynamicObject(),
-                RequiredFields = dto.RequiredFields
-            };
-        }
-        
-        public static UserTypeDto ToDto(this UserType model)
-        {
-            var schemaJson = model.Properties.ToString();
-            var schema = BsonDocument.Parse(schemaJson);
-            
-            return new UserTypeDto
-            {
-                Name = model.Name,
-                Title = model.Title,
-                Description = model.Description,
-                Properties = schema,
-                RequiredFields = model.RequiredFields
-            };
         }
 
         #endregion
