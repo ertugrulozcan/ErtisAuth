@@ -9,6 +9,7 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Mailing;
+using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Mailing;
 using ErtisAuth.Extensions.Mailkit.Services.Interfaces;
@@ -90,7 +91,8 @@ namespace ErtisAuth.Infrastructure.Services
 				var membership = await this.membershipService.GetAsync(mailHook.MembershipId);
 				if (membership?.MailSettings?.SmtpServer != null)
 				{
-					var user = await this.userService.GetAsync(membership.Id, ertisAuthEvent.UtilizerId);
+					var dynamicObject = await this.userService.GetAsync(membership.Id, ertisAuthEvent.UtilizerId);
+					var user = dynamicObject.Deserialize<User>();
 					if (user != null)
 					{
 						await Task.Run(async () =>

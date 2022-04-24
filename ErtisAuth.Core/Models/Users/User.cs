@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ertis.Core.Models.Resources;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Core.Models.Identity;
 using Newtonsoft.Json;
 
@@ -36,6 +37,14 @@ namespace ErtisAuth.Core.Models.Users
 		[JsonIgnore] 
 		public Utilizer.UtilizerType UtilizerType => Utilizer.UtilizerType.User;
 		
+		#endregion
+
+		#region Implicit & Explicit Operators
+
+		public static implicit operator DynamicObject(User user) => new(user);
+		
+		public static explicit operator User(DynamicObject dynamicObject) => dynamicObject.Deserialize<User>();
+
 		#endregion
 	}
 }

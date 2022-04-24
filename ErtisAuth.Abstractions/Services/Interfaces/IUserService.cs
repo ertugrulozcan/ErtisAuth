@@ -1,29 +1,65 @@
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Ertis.Core.Collections;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
+using ErtisAuth.Events.EventArgs;
 
 namespace ErtisAuth.Abstractions.Services.Interfaces
 {
-	public interface IUserService : IMembershipBoundedCrudService<User>
-	{
-		UserWithPasswordHash GetUserWithPassword(string id, string membershipId);
-		
-		ValueTask<UserWithPasswordHash> GetUserWithPasswordAsync(string id, string membershipId);
-		
-		UserWithPasswordHash GetUserWithPassword(string username, string email, string membershipId);
-		
-		ValueTask<UserWithPasswordHash> GetUserWithPasswordAsync(string username, string email, string membershipId);
+    public interface IUserService : IDeletableMembershipBoundedService
+    {
+        #region Events
 
-		User ChangePassword(Utilizer utilizer, string membershipId, string userId, string newPassword);
+        event EventHandler<CreateResourceEventArgs<DynamicObject>> OnCreated;
 		
-		ValueTask<User> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword);
+        event EventHandler<UpdateResourceEventArgs<DynamicObject>> OnUpdated;
+		
+        event EventHandler<DeleteResourceEventArgs<DynamicObject>> OnDeleted;
 
-		ResetPasswordToken ResetPassword(Utilizer utilizer, string membershipId, string emailAddress, string server, string host);
+        #endregion
+        
+        #region Methods
+        
+        Task<DynamicObject> GetAsync(string membershipId, string id);
+
+        Task<IPaginationCollection<DynamicObject>> GetAsync(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null);
 		
-		ValueTask<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host);
+        Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model);
 		
-		void SetPassword(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password);
-		
-		ValueTask SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password);
-	}
+        Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, DynamicObject model);
+        
+        Task<IPaginationCollection<DynamicObject>> QueryAsync(
+            string membershipId, 
+            string query,
+            int? skip = null,
+            int? limit = null,
+            bool? withCount = null,
+            string orderBy = null,
+            SortDirection? sortDirection = null,
+            IDictionary<string, bool> selectFields = null);
+        
+        Task<IPaginationCollection<DynamicObject>> SearchAsync(
+            string membershipId, 
+            string keyword, 
+            int? skip = null, 
+            int? limit = null,
+            bool? withCount = null, 
+            string sortField = null, 
+            SortDirection? sortDirection = null);
+        
+        Task<UserWithPasswordHash> GetUserWithPasswordAsync(string membershipId, string id);
+        
+        Task<UserWithPasswordHash> GetUserWithPasswordAsync(string membershipId, string username, string email);
+        
+        Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword);
+        
+        Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host);
+        
+        Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password);
+
+        #endregion
+    }
 }

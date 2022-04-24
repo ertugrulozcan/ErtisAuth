@@ -2,10 +2,11 @@ using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using ErtisAuth.Dto.Models.Users;
 
 namespace ErtisAuth.Dao.Repositories
 {
-    public class UserRepository : DynamicMongoRepository, IUserRepository
+    public class UserTypeRepository : MongoRepositoryBase<UserTypeDto>, IUserTypeRepository
     {
         #region Constructors
 
@@ -14,9 +15,9 @@ namespace ErtisAuth.Dao.Repositories
         /// </summary>
         /// <param name="settings"></param>
         /// <param name="actionBinder"></param>
-        public UserRepository(IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(settings, "users", actionBinder)
+        public UserTypeRepository(IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(settings, "user-types", actionBinder)
         {
-            
+			
         }
 
         #endregion

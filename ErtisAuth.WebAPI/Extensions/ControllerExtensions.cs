@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Extensions.Authorization.Extensions;
 using ErtisAuth.WebAPI.Constants;
 using Microsoft.AspNetCore.Http;
@@ -72,8 +73,10 @@ namespace ErtisAuth.WebAPI.Extensions
 					var userService = controller.HttpContext.RequestServices.GetService<IUserService>();
 					if (userService != null)
 					{
-						Utilizer user = userService.Get(utilizerSampling.MembershipId, utilizerSampling.Id);
-						return user;
+						var dynamicObject = userService.GetAsync(utilizerSampling.MembershipId, utilizerSampling.Id).ConfigureAwait(false).GetAwaiter().GetResult();
+						var user = dynamicObject.Deserialize<User>();
+						Utilizer utilizer = user; 
+						return utilizer;
 					}
 				}
 				else if (utilizerSampling.Type == Utilizer.UtilizerType.Application)
@@ -105,6 +108,11 @@ namespace ErtisAuth.WebAPI.Extensions
 		public static NotFoundObjectResult UserNotFound(this ControllerBase controller, string userId)
 		{
 			return controller.NotFound(ErtisAuthException.UserNotFound(userId, "_id").Error);
+		}
+
+		public static NotFoundObjectResult UserTypeNotFound(this ControllerBase controller, string userTypeId)
+		{
+			return controller.NotFound(ErtisAuthException.UserTypeNotFound(userTypeId, "_id").Error);
 		}
 		
 		public static NotFoundObjectResult ApplicationNotFound(this ControllerBase controller, string applicationId)

@@ -57,6 +57,21 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#endregion
 		
+		#region Virtual Methods
+
+		protected virtual TModel Touch(TModel model)
+		{
+			return model;
+		}
+		
+		protected virtual async Task<TModel> TouchAsync(TModel model)
+		{
+			await Task.CompletedTask;
+			return model;
+		}
+		
+		#endregion
+		
 		#region Insert Methods
 
 		public virtual TModel Create(Utilizer utilizer, string membershipId, TModel model)
@@ -71,6 +86,9 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				model.MembershipId = membershipId;	
 			}
+			
+			// Touch model
+			model = this.Touch(model);
 
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -106,6 +124,9 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				model.MembershipId = membershipId;	
 			}
+			
+			// Touch model
+			model = await this.TouchAsync(model);
 			
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -154,6 +175,9 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			this.Overwrite(model, current);
+			
+			// Touch model
+			model = this.Touch(model);
 
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -198,6 +222,9 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			this.Overwrite(model, current);
+			
+			// Touch model
+			model = await this.TouchAsync(model);
 			
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))

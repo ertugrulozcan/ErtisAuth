@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using Ertis.Core.Exceptions;
 using Ertis.Core.Models.Response;
+using Ertis.Schema.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
@@ -21,7 +23,7 @@ namespace ErtisAuth.WebAPI.Extensions
 					{
 						context.Response.ContentType = "application/json";
 
-						ErrorModel errorModel;
+						object errorModel;
 						switch (contextFeature.Error)
 						{
 							case ValidationException validationException:
@@ -32,6 +34,21 @@ namespace ErtisAuth.WebAPI.Extensions
 									ErrorCode = validationException.ErrorCode,
 									StatusCode = (int) validationException.StatusCode,
 									Data = validationException.Errors
+								};
+								break;
+							case CumulativeValidationException cumulativeValidationException:
+								context.Response.StatusCode = 400;
+								errorModel = new 
+								{
+									contextFeature.Error.Message,
+									ErrorCode = "ValidationException",
+									StatusCode = 400,
+									Errors = cumulativeValidationException.Errors.Select(x => new
+									{
+										x.Message,
+										x.FieldName,
+										x.FieldPath
+									})
 								};
 								break;
 							case ErtisException ertisException:

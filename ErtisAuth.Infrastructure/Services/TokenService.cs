@@ -139,7 +139,9 @@ namespace ErtisAuth.Infrastructure.Services
 				var userId = securityToken.Subject;
 				if (!string.IsNullOrEmpty(userId))
 				{
-					return await this.userService.GetAsync(membershipId, userId);
+					var dynamicObject = await this.userService.GetAsync(membershipId, userId);
+					var user = dynamicObject.Deserialize<User>();
+					return user;
 				}
 				else
 				{
@@ -173,7 +175,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Check user
-			var user = await this.userService.GetUserWithPasswordAsync(username, username, membership.Id);
+			var user = await this.userService.GetUserWithPasswordAsync(membership.Id, username, username);
 			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(username, "username or email");
@@ -481,7 +483,8 @@ namespace ErtisAuth.Infrastructure.Services
 								var userId = securityToken.Subject;
 								if (!string.IsNullOrEmpty(userId))
 								{
-									var user = await this.userService.GetAsync(membershipId, userId);
+									var dynamicObject = await this.userService.GetAsync(membershipId, userId);
+									var user = dynamicObject.Deserialize<User>();
 									if (user != null)
 									{
 										var token = await this.GenerateBearerTokenAsync(user, membership);

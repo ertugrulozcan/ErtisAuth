@@ -1,6 +1,6 @@
+using ErtisAuth.Core.Models.Users;
 using ErtisAuth.WebAPI.Models.Request.Applications;
 using ErtisAuth.WebAPI.Models.Request.Memberships;
-using ErtisAuth.WebAPI.Models.Request.Users;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.WebAPI.Models.Request.Migration
@@ -13,7 +13,7 @@ namespace ErtisAuth.WebAPI.Models.Request.Migration
 		public CreateMembershipFormModel Membership { get; set; }
 		
 		[JsonProperty("user")]
-		public CreateUserFormModel User { get; set; }
+		public UserWithPassword User { get; set; }
 		
 		[JsonProperty("application")]
 		public CreateApplicationFormModel Application { get; set; }

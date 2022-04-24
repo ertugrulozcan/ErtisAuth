@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
@@ -45,42 +46,18 @@ namespace ErtisAuth.WebAPI.Controllers
 		}
 
 		#endregion
-		
-		#region Create Methods
-		
-		[HttpPost]
-		[RbacAction(Rbac.CrudActions.Create)]
-		[ProducesResponseType(StatusCodes.Status201Created)]
-		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(StatusCodes.Status404NotFound)]
-		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateUserFormModel model)
+
+		#region Helper Methods
+
+		// ReSharper disable once MemberCanBeMadeStatic.Local
+		private void ClearReadonlyProperties(DynamicObject model)
 		{
-			var membership = await this.membershipService.GetAsync(membershipId);
-			if (membership == null)
-			{
-				return this.MembershipNotFound(membershipId);
-			}
-			
-			var userModel = new UserWithPasswordHash
-			{
-				Username = model.Username,
-				EmailAddress = model.EmailAddress,
-				FirstName = model.FirstName,
-				LastName = model.LastName,
-				Role = model.Role,
-				MembershipId = membershipId,
-				PasswordHash = this.cryptographyService.CalculatePasswordHash(membership, model.Password),
-				Forbidden = model.Forbidden,
-				Permissions = model.Permissions
-			};
-			
-			var utilizer = this.GetUtilizer();
-			var user = await this.userService.CreateAsync(utilizer, membershipId, userModel);
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user.Id}", user);
+			model.RemoveProperty("_id");
+			model.RemoveProperty("membership_id");
+			model.RemoveProperty("sys");
+			model.RemoveProperty("password_hash");
 		}
-		
+
 		#endregion
 		
 		#region Read Methods
@@ -134,7 +111,15 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
 		{
-			return await this.userService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			if (this.Request.RouteValues.ContainsKey("membershipId"))
+			{
+				var membershipId = this.Request.RouteValues["membershipId"]?.ToString();
+				return await this.userService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			}
+			else
+			{
+				return null;
+			}
 		}
 		
 		[HttpGet("search")]
@@ -159,6 +144,49 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		#endregion
 		
+		#region Create Methods
+		
+		[HttpPost]
+		[RbacAction(Rbac.CrudActions.Create)]
+		[ProducesResponseType(StatusCodes.Status201Created)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] DynamicObject model)
+		{
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				return this.MembershipNotFound(membershipId);
+			}
+			
+			// Clear readonly properties
+			this.ClearReadonlyProperties(model);
+			
+			// Membership Id
+			model.SetValue("membership_id", membershipId, true);
+			
+			// Password Hash
+			if (model.TryGetValue("password", out string password, out _))
+			{
+				model.SetValue("password_hash", this.cryptographyService.CalculatePasswordHash(membership, password), true);
+				model.RemoveProperty("password");
+			}
+			
+			// User Type
+			if (!model.ContainsProperty("user_type"))
+			{
+				model.SetValue("user_type", UserType.ORIGIN_USER_TYPE_NAME, true);
+			}
+			
+			var utilizer = this.GetUtilizer();
+			var user = await this.userService.CreateAsync(utilizer, membershipId, model);
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user["_id"]}", user);
+		}
+		
+		#endregion
+		
 		#region Update Methods
 
 		[HttpPut("{id}")]
@@ -169,23 +197,19 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateUserFormModel model)
+		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] DynamicObject model)
 		{
-			var userModel = new User
-			{
-				Id = id,
-				Username = model.Username,
-				EmailAddress = model.EmailAddress,
-				FirstName = model.FirstName,
-				LastName = model.LastName,
-				Role = model.Role,
-				Forbidden = model.Forbidden,
-				Permissions = model.Permissions,
-				MembershipId = membershipId
-			};
+			// Clear readonly properties
+			this.ClearReadonlyProperties(model);
+			
+			// Id
+			model.SetValue("_id", id, true);
+			
+			// Membership Id
+			model.SetValue("membership_id", membershipId, true);
 			
 			var utilizer = this.GetUtilizer();
-			var user = await this.userService.UpdateAsync(utilizer, membershipId, userModel);
+			var user = await this.userService.UpdateAsync(utilizer, membershipId, model);
 			return this.Ok(user);
 		}
 		

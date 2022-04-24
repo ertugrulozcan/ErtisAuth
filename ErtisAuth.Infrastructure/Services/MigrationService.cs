@@ -84,6 +84,7 @@ namespace ErtisAuth.Infrastructure.Services
 			// Utilizer
 			var utilizer = new Utilizer
 			{
+				Username = "migration",
 				Role = ReservedRoles.Administrator,
 				Type = Utilizer.UtilizerType.System,
 				MembershipId = membership.Id

@@ -40,8 +40,6 @@ namespace ErtisAuth.WebAPI.Controllers
 		{
 			try
 			{
-				var releaseVersion = Program.GetEnvironmentParameter("Version");
-				
 				var dbStatisticsTask = this.database.GetDatabaseStatisticsAsync();
 				var listCollectionsTask = this.database.ListCollectionsAsync();
 				
@@ -58,7 +56,6 @@ namespace ErtisAuth.WebAPI.Controllers
 				{
 					return this.Ok(new
 					{
-						Version = releaseVersion,
 						Status = "Unhealthy",
 						Message = "Database statistics could not fetched"
 					});
@@ -74,7 +71,6 @@ namespace ErtisAuth.WebAPI.Controllers
 				{
 					return this.Ok(new
 					{
-						Version = releaseVersion,
 						Status = "Unhealthy",
 						Message = "Database have not migrated yet"
 					});
@@ -82,7 +78,6 @@ namespace ErtisAuth.WebAPI.Controllers
 				
 				return this.Ok(new
 				{
-					Version = releaseVersion,
 					Status = "Healthy"
 				});
 			}

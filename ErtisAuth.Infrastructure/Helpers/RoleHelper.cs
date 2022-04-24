@@ -12,6 +12,7 @@ namespace ErtisAuth.Infrastructure.Helpers
 			string[] reservedResources = {
 				"memberships",
 				"users",
+				"user-types",
 				"applications",
 				"roles",
 				"events",

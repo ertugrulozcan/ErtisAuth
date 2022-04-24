@@ -4,7 +4,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ertis.Extensions.AspNetCore" Version="5.1.6" />
+        <PackageReference Include="Ertis.Extensions.AspNetCore" Version="5.1.7" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.16" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.0.0" />
         <PackageReference Include="Serilog" Version="2.10.0" />

@@ -48,6 +48,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Hub", "ErtisAuth.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Mailkit", "ErtisAuth.Extensions.Mailkit\ErtisAuth.Extensions.Mailkit.csproj", "{F0DDF483-5AD1-4E4D-8DD9-DA41B77F7CD9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ertis.Schema", "..\Ertis\Ertis.Schema\Ertis.Schema.csproj", "{668914D0-5521-4297-9398-DDAF2C858D92}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -118,6 +120,10 @@ Global
 		{F0DDF483-5AD1-4E4D-8DD9-DA41B77F7CD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F0DDF483-5AD1-4E4D-8DD9-DA41B77F7CD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F0DDF483-5AD1-4E4D-8DD9-DA41B77F7CD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{668914D0-5521-4297-9398-DDAF2C858D92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{668914D0-5521-4297-9398-DDAF2C858D92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{668914D0-5521-4297-9398-DDAF2C858D92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{668914D0-5521-4297-9398-DDAF2C858D92}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{3DBF8D8C-08F0-46F5-ACE8-E5E303649F8E} = {39676EB6-FDB2-481D-BA89-A3B08B87950D}

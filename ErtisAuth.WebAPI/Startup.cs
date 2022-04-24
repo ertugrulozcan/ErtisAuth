@@ -4,6 +4,7 @@ using Ertis.Extensions.AspNetCore.Versioning;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Database;
 using Ertis.Net.Rest;
+using Ertis.Schema.Serialization;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
@@ -80,6 +81,7 @@ namespace ErtisAuth.WebAPI
 			
 			services.AddSingleton<IMongoDatabase, MongoDatabase>();
 			services.AddSingleton<IMembershipRepository, MembershipRepository>();
+			services.AddSingleton<IUserTypeRepository, UserTypeRepository>();
 			services.AddSingleton<IUserRepository, UserRepository>();
 			services.AddSingleton<IApplicationRepository, ApplicationRepository>();
 			services.AddSingleton<IRoleRepository, RoleRepository>();
@@ -98,6 +100,7 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IRevokedTokenService, RevokedTokenService>();
 			services.AddSingleton<IAccessControlService, AccessControlService>();
 			services.AddSingleton<IMembershipService, MembershipService>();
+			services.AddSingleton<IUserTypeService, UserTypeService>();
 			services.AddSingleton<IUserService, UserService>();
 			services.AddSingleton<IApplicationService, ApplicationService>();
 			services.AddSingleton<IRoleService, RoleService>();
@@ -167,7 +170,10 @@ namespace ErtisAuth.WebAPI
 			// Quartz
 			services.AddQuartzJobs();
 
-			services.AddControllers().AddNewtonsoftJson();
+			services
+				.AddControllers()
+				.AddNewtonsoftJson(options => 
+					options.SerializerSettings.Converters.Add(new DynamicObjectJsonConverter()));
 			
 			// Swagger
 			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
@@ -213,6 +219,7 @@ namespace ErtisAuth.WebAPI
 
 		private void ResolveRequiredServices(IServiceProvider serviceProvider)
 		{
+			serviceProvider.GetRequiredService<IUserTypeService>();
 			serviceProvider.GetRequiredService<IUserService>();
 			serviceProvider.GetRequiredService<IApplicationService>();
 			serviceProvider.GetRequiredService<IRoleService>();

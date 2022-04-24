@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Data.Models;
@@ -89,6 +91,19 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			var dto = await this.repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId);
 			return Mapper.Current.Map<TDto, TModel>(dto);
+		}
+		
+		protected async ValueTask<TModel> GetAsync(string membershipId, Expression<Func<TDto, bool>> expression)
+		{
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+			
+			var entities = await this.repository.FindAsync(expression);
+			var entity = entities.Items.FirstOrDefault(x => x.MembershipId == membershipId);
+			return Mapper.Current.Map<TDto, TModel>(entity);
 		}
 		
 		public virtual IPaginationCollection<TModel> Get(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)

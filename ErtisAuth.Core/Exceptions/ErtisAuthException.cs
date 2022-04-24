@@ -144,6 +144,80 @@ namespace ErtisAuth.Core.Exceptions
 		
 		#endregion
 
+		#region User Type Exceptions
+		
+		public static ErtisAuthException UserTypeNameRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type name is required.", "UserTypeNameRequired");
+		}
+		
+		public static ErtisAuthException UserTypePropertiesRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type properties is required.", "UserTypePropertiesRequired");
+		}
+		
+		public static ErtisAuthException UserTypeCannotBeBothAbstractAndSealed()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type cannot be both abstract and sealed.", "UserTypeCannotBeBothAbstractAndSealed");
+		}
+		
+		public static ErtisAuthException InheritedTypeNotFound(string baseUserTypeName)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"The base user type '{baseUserTypeName}' not found", "InheritedTypeNotFound");
+		}
+		
+		public static ErtisAuthException InheritedTypeIsSealed(string baseUserTypeName)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"The base user type '{baseUserTypeName}' is flagged as sealed. It's can not be used as base type.", "InheritedTypeIsSealed");
+		}
+		
+		public static ErtisAuthException InheritedTypeIsAbstract(string baseUserTypeName)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"The base user type '{baseUserTypeName}' has abstract modifier.", "InheritedTypeIsAbstract");
+		}
+
+		public static ErtisAuthException ReservedUserTypeName(string userTypeName)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"'{userTypeName}' is a reserved name. It's can not be used as user type name.", "ReservedUserTypeName");
+		}
+		
+		public static ErtisAuthException DuplicateFieldWithBaseType(string fieldName)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"'{fieldName}' field is already exist in base user type.", "DuplicateFieldWithBaseType");
+		}
+
+		public static ErtisAuthException VirtualFieldTypeCanNotOverwrite(string fieldName)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"The field type cannot be overwritten on virtual fields. ('{fieldName}')", "VirtualFieldTypeCanNotOverwrite");
+		}
+
+		public static ErtisAuthException UserTypeAlreadyExists(string userTypeName)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"'{userTypeName}' is already exist.", "UserTypeAlreadyExists");
+		}
+		
+		public static ErtisAuthException UserTypeNotFound(string field, string parameterName)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"User type not found in db by given {parameterName}: <{field}>", "UserTypeNotFound");
+		}
+		
+		public static ErtisAuthException UserTypeRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is required", "UserTypeRequired");
+		}
+		
+		public static ErtisAuthException UserTypeImmutable()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is an immutable field. It's cannot be updated.", "UserTypeImmutable");
+		}
+		
+		public static ErtisAuthException UserTypeCanNotBeDelete()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "This user type currently using by another users, it's cannot be deleted.", "UserTypeCanNotBeDelete");
+		}
+
+		#endregion
+
 		#region Application Exceptions
 		
 		public static ErtisAuthException ApplicationNotFound(string id)
@@ -180,6 +254,11 @@ namespace ErtisAuth.Core.Exceptions
 		public static ErtisAuthException RoleWithSameNameAlreadyExists(string name)
 		{
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The role with same name is already exists ({name})", "RoleWithSameNameAlreadyExists");
+		}
+		
+		public static ErtisAuthException UbacsConflicted(string message)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, message, "UbacsConflicted");
 		}
 		
 		#endregion

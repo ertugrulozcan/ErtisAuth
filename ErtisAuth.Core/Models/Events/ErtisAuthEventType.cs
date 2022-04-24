@@ -13,6 +13,10 @@ namespace ErtisAuth.Core.Models.Events
 		UserPasswordReset = 210,
 		UserPasswordChanged = 211,
 		
+		UserTypeCreated = 250,
+		UserTypeUpdated = 251,
+		UserTypeDeleted = 252,
+		
 		ApplicationCreated = 300,
 		ApplicationUpdated = 301,
 		ApplicationDeleted = 302,

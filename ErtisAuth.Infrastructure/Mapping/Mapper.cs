@@ -83,6 +83,10 @@ namespace ErtisAuth.Infrastructure.Mapping
 			this.CustomMappers
 				.Add(new CustomMapper<Membership, MembershipDto>((model) => model.ToDto()))
 				.Add(new CustomMapper<MembershipDto, Membership>((dto) => dto.ToModel()))
+				
+				.Add(new CustomMapper<UserType, UserTypeDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<UserTypeDto, UserType>((dto) => dto.ToModel()))
+				
 				.Add(new CustomMapper<User, UserDto>((model) => model.ToDto()))
 				.Add(new CustomMapper<UserDto, User>((dto) => dto.ToModel()))
 				.Add(new CustomMapper<UserWithPasswordHash, UserDto>((model) => model.ToDto()))
