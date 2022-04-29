@@ -114,12 +114,14 @@ namespace ErtisAuth.Infrastructure.Services
 						    DefaultValue = "",
 						    IsRequired = true,
 						    IsHidden = true,
+						    IsReadonly = true
 					    },
 					    new StringFieldInfo
 					    {
 						    Name = "user_type",
 						    DisplayName = "User Type",
 						    Description = "User Type",
+						    DefaultValue = UserType.ORIGIN_USER_TYPE_NAME,
 						    IsRequired = true,
 					    },
 					    new StringFieldInfo
@@ -127,7 +129,8 @@ namespace ErtisAuth.Infrastructure.Services
 						    Name = "membership_id",
 						    DisplayName = "Membership Id",
 						    Description = "Membership Id",
-						    IsRequired = true
+						    IsRequired = true,
+						    IsReadonly = true
 					    },
 					    SysFieldInfo
 				    }
@@ -173,7 +176,8 @@ namespace ErtisAuth.Infrastructure.Services
 			    {
 				    Name = "sys",
 				    IsRequired = true,
-				    IsVirtual = false
+				    IsVirtual = false,
+				    IsReadonly = true
 			    };
 		    }
 	    }

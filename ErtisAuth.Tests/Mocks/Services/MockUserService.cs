@@ -41,7 +41,7 @@ namespace ErtisAuth.Tests.Mocks.Services
             throw new NotImplementedException();
         }
 
-        public Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, DynamicObject model)
+        public Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model)
         {
             throw new NotImplementedException();
         }
