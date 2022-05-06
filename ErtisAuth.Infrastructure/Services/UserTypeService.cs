@@ -247,6 +247,55 @@ namespace ErtisAuth.Infrastructure.Services
         
         #region Methods
 
+        public async ValueTask<Dictionary<string, List<string>>> GetFieldInfoOwnerRelationsAsync(string membershipId, string id)
+        {
+	        var fieldInfoOwnerRelationDictionary = new Dictionary<string, List<string>>();
+	        var userType = await base.GetAsync(membershipId, id);
+	        if (userType == null)
+	        {
+		        return null;
+	        }
+	        
+	        var ancestors = await this.GetGenealogyAsync(userType);
+	        foreach (var fieldInfo in userType.Properties)
+	        {
+		        var ancestor = ancestors.LastOrDefault(x => x.Properties.Any(y => y.Name == fieldInfo.Name));
+		        if (ancestor != null)
+		        {
+			        var declaringType = ancestor.Slug;
+			        if (!fieldInfoOwnerRelationDictionary.ContainsKey(declaringType))
+			        {
+				        fieldInfoOwnerRelationDictionary.Add(declaringType, new List<string>());
+			        }
+				        
+			        fieldInfoOwnerRelationDictionary[declaringType].Add(fieldInfo.Name);
+		        }
+	        }
+	        
+	        return fieldInfoOwnerRelationDictionary;
+        }
+        
+        private async ValueTask<List<UserType>> GetGenealogyAsync(UserType userType)
+        {
+	        var ancestors = new List<UserType> { userType };
+	        var pivotUserType = userType;
+	        do
+	        {
+		        pivotUserType = await this.GetBaseUserTypeAsync(userType.MembershipId, pivotUserType.BaseUserType);
+		        if (pivotUserType != null)
+		        {
+			        ancestors.Add(pivotUserType);
+		        }
+	        } 
+	        while (
+		        pivotUserType != null &&
+		        !string.IsNullOrEmpty(pivotUserType.BaseUserType) &&
+		        pivotUserType.BaseUserType != UserType.ORIGIN_USER_TYPE_NAME
+		    );
+
+	        return ancestors;
+        }
+
         protected override void Overwrite(UserType destination, UserType source)
         {
 	        destination.Id = source.Id;

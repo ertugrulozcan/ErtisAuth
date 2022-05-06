@@ -48,12 +48,32 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<ActionResult<User>> Get([FromRoute] string membershipId, [FromRoute] string id)
+		public async Task<ActionResult<UserType>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
 			var userType = await this.userTypeService.GetAsync(membershipId, id);
 			if (userType != null)
 			{
 				return this.Ok(userType);
+			}
+			else
+			{
+				return this.UserTypeNotFound(id);
+			}
+		}
+		
+		[HttpGet("relations/{id}")]
+		[RbacObject("id")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<ActionResult<UserType>> GetFieldInfoOwnerRelations([FromRoute] string membershipId, [FromRoute] string id)
+		{
+			var relations = await this.userTypeService.GetFieldInfoOwnerRelationsAsync(membershipId, id);
+			if (relations != null)
+			{
+				return this.Ok(relations);
 			}
 			else
 			{
