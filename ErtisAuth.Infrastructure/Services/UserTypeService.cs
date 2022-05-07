@@ -4,11 +4,11 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Ertis.MongoDB.Queries;
+using Ertis.Schema.Extensions;
 using Ertis.Schema.Types;
 using Ertis.Schema.Types.CustomTypes;
 using Ertis.Schema.Types.Primitives;
 using ErtisAuth.Abstractions.Services.Interfaces;
-using ErtisAuth.Infrastructure.Extensions;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
@@ -332,7 +332,7 @@ namespace ErtisAuth.Infrastructure.Services
 		        throw ErtisAuthException.InheritedTypeIsSealed(model.BaseUserType);
 	        }
 
-	        model.Properties = new ReadOnlyCollection<IFieldInfo>(model.MergeUserTypeProperties(baseUserType).ToList());
+	        model.Properties = new ReadOnlyCollection<IFieldInfo>(model.MergeTypeProperties(baseUserType).ToList());
 
 	        return model;
         }
