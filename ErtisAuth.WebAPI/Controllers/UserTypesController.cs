@@ -96,6 +96,27 @@ namespace ErtisAuth.WebAPI.Controllers
 			return this.Ok(userTypes);
 		}
 		
+		[HttpGet("all")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> GetAll([FromRoute] string membershipId)
+		{
+			var userTypes = await this.userTypeService.GetAsync(membershipId, null, null, false, null, null);
+			var allUserTypes = new List<UserType>();
+			allUserTypes.AddRange(userTypes.Items);
+			allUserTypes.Add(await this.userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_NAME));
+			userTypes = new PaginationCollection<UserType>
+			{
+				Items = allUserTypes,
+				Count = allUserTypes.Count
+			};
+			
+			return this.Ok(userTypes);
+		}
+		
 		[HttpPost("_query")]
 		[RbacAction(Rbac.CrudActions.Read)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
