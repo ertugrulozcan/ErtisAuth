@@ -10,6 +10,7 @@ using Ertis.Schema.Types.CustomTypes;
 using Ertis.Schema.Types.Primitives;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
@@ -308,13 +309,13 @@ namespace ErtisAuth.Infrastructure.Services
 	        }
         }
         
-        protected override async Task<UserType> TouchAsync(UserType model)
+        protected override async Task<UserType> TouchAsync(UserType model, CrudOperation crudOperation)
         {
-	        model = await this.EnsureBaseUserTypeAsync(model);
+	        model = await this.EnsureBaseUserTypeAsync(model, crudOperation);
 	        return model;
         }
 
-        private async Task<UserType> EnsureBaseUserTypeAsync(UserType model)
+        private async Task<UserType> EnsureBaseUserTypeAsync(UserType model, CrudOperation crudOperation)
         {
 	        if (string.IsNullOrEmpty(model.BaseUserType))
 	        {
@@ -332,7 +333,7 @@ namespace ErtisAuth.Infrastructure.Services
 		        throw ErtisAuthException.InheritedTypeIsSealed(model.BaseUserType);
 	        }
 
-	        model.Properties = new ReadOnlyCollection<IFieldInfo>(model.MergeTypeProperties(baseUserType).ToList());
+	        model.Properties = new ReadOnlyCollection<IFieldInfo>(model.MergeTypeProperties(baseUserType, crudOperation == CrudOperation.Update).ToList());
 
 	        return model;
         }
@@ -519,6 +520,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return await base.DeleteAsync(utilizer, membershipId, id);
 		}
 
+		// ReSharper disable once OutParameterValueIsAlwaysDiscarded.Local
 		private bool IsDeletable(string id, string membershipId, out IEnumerable<string> errors)
 		{
 			var userType = this.GetAsync(membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();

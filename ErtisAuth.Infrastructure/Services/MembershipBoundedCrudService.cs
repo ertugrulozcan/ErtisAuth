@@ -6,6 +6,7 @@ using Ertis.MongoDB.Repository;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
 
@@ -14,7 +15,7 @@ namespace ErtisAuth.Infrastructure.Services
 	public abstract class MembershipBoundedCrudService<TModel, TDto> : 
 		MembershipBoundedService<TModel, TDto>, 
 		IMembershipBoundedCrudService<TModel> 
-		where TModel : class, Core.Models.IHasMembership, Core.Models.IHasIdentifier
+		where TModel : class, IHasMembership, IHasIdentifier
 		where TDto : class, IEntity<string>, Dto.Models.IHasMembership
 	{
 		#region Constructors
@@ -59,12 +60,12 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Virtual Methods
 
-		protected virtual TModel Touch(TModel model)
+		protected virtual TModel Touch(TModel model, CrudOperation crudOperation)
 		{
 			return model;
 		}
 		
-		protected virtual async Task<TModel> TouchAsync(TModel model)
+		protected virtual async Task<TModel> TouchAsync(TModel model, CrudOperation crudOperation)
 		{
 			await Task.CompletedTask;
 			return model;
@@ -88,7 +89,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Touch model
-			model = this.Touch(model);
+			model = this.Touch(model, CrudOperation.Create);
 
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -126,7 +127,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Touch model
-			model = await this.TouchAsync(model);
+			model = await this.TouchAsync(model, CrudOperation.Create);
 			
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -177,7 +178,7 @@ namespace ErtisAuth.Infrastructure.Services
 			this.Overwrite(model, current);
 			
 			// Touch model
-			model = this.Touch(model);
+			model = this.Touch(model, CrudOperation.Update);
 
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -224,7 +225,7 @@ namespace ErtisAuth.Infrastructure.Services
 			this.Overwrite(model, current);
 			
 			// Touch model
-			model = await this.TouchAsync(model);
+			model = await this.TouchAsync(model, CrudOperation.Update);
 			
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
