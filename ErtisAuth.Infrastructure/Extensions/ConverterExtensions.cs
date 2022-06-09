@@ -108,6 +108,7 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Role = dto.Role,
                 Forbidden = dto.Forbidden,
                 Permissions = dto.Permissions,
+                UserType = dto.UserType,
                 MembershipId = dto.MembershipId,
                 Sys = dto.Sys?.ToModel()
             };
@@ -125,6 +126,7 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Role = model.Role,
                 Forbidden = model.Forbidden,
                 Permissions = model.Permissions,
+                UserType = model.UserType,
                 MembershipId = model.MembershipId,
                 Sys = model.Sys?.ToDto()
             };

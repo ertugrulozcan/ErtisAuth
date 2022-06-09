@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
         <PackageId>ErtisAuth.Core</PackageId>
-        <PackageVersion>5.2.0</PackageVersion>
+        <PackageVersion>5.2.1</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Core</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -13,8 +13,8 @@
         <Title>ErtisAuth.Core</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>5.2.0</AssemblyVersion>
-        <FileVersion>5.2.0</FileVersion>
+        <AssemblyVersion>5.2.1</AssemblyVersion>
+        <FileVersion>5.2.1</FileVersion>
     </PropertyGroup>
     
     <ItemGroup>

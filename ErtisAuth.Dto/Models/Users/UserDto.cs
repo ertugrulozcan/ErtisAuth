@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Ertis.MongoDB.Attributes;
 using ErtisAuth.Dto.Models.Resources;
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Users
@@ -37,6 +36,9 @@ namespace ErtisAuth.Dto.Models.Users
 		
 		[BsonElement("forbidden")]
 		public IEnumerable<string> Forbidden { get; set; }
+		
+		[BsonElement("user_type")]
+		public string UserType { get; set; }
 		
 		[BsonElement("password_hash")]
 		public string PasswordHash { get; set; }

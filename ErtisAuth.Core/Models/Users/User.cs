@@ -31,6 +31,9 @@ namespace ErtisAuth.Core.Models.Users
 		[JsonProperty("forbidden")]
 		public IEnumerable<string> Forbidden { get; set; }
 
+		[JsonProperty("user_type")]
+		public string UserType { get; set; }
+		
 		[JsonProperty("sys")]
 		public SysModel Sys { get; set; }
 
