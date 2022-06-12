@@ -333,7 +333,7 @@ namespace ErtisAuth.Infrastructure.Services
 		        throw ErtisAuthException.InheritedTypeIsSealed(model.BaseUserType);
 	        }
 
-	        model.Properties = new ReadOnlyCollection<IFieldInfo>(model.MergeTypeProperties(baseUserType, crudOperation == CrudOperation.Update).ToList());
+	        model.Properties = new ReadOnlyCollection<IFieldInfo>(baseUserType.MergeTypeProperties(model, crudOperation is CrudOperation.Update or CrudOperation.Create).ToList());
 
 	        return model;
         }
