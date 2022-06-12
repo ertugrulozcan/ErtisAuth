@@ -69,6 +69,32 @@ namespace ErtisAuth.WebAPI.Extensions
 									StatusCode = (int) httpStatusCodeException.StatusCode
 								};
 								break;
+							case ErtisSchemaValidationException ertisSchemaValidationException:
+								context.Response.StatusCode = 400;
+								errorModel = contextFeature.Error switch
+								{
+									FieldValidationException fieldValidationException => new
+									{
+										fieldValidationException.Message,
+										fieldValidationException.FieldName,
+										fieldValidationException.FieldPath,
+										ErrorCode = "FieldValidationException",
+										StatusCode = 400
+									},
+									SchemaValidationException schemaValidationException => new
+									{
+										schemaValidationException.Message,
+										ErrorCode = "SchemaValidationException",
+										StatusCode = 400
+									},
+									_ => new ErrorModel
+									{
+										Message = ertisSchemaValidationException.Message,
+										ErrorCode = "SchemaValidationException",
+										StatusCode = 400
+									}
+								};
+								break;
 							default:
 								context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 								errorModel = new ErrorModel
