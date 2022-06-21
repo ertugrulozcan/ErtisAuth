@@ -60,6 +60,8 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
         
         Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password);
 
+        Task<bool> CheckPasswordAsync(Utilizer utilizer, string password);
+        
         #endregion
     }
 }

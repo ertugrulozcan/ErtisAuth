@@ -877,5 +877,32 @@ namespace ErtisAuth.Infrastructure.Services
 		}
 
 		#endregion
+
+		#region Check Password
+
+		public async Task<bool> CheckPasswordAsync(Utilizer utilizer, string password)
+		{
+			if (string.IsNullOrEmpty(password))
+			{
+				return false;
+			}
+			
+			var membership = await this._membershipService.GetAsync(utilizer.MembershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(utilizer.MembershipId);
+			}
+
+			var user = await this.GetUserWithPasswordAsync(utilizer.MembershipId, utilizer.Id);
+			if (user == null)
+			{
+				throw ErtisAuthException.UserNotFound(utilizer.Id, "_id");
+			}
+
+			var passwordHash = this._cryptographyService.CalculatePasswordHash(membership, password);
+			return user.PasswordHash == passwordHash;
+		}
+		
+		#endregion
     }
 }

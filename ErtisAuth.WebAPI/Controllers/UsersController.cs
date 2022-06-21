@@ -247,5 +247,34 @@ namespace ErtisAuth.WebAPI.Controllers
 		}
 
 		#endregion
+		
+		#region Check Password
+
+		[HttpGet("check-password")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> CheckPassword([FromRoute] string membershipId, [FromQuery] string password)
+		{
+			var utilizer = this.GetUtilizer();
+			if (membershipId != utilizer.MembershipId)
+			{
+				return this.Unauthorized();
+			}
+			
+			if (await this.userService.CheckPasswordAsync(utilizer, password))
+			{
+				return this.Ok();
+			}
+			else
+			{
+				return this.Unauthorized("Invalid password");
+			}
+		}
+
+		#endregion
 	}
 }

@@ -113,5 +113,10 @@ namespace ErtisAuth.Tests.Mocks.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<bool> CheckPasswordAsync(Utilizer utilizer, string password)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
