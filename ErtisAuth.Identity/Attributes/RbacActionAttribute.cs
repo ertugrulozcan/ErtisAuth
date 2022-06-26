@@ -4,32 +4,26 @@ using ErtisAuth.Core.Models.Roles;
 namespace ErtisAuth.Identity.Attributes
 {
 	[AttributeUsage(AttributeTargets.Method)]
-	public class RbacActionAttribute : Attribute
+	public class RbacActionAttribute : RbacAttribute
 	{
-		#region Properties
-
-		public RbacSegment ActionSegment { get; }
-
-		#endregion
-		
 		#region Constructors
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="action"></param>
-		public RbacActionAttribute(Rbac.CrudActions action)
+		public RbacActionAttribute(Rbac.CrudActions action) : base(Rbac.GetSegment(action))
 		{
-			this.ActionSegment = Rbac.GetSegment(action);
+			
 		}
 		
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="customAction"></param>
-		public RbacActionAttribute(string customAction)
+		public RbacActionAttribute(string customAction) : base(customAction)
 		{
-			this.ActionSegment = new RbacSegment(customAction);
+			
 		}
 
 		#endregion

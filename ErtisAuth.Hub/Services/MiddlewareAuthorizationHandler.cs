@@ -5,6 +5,7 @@ using Ertis.Core.Models.Response;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.AspNetCore;
+using ErtisAuth.Extensions.Http.Extensions;
 using ErtisAuth.Identity.Attributes;
 using ErtisAuth.Sdk.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -131,61 +132,9 @@ namespace ErtisAuth.Hub.Services
 		{
 			if (context.Resource is HttpContext httpContext)
 			{
-				var endpoint = httpContext.GetEndpoint();
-				if (endpoint is Microsoft.AspNetCore.Routing.RouteEndpoint routeEndpoint)
-				{
-					// Subject
-					var rbacSubjectSegment = new RbacSegment(context.GetClaim(Claims.UserId));
-					
-					// Resource
-					string slug = null;
-					if (routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacResourceAttribute)) is RbacResourceAttribute rbacResourceAttribute)
-					{
-						slug = rbacResourceAttribute.ResourceSegment.Slug;
-					}
-					else if (TryExtractFirstSlugSegmentFromRouteEndpoint(routeEndpoint, out var routePatternPartSlug))
-					{
-						slug = routePatternPartSlug;
-					}
-
-					// Action
-					var rbacActionSegment = Rbac.GetSegment(Rbac.CrudActions.Read);
-					if (routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacActionAttribute)) is RbacActionAttribute rbacActionAttribute)
-					{
-						rbacActionSegment = rbacActionAttribute.ActionSegment;
-					}
-				
-					// Object
-					var rbacObjectSegment = RbacSegment.All;
-					if (routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacObjectAttribute)) is RbacObjectAttribute rbacObjectAttribute)
-					{
-						rbacObjectSegment = rbacObjectAttribute.ObjectSegment;
-						var objectSegmentValue = rbacObjectSegment.Value.Trim();
-						if (objectSegmentValue.Length > 2 && objectSegmentValue.StartsWith('{') && objectSegmentValue.EndsWith('}'))
-						{
-							var routeParameterName = objectSegmentValue.Substring(1, objectSegmentValue.Length - 2);
-							var routeParameter = routeEndpoint.RoutePattern.Parameters.FirstOrDefault(x => x.Name == routeParameterName);
-							if (routeParameter != null && httpContext.Request.RouteValues.ContainsKey(routeParameter.Name))
-							{
-								var routeParameterValue = httpContext.Request.RouteValues[routeParameter.Name]?.ToString();
-								if (!string.IsNullOrEmpty(routeParameterValue))
-								{
-									rbacObjectSegment = new RbacSegment(routeParameterValue);
-								}
-							}
-						}
-						else
-						{
-							rbacObjectSegment = new RbacSegment(objectSegmentValue);
-						}
-					}
-				
-					if (!string.IsNullOrEmpty(slug))
-					{
-						rbac = new Rbac(rbacSubjectSegment, new RbacSegment(slug), rbacActionSegment, rbacObjectSegment);
-						return true;
-					}
-				}
+				var utilizerId = context.GetClaim(Claims.UserId);
+				rbac = httpContext.GetRbacDefinition(utilizerId);
+				return true;
 			}
 
 			rbac = default;

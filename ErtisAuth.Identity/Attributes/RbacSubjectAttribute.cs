@@ -3,15 +3,15 @@ using System;
 namespace ErtisAuth.Identity.Attributes
 {
 	[AttributeUsage(AttributeTargets.Method)]
-	public class RbacObjectAttribute : RbacAttribute
+	public class RbacSubjectAttribute : RbacAttribute
 	{
 		#region Constructors
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="objectName"></param>
-		public RbacObjectAttribute(string objectName) : base(objectName)
+		/// <param name="subject"></param>
+		public RbacSubjectAttribute(string subject) : base(subject)
 		{
 			
 		}

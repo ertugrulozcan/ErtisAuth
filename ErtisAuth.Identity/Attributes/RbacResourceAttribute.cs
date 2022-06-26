@@ -1,26 +1,19 @@
 using System;
-using ErtisAuth.Core.Models.Roles;
 
 namespace ErtisAuth.Identity.Attributes
 {
 	[AttributeUsage(AttributeTargets.Class)]
-	public class RbacResourceAttribute : Attribute
+	public class RbacResourceAttribute : RbacAttribute
 	{
-		#region Properties
-
-		public RbacSegment ResourceSegment { get; }
-
-		#endregion
-		
 		#region Constructors
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		/// <param name="resourceName"></param>
-		public RbacResourceAttribute(string resourceName)
+		public RbacResourceAttribute(string resourceName) : base(resourceName)
 		{
-			this.ResourceSegment = new RbacSegment(resourceName);
+			
 		}
 
 		#endregion

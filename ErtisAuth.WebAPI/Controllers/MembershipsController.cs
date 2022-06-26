@@ -54,7 +54,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Read Methods
 
 		[HttpGet("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<IActionResult> Get([FromRoute] string id)
 		{
@@ -117,7 +117,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Update Methods
 
 		[HttpPut("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Update)]
 		public async Task<IActionResult> Update([FromRoute] string id, [FromBody] UpdateMembershipFormModel model)
 		{
@@ -130,7 +130,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Delete Methods
 
 		[HttpDelete("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Delete)]
 		public async Task<IActionResult> Delete([FromRoute] string id)
 		{

@@ -26,4 +26,8 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Ertis.TemplateEngine" Version="5.0.0" />
+    </ItemGroup>
+
 </Project>
