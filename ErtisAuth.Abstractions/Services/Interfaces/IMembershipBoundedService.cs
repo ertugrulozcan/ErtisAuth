@@ -5,7 +5,18 @@ using ErtisAuth.Core.Models;
 
 namespace ErtisAuth.Abstractions.Services.Interfaces
 {
-	public interface IMembershipBoundedService<TModel> where TModel : IHasMembership
+	public interface IMembershipBoundedService
+	{
+		TModel Get<TModel>(string membershipId, string id) where TModel : class, IHasMembership;
+		
+		ValueTask<TModel> GetAsync<TModel>(string membershipId, string id) where TModel : class, IHasMembership;
+		
+		IPaginationCollection<TModel> Get<TModel>(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection) where TModel : class, IHasMembership;
+
+		ValueTask<IPaginationCollection<TModel>> GetAsync<TModel>(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection) where TModel : class, IHasMembership;
+	}
+	
+	public interface IMembershipBoundedService<TModel> : IMembershipBoundedService where TModel : IHasMembership
 	{
 		IPaginationCollection<dynamic> Query(
 			string query, 
@@ -32,5 +43,23 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		IPaginationCollection<TModel> Get(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
 
 		ValueTask<IPaginationCollection<TModel>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
+		
+		IPaginationCollection<TModel> Search(
+			string membershipId, 
+			string keyword, 
+			int? skip = null, 
+			int? limit = null,
+			bool? withCount = null, 
+			string sortField = null, 
+			SortDirection? sortDirection = null);
+		
+		ValueTask<IPaginationCollection<TModel>> SearchAsync(
+			string membershipId, 
+			string keyword, 
+			int? skip = null, 
+			int? limit = null,
+			bool? withCount = null, 
+			string sortField = null, 
+			SortDirection? sortDirection = null);
 	}
 }

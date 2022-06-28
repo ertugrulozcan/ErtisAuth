@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Data.Models;
+using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services.Interfaces;
@@ -14,8 +15,8 @@ namespace ErtisAuth.Infrastructure.Services
 {
 	public abstract class GenericCrudService<TModel, TDto> : 
 		IGenericCrudService<TModel>
-		where TModel : Core.Models.IHasIdentifier
-		where TDto : IEntity<string>
+		where TModel : class, Core.Models.IHasIdentifier
+		where TDto : class, IEntity<string>
 	{
 		#region Services
 
@@ -66,14 +67,24 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public TModel Get(string id)
 		{
+			if (string.IsNullOrEmpty(id))
+			{
+				return null;
+			}
+			
 			var dto = this.repository.FindOne(id);
-			return Mapper.Current.Map<TDto, TModel>(dto);
+			return dto == null ? null : Mapper.Current.Map<TDto, TModel>(dto);
 		}
 		
 		public async ValueTask<TModel> GetAsync(string id)
 		{
+			if (string.IsNullOrEmpty(id))
+			{
+				return null;
+			}
+			
 			var dto = await this.repository.FindOneAsync(id);
-			return Mapper.Current.Map<TDto, TModel>(dto);
+			return dto == null ? null : Mapper.Current.Map<TDto, TModel>(dto);
 		}
 		
 		public IPaginationCollection<TModel> Get(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null)
@@ -120,6 +131,58 @@ namespace ErtisAuth.Infrastructure.Services
 			IDictionary<string, bool> selectFields = null)
 		{
 			return await this.repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+		}
+
+		#endregion
+		
+		#region Search Methods
+
+		public IPaginationCollection<TModel> Search(
+			string keyword,
+			TextSearchOptions options = null,
+			int? skip = null,
+			int? limit = null,
+			bool? withCount = null,
+			string sortField = null,
+			SortDirection? sortDirection = null)
+		{
+			var paginatedDtoCollection = this.repository.Search(keyword, options, skip, limit, withCount, sortField, sortDirection);
+			if (paginatedDtoCollection?.Items != null)
+			{
+				return new PaginationCollection<TModel>
+				{
+					Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
+					Count = paginatedDtoCollection.Count
+				};
+			}
+			else
+			{
+				return new PaginationCollection<TModel>();
+			}
+		}
+
+		public async ValueTask<IPaginationCollection<TModel>> SearchAsync(
+			string keyword,
+			TextSearchOptions options = null,
+			int? skip = null,
+			int? limit = null,
+			bool? withCount = null,
+			string sortField = null,
+			SortDirection? sortDirection = null)
+		{
+			var paginatedDtoCollection = await this.repository.SearchAsync(keyword, options, skip, limit, withCount, sortField, sortDirection);
+			if (paginatedDtoCollection?.Items != null)
+			{
+				return new PaginationCollection<TModel>
+				{
+					Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
+					Count = paginatedDtoCollection.Count
+				};
+			}
+			else
+			{
+				return new PaginationCollection<TModel>();
+			}
 		}
 
 		#endregion

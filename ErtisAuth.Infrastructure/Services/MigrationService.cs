@@ -8,6 +8,7 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Infrastructure.Helpers;
 
@@ -83,20 +84,30 @@ namespace ErtisAuth.Infrastructure.Services
 			// Utilizer
 			var utilizer = new Utilizer
 			{
-				Role = Rbac.ReservedRoles.Administrator,
+				Username = "migration",
+				Role = ReservedRoles.Administrator,
 				Type = Utilizer.UtilizerType.System,
 				MembershipId = membership.Id
 			};
 			
 			// 2. Role
-			var adminRole = await this.roleService.CreateAsync(utilizer, membership.Id, new Role
+			Role adminRole;
+			var currentAdminRole = await this.roleService.GetByNameAsync(ReservedRoles.Administrator, membership.Id);
+			if (currentAdminRole == null)
 			{
-				Name = Rbac.ReservedRoles.Administrator,
-				Description = "Administrator",
-				MembershipId = membership.Id,
-				Permissions = RoleHelper.AssertAdminPermissionsForReservedResources()
-			});
-			
+				adminRole = await this.roleService.CreateAsync(utilizer, membership.Id, new Role
+				{
+					Name = ReservedRoles.Administrator,
+					Description = "Administrator",
+					MembershipId = membership.Id,
+					Permissions = RoleHelper.AssertAdminPermissionsForReservedResources()
+				});
+			}
+			else
+			{
+				adminRole = currentAdminRole;
+			}
+
 			// 3. User (admin)
 			var adminUser = await this.userService.CreateAsync(utilizer, membership.Id, new UserWithPasswordHash
 			{

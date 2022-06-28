@@ -139,7 +139,9 @@ namespace ErtisAuth.Infrastructure.Services
 				var userId = securityToken.Subject;
 				if (!string.IsNullOrEmpty(userId))
 				{
-					return await this.userService.GetAsync(membershipId, userId);
+					var dynamicObject = await this.userService.GetAsync(membershipId, userId);
+					var user = dynamicObject.Deserialize<User>();
+					return user;
 				}
 				else
 				{
@@ -173,7 +175,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Check user
-			var user = await this.userService.GetUserWithPasswordAsync(username, username, membership.Id);
+			var user = await this.userService.GetUserWithPasswordAsync(membership.Id, username, username);
 			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(username, "username or email");
@@ -183,7 +185,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var passwordHash = this.cryptographyService.CalculatePasswordHash(membership, password);
 			if (passwordHash != user.PasswordHash)
 			{
-				throw ErtisAuthException.UsernameOrPasswordIsWrong(username, password);
+				throw ErtisAuthException.UsernameOrPasswordIsWrong();
 			}
 			else
 			{
@@ -407,6 +409,8 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 
 			var applicationId = parts[0];
+			var secret = parts[1];
+
 			var application = await this.applicationService.GetByIdAsync(applicationId);
 			if (application == null)
 			{
@@ -416,10 +420,29 @@ namespace ErtisAuth.Infrastructure.Services
 			var membership = await this.membershipService.GetAsync(application.MembershipId);
 			if (membership == null)
 			{
-				throw ErtisAuthException.MembershipNotFound(application.MembershipId);
+				if (this.applicationService.IsSystemReservedApplication(application)) 
+				{
+					membership = await this.membershipService.GetBySecretKeyAsync(secret);
+					var onTheFlyApplication = new Application
+					{
+						Id = application.Id,
+						Name = application.Name,
+						Role = application.Role,
+						Permissions = application.Permissions,
+						Forbidden = application.Forbidden,
+						Sys = application.Sys,
+						MembershipId = membership.Id
+					};
+
+					application = onTheFlyApplication;
+				}
+
+				if (membership == null)
+				{
+					throw ErtisAuthException.MembershipNotFound(application.MembershipId);
+				}
 			}
 
-			var secret = parts[1];
 			if (membership.SecretKey != secret)
 			{
 				throw ErtisAuthException.ApplicationSecretMismatch();
@@ -460,7 +483,8 @@ namespace ErtisAuth.Infrastructure.Services
 								var userId = securityToken.Subject;
 								if (!string.IsNullOrEmpty(userId))
 								{
-									var user = await this.userService.GetAsync(membershipId, userId);
+									var dynamicObject = await this.userService.GetAsync(membershipId, userId);
+									var user = dynamicObject.Deserialize<User>();
 									if (user != null)
 									{
 										var token = await this.GenerateBearerTokenAsync(user, membership);

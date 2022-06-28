@@ -4,6 +4,7 @@ using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.GeoLocation;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Models.Roles;
@@ -13,12 +14,14 @@ using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Dto.Models.Events;
 using ErtisAuth.Dto.Models.GeoLocation;
 using ErtisAuth.Dto.Models.Identity;
+using ErtisAuth.Dto.Models.Mailing;
 using ErtisAuth.Dto.Models.Memberships;
 using ErtisAuth.Dto.Models.Providers;
 using ErtisAuth.Dto.Models.Resources;
 using ErtisAuth.Dto.Models.Roles;
 using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Dto.Models.Webhooks;
+using ErtisAuth.Infrastructure.Extensions;
 using ErtisAuth.Infrastructure.Mapping.Impls;
 
 namespace ErtisAuth.Infrastructure.Mapping
@@ -27,24 +30,17 @@ namespace ErtisAuth.Infrastructure.Mapping
 	{
 		#region Singleton
 
-		private static Mapper self;
+		private static Mapper _self;
 
-		public static Mapper Current
-		{
-			get
-			{
-				if (self == null)
-					self = new Mapper();
-
-				return self;
-			}
-		}
+		public static Mapper Current => _self ??= new Mapper();
 
 		#endregion
 
 		#region Properties
 
 		private IMapper Implementation { get; }
+		
+		private CustomMapperCollection CustomMappers { get; }
 
 		#endregion
 		
@@ -59,12 +55,6 @@ namespace ErtisAuth.Infrastructure.Mapping
 			
 			mappings.Add<SysModelDto, SysModel>();
 			mappings.Add<SysModel, SysModelDto>();
-			mappings.Add<MembershipDto, Membership>();
-			mappings.Add<Membership, MembershipDto>();
-			mappings.Add<UserDto, User>();
-			mappings.Add<User, UserDto>();
-			mappings.Add<UserDto, UserWithPasswordHash>();
-			mappings.Add<UserWithPasswordHash, UserDto>();
 			mappings.Add<User, UserWithPasswordHash>();
 			mappings.Add<UserWithPasswordHash, User>();
 			mappings.Add<ApplicationDto, Application>();
@@ -87,8 +77,24 @@ namespace ErtisAuth.Infrastructure.Mapping
 			mappings.Add<ClientInfo, ClientInfoDto>();
 			mappings.Add<GeoLocationInfoDto, GeoLocationInfo>();
 			mappings.Add<GeoLocationInfo, GeoLocationInfoDto>();
-
 			this.Implementation = new TinyMapperImpl(mappings);
+
+			this.CustomMappers = new CustomMapperCollection();
+			this.CustomMappers
+				.Add(new CustomMapper<Membership, MembershipDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<MembershipDto, Membership>((dto) => dto.ToModel()))
+				
+				.Add(new CustomMapper<UserType, UserTypeDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<UserTypeDto, UserType>((dto) => dto.ToModel()))
+				
+				.Add(new CustomMapper<User, UserDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<UserDto, User>((dto) => dto.ToModel()))
+				.Add(new CustomMapper<UserWithPasswordHash, UserDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<UserDto, UserWithPasswordHash>((dto) => new UserWithPasswordHash(dto.ToModel()) { PasswordHash = dto.PasswordHash }))
+				.Add(new CustomMapper<Webhook, WebhookDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<WebhookDto, Webhook>((dto) => dto.ToModel()))
+				.Add(new CustomMapper<MailHook, MailHookDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<MailHookDto, MailHook>((dto) => dto.ToModel()));
 		}
 
 		#endregion
@@ -96,16 +102,27 @@ namespace ErtisAuth.Infrastructure.Mapping
 		#region Methods
 
 		public TOut Map<TIn, TOut>(TIn instance)
+			where TIn : class
+			where TOut : class
 		{
 			if (instance == null)
 			{
 				return default;
 			}
 			
+			if (this.CustomMappers.Contains<TIn, TOut>())
+			{
+				var mapperKey = $"{instance.GetType().FullName}_{typeof(TOut).FullName}";
+				var mapper = this.CustomMappers.GetMapper(mapperKey) ?? this.CustomMappers.GetMapper<TIn, TOut>();
+				return mapper.Map<TIn, TOut>(instance);
+			}
+			
 			return this.Implementation.Map<TIn, TOut>(instance);
 		}
 		
 		public IEnumerable<TOut> MapCollection<TIn, TOut>(IEnumerable<TIn> collection)
+			where TIn : class
+			where TOut : class
 		{
 			if (collection != null)
 			{

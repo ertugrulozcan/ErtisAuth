@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
@@ -24,8 +25,6 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Services
 
 		private readonly IUserService userService;
-		private readonly IMembershipService membershipService;
-		private readonly ICryptographyService cryptographyService;
 		
 		#endregion
 
@@ -35,56 +34,17 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// Constructor
 		/// </summary>
 		/// <param name="userService"></param>
-		/// <param name="membershipService"></param>
-		/// <param name="cryptographyService"></param>
-		public UsersController(IUserService userService, IMembershipService membershipService, ICryptographyService cryptographyService)
+		public UsersController(IUserService userService)
 		{
 			this.userService = userService;
-			this.membershipService = membershipService;
-			this.cryptographyService = cryptographyService;
 		}
 
-		#endregion
-		
-		#region Create Methods
-		
-		[HttpPost]
-		[RbacAction(Rbac.CrudActions.Create)]
-		[ProducesResponseType(StatusCodes.Status201Created)]
-		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(StatusCodes.Status404NotFound)]
-		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateUserFormModel model)
-		{
-			var membership = await this.membershipService.GetAsync(membershipId);
-			if (membership == null)
-			{
-				return this.MembershipNotFound(membershipId);
-			}
-			
-			var userModel = new UserWithPasswordHash
-			{
-				Username = model.Username,
-				EmailAddress = model.EmailAddress,
-				FirstName = model.FirstName,
-				LastName = model.LastName,
-				Role = model.Role,
-				MembershipId = membershipId,
-				PasswordHash = this.cryptographyService.CalculatePasswordHash(membership, model.Password)
-			};
-			
-			var utilizer = this.GetUtilizer();
-			var user = await this.userService.CreateAsync(utilizer, membershipId, userModel);
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user.Id}", user);
-		}
-		
 		#endregion
 		
 		#region Read Methods
 		
 		[HttpGet("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -132,7 +92,53 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
 		{
-			return await this.userService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			if (this.Request.RouteValues.ContainsKey("membershipId"))
+			{
+				var membershipId = this.Request.RouteValues["membershipId"]?.ToString();
+				return await this.userService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			}
+			else
+			{
+				return null;
+			}
+		}
+		
+		[HttpGet("search")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword)
+		{
+			if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(keyword.Trim()))
+			{
+				return this.SearchKeywordRequired();
+			}
+			
+			this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+			this.ExtractSortingParameters(out var orderBy, out var sortDirection);
+			
+			return this.Ok(await this.userService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection));
+		}
+		
+		#endregion
+		
+		#region Create Methods
+		
+		[HttpPost]
+		[RbacAction(Rbac.CrudActions.Create)]
+		[ProducesResponseType(StatusCodes.Status201Created)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] DynamicObject model)
+		{
+			var utilizer = this.GetUtilizer();
+			var user = await this.userService.CreateAsync(utilizer, membershipId, model);
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user["_id"]}", user);
 		}
 		
 		#endregion
@@ -140,28 +146,17 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Update Methods
 
 		[HttpPut("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Update)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateUserFormModel model)
+		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] DynamicObject model)
 		{
-			var userModel = new User
-			{
-				Id = id,
-				Username = model.Username,
-				EmailAddress = model.EmailAddress,
-				FirstName = model.FirstName,
-				LastName = model.LastName,
-				Role = model.Role,
-				MembershipId = membershipId
-			};
-			
 			var utilizer = this.GetUtilizer();
-			var user = await this.userService.UpdateAsync(utilizer, membershipId, userModel);
+			var user = await this.userService.UpdateAsync(utilizer, membershipId, id, model);
 			return this.Ok(user);
 		}
 		
@@ -170,7 +165,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Delete Methods
 
 		[HttpDelete("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -188,13 +183,24 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.UserNotFound(id);
 			}
 		}
+		
+		[HttpDelete]
+		[ProducesResponseType(StatusCodes.Status204NoContent)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		[RbacAction(Rbac.CrudActions.Delete)]
+		public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids)
+		{
+			return await this.BulkDeleteAsync(this.userService, membershipId, ids);
+		}
 
 		#endregion
 		
 		#region Change Password
 
 		[HttpPut("{id}/change-password")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Update)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -211,9 +217,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		#endregion
 		
 		#region Forgot Password
-
+		
 		[HttpPost("reset-password", Order = 1)]
-		[RbacAction(Rbac.CrudActions.Update)]
+		[RbacAction("reset-password")]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -222,12 +228,12 @@ namespace ErtisAuth.WebAPI.Controllers
 		public async Task<IActionResult> ResetPassword([FromRoute] string membershipId, [FromBody] ResetPasswordFormModel model)
 		{
 			var utilizer = this.GetUtilizer();
-			var resetPasswordToken = await this.userService.ResetPasswordAsync(utilizer, membershipId, model.UsernameOrEmailAddress);
+			var resetPasswordToken = await this.userService.ResetPasswordAsync(utilizer, membershipId, model.EmailAddress, model.Server, model.Host);
 			return this.Ok(resetPasswordToken);
 		}
 		
 		[HttpPost("set-password", Order = 2)]
-		[RbacAction(Rbac.CrudActions.Update)]
+		[RbacAction("set-password")]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -238,6 +244,35 @@ namespace ErtisAuth.WebAPI.Controllers
 			var utilizer = this.GetUtilizer();
 			await this.userService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password);
 			return this.Ok();
+		}
+
+		#endregion
+		
+		#region Check Password
+
+		[HttpGet("check-password")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> CheckPassword([FromRoute] string membershipId, [FromQuery] string password)
+		{
+			var utilizer = this.GetUtilizer();
+			if (membershipId != utilizer.MembershipId)
+			{
+				return this.Unauthorized();
+			}
+			
+			if (await this.userService.CheckPasswordAsync(utilizer, password))
+			{
+				return this.Ok();
+			}
+			else
+			{
+				return this.Unauthorized("Invalid password");
+			}
 		}
 
 		#endregion

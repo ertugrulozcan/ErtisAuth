@@ -33,8 +33,8 @@ namespace ErtisAuth.Sdk.Services
 
 		public IResponseResult<BearerToken> GetToken(string username, string password, string ipAddress = null, string userAgent = null)
 		{
-			var url = $"{this.AuthApiBaseUrl}/generate-token";
-			var headers = HeaderCollection.Add("X-Ertis-Alias", this.AuthApiMembershipId);
+			var url = $"{this.BaseUrl}/generate-token";
+			var headers = HeaderCollection.Add("X-Ertis-Alias", this.MembershipId);
 			if (!string.IsNullOrEmpty(ipAddress))
 			{
 				headers.Add("X-IpAddress", ipAddress);
@@ -57,8 +57,8 @@ namespace ErtisAuth.Sdk.Services
 
 		public async Task<IResponseResult<BearerToken>> GetTokenAsync(string username, string password, string ipAddress = null, string userAgent = null)
 		{
-			var url = $"{this.AuthApiBaseUrl}/generate-token";
-			var headers = HeaderCollection.Add("X-Ertis-Alias", this.AuthApiMembershipId);
+			var url = $"{this.BaseUrl}/generate-token";
+			var headers = HeaderCollection.Add("X-Ertis-Alias", this.MembershipId);
 			if (!string.IsNullOrEmpty(ipAddress))
 			{
 				headers.Add("X-IpAddress", ipAddress);
@@ -81,7 +81,7 @@ namespace ErtisAuth.Sdk.Services
 
 		public IResponseResult<BearerToken> RefreshToken(BearerToken bearerToken)
 		{
-			var url = $"{this.AuthApiBaseUrl}/refresh-token";
+			var url = $"{this.BaseUrl}/refresh-token";
 			var headers = HeaderCollection.Add("Authorization", bearerToken.RefreshToken);
 			var response = this.ExecuteRequest(HttpMethod.Get, url, null, headers);
 			return ConvertToBearerTokenResponse(response);
@@ -89,7 +89,7 @@ namespace ErtisAuth.Sdk.Services
 
 		public async Task<IResponseResult<BearerToken>> RefreshTokenAsync(BearerToken bearerToken)
 		{
-			var url = $"{this.AuthApiBaseUrl}/refresh-token";
+			var url = $"{this.BaseUrl}/refresh-token";
 			var headers = HeaderCollection.Add("Authorization", bearerToken.RefreshToken);
 			var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, null, headers);
 			return ConvertToBearerTokenResponse(response);
@@ -97,7 +97,7 @@ namespace ErtisAuth.Sdk.Services
 
 		public IResponseResult<BearerToken> RefreshToken(string refreshToken)
 		{
-			var url = $"{this.AuthApiBaseUrl}/refresh-token";
+			var url = $"{this.BaseUrl}/refresh-token";
 			var headers = HeaderCollection.Add("Authorization", $"Bearer {refreshToken}");
 			var response = this.ExecuteRequest(HttpMethod.Get, url, null, headers);
 			return ConvertToBearerTokenResponse(response);
@@ -105,7 +105,7 @@ namespace ErtisAuth.Sdk.Services
 
 		public async Task<IResponseResult<BearerToken>> RefreshTokenAsync(string refreshToken)
 		{
-			var url = $"{this.AuthApiBaseUrl}/refresh-token";
+			var url = $"{this.BaseUrl}/refresh-token";
 			var headers = HeaderCollection.Add("Authorization", $"Bearer {refreshToken}");
 			var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, null, headers);
 			return ConvertToBearerTokenResponse(response);
@@ -113,7 +113,7 @@ namespace ErtisAuth.Sdk.Services
 
 		public IResponseResult<ITokenValidationResult> VerifyToken(BearerToken token)
 		{
-			var url = $"{this.AuthApiBaseUrl}/verify-token";
+			var url = $"{this.BaseUrl}/verify-token";
 			var headers = HeaderCollection.Add("Authorization", token.ToString());
 			var response = this.ExecuteRequest(HttpMethod.Get, url, null, headers);
 			if (response.IsSuccess)
@@ -175,7 +175,7 @@ namespace ErtisAuth.Sdk.Services
 
 		public async Task<IResponseResult<ITokenValidationResult>> VerifyTokenAsync(BearerToken token)
 		{
-			var url = $"{this.AuthApiBaseUrl}/verify-token";
+			var url = $"{this.BaseUrl}/verify-token";
 			var headers = HeaderCollection.Add("Authorization", token.ToString());
 			var response = await this.ExecuteRequestAsync<BearerToken>(HttpMethod.Get, url, null, headers);
 			if (response.IsSuccess)
@@ -247,7 +247,7 @@ namespace ErtisAuth.Sdk.Services
 
 		public IResponseResult RevokeToken(BearerToken token, bool logoutFromAllDevices = false)
 		{
-			var url = $"{this.AuthApiBaseUrl}/revoke-token";
+			var url = $"{this.BaseUrl}/revoke-token";
 			var headers = HeaderCollection.Add("Authorization", token.ToString());
 			var queryString = logoutFromAllDevices ? QueryString.Add("logout-all", true) : QueryString.Empty;
 			return this.ExecuteRequest(HttpMethod.Get, url, queryString, headers);
@@ -255,7 +255,7 @@ namespace ErtisAuth.Sdk.Services
 
 		public async Task<IResponseResult> RevokeTokenAsync(BearerToken token, bool logoutFromAllDevices = false)
 		{
-			var url = $"{this.AuthApiBaseUrl}/revoke-token";
+			var url = $"{this.BaseUrl}/revoke-token";
 			var headers = HeaderCollection.Add("Authorization", token.ToString());
 			var queryString = logoutFromAllDevices ? QueryString.Add("logout-all", true) : QueryString.Empty;
 			return await this.ExecuteRequestAsync(HttpMethod.Get, url, queryString, headers);
@@ -273,28 +273,28 @@ namespace ErtisAuth.Sdk.Services
 
 		public IResponseResult<User> WhoAmI(BearerToken bearerToken)
 		{
-			var url = $"{this.AuthApiBaseUrl}/whoami";
+			var url = $"{this.BaseUrl}/whoami";
 			var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
 			return this.ExecuteRequest<User>(HttpMethod.Get, url, null, headers);	
 		}
 
 		public async Task<IResponseResult<User>> WhoAmIAsync(BearerToken bearerToken)
 		{
-			var url = $"{this.AuthApiBaseUrl}/whoami";
+			var url = $"{this.BaseUrl}/whoami";
 			var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
 			return await this.ExecuteRequestAsync<User>(HttpMethod.Get, url, null, headers);	
 		}
 
 		public IResponseResult<Application> WhoAmI(BasicToken basicToken)
 		{
-			var url = $"{this.AuthApiBaseUrl}/whoami";
+			var url = $"{this.BaseUrl}/whoami";
 			var headers = HeaderCollection.Add("Authorization", basicToken.ToString());
 			return this.ExecuteRequest<Application>(HttpMethod.Get, url, null, headers);	
 		}
 
 		public async Task<IResponseResult<Application>> WhoAmIAsync(BasicToken basicToken)
 		{
-			var url = $"{this.AuthApiBaseUrl}/whoami";
+			var url = $"{this.BaseUrl}/whoami";
 			var headers = HeaderCollection.Add("Authorization", basicToken.ToString());
 			return await this.ExecuteRequestAsync<Application>(HttpMethod.Get, url, null, headers);
 		}

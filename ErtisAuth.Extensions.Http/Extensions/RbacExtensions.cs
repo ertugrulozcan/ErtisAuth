@@ -10,47 +10,82 @@ namespace ErtisAuth.Extensions.Http.Extensions
 	{
 		#region Methods
 
-		public static Rbac GetRbacDefinition(this HttpContext httpContext, string subjectId)
+		public static Rbac GetRbacDefinition(this HttpContext httpContext, string utilizerId)
 		{
 			var endpoint = httpContext.GetEndpoint();
-                    		
-			// Subject
-			var rbacSubjectSegment = new RbacSegment(subjectId);
-            
-			// Resource
-			var rbacResourceSegment = RbacSegment.All;
-			var resourceMetadata = endpoint?.Metadata?.FirstOrDefault(x => x.GetType() == typeof(RbacResourceAttribute));
-			if (resourceMetadata is RbacResourceAttribute rbacResourceAttribute)
+			var formatter = new Ertis.TemplateEngine.Formatter(new Ertis.TemplateEngine.ParserOptions { OpenBrackets = "{", CloseBrackets = "}" });
+			
+			if (endpoint is RouteEndpoint routeEndpoint)
 			{
-				rbacResourceSegment = rbacResourceAttribute.ResourceSegment;
-			}
-			else if (endpoint is RouteEndpoint routeEndpoint)
-			{
-				rbacResourceSegment = new RbacSegment(routeEndpoint.RoutePattern.RawText.Split('/').Last());
-			}
-            
-			// Action
-			var rbacActionSegment = RbacSegment.All;
-			var actionMetadata = endpoint?.Metadata?.FirstOrDefault(x => x.GetType() == typeof(RbacActionAttribute));
-			if (actionMetadata is RbacActionAttribute rbacActionAttribute)
-			{
-				rbacActionSegment = rbacActionAttribute.ActionSegment;
-			}
-            
-			// Object
-			var rbacObjectSegment = RbacSegment.All;
-			var objectMetadata = endpoint?.Metadata?.FirstOrDefault(x => x.GetType() == typeof(RbacObjectAttribute));
-			var routeData = httpContext.GetRouteData();
-			if (routeData?.Values != null && objectMetadata is RbacObjectAttribute rbacObjectAttribute)
-			{
-				if (routeData.Values.ContainsKey(rbacObjectAttribute.RouteParameterName))
+				// Subject
+				var rbacSubjectSegment = string.IsNullOrEmpty(utilizerId) ? RbacSegment.All : new RbacSegment(utilizerId);
+				var subjectMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacSubjectAttribute));
+				if (subjectMetadata is RbacSubjectAttribute rbacSubjectAttribute)
 				{
-					var rbacObject = routeData.Values[rbacObjectAttribute.RouteParameterName];
-					rbacObjectSegment = new RbacSegment(rbacObject.ToString());
+					rbacSubjectSegment = rbacSubjectAttribute.Value;
+					if (!string.IsNullOrEmpty(rbacSubjectSegment.Value?.Trim()))
+					{
+						var rbacSubjectSegmentValue = rbacSubjectSegment.Value.Trim();
+						rbacSubjectSegmentValue = formatter.Format(rbacSubjectSegmentValue, httpContext.Request.RouteValues);
+						rbacSubjectSegment = new RbacSegment(rbacSubjectSegmentValue);
+					}
 				}
+				
+				// Resource
+				var rbacResourceSegment = RbacSegment.All;
+				var resourceMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacResourceAttribute));
+				if (resourceMetadata is RbacResourceAttribute rbacResourceAttribute)
+				{
+					rbacResourceSegment = rbacResourceAttribute.Value;
+					if (!string.IsNullOrEmpty(rbacResourceSegment.Value?.Trim()))
+					{
+						var rbacResourceSegmentValue = rbacResourceSegment.Value.Trim();
+						rbacResourceSegmentValue = formatter.Format(rbacResourceSegmentValue, httpContext.Request.RouteValues);
+						rbacResourceSegment = new RbacSegment(rbacResourceSegmentValue);
+					}
+				}
+				else
+				{
+					var routePath = routeEndpoint.RoutePattern.RawText;
+					if (!string.IsNullOrEmpty(routePath))
+					{
+						rbacResourceSegment = new RbacSegment(routePath.Split('/').Last());	
+					}
+				}
+
+				// Action
+				var rbacActionSegment = RbacSegment.All;
+				var actionMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacActionAttribute));
+				if (actionMetadata is RbacActionAttribute rbacActionAttribute)
+				{
+					rbacActionSegment = rbacActionAttribute.Value;
+					if (!string.IsNullOrEmpty(rbacActionSegment.Value?.Trim()))
+					{
+						var rbacActionSegmentValue = rbacActionSegment.Value.Trim();
+						rbacActionSegmentValue = formatter.Format(rbacActionSegmentValue, httpContext.Request.RouteValues);
+						rbacActionSegment = new RbacSegment(rbacActionSegmentValue);
+					}
+				}
+				
+				// Object
+				var rbacObjectSegment = RbacSegment.All;
+				var objectMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacObjectAttribute));
+				if (objectMetadata is RbacObjectAttribute rbacObjectAttribute)
+				{
+					rbacObjectSegment = rbacObjectAttribute.Value;
+					if (!string.IsNullOrEmpty(rbacObjectSegment.Value?.Trim()))
+					{
+						var rbacObjectSegmentValue = rbacObjectSegment.Value.Trim();
+						rbacObjectSegmentValue = formatter.Format(rbacObjectSegmentValue, httpContext.Request.RouteValues);
+						rbacObjectSegment = new RbacSegment(rbacObjectSegmentValue);
+					}
+				}
+
+				// Rbac
+				return new Rbac(rbacSubjectSegment, rbacResourceSegment, rbacActionSegment, rbacObjectSegment);
 			}
 
-			return new Rbac(rbacSubjectSegment, rbacResourceSegment, rbacActionSegment, rbacObjectSegment);
+			return default;
 		}
 
 		#endregion

@@ -3,14 +3,22 @@ using System.Linq;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Memberships;
+using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services
 {
 	public class MembershipService : GenericCrudService<Membership, MembershipDto>, IMembershipService
 	{
+		#region Properties
+
+		private List<IMembershipBoundedService> MembershipBoundedServiceCollection { get; }
+
+		#endregion
+		
 		#region Constructors
 
 		/// <summary>
@@ -19,13 +27,21 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="membershipRepository"></param>
 		public MembershipService(IMembershipRepository membershipRepository) : base(membershipRepository)
 		{
-			
+			this.MembershipBoundedServiceCollection = new List<IMembershipBoundedService>();
 		}
 
 		#endregion
 
 		#region Methods
 
+		public void RegisterService<T>(IMembershipBoundedService<T> service) where T : IHasMembership, IHasIdentifier
+		{
+			if (service is IMembershipBoundedService membershipBoundedResource)
+			{
+				this.MembershipBoundedServiceCollection.Add(membershipBoundedResource);	
+			}
+		}
+		
 		protected override bool ValidateModel(Membership model, out IEnumerable<string> errors)
 		{
 			var errorList = new List<string>();
@@ -49,7 +65,7 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				errorList.Add("secret_key is a required field");
 			}
-			
+
 			errors = errorList;
 			return !errors.Any();
 		}
@@ -139,7 +155,80 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			return ErtisAuthException.MembershipNotFound(id);
 		}
+		
+		private IEnumerable<MembershipBoundedResource> GetMembershipBoundedResources(string membershipId, int limit = 10) =>
+			this.GetMembershipBoundedResourcesAsync(membershipId, limit).ConfigureAwait(false).GetAwaiter().GetResult();
 
+		private async Task<IEnumerable<MembershipBoundedResource>> GetMembershipBoundedResourcesAsync(string membershipId, int limit = 10)
+		{
+			var tasks = this.MembershipBoundedServiceCollection.Select(service => 
+				service.GetAsync<MembershipBoundedResource>(membershipId, 0, limit, false, null, null).AsTask())
+				.ToArray();
+
+			await Task.WhenAll(tasks);
+
+			var cumulativeList = new List<MembershipBoundedResource>();
+			foreach (var task in tasks)
+			{
+				var items = (await task).Items;
+				cumulativeList.AddRange(items);
+			}
+
+			return cumulativeList.Take(limit);
+		}
+
+		#endregion
+
+		#region Read Methods
+
+		public Membership GetBySecretKey(string secretKey)
+		{
+			var dto = this.repository.FindOne(x => x.SecretKey == secretKey);
+			if (dto == null)
+			{
+				return null;
+			}
+
+			return Mapper.Current.Map<MembershipDto, Membership>(dto);
+		}
+
+		public async Task<Membership> GetBySecretKeyAsync(string secretKey)
+		{
+			var dto = await this.repository.FindOneAsync(x => x.SecretKey == secretKey);
+			if (dto == null)
+			{
+				return null;
+			}
+
+			return Mapper.Current.Map<MembershipDto, Membership>(dto);
+		}
+
+		#endregion
+		
+		#region Delete Methods
+
+		public override bool Delete(string id)
+		{
+			var membershipBoundedResources = this.GetMembershipBoundedResources(id);
+			if (membershipBoundedResources.Any())
+			{
+				throw ErtisAuthException.MembershipCouldNotDeleted(id);
+			}
+			
+			return base.Delete(id);
+		}
+		
+		public override async ValueTask<bool> DeleteAsync(string id)
+		{
+			var membershipBoundedResources = await this.GetMembershipBoundedResourcesAsync(id);
+			if (membershipBoundedResources.Any())
+			{
+				throw ErtisAuthException.MembershipCouldNotDeleted(id);
+			}
+			
+			return await base.DeleteAsync(id);
+		}
+		
 		#endregion
 	}
 }

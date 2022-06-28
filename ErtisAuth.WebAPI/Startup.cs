@@ -4,10 +4,12 @@ using Ertis.Extensions.AspNetCore.Versioning;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Database;
 using Ertis.Net.Rest;
+using Ertis.Schema.Serialization;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Extensions.Authorization.Constants;
+using ErtisAuth.Extensions.Mailkit.Extensions;
 using ErtisAuth.Extensions.Quartz.Extensions;
 using ErtisAuth.Identity.Jwt.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
@@ -63,6 +65,8 @@ namespace ErtisAuth.WebAPI
 
 		public void ConfigureServices(IServiceCollection services)
 		{
+			Program.SetEnvironmentParameter("Version", this.Configuration.GetValue<string>("Version"));
+			
 			services.Configure<DatabaseSettings>(this.Configuration.GetSection("Database"));
 			services.AddSingleton<IDatabaseSettings>(serviceProvider =>
 			{
@@ -77,10 +81,12 @@ namespace ErtisAuth.WebAPI
 			
 			services.AddSingleton<IMongoDatabase, MongoDatabase>();
 			services.AddSingleton<IMembershipRepository, MembershipRepository>();
+			services.AddSingleton<IUserTypeRepository, UserTypeRepository>();
 			services.AddSingleton<IUserRepository, UserRepository>();
 			services.AddSingleton<IApplicationRepository, ApplicationRepository>();
 			services.AddSingleton<IRoleRepository, RoleRepository>();
 			services.AddSingleton<IWebhookRepository, WebhookRepository>();
+			services.AddSingleton<IMailHookRepository, MailHookRepository>();
 			services.AddSingleton<IProviderRepository, ProviderRepository>();
 			services.AddSingleton<IActiveTokensRepository, ActiveTokensRepository>();
 			services.AddSingleton<IRevokedTokensRepository, RevokedTokensRepository>();
@@ -94,11 +100,13 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IRevokedTokenService, RevokedTokenService>();
 			services.AddSingleton<IAccessControlService, AccessControlService>();
 			services.AddSingleton<IMembershipService, MembershipService>();
+			services.AddSingleton<IUserTypeService, UserTypeService>();
 			services.AddSingleton<IUserService, UserService>();
 			services.AddSingleton<IApplicationService, ApplicationService>();
 			services.AddSingleton<IRoleService, RoleService>();
 			services.AddSingleton<IProviderService, ProviderService>();
 			services.AddSingleton<IWebhookService, WebhookService>();
+			services.AddSingleton<IMailHookService, MailHookService>();
 			services.AddSingleton<IEventService, EventService>();
 			services.AddSingleton<IMigrationService, MigrationService>();
 			
@@ -106,6 +114,9 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
 			services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
 			
+			// Mailkit
+			services.AddMailkit();
+
 			// GeoLocation Tracking
 			services.Configure<GeoLocationOptions>(this.Configuration.GetSection("GeoLocationTracking"));
 			services.AddSingleton<IGeoLocationOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<GeoLocationOptions>>().Value);
@@ -159,7 +170,10 @@ namespace ErtisAuth.WebAPI
 			// Quartz
 			services.AddQuartzJobs();
 
-			services.AddControllers().AddNewtonsoftJson();
+			services
+				.AddControllers()
+				.AddNewtonsoftJson(options => 
+					options.SerializerSettings.Converters.Add(new DynamicObjectJsonConverter()));
 			
 			// Swagger
 			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
@@ -175,6 +189,8 @@ namespace ErtisAuth.WebAPI
 			{
 				app.UseDeveloperExceptionPage();
 			}
+			
+			this.ResolveRequiredServices(app.ApplicationServices);
 			
 			// Swagger
 			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
@@ -199,6 +215,17 @@ namespace ErtisAuth.WebAPI
 			{
 				endpoints.MapControllers();
 			});
+		}
+
+		private void ResolveRequiredServices(IServiceProvider serviceProvider)
+		{
+			serviceProvider.GetRequiredService<IUserTypeService>();
+			serviceProvider.GetRequiredService<IUserService>();
+			serviceProvider.GetRequiredService<IApplicationService>();
+			serviceProvider.GetRequiredService<IRoleService>();
+			serviceProvider.GetRequiredService<IProviderService>();
+			serviceProvider.GetRequiredService<IWebhookService>();
+			serviceProvider.GetRequiredService<IMailHookService>();
 		}
 
 		#endregion

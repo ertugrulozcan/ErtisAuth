@@ -118,6 +118,11 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"Membership is already exists ({membershipId})", "MembershipAlreadyExists");
 		}
 		
+		public static ErtisAuthException MembershipCouldNotDeleted(string membershipId)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"This membership is already using by some membership related resources, it's could not be deleted ({membershipId})", "MembershipCouldNotDeleted");
+		}
+
 		#endregion
 		
 		#region User Exceptions
@@ -127,7 +132,7 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.NotFound, $"User not found in db by given {parameterName}: <{field}>", "UserNotFound");
 		}
 		
-		public static ErtisAuthException UsernameOrPasswordIsWrong(string username, string password)
+		public static ErtisAuthException UsernameOrPasswordIsWrong()
 		{
 			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Username or password is wrong", "UsernameOrPasswordIsWrong");
 		}
@@ -137,6 +142,80 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The user with same username or email is already exists ({usernameOrEmail})", "UserWithSameUsernameAlreadyExists");
 		}
 		
+		#endregion
+
+		#region User Type Exceptions
+		
+		public static ErtisAuthException UserTypeNameRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type name is required.", "UserTypeNameRequired");
+		}
+		
+		public static ErtisAuthException UserTypePropertiesRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type properties is required.", "UserTypePropertiesRequired");
+		}
+		
+		public static ErtisAuthException UserTypeCannotBeBothAbstractAndSealed()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type cannot be both abstract and sealed.", "UserTypeCannotBeBothAbstractAndSealed");
+		}
+		
+		public static ErtisAuthException InheritedTypeNotFound(string baseUserTypeName)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"The base user type '{baseUserTypeName}' not found", "InheritedTypeNotFound");
+		}
+		
+		public static ErtisAuthException InheritedTypeIsSealed(string baseUserTypeName)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"The base user type '{baseUserTypeName}' is flagged as sealed. It's can not be used as base type.", "InheritedTypeIsSealed");
+		}
+		
+		public static ErtisAuthException InheritedTypeIsAbstract(string baseUserTypeName)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"The base user type '{baseUserTypeName}' has abstract modifier.", "InheritedTypeIsAbstract");
+		}
+
+		public static ErtisAuthException ReservedUserTypeName(string userTypeName)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"'{userTypeName}' is a reserved name. It's can not be used as user type name.", "ReservedUserTypeName");
+		}
+		
+		public static ErtisAuthException DuplicateFieldWithBaseType(string fieldName)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"'{fieldName}' field is already exist in base user type.", "DuplicateFieldWithBaseType");
+		}
+
+		public static ErtisAuthException VirtualFieldTypeCanNotOverwrite(string fieldName)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"The field type cannot be overwritten on virtual fields. ('{fieldName}')", "VirtualFieldTypeCanNotOverwrite");
+		}
+
+		public static ErtisAuthException UserTypeAlreadyExists(string userTypeName)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"'{userTypeName}' is already exist.", "UserTypeAlreadyExists");
+		}
+		
+		public static ErtisAuthException UserTypeNotFound(string field, string parameterName)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"User type not found in db by given {parameterName}: <{field}>", "UserTypeNotFound");
+		}
+		
+		public static ErtisAuthException UserTypeRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is required", "UserTypeRequired");
+		}
+		
+		public static ErtisAuthException UserTypeImmutable()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is an immutable field. It's cannot be updated.", "UserTypeImmutable");
+		}
+		
+		public static ErtisAuthException UserTypeCanNotBeDelete()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "This user type currently using by another users, it's cannot be deleted.", "UserTypeCanNotBeDelete");
+		}
+
 		#endregion
 
 		#region Application Exceptions
@@ -177,6 +256,11 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The role with same name is already exists ({name})", "RoleWithSameNameAlreadyExists");
 		}
 		
+		public static ErtisAuthException UbacsConflicted(string message)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, message, "UbacsConflicted");
+		}
+		
 		#endregion
 		
 		#region Provider Exceptions
@@ -207,6 +291,20 @@ namespace ErtisAuth.Core.Exceptions
 
 		#endregion
 		
+		#region MailHook Exceptions
+
+		public static ErtisAuthException MailHookNotFound(string id)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"Mail hook not found in db by given _id: <{id}>", "MailHookNotFound");
+		}
+		
+		public static ErtisAuthException MailHookWithSameNameAlreadyExists(string name)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"The mail hook with same name is already exists ({name})", "MailHookWithSameNameAlreadyExists");
+		}
+
+		#endregion
+		
 		#region Event Exceptions
 
 		public static ErtisAuthException EventNotFound(string eventId)
@@ -221,6 +319,36 @@ namespace ErtisAuth.Core.Exceptions
 		public static ErtisAuthException ActiveTokenNotFound(string id)
 		{
 			return new ErtisAuthException(HttpStatusCode.NotFound, $"Active token not found in db by given id: <{id}>", "ActiveTokenNotFound");
+		}
+
+		#endregion
+
+		#region Search Exceptions
+
+		public static ErtisAuthException SearchKeywordRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "Search keyword is required", "SearchKeywordRequired");
+		}
+
+		#endregion
+
+		#region BulkDelete Exceptions
+
+		public static ErtisAuthException BulkDeleteFailed(IEnumerable<string> ids)
+		{
+			if (ids != null)
+			{
+				return new ErtisAuthException(HttpStatusCode.NotFound, $"Bulk delete operation failed ({string.Join(", ", ids)})", "BulkDeleteFailed");
+			}
+			else
+			{
+				return new ErtisAuthException(HttpStatusCode.NotFound, "Bulk delete operation failed (ids: null)", "BulkDeleteFailed");
+			}
+		}
+		
+		public static ErtisAuthException BulkDeletePartial()
+		{
+			return new ErtisAuthException(HttpStatusCode.OK, $"Bulk delete operation was partial completed", "BulkDeletePartial");
 		}
 
 		#endregion

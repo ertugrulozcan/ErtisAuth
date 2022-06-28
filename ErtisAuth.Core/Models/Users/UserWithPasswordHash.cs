@@ -32,8 +32,10 @@ namespace ErtisAuth.Core.Models.Users
 			this.Username = user.Username;
 			this.EmailAddress = user.EmailAddress;
 			this.Role = user.Role;
-			this.Sys = user.Sys;
+			this.Forbidden = user.Forbidden;
+			this.Permissions = user.Permissions;
 			this.MembershipId = user.MembershipId;
+			this.Sys = user.Sys;
 		}
 
 		#endregion

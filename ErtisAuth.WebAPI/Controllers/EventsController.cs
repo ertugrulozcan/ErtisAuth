@@ -44,7 +44,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Read Methods
 		
 		[HttpGet("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<ActionResult<ErtisAuthEvent>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{

@@ -82,7 +82,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Read Methods
 		
 		[HttpGet("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -133,12 +133,32 @@ namespace ErtisAuth.WebAPI.Controllers
 			return await this.webhookService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 		}
 		
+		[HttpGet("search")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword)
+		{
+			if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(keyword.Trim()))
+			{
+				return this.SearchKeywordRequired();
+			}
+			
+			this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+			this.ExtractSortingParameters(out var orderBy, out var sortDirection);
+			
+			return this.Ok(await this.webhookService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection));
+		}
+		
 		#endregion
 		
 		#region Update Methods
 
 		[HttpPut("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Update)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -169,7 +189,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Delete Methods
 
 		[HttpDelete("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[ProducesResponseType(StatusCodes.Status204NoContent)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -186,6 +206,17 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				return this.WebhookNotFound(id);
 			}
+		}
+		
+		[HttpDelete]
+		[ProducesResponseType(StatusCodes.Status204NoContent)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		[RbacAction(Rbac.CrudActions.Delete)]
+		public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids)
+		{
+			return await this.BulkDeleteAsync(this.webhookService, membershipId, ids);
 		}
 
 		#endregion

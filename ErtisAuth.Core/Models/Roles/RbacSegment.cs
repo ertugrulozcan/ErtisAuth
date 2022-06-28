@@ -12,7 +12,7 @@ namespace ErtisAuth.Core.Models.Roles
 		
 		#region Statics
 
-		public static readonly RbacSegment All = new RbacSegment("*", "__all__");
+		public static readonly RbacSegment All = new("*", "__all__");
 
 		#endregion
 

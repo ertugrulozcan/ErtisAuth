@@ -10,7 +10,7 @@ namespace ErtisAuth.WebAPI
 	{
 		private static IConfigurationRoot BootConfiguration;
 		
-		private static readonly Dictionary<string, object> EnvironmentParameters = new Dictionary<string, object>();
+		private static readonly Dictionary<string, object> EnvironmentParameters = new();
 
 		public static void Main(string[] args)
 		{

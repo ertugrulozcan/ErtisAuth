@@ -3,23 +3,17 @@ using System;
 namespace ErtisAuth.Identity.Attributes
 {
 	[AttributeUsage(AttributeTargets.Method)]
-	public class RbacObjectAttribute : Attribute
+	public class RbacObjectAttribute : RbacAttribute
 	{
-		#region Properties
-
-		public string RouteParameterName { get; }
-
-		#endregion
-		
 		#region Constructors
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="routeParameter"></param>
-		public RbacObjectAttribute(string routeParameter)
+		/// <param name="objectName"></param>
+		public RbacObjectAttribute(string objectName) : base(objectName)
 		{
-			this.RouteParameterName = routeParameter;
+			
 		}
 
 		#endregion

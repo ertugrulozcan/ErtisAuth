@@ -6,6 +6,7 @@ using Ertis.MongoDB.Repository;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
 
@@ -14,8 +15,8 @@ namespace ErtisAuth.Infrastructure.Services
 	public abstract class MembershipBoundedCrudService<TModel, TDto> : 
 		MembershipBoundedService<TModel, TDto>, 
 		IMembershipBoundedCrudService<TModel> 
-		where TModel : Core.Models.IHasMembership, Core.Models.IHasIdentifier
-		where TDto : IEntity<string>, Dto.Models.IHasMembership
+		where TModel : class, IHasMembership, IHasIdentifier
+		where TDto : class, IEntity<string>, Dto.Models.IHasMembership
 	{
 		#region Constructors
 
@@ -26,7 +27,7 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="repository"></param>
 		protected MembershipBoundedCrudService(IMembershipService membershipService, IMongoRepository<TDto> repository) : base(membershipService, repository)
 		{
-			
+			membershipService.RegisterService(this);
 		}
 
 		#endregion
@@ -57,6 +58,21 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#endregion
 		
+		#region Virtual Methods
+
+		protected virtual TModel Touch(TModel model, CrudOperation crudOperation)
+		{
+			return model;
+		}
+		
+		protected virtual async Task<TModel> TouchAsync(TModel model, CrudOperation crudOperation)
+		{
+			await Task.CompletedTask;
+			return model;
+		}
+		
+		#endregion
+		
 		#region Insert Methods
 
 		public virtual TModel Create(Utilizer utilizer, string membershipId, TModel model)
@@ -71,6 +87,9 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				model.MembershipId = membershipId;	
 			}
+			
+			// Touch model
+			model = this.Touch(model, CrudOperation.Create);
 
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -106,6 +125,9 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				model.MembershipId = membershipId;	
 			}
+			
+			// Touch model
+			model = await this.TouchAsync(model, CrudOperation.Create);
 			
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -154,6 +176,9 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			this.Overwrite(model, current);
+			
+			// Touch model
+			model = this.Touch(model, CrudOperation.Update);
 
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -198,6 +223,9 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			this.Overwrite(model, current);
+			
+			// Touch model
+			model = await this.TouchAsync(model, CrudOperation.Update);
 			
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -304,6 +332,76 @@ namespace ErtisAuth.Infrastructure.Services
 			else
 			{
 				return false;
+			}
+		}
+		
+		public virtual bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids)
+		{
+			var isAllDeleted = true;
+			var isAllFailed = true;
+			
+			foreach (var id in ids)
+			{
+				var current = this.Get(membershipId, id);
+				if (current != null)
+				{
+					var isDeleted = this.repository.Delete(id);
+					if (isDeleted)
+					{
+						this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));		
+					}
+
+					isAllDeleted &= isDeleted;
+					isAllFailed &= !isDeleted;
+				}
+			}
+
+			if (isAllDeleted)
+			{
+				return true;
+			}
+			else if (isAllFailed)
+			{
+				return false;
+			}
+			else
+			{
+				return null;
+			}
+		}
+		
+		public virtual async ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids)
+		{
+			var isAllDeleted = true;
+			var isAllFailed = true;
+			
+			foreach (var id in ids)
+			{
+				var current = await this.GetAsync(membershipId, id);
+				if (current != null)
+				{
+					var isDeleted = await this.repository.DeleteAsync(id);
+					if (isDeleted)
+					{
+						this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));		
+					}
+
+					isAllDeleted &= isDeleted;
+					isAllFailed &= !isDeleted;
+				}
+			}
+
+			if (isAllDeleted)
+			{
+				return true;
+			}
+			else if (isAllFailed)
+			{
+				return false;
+			}
+			else
+			{
+				return null;
 			}
 		}
 		

@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
+using Ertis.Core.Models.Resources;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Helpers;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Roles;
 using ErtisAuth.Events.EventArgs;
@@ -20,6 +23,12 @@ namespace ErtisAuth.Infrastructure.Services
 		#region Services
 
 		private readonly IEventService eventService;
+
+		#endregion
+
+		#region Properties
+
+		private Dictionary<string, Role> ServerRoleDictionary { get; } = new();
 
 		#endregion
 		
@@ -48,7 +57,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		private void Initialize()
 		{
-			this.InitializeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+			this.InitializeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 		
 		private async ValueTask InitializeAsync()
@@ -60,17 +69,17 @@ namespace ErtisAuth.Infrastructure.Services
 				{
 					var utilizer = new Utilizer
 					{
-						Role = Rbac.ReservedRoles.Administrator,
+						Role = ReservedRoles.Administrator,
 						Type = Utilizer.UtilizerType.System,
 						MembershipId = membership.Id
 					};
 					
-					var role = await this.GetByNameAsync(Rbac.ReservedRoles.Administrator, membership.Id);
+					var role = await this.GetByNameAsync(ReservedRoles.Administrator, membership.Id);
 					if (role == null)
 					{
 						await this.CreateAsync(utilizer, membership.Id, new Role
 						{
-							Name = Rbac.ReservedRoles.Administrator,
+							Name = ReservedRoles.Administrator,
 							Description = "Administrator",
 							MembershipId = membership.Id,
 							Permissions = RoleHelper.AssertAdminPermissionsForReservedResources()
@@ -178,6 +187,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return !errors.Any();
 		}
 
+		[SuppressMessage("ReSharper", "ConvertIfStatementToNullCoalescingAssignment")]
 		protected override void Overwrite(Role destination, Role source)
 		{
 			destination.Id = source.Id;
@@ -210,25 +220,8 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		protected override bool IsAlreadyExist(Role model, string membershipId, Role exclude = default)
-		{
-			if (exclude == null)
-			{
-				return this.GetByName(model.Name, membershipId) != null;	
-			}
-			else
-			{
-				var current = this.GetByName(model.Name, membershipId);
-				if (current != null)
-				{
-					return current.Name != exclude.Name;	
-				}
-				else
-				{
-					return false;
-				}
-			}
-		}
+		protected override bool IsAlreadyExist(Role model, string membershipId, Role exclude = default) =>
+			this.IsAlreadyExistAsync(model, membershipId, exclude).ConfigureAwait(false).GetAwaiter().GetResult();
 
 		protected override async Task<bool> IsAlreadyExistAsync(Role model, string membershipId, Role exclude = default)
 		{
@@ -259,9 +252,28 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			return ErtisAuthException.RoleNotFound(id);
 		}
-		
+
+		public override Role Get(string membershipId, string id)
+		{
+			return id == ReservedRoles.Server ? 
+				this.GetServerRole(membershipId) : 
+				base.Get(membershipId, id);
+		}
+
+		public override async ValueTask<Role> GetAsync(string membershipId, string id)
+		{
+			return id == ReservedRoles.Server ? 
+				await this.GetServerRoleAsync(membershipId) : 
+				await base.GetAsync(membershipId, id);
+		}
+
 		public Role GetByName(string name, string membershipId)
 		{
+			if (name == ReservedRoles.Server)
+			{
+				return this.GetServerRole(membershipId);
+			}
+			
 			var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
 			if (dto == null)
 			{
@@ -273,6 +285,11 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		public async ValueTask<Role> GetByNameAsync(string name, string membershipId)
 		{
+			if (name == ReservedRoles.Server)
+			{
+				return await this.GetServerRoleAsync(membershipId);
+			}
+			
 			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
 			if (dto == null)
 			{
@@ -280,6 +297,46 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			return Mapper.Current.Map<RoleDto, Role>(dto);
+		}
+
+		private Role GetServerRole(string membershipId) =>
+			this.GetServerRoleAsync(membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
+		
+		private async Task<Role> GetServerRoleAsync(string membershipId)
+		{
+			if (this.ServerRoleDictionary.ContainsKey(membershipId))
+			{
+				return this.ServerRoleDictionary[membershipId];
+			}
+			
+			// Check membership
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+			
+			var serverRole = new Role
+			{
+				Id = "server",
+				Name = "server",
+				Description = "An on the fly role instance required for password set/reset etc operations",
+				Permissions = new[]
+				{
+					"*.users.reset-password.*",
+					"*.users.set-password.*"
+				},
+				Forbidden = null,
+				MembershipId = membershipId,
+				Sys = new SysModel
+				{
+					CreatedAt = DateTime.Now,
+					CreatedBy = "system"
+				}
+			};
+			
+			this.ServerRoleDictionary.Add(membershipId, serverRole);
+			return serverRole;
 		}
 
 		#endregion

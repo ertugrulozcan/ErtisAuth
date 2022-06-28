@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
+using Ertis.MongoDB.Queries;
 using ErtisAuth.Events.EventArgs;
 
 namespace ErtisAuth.Abstractions.Services.Interfaces
@@ -26,6 +27,24 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		IPaginationCollection<T> Get(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null);
 		
 		ValueTask<IPaginationCollection<T>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null);
+		
+		IPaginationCollection<T> Search(
+			string keyword, 
+			TextSearchOptions options = null,
+			int? skip = null, 
+			int? limit = null,
+			bool? withCount = null, 
+			string sortField = null, 
+			SortDirection? sortDirection = null);
+		
+		ValueTask<IPaginationCollection<T>> SearchAsync(
+			string keyword, 
+			TextSearchOptions options = null,
+			int? skip = null, 
+			int? limit = null,
+			bool? withCount = null, 
+			string sortField = null, 
+			SortDirection? sortDirection = null);
 		
 		T Create(T model);
 		

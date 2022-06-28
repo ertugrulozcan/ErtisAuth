@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 
@@ -157,7 +158,19 @@ namespace ErtisAuth.Tests.Mocks.Services
 				};
 			}
 		}
-		
+
+		public IPaginationCollection<Role> Search(string membershipId, string keyword, int? skip = null, int? limit = null, bool? withCount = null,
+			string sortField = null, SortDirection? sortDirection = null)
+		{
+			throw new NotImplementedException();
+		}
+
+		public ValueTask<IPaginationCollection<Role>> SearchAsync(string membershipId, string keyword, int? skip = null, int? limit = null, bool? withCount = null,
+			string sortField = null, SortDirection? sortDirection = null)
+		{
+			throw new NotImplementedException();
+		}
+
 		public Role GetByName(string name, string membershipId) => this.GetByNameAsync(name, membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
 
 		public async ValueTask<Role> GetByNameAsync(string name, string membershipId)
@@ -279,6 +292,38 @@ namespace ErtisAuth.Tests.Mocks.Services
 			}
 		}
 
+		public bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids)
+		{
+			throw new NotImplementedException();
+		}
+
+		public ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids)
+		{
+			throw new NotImplementedException();
+		}
+
 		#endregion
+
+		public TModel Get<TModel>(string membershipId, string id) where TModel : class, IHasMembership
+		{
+			throw new NotImplementedException();
+		}
+
+		public ValueTask<TModel> GetAsync<TModel>(string membershipId, string id) where TModel : class, IHasMembership
+		{
+			throw new NotImplementedException();
+		}
+
+		public IPaginationCollection<TModel> Get<TModel>(string membershipId, int? skip, int? limit, bool withCount, string orderBy,
+			SortDirection? sortDirection) where TModel : class, IHasMembership
+		{
+			throw new NotImplementedException();
+		}
+
+		public ValueTask<IPaginationCollection<TModel>> GetAsync<TModel>(string membershipId, int? skip, int? limit, bool withCount, string orderBy,
+			SortDirection? sortDirection) where TModel : class, IHasMembership
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

@@ -10,6 +10,7 @@ using ErtisAuth.Identity.Attributes;
 using ErtisAuth.Extensions.Authorization.Annotations;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Roles;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
@@ -76,7 +77,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Read Methods
 
 		[HttpGet("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<ActionResult<Role>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
@@ -114,12 +115,32 @@ namespace ErtisAuth.WebAPI.Controllers
 			return await this.roleService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 		}
 		
+		[HttpGet("search")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword)
+		{
+			if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(keyword.Trim()))
+			{
+				return this.SearchKeywordRequired();
+			}
+			
+			this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+			this.ExtractSortingParameters(out var orderBy, out var sortDirection);
+			
+			return this.Ok(await this.roleService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection));
+		}
+		
 		#endregion
 		
 		#region Update Methods
 
 		[HttpPut("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Update)]
 		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateRoleFormModel model)
 		{
@@ -143,7 +164,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Delete Methods
 
 		[HttpDelete("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Delete)]
 		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id)
 		{
@@ -157,6 +178,17 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.RoleNotFound(id);
 			}
 		}
+		
+		[HttpDelete]
+		[ProducesResponseType(StatusCodes.Status204NoContent)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		[RbacAction(Rbac.CrudActions.Delete)]
+		public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids)
+		{
+			return await this.BulkDeleteAsync(this.roleService, membershipId, ids);
+		}
 
 		#endregion
 
@@ -169,9 +201,10 @@ namespace ErtisAuth.WebAPI.Controllers
 			var role = await this.roleService.GetAsync(membershipId, id);
 			if (role != null)
 			{
+				var utilizer = this.GetUtilizer();
 				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
 				{
-					if (this.accessControlService.HasPermission(role, rbac, this.GetUtilizer()))
+					if (this.accessControlService.HasPermission(role, rbac, utilizer))
 					{
 						return this.Ok();
 					}
@@ -201,7 +234,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
 				{
-					if (this.accessControlService.HasPermission(role, rbac, this.GetUtilizer()))
+					if (this.accessControlService.HasPermission(role, rbac, utilizer))
 					{
 						return this.Ok();
 					}

@@ -1,0 +1,45 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "ErtisAuth Hub",
+			"type": "coreclr",
+			"request": "launch",
+			"preLaunchTask": "ertisauth_hub.build",
+			"program": "${workspaceFolder}/ErtisAuth.Hub/bin/Debug/net5.0/ErtisAuth.Hub.dll",
+			"args": [],
+			"cwd": "${workspaceFolder}/ErtisAuth.Hub",
+			"stopAtEntry": false,
+			"serverReadyAction": {
+				"action": "openExternally",
+				"pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+			},
+			"env": {
+				"ASPNETCORE_ENVIRONMENT": "Development"
+			},
+			"sourceFileMap": {
+				"/Views": "${workspaceFolder}/Views"
+			}
+		},
+		{
+			"name": "ErtisAuth WebAPI",
+			"type": "coreclr",
+			"request": "launch",
+			"preLaunchTask": "ertisauth_api.build",
+			"program": "${workspaceFolder}/ErtisAuth.WebAPI/bin/Debug/net5.0/ErtisAuth.WebAPI.dll",
+			"args": [],
+			"cwd": "${workspaceFolder}/ErtisAuth.WebAPI",
+			"stopAtEntry": false,
+			"serverReadyAction": {
+				"action": "openExternally",
+				"pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+			},
+			"env": {
+				"ASPNETCORE_ENVIRONMENT": "Development"
+			},
+			"sourceFileMap": {
+				"/Views": "${workspaceFolder}/Views"
+			}
+		}
+	]
+}

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Ertis.Net.Rest;
 using ErtisAuth.Extensions.AspNetCore.Configuration;
+using ErtisAuth.Sdk.Attributes;
 using ErtisAuth.Sdk.Configuration;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -46,7 +47,7 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			// Authentication
 			if (options.SetDefaultAuthenticationHandler)
 			{
-				services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ErtisAuthAuthenticationHandler>(schemeName, configureOptions =>
+				services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ErtisAuthAuthenticationHandler>(schemeName, _ =>
 				{
 					
 				});	
@@ -101,18 +102,31 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			}
 			
 			var types = assembly.GetTypes();
-			var interfaces = types.Where(x => !string.IsNullOrEmpty(x.FullName) && x.IsInterface && x.FullName.StartsWith("ErtisAuth.Sdk.Services.Interfaces")).ToList();
+			var interfaces = types
+				.Where(x => !string.IsNullOrEmpty(x.FullName) && x.IsInterface && x.FullName.StartsWith("ErtisAuth.Sdk.Services.Interfaces"))
+				.Where(x => x.CustomAttributes.Any(y => y.AttributeType == typeof(ServiceLifetimeAttribute))).ToList();
+			
 			var implementations = types.Where(x => !string.IsNullOrEmpty(x.FullName) && x.IsClass && x.FullName.StartsWith("ErtisAuth.Sdk.Services"));
 			foreach (var implementation in implementations)
 			{
 				var baseInterface = interfaces.FirstOrDefault(x => x.IsAssignableFrom(implementation));
-				if (baseInterface != null)
+				if (baseInterface?.GetCustomAttributes(typeof(ServiceLifetimeAttribute), true).FirstOrDefault() is ServiceLifetimeAttribute serviceLifetimeAttribute)
 				{
-					services.AddSingleton(baseInterface, implementation);
-					
-					var interfaceName = baseInterface.Name;
-					var serviceName = implementation.Name;
-					Console.WriteLine($"{interfaceName} resolved as {serviceName}.");
+					// ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+					switch (serviceLifetimeAttribute.Lifetime)
+					{
+						case ServiceLifetime.Singleton:
+							services.AddSingleton(baseInterface, implementation);
+							break;
+						case ServiceLifetime.Scoped:
+							services.AddScoped(baseInterface, implementation);
+							break;
+						case ServiceLifetime.Transient:
+							services.AddTransient(baseInterface, implementation);
+							break;
+					}
+
+					Console.WriteLine($"{baseInterface.Name} resolved as {implementation.Name}");
 				}
 			}
 		}

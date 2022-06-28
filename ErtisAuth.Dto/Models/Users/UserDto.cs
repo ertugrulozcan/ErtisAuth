@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Ertis.MongoDB.Attributes;
 using ErtisAuth.Dto.Models.Resources;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -8,15 +9,19 @@ namespace ErtisAuth.Dto.Models.Users
 	{
 		#region Properties
 		
+		[Searchable]
 		[BsonElement("firstname")]
 		public string FirstName { get; set; }
 		
+		[Searchable]
 		[BsonElement("lastname")]
 		public string LastName { get; set; }
 		
+		[Searchable]
 		[BsonElement("username")]
 		public string Username { get; set; }
 		
+		[Searchable]
 		[BsonElement("email_address")]
 		public string EmailAddress { get; set; }
 		
@@ -32,12 +37,15 @@ namespace ErtisAuth.Dto.Models.Users
 		[BsonElement("forbidden")]
 		public IEnumerable<string> Forbidden { get; set; }
 		
+		[BsonElement("user_type")]
+		public string UserType { get; set; }
+		
 		[BsonElement("password_hash")]
 		public string PasswordHash { get; set; }
 		
 		[BsonElement("sys")]
 		public SysModelDto Sys { get; set; }
-		
+
 		#endregion
 	}
 }

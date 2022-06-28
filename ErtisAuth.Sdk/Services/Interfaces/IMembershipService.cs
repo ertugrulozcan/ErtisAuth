@@ -3,11 +3,18 @@ using Ertis.Core.Collections;
 using Ertis.Core.Models.Response;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
+using ErtisAuth.Sdk.Attributes;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ErtisAuth.Sdk.Services.Interfaces
 {
+	[ServiceLifetime(ServiceLifetime.Singleton)]
 	public interface IMembershipService
 	{
+		IResponseResult<Membership> CreateMembership(Membership membership, TokenBase token);
+		
+		Task<IResponseResult<Membership>> CreateMembershipAsync(Membership membership, TokenBase token);
+		
 		IResponseResult<Membership> GetMembership(string membershipId, TokenBase token);
 		
 		Task<IResponseResult<Membership>> GetMembershipAsync(string membershipId, TokenBase token);
@@ -23,5 +30,9 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 		IResponseResult<Membership> UpdateMembership(Membership membership, TokenBase token);
 		
 		Task<IResponseResult<Membership>> UpdateMembershipAsync(Membership membership, TokenBase token);
+
+		IResponseResult DeleteMembership(string membershipId, TokenBase token);
+		
+		Task<IResponseResult> DeleteMembershipAsync(string membershipId, TokenBase token);
 	}
 }

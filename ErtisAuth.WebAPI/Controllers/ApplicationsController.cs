@@ -10,6 +10,7 @@ using ErtisAuth.Extensions.Authorization.Annotations;
 using ErtisAuth.Identity.Attributes;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Applications;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
@@ -71,7 +72,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Read Methods
 		
 		[HttpGet("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<ActionResult<Application>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
@@ -109,12 +110,32 @@ namespace ErtisAuth.WebAPI.Controllers
 			return await this.applicationService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 		}
 		
+		[HttpGet("search")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword)
+		{
+			if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(keyword.Trim()))
+			{
+				return this.SearchKeywordRequired();
+			}
+			
+			this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+			this.ExtractSortingParameters(out var orderBy, out var sortDirection);
+			
+			return this.Ok(await this.applicationService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection));
+		}
+		
 		#endregion
 		
 		#region Update Methods
 
 		[HttpPut("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Update)]
 		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateApplicationFormModel model)
 		{
@@ -136,7 +157,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Delete Methods
 
 		[HttpDelete("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Delete)]
 		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id)
 		{
@@ -149,6 +170,17 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				return this.RoleNotFound(id);
 			}
+		}
+		
+		[HttpDelete]
+		[ProducesResponseType(StatusCodes.Status204NoContent)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		[RbacAction(Rbac.CrudActions.Delete)]
+		public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids)
+		{
+			return await this.BulkDeleteAsync(this.applicationService, membershipId, ids);
 		}
 
 		#endregion

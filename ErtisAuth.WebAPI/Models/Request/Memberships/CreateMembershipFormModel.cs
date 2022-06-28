@@ -1,3 +1,5 @@
+using ErtisAuth.Core.Models.Memberships;
+using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.WebAPI.Models.Request.Memberships
@@ -24,6 +26,27 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		[JsonProperty("encoding")]
 		public string DefaultEncoding { get; set; }
 		
+		[JsonProperty("default_language")]
+		public string DefaultLanguage { get; set; }
+
+		#endregion
+
+		#region Methods
+
+		public Membership ToMembership()
+		{
+			return new Membership
+			{
+				Name = this.Name,
+				ExpiresIn = this.ExpiresIn,
+				RefreshTokenExpiresIn = this.RefreshTokenExpiresIn,
+				SecretKey = this.SecretKey,
+				HashAlgorithm = this.HashAlgorithm,
+				DefaultEncoding = this.DefaultEncoding,
+				DefaultLanguage = this.DefaultLanguage,
+			};
+		}
+
 		#endregion
 	}
 }

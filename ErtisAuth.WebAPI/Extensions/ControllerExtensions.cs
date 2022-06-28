@@ -1,10 +1,15 @@
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Extensions.Authorization.Extensions;
 using ErtisAuth.WebAPI.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ErtisAuth.WebAPI.Extensions
 {
@@ -60,7 +65,31 @@ namespace ErtisAuth.WebAPI.Extensions
 			var utilizerIdentity = claimUser.Identities.FirstOrDefault(x => x.NameClaimType == "Utilizer");
 			if (utilizerIdentity != null)
 			{
-				return utilizerIdentity.ConvertToUtilizer();
+				var utilizerSampling = utilizerIdentity.ConvertToUtilizer();
+				
+				// ReSharper disable once ConvertIfStatementToSwitchStatement
+				if (utilizerSampling.Type == Utilizer.UtilizerType.User)
+				{
+					var userService = controller.HttpContext.RequestServices.GetService<IUserService>();
+					if (userService != null)
+					{
+						var dynamicObject = userService.GetAsync(utilizerSampling.MembershipId, utilizerSampling.Id).ConfigureAwait(false).GetAwaiter().GetResult();
+						var user = dynamicObject.Deserialize<User>();
+						Utilizer utilizer = user; 
+						return utilizer;
+					}
+				}
+				else if (utilizerSampling.Type == Utilizer.UtilizerType.Application)
+				{
+					var applicationService = controller.HttpContext.RequestServices.GetService<IApplicationService>();
+					if (applicationService != null)
+					{
+						Utilizer application = applicationService.Get(utilizerSampling.MembershipId, utilizerSampling.Id);
+						return application;
+					}
+				}
+
+				return utilizerSampling;
 			}
 
 			return new Utilizer();
@@ -79,6 +108,11 @@ namespace ErtisAuth.WebAPI.Extensions
 		public static NotFoundObjectResult UserNotFound(this ControllerBase controller, string userId)
 		{
 			return controller.NotFound(ErtisAuthException.UserNotFound(userId, "_id").Error);
+		}
+
+		public static NotFoundObjectResult UserTypeNotFound(this ControllerBase controller, string userTypeId)
+		{
+			return controller.NotFound(ErtisAuthException.UserTypeNotFound(userTypeId, "_id").Error);
 		}
 		
 		public static NotFoundObjectResult ApplicationNotFound(this ControllerBase controller, string applicationId)
@@ -100,6 +134,11 @@ namespace ErtisAuth.WebAPI.Extensions
 		{
 			return controller.NotFound(ErtisAuthException.WebhookNotFound(webhookId));
 		}
+		
+		public static NotFoundObjectResult MailHookNotFound(this ControllerBase controller, string mailHookId)
+		{
+			return controller.NotFound(ErtisAuthException.MailHookNotFound(mailHookId));
+		}
 
 		public static NotFoundObjectResult ProviderNotFound(this ControllerBase controller, string providerId)
 		{
@@ -111,9 +150,9 @@ namespace ErtisAuth.WebAPI.Extensions
 			return controller.NotFound(ErtisAuthException.EventNotFound(eventId));
 		}
 
-		public static UnauthorizedObjectResult UsernameOrPasswordIsWrong(this ControllerBase controller, string username, string password)
+		public static UnauthorizedObjectResult UsernameOrPasswordIsWrong(this ControllerBase controller)
 		{
-			return controller.Unauthorized(ErtisAuthException.UsernameOrPasswordIsWrong(username, password).Error);
+			return controller.Unauthorized(ErtisAuthException.UsernameOrPasswordIsWrong().Error);
 		}
 		
 		public static UnauthorizedObjectResult InvalidToken(this ControllerBase controller)
@@ -124,6 +163,49 @@ namespace ErtisAuth.WebAPI.Extensions
 		public static NotFoundObjectResult ActiveTokenNotFound(this ControllerBase controller, string activeTokenId)
 		{
 			return controller.NotFound(ErtisAuthException.ActiveTokenNotFound(activeTokenId));
+		}
+		
+		public static BadRequestObjectResult SearchKeywordRequired(this ControllerBase controller)
+		{
+			return controller.BadRequest(ErtisAuthException.SearchKeywordRequired().Error);
+		}
+		
+		public static async Task<IActionResult> BulkDeleteAsync(this ControllerBase controller, IDeletableMembershipBoundedService service, string membershipId, string[] ids)
+		{
+			var utilizer = controller.GetUtilizer();
+			if (ids != null)
+			{
+				var isDeleted = await service.BulkDeleteAsync(utilizer, membershipId, ids);
+				if (isDeleted != null)
+				{
+					if (isDeleted.Value)
+					{
+						return controller.NoContent();	
+					}
+					else
+					{
+						return controller.BulkDeleteFailed(ids);
+					}
+				}
+				else
+				{
+					return controller.BulkDeletePartial();
+				}	
+			}
+			else
+			{
+				return controller.BadRequest();
+			}
+		}
+		
+		public static NotFoundObjectResult BulkDeleteFailed(this ControllerBase controller, IEnumerable<string> ids)
+		{
+			return controller.NotFound(ErtisAuthException.BulkDeleteFailed(ids).Error);
+		}
+		
+		public static OkObjectResult BulkDeletePartial(this ControllerBase controller)
+		{
+			return controller.Ok(ErtisAuthException.BulkDeletePartial().Error);
 		}
 
 		#endregion

@@ -3,9 +3,12 @@ using Ertis.Core.Models.Response;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
+using ErtisAuth.Sdk.Attributes;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ErtisAuth.Sdk.Services.Interfaces
 {
+	[ServiceLifetime(ServiceLifetime.Singleton)]
 	public interface IAuthenticationService
 	{
 		#region Methods

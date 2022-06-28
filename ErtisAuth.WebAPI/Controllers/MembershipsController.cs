@@ -4,12 +4,12 @@ using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
-using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Identity.Attributes;
 using ErtisAuth.Extensions.Authorization.Annotations;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Memberships;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
@@ -45,17 +45,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[RbacAction(Rbac.CrudActions.Create)]
 		public async Task<IActionResult> Create([FromBody] CreateMembershipFormModel model)
 		{
-			var membershipModel = new Membership
-			{
-				Name = model.Name,
-				ExpiresIn = model.ExpiresIn,
-				RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
-				SecretKey = model.SecretKey,
-				HashAlgorithm = model.HashAlgorithm,
-				DefaultEncoding = model.DefaultEncoding
-			};
-			
-			var membership = await this.membershipService.CreateAsync(membershipModel);
+			var membership = await this.membershipService.CreateAsync(model.ToMembership());
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{membership.Id}", membership);
 		}
 		
@@ -64,7 +54,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Read Methods
 
 		[HttpGet("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<IActionResult> Get([FromRoute] string id)
 		{
@@ -101,24 +91,37 @@ namespace ErtisAuth.WebAPI.Controllers
 		{
 			return await this.membershipService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 		}
+		
+		[HttpGet("search")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword)
+		{
+			if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(keyword.Trim()))
+			{
+				return this.SearchKeywordRequired();
+			}
+			
+			this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+			this.ExtractSortingParameters(out var orderBy, out var sortDirection);
+			
+			return this.Ok(await this.membershipService.SearchAsync(keyword, null, skip, limit, withCount, orderBy, sortDirection));
+		}
 
 		#endregion
 		
 		#region Update Methods
 
 		[HttpPut("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Update)]
 		public async Task<IActionResult> Update([FromRoute] string id, [FromBody] UpdateMembershipFormModel model)
 		{
-			var membershipModel = new Membership
-			{
-				Id = id,
-				ExpiresIn = model.ExpiresIn,
-				RefreshTokenExpiresIn = model.RefreshTokenExpiresIn
-			};
-			
-			var user = await this.membershipService.UpdateAsync(membershipModel);
+			var user = await this.membershipService.UpdateAsync(model.ToMembership(id));
 			return this.Ok(user);
 		}
 
@@ -127,7 +130,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Delete Methods
 
 		[HttpDelete("{id}")]
-		[RbacObject("id")]
+		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Delete)]
 		public async Task<IActionResult> Delete([FromRoute] string id)
 		{

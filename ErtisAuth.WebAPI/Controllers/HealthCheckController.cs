@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Ertis.MongoDB.Database;
+using ErtisAuth.Abstractions.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
@@ -13,6 +14,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Services
 
 		private readonly IMongoDatabase database;
+		private readonly IMembershipService membershipService;
 
 		#endregion
 		
@@ -22,9 +24,11 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// Constructor
 		/// </summary>
 		/// <param name="database"></param>
-		public HealthCheckController(IMongoDatabase database)
+		/// <param name="membershipService"></param>
+		public HealthCheckController(IMongoDatabase database, IMembershipService membershipService)
 		{
 			this.database = database;
+			this.membershipService = membershipService;
 		}
 
 		#endregion
@@ -57,10 +61,13 @@ namespace ErtisAuth.WebAPI.Controllers
 					});
 				}
 			
+				var memberships = await this.membershipService.GetAsync();
+				
 				var collectionList = (await listCollectionsTask).ToList();
 				if (!collectionList.Contains("memberships") ||
 					!collectionList.Contains("roles") ||
-					!collectionList.Contains("users"))
+					!collectionList.Contains("users") ||
+					!memberships.Items.Any())
 				{
 					return this.Ok(new
 					{

@@ -33,22 +33,27 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync(
 				HttpMethod.Put, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/users/{userId}/change-password", 
+				$"{this.BaseUrl}/memberships/{this.MembershipId}/users/{userId}/change-password", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(new { password = newPassword }));
 		}
 
-		public IResponseResult<ResetPasswordToken> ResetPassword(string emailAddress, TokenBase token) => this.ResetPasswordAsync(emailAddress, token).ConfigureAwait(false).GetAwaiter().GetResult();
+		public IResponseResult<ResetPasswordToken> ResetPassword(string emailAddress, string server, string host, TokenBase token) => this.ResetPasswordAsync(emailAddress, server, host, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress, TokenBase token)
+		public async Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress, string server, string host, TokenBase token)
 		{
 			return await this.ExecuteRequestAsync<ResetPasswordToken>(
 				HttpMethod.Post, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/users/reset-password", 
+				$"{this.BaseUrl}/memberships/{this.MembershipId}/users/reset-password", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(new { email_address = emailAddress }));
+				new JsonRequestBody(new
+				{
+					email_address = emailAddress,
+					server,
+					host
+				}));
 		}
 
 		public IResponseResult SetPassword(string email, string password, string resetToken, TokenBase token) => this.SetPasswordAsync(email, password, resetToken, token).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -57,7 +62,7 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.ExecuteRequestAsync(
 				HttpMethod.Post, 
-				$"{this.AuthApiBaseUrl}/memberships/{this.AuthApiMembershipId}/users/set-password", 
+				$"{this.BaseUrl}/memberships/{this.MembershipId}/users/set-password", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
 				new JsonRequestBody(new { email_address = email, reset_token = resetToken, password }));
