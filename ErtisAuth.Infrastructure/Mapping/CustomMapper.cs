@@ -31,9 +31,7 @@ namespace ErtisAuth.Infrastructure.Mapping
         {
             return instance == null ? default : this.Converter(instance);
         }
-
-        #endregion
-
+        
         public TOut1 Map<TIn1, TOut1>(TIn1 instance)
             where TIn1 : class
             where TOut1 : class
@@ -48,5 +46,7 @@ namespace ErtisAuth.Infrastructure.Mapping
                 throw new InvalidCastException("This mapper is not compatible for generic types");
             }
         }
+
+        #endregion
     }
 }

@@ -272,7 +272,11 @@ namespace ErtisAuth.Infrastructure.Services
 					Country = geoLocation.Country,
 					CountryCode = geoLocation.CountryCode,
 					PostalCode = geoLocation.PostalCode,
-					Location = geoLocation.Location,
+					Location = new CoordinateDto
+					{
+						Latitude = geoLocation.Location.Latitude,
+						Longitude = geoLocation.Location.Longitude
+					},
 					Isp = geoLocation.Isp,
 					IspDomain = geoLocation.IspDomain
 				};
