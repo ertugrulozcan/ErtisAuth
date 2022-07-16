@@ -332,7 +332,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		public async ValueTask<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true)
 		{
-			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token == token);
+			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token.AccessToken == token);
 			if (revokedToken != null)
 			{
 				throw ErtisAuthException.TokenWasRevoked();
@@ -466,7 +466,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public async ValueTask<BearerToken> RefreshTokenAsync(string refreshToken, bool revokeBefore = true, bool fireEvent = true)
 		{
-			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token == refreshToken);
+			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token.AccessToken == refreshToken);
 			if (revokedToken != null)
 			{
 				throw ErtisAuthException.RefreshTokenWasRevoked();
@@ -596,7 +596,7 @@ namespace ErtisAuth.Infrastructure.Services
 				
 					await this.revokedTokensRepository.InsertAsync(new RevokedTokenDto
 					{
-						Token = activeTokenDto.AccessToken,
+						Token = activeTokenDto,
 						RevokedAt = DateTime.Now,
 						UserId = user.Id,
 						UserName = user.Username,

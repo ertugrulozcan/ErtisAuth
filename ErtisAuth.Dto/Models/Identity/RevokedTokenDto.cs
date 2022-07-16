@@ -8,7 +8,7 @@ namespace ErtisAuth.Dto.Models.Identity
 		#region Properties
 
 		[BsonElement("token")]
-		public string Token { get; set; }
+		public ActiveTokenDto Token { get; set; }
 		
 		[BsonElement("user_id")]
 		public string UserId { get; set; }
