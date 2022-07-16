@@ -9,7 +9,7 @@ using ErtisAuth.Infrastructure.Models.GeoLocation;
 
 namespace ErtisAuth.Infrastructure.Services
 {
-	public class GeoLocationService : RestService, IGeoLocationService
+	public class Ip2LocationService : RestService, IGeoLocationService
 	{
 		#region Services
 
@@ -24,7 +24,7 @@ namespace ErtisAuth.Infrastructure.Services
 		/// </summary>
 		/// <param name="restHandler"></param>
 		/// <param name="ip2LocationOptions"></param>
-		public GeoLocationService(IRestHandler restHandler, IIp2LocationOptions ip2LocationOptions) : base(restHandler)
+		public Ip2LocationService(IRestHandler restHandler, IIp2LocationOptions ip2LocationOptions) : base(restHandler)
 		{
 			this.ip2LocationOptions = ip2LocationOptions;
 		}
@@ -70,18 +70,6 @@ namespace ErtisAuth.Infrastructure.Services
 				Console.WriteLine($"GeoLocationService.LookupAsync({ipAddress}) error : {response.Message}");
 				return null;
 			}
-		}
-		
-		#endregion
-	}
-
-	public class GeoLocationDisabledService : IGeoLocationService
-	{
-		#region Methods
-
-		public Task<GeoLocationInfo> LookupAsync(string ipAddress)
-		{
-			return null;
 		}
 
 		#endregion
