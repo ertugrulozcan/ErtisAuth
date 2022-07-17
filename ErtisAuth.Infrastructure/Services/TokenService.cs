@@ -491,7 +491,8 @@ namespace ErtisAuth.Infrastructure.Services
 									var user = dynamicObject.Deserialize<User>();
 									if (user != null)
 									{
-										var token = await this.GenerateBearerTokenAsync(user, membership);
+										var originalActiveToken = await this.activeTokensRepository.FindOneAsync(x => x.RefreshToken == refreshToken);
+										var token = await this.GenerateBearerTokenAsync(user, membership, originalActiveToken?.ClientInfo?.IPAddress, originalActiveToken?.ClientInfo?.UserAgent);
 
 										if (revokeBefore)
 										{
