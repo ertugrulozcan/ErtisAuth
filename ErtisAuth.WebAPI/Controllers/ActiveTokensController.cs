@@ -85,7 +85,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<IActionResult> Aggregate([FromRoute] string membershipId)
 		{
-			var aggregationResults = await this.activeTokenService.AggregateAsync(await this.ExtractRequestBodyAsync());
+			var aggregationResults = await this.activeTokenService.AggregateAsync(membershipId, await this.ExtractRequestBodyAsync());
 			return this.Ok(aggregationResults);
 		}
 		

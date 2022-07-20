@@ -62,8 +62,8 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 			string sortField = null, 
 			SortDirection? sortDirection = null);
 
-		dynamic Aggregate(string aggregateStagesJson);
+		dynamic Aggregate(string membershipId, string aggregationStagesJson);
 
-		Task<dynamic> AggregateAsync(string aggregateStagesJson);
+		Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson);
 	}
 }
