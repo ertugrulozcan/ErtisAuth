@@ -61,5 +61,9 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 			bool? withCount = null, 
 			string sortField = null, 
 			SortDirection? sortDirection = null);
+
+		dynamic Aggregate(string aggregateStagesJson);
+
+		Task<dynamic> AggregateAsync(string aggregateStagesJson);
 	}
 }

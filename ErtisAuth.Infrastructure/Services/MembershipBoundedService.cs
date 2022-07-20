@@ -277,5 +277,19 @@ namespace ErtisAuth.Infrastructure.Services
 		}
 
 		#endregion
+
+		#region Aggregation Methods
+
+		public dynamic Aggregate(string aggregateStagesJson)
+		{
+			return this.repository.Aggregate(aggregateStagesJson);
+		}
+		
+		public async Task<dynamic> AggregateAsync(string aggregateStagesJson)
+		{
+			return await this.repository.AggregateAsync(aggregateStagesJson);
+		}
+
+		#endregion
 	}
 }
