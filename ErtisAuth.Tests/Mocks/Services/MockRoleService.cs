@@ -171,6 +171,16 @@ namespace ErtisAuth.Tests.Mocks.Services
 			throw new NotImplementedException();
 		}
 
+		public dynamic Aggregate(string membershipId, string aggregationStagesJson)
+		{
+			throw new NotImplementedException();
+		}
+
+		public Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson)
+		{
+			throw new NotImplementedException();
+		}
+
 		public Role GetByName(string name, string membershipId) => this.GetByNameAsync(name, membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
 
 		public async ValueTask<Role> GetByNameAsync(string name, string membershipId)
