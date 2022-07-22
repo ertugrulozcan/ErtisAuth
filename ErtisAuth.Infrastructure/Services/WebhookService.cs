@@ -130,17 +130,14 @@ namespace ErtisAuth.Infrastructure.Services
 				await Task.Run(() =>
 				{
 					var tryCount = webhook.TryCount > 0 ? webhook.TryCount : 1;
-					foreach (var webhookRequest in webhook.RequestList)
+					try
 					{
-						try
-						{
-							this.ExecuteWebhookRequestAsync(webhookRequest, utilizerId, membershipId, document, prior, tryCount);
-						}
-						catch (Exception ex)
-						{
-							Console.WriteLine("Webhook execution occured an exception");
-							Console.WriteLine(ex);
-						}
+						this.ExecuteWebhookRequestAsync(webhook.Request, utilizerId, membershipId, document, prior, tryCount);
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("Webhook execution occured an exception");
+						Console.WriteLine(ex);
 					}
 				});
 			}
@@ -162,29 +159,12 @@ namespace ErtisAuth.Infrastructure.Services
 				}
 			}
 
-			IRequestBody body = null;
-			switch (webhookRequest.BodyTypeEnum)
+			IRequestBody body = new JsonRequestBody(new
 			{
-				case WebhookRequestBodyType.None:
-				case WebhookRequestBodyType.Javascript:
-				case WebhookRequestBodyType.Json:
-					body = new JsonRequestBody(new
-					{
-						document,
-						prior,
-						payload = webhookRequest.Body
-					});
-					break;
-				case WebhookRequestBodyType.Html:
-				case WebhookRequestBodyType.Xml:
-					body = new XmlRequestBody(new
-					{
-						document,
-						prior,
-						payload = webhookRequest.Body
-					});
-					break;
-			}
+				document,
+				prior,
+				payload = webhookRequest.Body
+			});
 
 			for (var i = 0; i < tryCount; i++)
 			{
@@ -237,13 +217,9 @@ namespace ErtisAuth.Infrastructure.Services
 				errorList.Add("membership_id is a required field");
 			}
 
-			if (string.IsNullOrEmpty(model.Status))
+			if (model.Status == null)
 			{
 				errorList.Add("status is a required field");
-			}
-			else if (model.Status != "active" && model.Status != "passive")
-			{
-				errorList.Add("Status should be 'active' or 'passive'");
 			}
 			
 			if (string.IsNullOrEmpty(model.Event))
@@ -260,28 +236,25 @@ namespace ErtisAuth.Infrastructure.Services
 				errorList.Add("try_count is a required field (must be in 1..5 range)");
 			}
 
-			if (model.RequestList == null || !model.RequestList.Any())
+			if (model.Request == null)
 			{
-				errorList.Add("requests is a required field");
+				errorList.Add("request is a required field");
 			}
 			else
 			{
-				foreach (var webhookRequest in model.RequestList)
+				if (string.IsNullOrEmpty(model.Request.Url))
 				{
-					if (string.IsNullOrEmpty(webhookRequest.Url))
-					{
-						errorList.Add("url is a required field for the webhook request");
-					}
+					errorList.Add("url is a required field for the webhook request");
+				}
 					
-					var httpMethodList = typeof(HttpMethod).GetProperties().Where(x => x.PropertyType == typeof(HttpMethod)).Select(x => x.Name).ToList();
-					if (string.IsNullOrEmpty(webhookRequest.Method))
-					{
-						errorList.Add("method is a required field for the webhook request");
-					}
-					else if (!httpMethodList.Any(x => string.Equals(x, webhookRequest.Method, StringComparison.CurrentCultureIgnoreCase)))
-					{
-						errorList.Add($"Unknown http method in webhook request. (Supported methods: [{string.Join(", ", httpMethodList)}])");
-					}
+				var httpMethodList = typeof(HttpMethod).GetProperties().Where(x => x.PropertyType == typeof(HttpMethod)).Select(x => x.Name).ToList();
+				if (string.IsNullOrEmpty(model.Request.Method))
+				{
+					errorList.Add("method is a required field for the webhook request");
+				}
+				else if (!httpMethodList.Any(x => string.Equals(x, model.Request.Method, StringComparison.CurrentCultureIgnoreCase)))
+				{
+					errorList.Add($"Unknown http method in webhook request. (Supported methods: [{string.Join(", ", httpMethodList)}])");
 				}
 			}
 			
@@ -315,15 +288,15 @@ namespace ErtisAuth.Infrastructure.Services
 				destination.Event = source.Event;
 			}
 			
-			if (string.IsNullOrEmpty(destination.Status))
+			if (destination.Status == null)
 			{
 				destination.Status = source.Status;
 			}
 			
 			// ReSharper disable once ConvertIfStatementToNullCoalescingAssignment
-			if (destination.RequestList == null)
+			if (destination.Request == null)
 			{
-				destination.RequestList = source.RequestList;
+				destination.Request = source.Request;
 			}
 			
 			if (destination.TryCount == 0)

@@ -22,8 +22,8 @@ namespace ErtisAuth.Dto.Models.Webhooks
 		[BsonElement("status")]
 		public string Status { get; set; }
 		
-		[BsonElement("requests")]
-		public WebhookRequestDto[] RequestList { get; set; }
+		[BsonElement("request")]
+		public WebhookRequestDto Request { get; set; }
 
 		[BsonElement("try_count")]
 		public int TryCount { get; set; }

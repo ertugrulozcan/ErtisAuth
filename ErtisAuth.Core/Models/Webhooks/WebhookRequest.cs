@@ -21,30 +21,6 @@ namespace ErtisAuth.Core.Models.Webhooks
 		[JsonProperty("body")]
 		public dynamic Body { get; set; }
 		
-		[JsonProperty("body_type")]
-		public string BodyType { get; set; }
-
-		[JsonIgnore]
-		public WebhookRequestBodyType BodyTypeEnum
-		{
-			get
-			{
-				if (string.IsNullOrEmpty(this.BodyType))
-				{
-					return WebhookRequestBodyType.None;
-				}
-				
-				if (Enum.GetNames(typeof(WebhookRequestBodyType)).Any(x => x == this.BodyType))
-				{
-					return (WebhookRequestBodyType) Enum.Parse(typeof(WebhookRequestBodyType), this.BodyType);
-				}
-				else
-				{
-					return WebhookRequestBodyType.None;
-				}
-			}
-		}
-		
 		#endregion
 	}
 }
