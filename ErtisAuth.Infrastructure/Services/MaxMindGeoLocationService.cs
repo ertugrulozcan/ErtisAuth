@@ -30,7 +30,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		public async Task<GeoLocationInfo> LookupAsync(string ipAddress)
 		{
-			using var client = new MaxMind.GeoIP2.WebServiceClient(this.maxMindOptions.AccountId, this.maxMindOptions.LicenseKey, host: "geolite.info");
+			using var client = new MaxMind.GeoIP2.WebServiceClient(this.maxMindOptions.AccountId, this.maxMindOptions.LicenseKey, host: "geolite.info", timeout: 10000);
 			var response = await client.CityAsync(ipAddress);
 			return new GeoLocationInfo
 			{
