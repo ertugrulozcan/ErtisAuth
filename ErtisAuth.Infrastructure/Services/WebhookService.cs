@@ -132,7 +132,7 @@ namespace ErtisAuth.Infrastructure.Services
 					var tryCount = webhook.TryCount > 0 ? webhook.TryCount : 1;
 					try
 					{
-						this.ExecuteWebhookRequestAsync(webhook.Request, utilizerId, membershipId, document, prior, tryCount);
+						this.ExecuteWebhookRequestAsync(webhook, utilizerId, membershipId, document, prior, tryCount);
 					}
 					catch (Exception ex)
 					{
@@ -143,14 +143,14 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		private async void ExecuteWebhookRequestAsync(WebhookRequest webhookRequest, string utilizerId, string membershipId, object document, object prior, int tryCount)
+		private async void ExecuteWebhookRequestAsync(Webhook webhook, string utilizerId, string membershipId, object document, object prior, int tryCount)
 		{
-			var httpMethod = new HttpMethod(webhookRequest.Method);
-			var url = webhookRequest.Url;
+			var httpMethod = new HttpMethod(webhook.Request.Method);
+			var url = webhook.Request.Url;
 			var headers = HeaderCollection.Empty;
-			if (webhookRequest.Headers != null)
+			if (webhook.Request.Headers != null)
 			{
-				foreach (var webhookRequestHeader in webhookRequest.Headers)
+				foreach (var webhookRequestHeader in webhook.Request.Headers)
 				{
 					if (!string.IsNullOrEmpty(webhookRequestHeader.Key) && webhookRequestHeader.Value != null && !string.IsNullOrEmpty(webhookRequestHeader.Value.ToString()))
 					{
@@ -163,21 +163,44 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				document,
 				prior,
-				payload = webhookRequest.Body
+				payload = webhook.Request.Body
 			});
+
+			var webhookRequest = new WebhookRequest
+			{
+				Method = webhook.Request.Method,
+				Url = webhook.Request.Url,
+				Headers = webhook.Request.Headers,
+				Body = new {
+					document,
+					prior,
+					payload = webhook.Request.Body
+				},
+			};
 
 			for (var i = 0; i < tryCount; i++)
 			{
 				try
 				{
 					var response = await this.restHandler.ExecuteRequestAsync(httpMethod, url, QueryString.Empty, headers, body);
+					var webhookExecutionResult = new WebhookExecutionResult
+					{
+						WebhookId = webhook.Id,
+						IsSuccess = response.IsSuccess,
+						StatusCode = response.StatusCode != null ? (int) response.StatusCode : null,
+						TryIndex = i + 1,
+						Exception = null,
+						Request = webhookRequest,
+						Response = response
+					};
+					
 					if (response.IsSuccess)
 					{
 						await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
 							ErtisAuthEventType.WebhookRequestSent,
 							utilizerId,
 							membershipId,
-							response
+							webhookExecutionResult
 						));
 					
 						break;
@@ -188,17 +211,28 @@ namespace ErtisAuth.Infrastructure.Services
 							ErtisAuthEventType.WebhookRequestFailed,
 							utilizerId,
 							membershipId,
-							response
+							webhookExecutionResult
 						));
 					}
 				}
 				catch (Exception ex)
 				{
+					var webhookExecutionResult = new WebhookExecutionResult
+					{
+						WebhookId = webhook.Id,
+						IsSuccess = false,
+						StatusCode = 500,
+						TryIndex = i + 1,
+						Exception = ex,
+						Request = webhookRequest,
+						Response = null
+					};
+					
 					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
 						ErtisAuthEventType.WebhookRequestFailed,
 						utilizerId,
 						membershipId,
-						ex
+						webhookExecutionResult
 					));
 				}
 			}
