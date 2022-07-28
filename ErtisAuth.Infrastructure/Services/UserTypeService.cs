@@ -110,10 +110,10 @@ namespace ErtisAuth.Infrastructure.Services
 					    new StringFieldInfo
 					    {
 						    Name = "password_hash",
-						    DisplayName = "Password Hash",
-						    Description = "Password Hash",
+						    DisplayName = "Password",
+						    Description = "Password",
 						    DefaultValue = "",
-						    IsRequired = true,
+						    IsRequired = false,
 						    IsHidden = true,
 						    IsReadonly = true
 					    },
