@@ -319,7 +319,7 @@ namespace ErtisAuth.Infrastructure.Services
         {
 	        if (string.IsNullOrEmpty(model.BaseUserType))
 	        {
-		        model.BaseUserType = OriginUserType.Name;
+		        model.BaseUserType = OriginUserType.Slug;
 	        }
 
 	        var baseUserType = await this.GetBaseUserTypeAsync(model.MembershipId, model.BaseUserType);
@@ -340,7 +340,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
         private async Task<UserType> GetBaseUserTypeAsync(string membershipId, string baseUserTypeName)
         {
-	        if (baseUserTypeName == OriginUserType.Name)
+	        if (baseUserTypeName == OriginUserType.Name || baseUserTypeName == OriginUserType.Slug)
 	        {
 		        return OriginUserType;
 	        }
@@ -350,7 +350,7 @@ namespace ErtisAuth.Infrastructure.Services
 
         public async Task<UserType> GetByNameOrSlugAsync(string membershipId, string nameOrSlug)
 		{
-			if (nameOrSlug == OriginUserType.Name)
+			if (nameOrSlug == OriginUserType.Name || nameOrSlug == OriginUserType.Slug)
 			{
 				return OriginUserType;
 			}
@@ -529,7 +529,7 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.UserTypeNotFound(id, "_id");
 			}
 			
-			var query = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("base_type", userType.Name));
+			var query = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("base_type", userType.Slug));
 			var inheritedUserTypes = this.QueryAsync(query.ToString()).ConfigureAwait(false).GetAwaiter().GetResult();
 			if (inheritedUserTypes.Items.Any())
 			{
