@@ -221,14 +221,8 @@ namespace ErtisAuth.Infrastructure.Services
             var uniqueProperties = userType.GetUniqueProperties();
             foreach (var uniqueProperty in uniqueProperties)
             {
-                var path = uniqueProperty.Path;
-                var segments = path.Split('.');
-                if (segments.Length > 1 && segments[0] == userType.Slug)
-                {
-                    path = string.Join(".", segments.Skip(1));
-                }
-
-                if (model.TryGetValue(path, out var value, out _) && value != null)
+	            var path = uniqueProperty.GetSelfPath(userType);
+	            if (model.TryGetValue(path, out var value, out _) && value != null)
                 {
                     var found = await this.FindOneAsync(
                         QueryBuilder.Equals("membership_id", membershipId),
@@ -331,12 +325,7 @@ namespace ErtisAuth.Infrastructure.Services
             var referenceProperties = userType.GetReferenceProperties();
             foreach (var referenceProperty in referenceProperties)
             {
-                var path = referenceProperty.Path;
-                var segments = path.Split('.');
-                if (segments.Length > 1 && segments[0] == userType.Slug)
-                {
-                    path = string.Join(".", segments.Skip(1));
-                }
+	            var path = referenceProperty.GetSelfPath(userType);
 
                 // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
                 switch (referenceProperty.ReferenceType)
