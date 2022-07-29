@@ -471,6 +471,19 @@ namespace ErtisAuth.Infrastructure.Services
 	        return password;
         }
         
+        private void EnsurePassword(DynamicObject model, out string password)
+        {
+	        password = this.GetPassword(model);
+	        if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(password.Trim()))
+	        {
+		        throw ErtisAuthException.PasswordRequired();
+	        }
+	        else if (password.Length < 6)
+	        {
+		        throw ErtisAuthException.PasswordMinLengthRuleError(6);
+	        }
+        }
+        
         // ReSharper disable once MemberCanBeMadeStatic.Local
         private void SetPasswordHash(DynamicObject model, Membership membership, string password)
         {
@@ -595,7 +608,7 @@ namespace ErtisAuth.Infrastructure.Services
         {
 	        var membership = await this.CheckMembershipAsync(membershipId);
 	        var userType = await this.GetUserTypeAsync(model, membershipId, true);
-	        var password = this.GetPassword(model);
+	        this.EnsurePassword(model, out var password);
 	        this.ClearReadonlyProperties(model, userType, new Dictionary<string, object> { { "membership_id", membershipId } });
 	        await this.EnsureAndValidateAsync(utilizer, membershipId, null, userType, model, null);
 	        this.SetPasswordHash(model, membership, password);

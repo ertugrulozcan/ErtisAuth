@@ -142,6 +142,16 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The user with same username or email is already exists ({usernameOrEmail})", "UserWithSameUsernameAlreadyExists");
 		}
 		
+		public static ErtisAuthException PasswordRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "Password is required", "PasswordRequired");
+		}
+		
+		public static ErtisAuthException PasswordMinLengthRuleError(int minLength)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"The user password length must be a minimum of {minLength} characters.", "UsernameOrPasswordIsWrong");
+		}
+		
 		#endregion
 
 		#region User Type Exceptions
