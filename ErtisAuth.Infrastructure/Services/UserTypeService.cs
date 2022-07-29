@@ -342,7 +342,11 @@ namespace ErtisAuth.Infrastructure.Services
         {
 	        if (baseUserTypeName == OriginUserType.Name || baseUserTypeName == OriginUserType.Slug)
 	        {
-		        return OriginUserType;
+		        if (OriginUserType.Clone() is UserType userType)
+		        {
+			        userType.MembershipId = membershipId;
+			        return userType;
+		        }
 	        }
 			
 	        return await this.GetByNameOrSlugAsync(membershipId, baseUserTypeName);
@@ -352,7 +356,11 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			if (nameOrSlug == OriginUserType.Name || nameOrSlug == OriginUserType.Slug)
 			{
-				return OriginUserType;
+				if (OriginUserType.Clone() is UserType userType)
+				{
+					userType.MembershipId = membershipId;
+					return userType;
+				}
 			}
 
 			return await this.GetAsync(membershipId, x => x.Name == nameOrSlug || x.Slug == nameOrSlug);

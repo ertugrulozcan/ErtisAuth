@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Users
 {
-    public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema
+    public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, ICloneable
     {
         #region Constants
 
@@ -125,6 +125,27 @@ namespace ErtisAuth.Core.Models.Users
         public bool ValidateContent(DynamicObject obj, IValidationContext validationContext)
         {
             return this.ValidateData(obj, validationContext);
+        }
+
+        #endregion
+
+        #region Clone
+
+        public object Clone()
+        {
+            return new UserType
+            {
+                Id = this.Id,
+                Name = this.Name,
+                Description = this.Description,
+                Properties = this.Properties,
+                IsAbstract = this.IsAbstract,
+                IsSealed = this.IsSealed,
+                AllowAdditionalProperties = this.AllowAdditionalProperties,
+                BaseUserType = this.BaseUserType,
+                MembershipId = this.MembershipId,
+                Sys = this.Sys
+            };
         }
 
         #endregion
