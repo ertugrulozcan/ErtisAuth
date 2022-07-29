@@ -185,7 +185,7 @@ namespace ErtisAuth.Infrastructure.Services
             }
             else if (fallbackWithOriginUserType)
             {
-	            return await this._userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_NAME);
+	            return await this._userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG);
             }
 	        else
 	        {

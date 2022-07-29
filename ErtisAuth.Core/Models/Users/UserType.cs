@@ -16,7 +16,8 @@ namespace ErtisAuth.Core.Models.Users
     {
         #region Constants
 
-        public const string ORIGIN_USER_TYPE_NAME = "base_user";
+        public const string ORIGIN_USER_TYPE_NAME = "Base User";
+        public const string ORIGIN_USER_TYPE_SLUG = "base_user";
 
         #endregion
         

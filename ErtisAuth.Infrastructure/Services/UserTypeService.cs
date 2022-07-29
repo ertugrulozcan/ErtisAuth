@@ -43,11 +43,11 @@ namespace ErtisAuth.Infrastructure.Services
 		    {
 			    return originUserType ??= new UserType
 			    {
-				    Id = UserType.ORIGIN_USER_TYPE_NAME,
+				    Id = UserType.ORIGIN_USER_TYPE_SLUG,
 				    Name = UserType.ORIGIN_USER_TYPE_NAME,
 				    Description = "Origin User Type",
 				    IsAbstract = false,
-				    IsSealed = false,
+				    IsSealed = true,
 				    AllowAdditionalProperties = false,
 				    Properties = new IFieldInfo[]
 				    {
@@ -122,7 +122,7 @@ namespace ErtisAuth.Infrastructure.Services
 						    Name = "user_type",
 						    DisplayName = "User Type",
 						    Description = "User Type",
-						    DefaultValue = UserType.ORIGIN_USER_TYPE_NAME,
+						    DefaultValue = UserType.ORIGIN_USER_TYPE_SLUG,
 						    IsRequired = true,
 					    },
 					    new StringFieldInfo
@@ -291,7 +291,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        while (
 		        pivotUserType != null &&
 		        !string.IsNullOrEmpty(pivotUserType.BaseUserType) &&
-		        pivotUserType.BaseUserType != UserType.ORIGIN_USER_TYPE_NAME
+		        pivotUserType.BaseUserType != UserType.ORIGIN_USER_TYPE_SLUG
 		    );
 
 	        return ancestors;

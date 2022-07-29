@@ -107,7 +107,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			var userTypes = await this.userTypeService.GetAsync(membershipId, null, null, false, null, null);
 			var allUserTypes = new List<UserType>();
 			allUserTypes.AddRange(userTypes.Items);
-			allUserTypes.Add(await this.userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_NAME));
+			allUserTypes.Add(await this.userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG));
 			userTypes = new PaginationCollection<UserType>
 			{
 				Items = allUserTypes,
