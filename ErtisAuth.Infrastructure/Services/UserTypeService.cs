@@ -251,7 +251,21 @@ namespace ErtisAuth.Infrastructure.Services
         public async ValueTask<Dictionary<string, List<string>>> GetFieldInfoOwnerRelationsAsync(string membershipId, string id)
         {
 	        var fieldInfoOwnerRelationDictionary = new Dictionary<string, List<string>>();
-	        var userType = await base.GetAsync(membershipId, id);
+
+	        UserType userType = null;
+	        if (id == OriginUserType.Id)
+	        {
+		        if (OriginUserType.Clone() is UserType userType_)
+		        {
+			        userType_.MembershipId = membershipId;
+			        userType = userType_;
+		        }
+	        }
+	        else
+	        {
+		        userType = await base.GetAsync(membershipId, id);
+	        }
+	        
 	        if (userType == null)
 	        {
 		        return null;
@@ -531,6 +545,12 @@ namespace ErtisAuth.Infrastructure.Services
 		// ReSharper disable once OutParameterValueIsAlwaysDiscarded.Local
 		private bool IsDeletable(string id, string membershipId, out IEnumerable<string> errors)
 		{
+			if (id == OriginUserType.Id)
+			{
+				errors = new [] { "Origin user-type is immutable, you can not delete it." };
+				return false;
+			}
+			
 			var userType = this.GetAsync(membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
 			if (userType == null)
 			{
