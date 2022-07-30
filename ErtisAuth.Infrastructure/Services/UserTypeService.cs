@@ -46,8 +46,8 @@ namespace ErtisAuth.Infrastructure.Services
 				    Id = UserType.ORIGIN_USER_TYPE_SLUG,
 				    Name = UserType.ORIGIN_USER_TYPE_NAME,
 				    Description = "Origin User Type",
-				    IsAbstract = false,
-				    IsSealed = true,
+				    IsAbstract = true,
+				    IsSealed = false,
 				    AllowAdditionalProperties = false,
 				    Properties = new IFieldInfo[]
 				    {
