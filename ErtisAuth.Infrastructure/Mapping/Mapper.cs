@@ -77,6 +77,8 @@ namespace ErtisAuth.Infrastructure.Mapping
 			mappings.Add<ClientInfo, ClientInfoDto>();
 			mappings.Add<GeoLocationInfoDto, GeoLocationInfo>();
 			mappings.Add<GeoLocationInfo, GeoLocationInfoDto>();
+			mappings.Add<CoordinateDto, Coordinate>();
+			mappings.Add<Coordinate, CoordinateDto>();
 			this.Implementation = new TinyMapperImpl(mappings);
 
 			this.CustomMappers = new CustomMapperCollection();

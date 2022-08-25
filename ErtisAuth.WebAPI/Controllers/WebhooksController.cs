@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
@@ -66,9 +65,14 @@ namespace ErtisAuth.WebAPI.Controllers
 				Name = model.Name,
 				Description = model.Description,
 				Event = model.Event,
-				Status = model.Status,
+				Status = model.Status switch
+				{
+					"active" or "Active" => WebhookStatus.Active,
+					"passive" or "Passive" => WebhookStatus.Passive,
+					_ => null
+				},
 				TryCount = model.TryCount,
-				RequestList = model.RequestList?.ToArray(),
+				Request = model.Request,
 				MembershipId = membershipId
 			};
 			
@@ -173,9 +177,14 @@ namespace ErtisAuth.WebAPI.Controllers
 				Name = model.Name,
 				Description = model.Description,
 				Event = model.Event,
-				Status = model.Status,
+				Status = model.Status switch
+				{
+					"active" or "Active" => WebhookStatus.Active,
+					"passive" or "Passive" => WebhookStatus.Passive,
+					_ => null
+				},
 				TryCount = model.TryCount,
-				RequestList = model.RequestList?.ToArray(),
+				Request = model.Request,
 				MembershipId = membershipId
 			};
 			

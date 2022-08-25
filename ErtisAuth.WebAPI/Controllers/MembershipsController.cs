@@ -1,8 +1,12 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
+using Ertis.MongoDB.Queries;
+using Ertis.Security.Cryptography;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Identity.Attributes;
@@ -142,6 +146,78 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				return this.RoleNotFound(id);
 			}
+		}
+
+		#endregion
+
+		#region Membership Setting Methods
+
+		[HttpGet("settings")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public IActionResult GetAllSettings()
+		{
+			return this.Ok(new
+			{
+				encodings = System.Text.Encoding.GetEncodings().Select(x => new
+				{
+					displayName = x.DisplayName,
+					name = x.Name.ToUpper()
+				}).ToArray(),
+				defaultEncoding = Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName,
+				hashAlgorithms = Enum.GetNames<HashAlgorithms>().Select(x => x.Replace('_', '-')).ToArray(),
+				defaultHashAlgorithm = Core.Constants.Defaults.DEFAULT_HASH_ALGORITHM.ToString().Replace('_', '-'),
+				dbLocales = TextSearchLanguage.All.ToArray(),
+				defaultDbLocale = TextSearchLanguage.None.ISO6391Code
+			});
+		}
+		
+		[HttpGet("settings/encodings")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public IActionResult GetEncodingList()
+		{
+			var encodings = System.Text.Encoding.GetEncodings();
+			return this.Ok(encodings.Select(x => new
+			{
+				displayName = x.DisplayName,
+				name = x.Name.ToUpper()
+			}).ToArray());
+		}
+		
+		[HttpGet("settings/encodings/default")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public IActionResult GetDefaultEncoding()
+		{
+			return this.Ok(Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName);
+		}
+		
+		[HttpGet("settings/hash-algorithms")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public IActionResult GetHashAlgorithmList()
+		{
+			var hashAlgorithms = Enum.GetNames<HashAlgorithms>().Select(x => x.Replace('_', '-'));
+			return this.Ok(hashAlgorithms.ToArray());
+		}
+		
+		[HttpGet("settings/hash-algorithms/default")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public IActionResult GetDefaultHashAlgorithm()
+		{
+			return this.Ok(Core.Constants.Defaults.DEFAULT_HASH_ALGORITHM.ToString().Replace('_', '-'));
+		}
+		
+		[HttpGet("settings/db-locales")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public IActionResult GetDbLocales()
+		{
+			var languages = TextSearchLanguage.All;
+			return this.Ok(languages.ToArray());
+		}
+		
+		[HttpGet("settings/db-locales/default")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public IActionResult GetDefaultDbLocale()
+		{
+			return this.Ok(TextSearchLanguage.None.ISO6391Code);
 		}
 
 		#endregion

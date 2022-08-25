@@ -20,8 +20,8 @@ namespace ErtisAuth.WebAPI.Models.Request.Webhooks
 		[JsonProperty("status")]
 		public string Status { get; set; }
 		
-		[JsonProperty("requests")]
-		public IEnumerable<WebhookRequest> RequestList { get; set; }
+		[JsonProperty("request")]
+		public WebhookRequest Request { get; set; }
 		
 		[JsonProperty("try_count")]
 		public int TryCount { get; set; }

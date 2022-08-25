@@ -185,7 +185,7 @@ namespace ErtisAuth.Infrastructure.Services
             }
             else if (fallbackWithOriginUserType)
             {
-	            return await this._userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_NAME);
+	            return await this._userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG);
             }
 	        else
 	        {
@@ -221,14 +221,8 @@ namespace ErtisAuth.Infrastructure.Services
             var uniqueProperties = userType.GetUniqueProperties();
             foreach (var uniqueProperty in uniqueProperties)
             {
-                var path = uniqueProperty.Path;
-                var segments = path.Split('.');
-                if (segments.Length > 1 && segments[0] == userType.Slug)
-                {
-                    path = string.Join(".", segments.Skip(1));
-                }
-
-                if (model.TryGetValue(path, out var value, out _) && value != null)
+	            var path = uniqueProperty.GetSelfPath(userType);
+	            if (model.TryGetValue(path, out var value, out _) && value != null)
                 {
                     var found = await this.FindOneAsync(
                         QueryBuilder.Equals("membership_id", membershipId),
@@ -331,12 +325,7 @@ namespace ErtisAuth.Infrastructure.Services
             var referenceProperties = userType.GetReferenceProperties();
             foreach (var referenceProperty in referenceProperties)
             {
-                var path = referenceProperty.Path;
-                var segments = path.Split('.');
-                if (segments.Length > 1 && segments[0] == userType.Slug)
-                {
-                    path = string.Join(".", segments.Skip(1));
-                }
+	            var path = referenceProperty.GetSelfPath(userType);
 
                 // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
                 switch (referenceProperty.ReferenceType)
@@ -471,6 +460,19 @@ namespace ErtisAuth.Infrastructure.Services
 	        return password;
         }
         
+        private void EnsurePassword(DynamicObject model, out string password)
+        {
+	        password = this.GetPassword(model);
+	        if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(password.Trim()))
+	        {
+		        throw ErtisAuthException.PasswordRequired();
+	        }
+	        else if (password.Length < 6)
+	        {
+		        throw ErtisAuthException.PasswordMinLengthRuleError(6);
+	        }
+        }
+        
         // ReSharper disable once MemberCanBeMadeStatic.Local
         private void SetPasswordHash(DynamicObject model, Membership membership, string password)
         {
@@ -595,7 +597,7 @@ namespace ErtisAuth.Infrastructure.Services
         {
 	        var membership = await this.CheckMembershipAsync(membershipId);
 	        var userType = await this.GetUserTypeAsync(model, membershipId, true);
-	        var password = this.GetPassword(model);
+	        this.EnsurePassword(model, out var password);
 	        this.ClearReadonlyProperties(model, userType, new Dictionary<string, object> { { "membership_id", membershipId } });
 	        await this.EnsureAndValidateAsync(utilizer, membershipId, null, userType, model, null);
 	        this.SetPasswordHash(model, membership, password);

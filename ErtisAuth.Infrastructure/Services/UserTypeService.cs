@@ -43,10 +43,10 @@ namespace ErtisAuth.Infrastructure.Services
 		    {
 			    return originUserType ??= new UserType
 			    {
-				    Id = UserType.ORIGIN_USER_TYPE_NAME,
+				    Id = UserType.ORIGIN_USER_TYPE_SLUG,
 				    Name = UserType.ORIGIN_USER_TYPE_NAME,
 				    Description = "Origin User Type",
-				    IsAbstract = false,
+				    IsAbstract = true,
 				    IsSealed = false,
 				    AllowAdditionalProperties = false,
 				    Properties = new IFieldInfo[]
@@ -110,7 +110,7 @@ namespace ErtisAuth.Infrastructure.Services
 					    new StringFieldInfo
 					    {
 						    Name = "password_hash",
-						    DisplayName = "Password Hash",
+						    DisplayName = "Password",
 						    Description = "Password Hash",
 						    DefaultValue = "",
 						    IsRequired = true,
@@ -122,7 +122,7 @@ namespace ErtisAuth.Infrastructure.Services
 						    Name = "user_type",
 						    DisplayName = "User Type",
 						    Description = "User Type",
-						    DefaultValue = UserType.ORIGIN_USER_TYPE_NAME,
+						    DefaultValue = UserType.ORIGIN_USER_TYPE_SLUG,
 						    IsRequired = true,
 					    },
 					    new StringFieldInfo
@@ -251,7 +251,21 @@ namespace ErtisAuth.Infrastructure.Services
         public async ValueTask<Dictionary<string, List<string>>> GetFieldInfoOwnerRelationsAsync(string membershipId, string id)
         {
 	        var fieldInfoOwnerRelationDictionary = new Dictionary<string, List<string>>();
-	        var userType = await base.GetAsync(membershipId, id);
+
+	        UserType userType = null;
+	        if (id == OriginUserType.Id)
+	        {
+		        if (OriginUserType.Clone() is UserType userType_)
+		        {
+			        userType_.MembershipId = membershipId;
+			        userType = userType_;
+		        }
+	        }
+	        else
+	        {
+		        userType = await base.GetAsync(membershipId, id);
+	        }
+	        
 	        if (userType == null)
 	        {
 		        return null;
@@ -291,7 +305,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        while (
 		        pivotUserType != null &&
 		        !string.IsNullOrEmpty(pivotUserType.BaseUserType) &&
-		        pivotUserType.BaseUserType != UserType.ORIGIN_USER_TYPE_NAME
+		        pivotUserType.BaseUserType != UserType.ORIGIN_USER_TYPE_SLUG
 		    );
 
 	        return ancestors;
@@ -319,7 +333,7 @@ namespace ErtisAuth.Infrastructure.Services
         {
 	        if (string.IsNullOrEmpty(model.BaseUserType))
 	        {
-		        model.BaseUserType = OriginUserType.Name;
+		        model.BaseUserType = OriginUserType.Slug;
 	        }
 
 	        var baseUserType = await this.GetBaseUserTypeAsync(model.MembershipId, model.BaseUserType);
@@ -340,9 +354,13 @@ namespace ErtisAuth.Infrastructure.Services
 		
         private async Task<UserType> GetBaseUserTypeAsync(string membershipId, string baseUserTypeName)
         {
-	        if (baseUserTypeName == OriginUserType.Name)
+	        if (baseUserTypeName == OriginUserType.Name || baseUserTypeName == OriginUserType.Slug)
 	        {
-		        return OriginUserType;
+		        if (OriginUserType.Clone() is UserType userType)
+		        {
+			        userType.MembershipId = membershipId;
+			        return userType;
+		        }
 	        }
 			
 	        return await this.GetByNameOrSlugAsync(membershipId, baseUserTypeName);
@@ -350,9 +368,13 @@ namespace ErtisAuth.Infrastructure.Services
 
         public async Task<UserType> GetByNameOrSlugAsync(string membershipId, string nameOrSlug)
 		{
-			if (nameOrSlug == OriginUserType.Name)
+			if (nameOrSlug == OriginUserType.Name || nameOrSlug == OriginUserType.Slug)
 			{
-				return OriginUserType;
+				if (OriginUserType.Clone() is UserType userType)
+				{
+					userType.MembershipId = membershipId;
+					return userType;
+				}
 			}
 
 			return await this.GetAsync(membershipId, x => x.Name == nameOrSlug || x.Slug == nameOrSlug);
@@ -523,13 +545,19 @@ namespace ErtisAuth.Infrastructure.Services
 		// ReSharper disable once OutParameterValueIsAlwaysDiscarded.Local
 		private bool IsDeletable(string id, string membershipId, out IEnumerable<string> errors)
 		{
+			if (id == OriginUserType.Id)
+			{
+				errors = new [] { "Origin user-type is immutable, you can not delete it." };
+				return false;
+			}
+			
 			var userType = this.GetAsync(membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
 			if (userType == null)
 			{
 				throw ErtisAuthException.UserTypeNotFound(id, "_id");
 			}
 			
-			var query = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("base_type", userType.Name));
+			var query = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("base_type", userType.Slug));
 			var inheritedUserTypes = this.QueryAsync(query.ToString()).ConfigureAwait(false).GetAwaiter().GetResult();
 			if (inheritedUserTypes.Items.Any())
 			{

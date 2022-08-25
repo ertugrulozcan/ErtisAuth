@@ -1,4 +1,3 @@
-using ErtisAuth.Core.Models.GeoLocation;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.GeoLocation
@@ -20,7 +19,7 @@ namespace ErtisAuth.Dto.Models.GeoLocation
 		public string PostalCode { get; set; }
 		
 		[BsonElement("location")]
-		public Coordinate Location { get; set; }
+		public CoordinateDto Location { get; set; }
 
 		[BsonElement("isp")]
 		public string Isp { get; set; }

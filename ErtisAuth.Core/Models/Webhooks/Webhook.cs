@@ -3,6 +3,7 @@ using System.Linq;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Events;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace ErtisAuth.Core.Models.Webhooks
 {
@@ -36,13 +37,14 @@ namespace ErtisAuth.Core.Models.Webhooks
 		}
 
 		[JsonProperty("status")]
-		public string Status { get; set; }
+		[JsonConverter(typeof(StringEnumConverter))]
+		public WebhookStatus? Status { get; set; }
 
 		[JsonIgnore]
-		public bool IsActive => this.Status == "active";
+		public bool IsActive => this.Status == WebhookStatus.Active;
 
-		[JsonProperty("requests")]
-		public WebhookRequest[] RequestList { get; set; }
+		[JsonProperty("request")]
+		public WebhookRequest Request { get; set; }
 		
 		[JsonProperty("try_count")]
 		public int TryCount { get; set; }

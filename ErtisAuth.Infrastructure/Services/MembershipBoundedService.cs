@@ -10,6 +10,7 @@ using Ertis.MongoDB.Repository;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Infrastructure.Mapping;
+using Newtonsoft.Json.Linq;
 
 namespace ErtisAuth.Infrastructure.Services
 {
@@ -274,6 +275,56 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				return new PaginationCollection<TModel>();
 			}
+		}
+
+		#endregion
+
+		#region Aggregation Methods
+
+		public dynamic Aggregate(string membershipId, string aggregationStagesJson)
+		{
+			return this.repository.Aggregate(EnsureMembershipIdForAggregation(membershipId, aggregationStagesJson));
+		}
+		
+		public async Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson)
+		{
+			return await this.repository.AggregateAsync(EnsureMembershipIdForAggregation(membershipId, aggregationStagesJson));
+		}
+
+		private static string EnsureMembershipIdForAggregation(string membershipId, string aggregationStagesJson)
+		{
+			try
+			{
+				var jArray = JArray.Parse(aggregationStagesJson);
+				foreach (var jToken in jArray)
+				{
+					if (jToken is JObject jObject)
+					{
+						foreach (var (key, matchToken) in jObject)
+						{
+							if (key == "$match" && matchToken is JObject matchTokenObject)
+							{
+								foreach (var (membershipIdKey, membershipIdToken) in matchTokenObject)
+								{
+									if (membershipIdKey == "membership_id" && membershipIdToken != null && membershipIdToken.Value<string>() == membershipId)
+									{
+										return aggregationStagesJson;
+									}
+								}
+							}
+						}	
+					}
+				}
+				
+				jArray.AddFirst(JToken.Parse("{ \"$match\": { \"membership_id\" : \"" + membershipId + "\" } }"));
+				return jArray.ToString();
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("EnsureMembershipIdForAggregation method occured an error: " + ex.Message);
+			}
+
+			return aggregationStagesJson;
 		}
 
 		#endregion

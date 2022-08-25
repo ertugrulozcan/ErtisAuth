@@ -122,10 +122,32 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IGeoLocationOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<GeoLocationOptions>>().Value);
 			if (this.Configuration.GetSection("GeoLocationTracking").GetValue<bool>("Enabled"))
 			{
-				services.Configure<Ip2LocationOptions>(this.Configuration.GetSection("Ip2Location"));
-				services.AddSingleton<IIp2LocationOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<Ip2LocationOptions>>().Value);
-				
-				services.AddSingleton<IGeoLocationService, GeoLocationService>();
+				var provider = this.Configuration.GetSection("GeoLocationTracking").GetValue<string>("Provider");
+				if (!string.IsNullOrEmpty(provider))
+				{
+					switch (provider)
+					{
+						case "MaxMind":
+							services.Configure<MaxMindOptions>(this.Configuration.GetSection("MaxMind"));
+							services.AddSingleton<IMaxMindOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<MaxMindOptions>>().Value);
+							services.AddSingleton<IGeoLocationService, MaxMindGeoLocationService>();
+							break;
+						case "Ip2Location":
+							services.Configure<Ip2LocationOptions>(this.Configuration.GetSection("Ip2Location"));
+							services.AddSingleton<IIp2LocationOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<Ip2LocationOptions>>().Value);
+							services.AddSingleton<IGeoLocationService, Ip2LocationService>();
+							break;
+						default:
+							Console.WriteLine("Unknown geo location provider: " + provider);
+							services.AddSingleton<IGeoLocationService, GeoLocationDisabledService>();
+							break;
+					}
+				}
+				else
+				{
+					Console.WriteLine("Geo location provider is undefined");
+					services.AddSingleton<IGeoLocationService, GeoLocationDisabledService>();
+				}
 			}
 			else
 			{

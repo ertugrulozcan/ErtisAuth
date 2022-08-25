@@ -81,6 +81,14 @@ namespace ErtisAuth.WebAPI.Controllers
 			return QueryHelper.FixTimeZoneOffsetInQueryResult(dtos);
 		}
 		
+		[HttpPost("_aggregate")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public async Task<IActionResult> Aggregate([FromRoute] string membershipId)
+		{
+			var aggregationResults = await this.activeTokenService.AggregateAsync(membershipId, await this.ExtractRequestBodyAsync());
+			return this.Ok(aggregationResults);
+		}
+		
 		#endregion
 	}
 }

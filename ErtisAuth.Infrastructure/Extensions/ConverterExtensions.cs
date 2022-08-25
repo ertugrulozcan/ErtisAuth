@@ -196,8 +196,8 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Name = dto.Name,
                 Description = dto.Description,
                 Event = dto.Event,
-                Status = dto.Status,
-                RequestList = dto.RequestList?.Select(x => x.ToModel()).ToArray(),
+                Status = dto.Status is "active" or "Active" ? WebhookStatus.Active : dto.Status is "passive" or "Passive" ? WebhookStatus.Passive : null,
+                Request = dto.Request?.ToModel(),
                 TryCount = dto.TryCount,
                 MembershipId = dto.MembershipId,
                 Sys = dto.Sys?.ToModel()
@@ -212,8 +212,8 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Name = model.Name,
                 Description = model.Description,
                 Event = model.Event,
-                Status = model.Status,
-                RequestList = model.RequestList?.Select(x => x.ToDto()).ToArray(),
+                Status = model.Status?.ToString().ToLower(),
+                Request = model.Request?.ToDto(),
                 TryCount = model.TryCount,
                 MembershipId = model.MembershipId,
                 Sys = model.Sys?.ToDto()

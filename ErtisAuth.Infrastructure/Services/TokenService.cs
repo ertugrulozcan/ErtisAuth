@@ -272,7 +272,11 @@ namespace ErtisAuth.Infrastructure.Services
 					Country = geoLocation.Country,
 					CountryCode = geoLocation.CountryCode,
 					PostalCode = geoLocation.PostalCode,
-					Location = geoLocation.Location,
+					Location = new CoordinateDto
+					{
+						Latitude = geoLocation.Location.Latitude,
+						Longitude = geoLocation.Location.Longitude
+					},
 					Isp = geoLocation.Isp,
 					IspDomain = geoLocation.IspDomain
 				};
@@ -328,7 +332,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		public async ValueTask<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true)
 		{
-			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token == token);
+			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token.AccessToken == token);
 			if (revokedToken != null)
 			{
 				throw ErtisAuthException.TokenWasRevoked();
@@ -462,7 +466,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public async ValueTask<BearerToken> RefreshTokenAsync(string refreshToken, bool revokeBefore = true, bool fireEvent = true)
 		{
-			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token == refreshToken);
+			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token.AccessToken == refreshToken);
 			if (revokedToken != null)
 			{
 				throw ErtisAuthException.RefreshTokenWasRevoked();
@@ -487,7 +491,8 @@ namespace ErtisAuth.Infrastructure.Services
 									var user = dynamicObject.Deserialize<User>();
 									if (user != null)
 									{
-										var token = await this.GenerateBearerTokenAsync(user, membership);
+										var originalActiveToken = await this.activeTokensRepository.FindOneAsync(x => x.RefreshToken == refreshToken);
+										var token = await this.GenerateBearerTokenAsync(user, membership, originalActiveToken?.ClientInfo?.IPAddress, originalActiveToken?.ClientInfo?.UserAgent);
 
 										if (revokeBefore)
 										{
@@ -592,7 +597,7 @@ namespace ErtisAuth.Infrastructure.Services
 				
 					await this.revokedTokensRepository.InsertAsync(new RevokedTokenDto
 					{
-						Token = activeTokenDto.AccessToken,
+						Token = activeTokenDto,
 						RevokedAt = DateTime.Now,
 						UserId = user.Id,
 						UserName = user.Username,
