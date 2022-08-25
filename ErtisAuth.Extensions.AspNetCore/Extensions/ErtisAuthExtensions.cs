@@ -16,55 +16,42 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 	{
 		#region Methods
 
+		// ReSharper disable once MemberCanBePrivate.Global
 		public static void AddErtisAuth(this IServiceCollection services, Action<ErtisAuthBootloaderOptions> ertisAuthBootloaderOptions = null)
+		{
+			AddErtisAuth<ErtisAuthAuthenticationHandler>(services, ertisAuthBootloaderOptions);
+		}
+			
+		// ReSharper disable once MemberCanBePrivate.Global
+		public static void AddErtisAuth<TAuthenticationHandler>(this IServiceCollection services, Action<ErtisAuthBootloaderOptions> ertisAuthBootloaderOptions = null) where TAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 		{
 			var options = new ErtisAuthBootloaderOptions();
 			ertisAuthBootloaderOptions?.Invoke(options);
 
-			// Configuration - ErtisAuthOptions
-			if (options.SetConfiguration)
-			{
-				var configuration = BuildConfiguration(options.Environment);
-				services.Configure<ErtisAuthOptions>(configuration.GetSection(options.ConfigurationSectionName));
-				services.AddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);	
-			}
+			var configuration = BuildConfiguration(options.Environment);
+			services.Configure<ErtisAuthOptions>(configuration.GetSection(options.ConfigurationSectionName));
+			services.AddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);
 
 			// RestHandler registration
-			if (options.RegisterRestHandler)
-			{
-				services.AddSingleton(typeof(IRestHandler), options.RestHandlerType);	
-			}
+			services.AddSingleton(typeof(IRestHandler), options.RestHandlerType);
 
 			// Service registrations
-			if (options.InitializeServices)
-			{
-				InitializeServices(services);	
-			}
-
-			string schemeName = options.AuthorizationSchemeName;
-			string policyName = options.AuthorizationPolicyName;
+			InitializeServices(services);
 			
 			// Authentication
-			if (options.SetDefaultAuthenticationHandler)
-			{
-				services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ErtisAuthAuthenticationHandler>(schemeName, _ =>
-				{
-					
-				});	
-			}
+			var schemeName = options.AuthorizationSchemeName;
+			services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TAuthenticationHandler>(schemeName, _ => { });
 
 			// Authorization
-			if (options.SetDefaultAuthorizationHandler)
-			{
-				services.AddAuthorization(authorizationOptions =>
-					authorizationOptions.AddPolicy(policyName, policy =>
-					{
-						policy.AddAuthenticationSchemes(policyName);
-						policy.AddRequirements(new ErtisAuthAuthorizationRequirement());
-					}));
+			var policyName = options.AuthorizationPolicyName;
+			services.AddAuthorization(authorizationOptions =>
+				authorizationOptions.AddPolicy(policyName, policy =>
+				{
+					policy.AddAuthenticationSchemes(policyName);
+					policy.AddRequirements(new ErtisAuthAuthorizationRequirement());
+				}));
 			
-				services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();	
-			}
+			services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
 		}
 		
 		private static IConfigurationRoot BuildConfiguration(string environment = null)
