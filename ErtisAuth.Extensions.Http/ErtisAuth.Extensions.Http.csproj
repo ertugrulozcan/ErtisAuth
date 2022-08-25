@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.TemplateEngine" Version="5.0.1" />
+      <PackageReference Include="Ertis.TemplateEngine" Version="5.0.2" />
     </ItemGroup>
 
 </Project>
