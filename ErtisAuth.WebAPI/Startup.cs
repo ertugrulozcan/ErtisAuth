@@ -194,8 +194,11 @@ namespace ErtisAuth.WebAPI
 
 			services
 				.AddControllers()
-				.AddNewtonsoftJson(options => 
-					options.SerializerSettings.Converters.Add(new DynamicObjectJsonConverter()));
+				.AddNewtonsoftJson(options =>
+				{
+					options.SerializerSettings.Converters.Add(new DynamicObjectJsonConverter());
+					options.SerializerSettings.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Utc;
+				});
 			
 			// Swagger
 			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
