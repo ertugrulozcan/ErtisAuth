@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace ErtisAuth.Core.Models.Identity
 {
@@ -22,22 +24,33 @@ namespace ErtisAuth.Core.Models.Identity
 		
 		#region Properties
 
+		[JsonProperty("id")]
 		public string Id { get; set; }
 		
+		[JsonProperty("type")]
+		[JsonConverter(typeof(StringEnumConverter))]
 		public UtilizerType Type { get; set; }
 		
+		[JsonProperty("username")]
 		public string Username { get; set; }
 		
+		[JsonProperty("membership_id")]
 		public string MembershipId { get; set; }
 		
+		[JsonProperty("role")]
 		public string Role { get; set; }
 		
+		[JsonProperty("permissions")]
 		public IEnumerable<string> Permissions { get; set; }
 		
+		[JsonProperty("forbidden")]
 		public IEnumerable<string> Forbidden { get; set; }
 		
+		[JsonProperty("token")]
 		public string Token { get; set; }
 		
+		[JsonProperty("tokenType")]
+		[JsonConverter(typeof(StringEnumConverter))]
 		public SupportedTokenTypes TokenType { get; set; }
 
 		#endregion
