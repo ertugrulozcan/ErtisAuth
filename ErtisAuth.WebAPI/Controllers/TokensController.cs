@@ -15,6 +15,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Services
 
 		private readonly ITokenService tokenService;
+		private readonly IUserService userService;
 
 		#endregion
 
@@ -24,9 +25,11 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// Constructor
 		/// </summary>
 		/// <param name="tokenService"></param>
-		public TokensController(ITokenService tokenService)
+		/// <param name="userService"></param>
+		public TokensController(ITokenService tokenService, IUserService userService)
 		{
 			this.tokenService = tokenService;
+			this.userService = userService;
 		}
 
 		#endregion
@@ -37,51 +40,75 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("me")]
 		public async Task<IActionResult> Me()
 		{
-			return await this.WhoAmI();
+			var token = this.GetToken();
+			var utilizer = await this.GetTokenOwnerUtilizerAsync(token);
+			if (utilizer != null)
+			{
+				if (token.TokenType == SupportedTokenTypes.Bearer)
+				{
+					var user = await this.userService.GetAsync(utilizer.MembershipId, utilizer.Id);
+					return this.Ok(user);
+				}
+				else
+				{
+					return this.Ok(utilizer);	
+				}
+			}
+			else
+			{
+				return this.InvalidToken();
+			}
 		}
 		
 		[HttpGet]
 		[Route("whoami")]
 		public async Task<IActionResult> WhoAmI()
 		{
-			string token = this.GetTokenFromHeader(out string tokenTypeStr);
-			if (string.IsNullOrEmpty(token))
+			var token = this.GetToken();
+			var utilizer = await this.GetTokenOwnerUtilizerAsync(token);
+			if (utilizer != null)
 			{
-				return this.AuthorizationHeaderMissing();
+				return this.Ok(utilizer);
+			}
+			else
+			{
+				return this.InvalidToken();
+			}
+		}
+
+		private TokenBase GetToken()
+		{
+			var stringToken = this.GetTokenFromHeader(out var tokenTypeStr);
+			if (string.IsNullOrEmpty(stringToken))
+			{
+				throw ErtisAuthException.AuthorizationHeaderMissing();
 			}
 
 			if (!TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
 			{
-				throw ErtisAuthException.UnsupportedTokenType();	
+				throw ErtisAuthException.UnsupportedTokenType();
 			}
 
-			switch (tokenType)
+			TokenBase token = tokenType switch
 			{
-				case SupportedTokenTypes.None:
-					throw ErtisAuthException.UnsupportedTokenType();
-				case SupportedTokenTypes.Basic:
-					var application = await this.tokenService.WhoAmIAsync(new BasicToken(token));
-					if (application != null)
-					{
-						return this.Ok(application);
-					}
-					else
-					{
-						return this.InvalidToken();
-					}
-				case SupportedTokenTypes.Bearer:
-					var user = await this.tokenService.WhoAmIAsync(BearerToken.CreateTemp(token));
-					if (user != null)
-					{
-						return this.Ok(user);
-					}
-					else
-					{
-						return this.InvalidToken();
-					}
-				default:
-					throw ErtisAuthException.UnsupportedTokenType();
-			}
+				SupportedTokenTypes.None => throw ErtisAuthException.UnsupportedTokenType(),
+				SupportedTokenTypes.Basic => new BasicToken(stringToken),
+				SupportedTokenTypes.Bearer => BearerToken.CreateTemp(stringToken),
+				_ => throw ErtisAuthException.UnsupportedTokenType()
+			};
+
+			return token;
+		}
+
+		private async Task<IUtilizer> GetTokenOwnerUtilizerAsync(TokenBase token)
+		{
+			return token.TokenType switch
+			{
+				SupportedTokenTypes.None => throw ErtisAuthException.UnsupportedTokenType(),
+				SupportedTokenTypes.Basic => await this.tokenService.WhoAmIAsync(token as BasicToken),
+				SupportedTokenTypes.Bearer => await this.tokenService.WhoAmIAsync(token as BearerToken),
+				_ => throw ErtisAuthException.UnsupportedTokenType()
+			};
 		}
 		
 		[HttpPost]
