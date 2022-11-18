@@ -19,7 +19,7 @@
     
     <ItemGroup>
       <PackageReference Include="Ertis.Core" Version="5.1.6" />
-      <PackageReference Include="Ertis.Schema" Version="5.1.6" />
+      <PackageReference Include="Ertis.Schema" Version="5.1.7" />
       <PackageReference Include="Ertis.Security" Version="5.1.5" />
       <PackageReference Include="Newtonsoft.Json.Schema" Version="3.0.14" />
     </ItemGroup>
