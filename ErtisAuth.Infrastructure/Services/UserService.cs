@@ -193,7 +193,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        }
         }
         
-        private async Task EnsureUserTypeAsync(string membershipId, UserType userType, DynamicObject model, string userId, string currentUserTypeName)
+        private async Task EnsureUserTypeAsync(string membershipId, UserType userType, DynamicObject model, string userId, string currentUserTypeSlug)
         {
             // Check IsAbstract
             if (userType.IsAbstract)
@@ -202,7 +202,7 @@ namespace ErtisAuth.Infrastructure.Services
             }
                     
             // User type can not changed
-            if (!string.IsNullOrEmpty(currentUserTypeName) && currentUserTypeName != userType.Name)
+            if (!string.IsNullOrEmpty(currentUserTypeSlug) && currentUserTypeSlug != userType.Slug)
             {
                 throw ErtisAuthException.UserTypeImmutable();
             }
