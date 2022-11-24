@@ -22,13 +22,13 @@ namespace ErtisAuth.Integrations.OAuth.Google
 		
 		public async Task<bool> VerifyTokenAsync(GoogleLoginRequest request, Provider provider)
 		{
-			if (provider.AppId == request.AppId)
+			if (provider.AppClientId == request.ClientId)
 			{
 				var googleUser = await GoogleOAuth.GoogleJsonWebSignature.ValidateAsync(
 					request.AccessToken, // ID Token
 					new GoogleOAuth.GoogleJsonWebSignature.ValidationSettings
 					{
-						Audience = new List<string> { provider.AppId }
+						Audience = new List<string> { provider.AppClientId }
 					});
 
 				request.Token.ExpiresIn = googleUser.ExpirationTimeSeconds ?? 0;

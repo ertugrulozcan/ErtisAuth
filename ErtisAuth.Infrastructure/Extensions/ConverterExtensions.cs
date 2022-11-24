@@ -288,7 +288,8 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Description = dto.Description,
                 DefaultRole = dto.DefaultRole,
                 DefaultUserType = dto.DefaultUserType,
-                AppId = dto.AppId,
+                AppClientId = dto.AppClientId,
+                TenantId = dto.TenantId,
                 IsActive = dto.IsActive,
                 MembershipId = dto.MembershipId,
                 Sys = dto.Sys?.ToModel()
@@ -304,7 +305,8 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Description = model.Description,
                 DefaultRole = model.DefaultRole,
                 DefaultUserType = model.DefaultUserType,
-                AppId = model.AppId,
+                AppClientId = model.AppClientId,
+                TenantId = model.TenantId,
                 IsActive = model.IsActive,
                 MembershipId = model.MembershipId,
                 Sys = model.Sys?.ToDto()

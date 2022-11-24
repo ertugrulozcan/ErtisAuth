@@ -113,9 +113,9 @@ namespace ErtisAuth.Infrastructure.Services
 
 			if (model.IsActive != null && model.IsActive.Value)
 			{
-				if (string.IsNullOrEmpty(model.AppId))
+				if (string.IsNullOrEmpty(model.AppClientId))
 				{
-					errorList.Add("AppId is a required field");
+					errorList.Add("AppClientId is a required field");
 				}
 				
 				if (string.IsNullOrEmpty(model.DefaultRole))
@@ -145,7 +145,8 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			destination.Description ??= source.Description;
-			destination.AppId ??= source.AppId;
+			destination.AppClientId ??= source.AppClientId;
+			destination.TenantId ??= source.TenantId;
 			destination.DefaultRole ??= source.DefaultRole;
 			destination.DefaultUserType ??= source.DefaultUserType;
 			destination.IsActive ??= source.IsActive;
@@ -255,7 +256,8 @@ namespace ErtisAuth.Infrastructure.Services
 						{
 							MembershipId = membershipId,
 							Description = null,
-							AppId = null,
+							AppClientId = null,
+							TenantId = null,
 							DefaultRole = null,
 							DefaultUserType = null,
 							IsActive = false
@@ -270,7 +272,7 @@ namespace ErtisAuth.Infrastructure.Services
 				}
 			}
 			
-			providerList.AddRange(providers.Items);
+			providerList.AddRange(providers.Items.Where(x => x.Name != KnownProviders.ErtisAuth.ToString()));
 
 			return providerList;
 		}

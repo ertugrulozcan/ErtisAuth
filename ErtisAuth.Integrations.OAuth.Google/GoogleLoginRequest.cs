@@ -17,8 +17,8 @@ namespace ErtisAuth.Integrations.OAuth.Google
 		[JsonProperty("token")]
 		public GoogleToken Token { get; set; }
 
-		[JsonProperty("appId")]
-		public string AppId { get; set; }
+		[JsonProperty("clientId")]
+		public string ClientId { get; set; }
 
 		[JsonIgnore]
 		public string UserId => this.User?.Id;
@@ -38,7 +38,7 @@ namespace ErtisAuth.Integrations.OAuth.Google
 
 		public bool IsValid()
 		{
-			if (string.IsNullOrEmpty(this.AppId))
+			if (string.IsNullOrEmpty(this.ClientId))
 			{
 				return false;
 			}

@@ -20,8 +20,11 @@ namespace ErtisAuth.Core.Models.Providers
 		[JsonProperty("defaultUserType")]
 		public string DefaultUserType { get; set; }
 		
-		[JsonProperty("appId")]
-		public string AppId { get; set; }
+		[JsonProperty("appClientId")]
+		public string AppClientId { get; set; }
+		
+		[JsonProperty("tenantId")]
+		public string TenantId { get; set; }
 		
 		[JsonProperty("isActive")]
 		public bool? IsActive { get; set; }

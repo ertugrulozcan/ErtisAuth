@@ -44,7 +44,8 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				_id = x.Id,
 				name = x.Name,
-				appId = x.AppId,
+				appClientId = x.AppClientId,
+				tenantId = x.TenantId,
 				membership_id = x.MembershipId
 			}));
 		}

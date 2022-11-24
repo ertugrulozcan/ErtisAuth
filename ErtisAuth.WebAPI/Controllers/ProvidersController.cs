@@ -72,7 +72,8 @@ namespace ErtisAuth.WebAPI.Controllers
 					Id = id,
 					Description = model.Description,
 					DefaultRole = model.DefaultRole,
-					AppId = model.AppId,
+					AppClientId = model.AppClientId,
+					TenantId = model.TenantId,
 					IsActive = model.IsActive,
 					MembershipId = membershipId
 				};

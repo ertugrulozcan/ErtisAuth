@@ -19,8 +19,11 @@ namespace ErtisAuth.Dto.Models.Providers
 		[BsonElement("defaultUserType")]
 		public string DefaultUserType { get; set; }
 		
-		[BsonElement("appId")]
-		public string AppId { get; set; }
+		[BsonElement("appClientId")]
+		public string AppClientId { get; set; }
+		
+		[BsonElement("tenantId")]
+		public string TenantId { get; set; }
 		
 		[BsonElement("isActive")]
 		public bool? IsActive { get; set; }

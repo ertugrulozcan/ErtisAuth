@@ -74,7 +74,7 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 				throw ErtisAuthException.InvalidToken("Invalid provider payload");
 			}
 
-			if (provider.AppId == request.AppId)
+			if (provider.AppClientId == request.AppId)
 			{
 				var response = await this.ExecuteRequestAsync<VerifyTokenResponse>(
 					HttpMethod.Get, 
@@ -84,7 +84,7 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 				return
 					response.IsSuccess &&
 					response.Data.Data is { IsValid: true } && 
-					response.Data.Data.AppId == provider.AppId && 
+					response.Data.Data.AppId == provider.AppClientId && 
 					response.Data.Data.UserId == request.User.Id;
 			}
 			else
@@ -97,7 +97,7 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 		{
 			var response = await this.ExecuteRequestAsync(
 				HttpMethod.Delete, 
-				$"{FACEBOOK_GRAPH_API_URL}/{provider.AppId}/permissions",
+				$"{FACEBOOK_GRAPH_API_URL}/{provider.AppClientId}/permissions",
 				QueryString.Add("access_token", accessToken));
 
 			return response.IsSuccess;

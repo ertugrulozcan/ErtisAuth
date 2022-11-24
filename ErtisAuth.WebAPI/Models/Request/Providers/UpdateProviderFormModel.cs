@@ -16,9 +16,12 @@ namespace ErtisAuth.WebAPI.Models.Request.Providers
 		[JsonProperty("defaultRole")]
 		public string DefaultRole { get; set; }
 		
-		[JsonProperty("appId")]
-		public string AppId { get; set; }
+		[JsonProperty("appClientId")]
+		public string AppClientId { get; set; }
 		
+		[JsonProperty("tenantId")]
+		public string TenantId { get; set; }
+
 		[JsonProperty("isActive")]
 		public bool? IsActive { get; set; }
 		
