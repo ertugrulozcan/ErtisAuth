@@ -4,6 +4,7 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Integrations.OAuth.Facebook;
 using ErtisAuth.Integrations.OAuth.Google;
+using ErtisAuth.Integrations.OAuth.Microsoft;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Tokens;
 using Microsoft.AspNetCore.Mvc;
@@ -331,6 +332,27 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpPost]
 		[Route("oauth/google/login")]
 		public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+		{
+			var membershipId = this.GetXErtisAlias();
+			
+			string ipAddress = null;
+			if (this.Request.Headers.ContainsKey("X-IpAddress"))
+			{
+				ipAddress = this.Request.Headers["X-IpAddress"].ToString();
+			}
+			
+			string userAgent = null;
+			if (this.Request.Headers.ContainsKey("X-UserAgent"))
+			{
+				userAgent = this.Request.Headers["X-UserAgent"].ToString();
+			}
+			
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
+		}
+		
+		[HttpPost]
+		[Route("oauth/microsoft/login")]
+		public async Task<IActionResult> MicrosoftLogin([FromBody] MicrosoftLoginRequest request)
 		{
 			var membershipId = this.GetXErtisAlias();
 			
