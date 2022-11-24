@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Integrations.OAuth.Facebook
 {
-	public class FacebookUserToken : IProviderUser
+	public class FacebookUserToken : IProviderUser, IProviderToken
 	{
 		#region Properties
 		

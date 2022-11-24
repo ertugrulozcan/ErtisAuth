@@ -2,27 +2,24 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Integrations.OAuth.Core;
 using Newtonsoft.Json;
 
-namespace ErtisAuth.Integrations.OAuth.Facebook
+namespace ErtisAuth.Integrations.OAuth.Google
 {
-	public class FacebookLoginRequest : IProviderLoginRequest<FacebookUserToken, FacebookUserToken>
+	public class GoogleLoginRequest : IProviderLoginRequest<GoogleToken, GoogleUser>
 	{
 		#region Properties
 
 		[JsonIgnore]
-		public KnownProviders Provider => KnownProviders.Facebook;
+		public KnownProviders Provider => KnownProviders.Google;
 		
-		[JsonProperty("user")]
-		public FacebookUserToken User { get; set; }
+		[JsonIgnore]
+		public GoogleUser User { get; set; }
 		
+		[JsonProperty("token")]
+		public GoogleToken Token { get; set; }
+
 		[JsonProperty("appId")]
 		public string AppId { get; set; }
-		
-		[JsonIgnore]
-		public FacebookUserToken Token { get; set; }
-		
-		[JsonIgnore]
-		public string AccessToken => this.Token?.AccessToken;
-		
+
 		[JsonIgnore]
 		public string UserId => this.User?.Id;
 		
@@ -30,7 +27,10 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 		public string EmailAddress => this.User?.EmailAddress;
 		
 		[JsonIgnore]
-		public string AvatarUrl => this.User?.Picture?.Data?.Url;
+		public string AccessToken => this.Token?.AccessToken;
+		
+		[JsonIgnore]
+		public string AvatarUrl => this.User?.Picture;
 
 		#endregion
 
@@ -59,13 +59,14 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 				{
 					return false;
 				}
-				
-				if (string.IsNullOrEmpty(user.AccessToken))
-				{
-					return false;
-				}
 			}
 			else
+			{
+				return false;
+			}
+
+			// ReSharper disable once ConvertIfStatementToReturnStatement
+			if (this.Token == null || string.IsNullOrEmpty(this.Token.AccessToken))
 			{
 				return false;
 			}
@@ -84,12 +85,12 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 				EmailAddress = this.User.EmailAddress,
 				Role = role,
 				UserType = userType,
-				SourceProvider = KnownProviders.Facebook.ToString(),
+				SourceProvider = KnownProviders.Google.ToString(),
 				ConnectedAccounts = new ProviderAccountInfo[]
 				{
 					new()
 					{
-						Provider = KnownProviders.Facebook.ToString(),
+						Provider = KnownProviders.Google.ToString(),
 						UserId = this.UserId,
 						Token = this.AccessToken
 					}

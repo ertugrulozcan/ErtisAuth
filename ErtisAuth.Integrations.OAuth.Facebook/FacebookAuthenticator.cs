@@ -10,7 +10,7 @@ using ErtisAuth.Integrations.OAuth.Core;
 
 namespace ErtisAuth.Integrations.OAuth.Facebook
 {
-	public interface IFacebookAuthenticator : IProviderAuthenticator, IProviderAuthenticator<FacebookLoginRequest, FacebookUserToken>
+	public interface IFacebookAuthenticator : IProviderAuthenticator, IProviderAuthenticator<FacebookLoginRequest, FacebookUserToken, FacebookUserToken>
 	{}
 	
 	public class FacebookAuthenticator : IFacebookAuthenticator

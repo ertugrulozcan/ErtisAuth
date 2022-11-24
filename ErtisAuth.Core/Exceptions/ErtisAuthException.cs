@@ -310,9 +310,9 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Forbidden, "Provider not configured", "ProviderNotConfigured");
 		}
 		
-		public static ErtisAuthException ProviderNotConfiguredCorrectly()
+		public static ErtisAuthException ProviderNotConfiguredCorrectly(string message)
 		{
-			return new ErtisAuthException(HttpStatusCode.NotImplemented, "Provider not configured correctly", "ProviderNotConfiguredCorrectly");
+			return new ErtisAuthException(HttpStatusCode.NotImplemented, $"Provider not configured correctly. ({message})", "ProviderNotConfiguredCorrectly");
 		}
 		
 		public static ErtisAuthException UnsupportedProvider()

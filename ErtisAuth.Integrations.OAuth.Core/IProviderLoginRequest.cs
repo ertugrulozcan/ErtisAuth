@@ -10,9 +10,9 @@ namespace ErtisAuth.Integrations.OAuth.Core
 		
 		string EmailAddress { get; }
 		
-		string Token { get; }
-		
 		string AvatarUrl { get; }
+		
+		string AccessToken { get; }
 		
 		#endregion
 
@@ -25,10 +25,12 @@ namespace ErtisAuth.Integrations.OAuth.Core
 		#endregion
 	}
 	
-	public interface IProviderLoginRequest<TUser> : IProviderLoginRequest where TUser : IProviderUser
+	public interface IProviderLoginRequest<TToken, TUser> : IProviderLoginRequest where TToken : IProviderToken where TUser : IProviderUser
 	{
 		#region Properties
 
+		TToken Token { get; set; }
+		
 		TUser User { get; set; }
 
 		#endregion

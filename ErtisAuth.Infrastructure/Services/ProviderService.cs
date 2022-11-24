@@ -105,11 +105,6 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				errorList.Add("name is a required field");
 			}
-			
-			if (string.IsNullOrEmpty(model.DefaultRole))
-			{
-				errorList.Add("defaultRole is a required field");
-			}
 
 			if (string.IsNullOrEmpty(model.MembershipId))
 			{
@@ -150,8 +145,9 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			destination.Description ??= source.Description;
-			destination.DefaultRole ??= source.DefaultRole;
 			destination.AppId ??= source.AppId;
+			destination.DefaultRole ??= source.DefaultRole;
+			destination.DefaultUserType ??= source.DefaultUserType;
 			destination.IsActive ??= source.IsActive;
 		}
 
@@ -235,25 +231,43 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			var providerList = new List<Provider>();
 			var providers = await this.GetAsync(membershipId, null, null, false, null, null);
-			if (providers.Items.All(x => x.Name != KnownProviders.Facebook.ToString()))
+			
+			var utilizer = new Utilizer
 			{
-				var utilizer = new Utilizer
+				Role = ReservedRoles.Administrator,
+				Type = Utilizer.UtilizerType.System,
+				MembershipId = membershipId
+			};
+
+			var providerTypes = Enum.GetValues<KnownProviders>();
+			foreach (var providerType in providerTypes)
+			{
+				if (providerType == KnownProviders.ErtisAuth)
 				{
-					Role = ReservedRoles.Administrator,
-					Type = Utilizer.UtilizerType.System,
-					MembershipId = membershipId
-				};
+					continue;
+				}
 				
-				var facebookProvider = await this.CreateAsync(utilizer, membershipId, new Provider(KnownProviders.Facebook)
+				try
 				{
-					MembershipId = membershipId,
-					Description = null,
-					DefaultRole = null,
-					AppId = null,
-					IsActive = false
-				});
+					if (providers.Items.All(x => x.Name != providerType.ToString()))
+					{
+						var provider = await this.CreateAsync(utilizer, membershipId, new Provider(providerType)
+						{
+							MembershipId = membershipId,
+							Description = null,
+							AppId = null,
+							DefaultRole = null,
+							DefaultUserType = null,
+							IsActive = false
+						});
 				
-				providerList.Add(facebookProvider);
+						providerList.Add(provider);
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex);
+				}
 			}
 			
 			providerList.AddRange(providers.Items);
@@ -320,7 +334,7 @@ namespace ErtisAuth.Infrastructure.Services
 			catch (Exception ex)
 			{
 				Console.WriteLine(ex);
-				throw ErtisAuthException.ProviderNotConfiguredCorrectly();
+				throw ErtisAuthException.ProviderNotConfiguredCorrectly(ex.Message);
 			}
 		}
 
@@ -416,7 +430,7 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				Provider = provider.Name,
 				UserId = request.UserId,
-				Token = request.Token
+				Token = request.AccessToken
 			});
 
 			user.ConnectedAccounts = connectedAccounts.ToArray();

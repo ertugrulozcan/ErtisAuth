@@ -4,6 +4,7 @@ using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Abstractions;
 using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Integrations.OAuth.Facebook;
+using ErtisAuth.Integrations.OAuth.Google;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ErtisAuth.Integrations.OAuth
@@ -56,6 +57,10 @@ namespace ErtisAuth.Integrations.OAuth
 			if (provider.Name == KnownProviders.Facebook.ToString())
 			{
 				return this._serviceProvider.GetRequiredService<IFacebookAuthenticator>();
+			}
+			else if (provider.Name == KnownProviders.Google.ToString())
+			{
+				return this._serviceProvider.GetRequiredService<IGoogleAuthenticator>();
 			}
 			else
 			{

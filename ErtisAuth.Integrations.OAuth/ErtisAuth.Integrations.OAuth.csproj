@@ -10,6 +10,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Facebook\ErtisAuth.Integrations.OAuth.Facebook.csproj" />
+      <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Google\ErtisAuth.Integrations.OAuth.Google.csproj" />
     </ItemGroup>
 
     <ItemGroup>

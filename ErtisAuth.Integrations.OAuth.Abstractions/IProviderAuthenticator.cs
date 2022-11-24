@@ -11,7 +11,7 @@ namespace ErtisAuth.Integrations.OAuth.Abstractions
 		Task<bool> RevokeTokenAsync(string accessToken, Provider provider);
 	}
 	
-	public interface IProviderAuthenticator<in TProviderLoginRequest, TUser> where TProviderLoginRequest : IProviderLoginRequest<TUser> where TUser : IProviderUser
+	public interface IProviderAuthenticator<in TProviderLoginRequest, TToken, TUser> where TProviderLoginRequest : IProviderLoginRequest<TToken, TUser> where TToken : IProviderToken where TUser : IProviderUser
 	{
 		Task<bool> VerifyTokenAsync(TProviderLoginRequest request, Provider provider);
 	}
