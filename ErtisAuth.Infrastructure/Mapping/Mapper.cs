@@ -61,8 +61,6 @@ namespace ErtisAuth.Infrastructure.Mapping
 			mappings.Add<Application, ApplicationDto>();
 			mappings.Add<RoleDto, Role>();
 			mappings.Add<Role, RoleDto>();
-			mappings.Add<OAuthProviderDto, OAuthProvider>();
-			mappings.Add<OAuthProvider, OAuthProviderDto>();
 			mappings.Add<ActiveTokenDto, ActiveToken>();
 			mappings.Add<ActiveToken, ActiveTokenDto>();
 			mappings.Add<RevokedTokenDto, RevokedToken>();
@@ -85,10 +83,8 @@ namespace ErtisAuth.Infrastructure.Mapping
 			this.CustomMappers
 				.Add(new CustomMapper<Membership, MembershipDto>((model) => model.ToDto()))
 				.Add(new CustomMapper<MembershipDto, Membership>((dto) => dto.ToModel()))
-				
 				.Add(new CustomMapper<UserType, UserTypeDto>((model) => model.ToDto()))
 				.Add(new CustomMapper<UserTypeDto, UserType>((dto) => dto.ToModel()))
-				
 				.Add(new CustomMapper<User, UserDto>((model) => model.ToDto()))
 				.Add(new CustomMapper<UserDto, User>((dto) => dto.ToModel()))
 				.Add(new CustomMapper<UserWithPasswordHash, UserDto>((model) => model.ToDto()))
@@ -96,7 +92,9 @@ namespace ErtisAuth.Infrastructure.Mapping
 				.Add(new CustomMapper<Webhook, WebhookDto>((model) => model.ToDto()))
 				.Add(new CustomMapper<WebhookDto, Webhook>((dto) => dto.ToModel()))
 				.Add(new CustomMapper<MailHook, MailHookDto>((model) => model.ToDto()))
-				.Add(new CustomMapper<MailHookDto, MailHook>((dto) => dto.ToModel()));
+				.Add(new CustomMapper<MailHookDto, MailHook>((dto) => dto.ToModel()))
+				.Add(new CustomMapper<Provider, ProviderDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<ProviderDto, Provider>((dto) => dto.ToModel()));
 		}
 
 		#endregion

@@ -26,6 +26,7 @@
     
     <ItemGroup>
       <ProjectReference Include="..\ErtisAuth.Extensions.Mailkit\ErtisAuth.Extensions.Mailkit.csproj" />
+      <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Core\ErtisAuth.Integrations.OAuth.Core.csproj" />
     </ItemGroup>
 
 </Project>

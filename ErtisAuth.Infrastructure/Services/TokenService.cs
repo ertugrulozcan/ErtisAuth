@@ -96,7 +96,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return await this.GetTokenOwnerUserAsync(bearerToken.AccessToken);
 		}
 
-		private async Task<User> GetTokenOwnerUserAsync(string bearerToken)
+		public async Task<User> GetTokenOwnerUserAsync(string bearerToken)
 		{
 			if (this.jwtService.TryDecodeToken(bearerToken, out var securityToken))
 			{
@@ -189,18 +189,35 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			else
 			{
-				var token = await this.GenerateBearerTokenAsync(user, membership, ipAddress, userAgent);
-				
-				if (fireEvent)
-				{
-					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenGenerated, user, token) { MembershipId = membershipId });	
-				}
-				
-				return token;
+				return await this.GenerateBearerTokenAsync(user, membership, ipAddress, userAgent);
 			}
 		}
+
+		public async ValueTask<BearerToken> GenerateTokenAsync(User user, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true)
+		{
+			// Check membership
+			var membership = await this.membershipService.GetAsync(membershipId);
+			if (membership == null)
+			{
+				throw ErtisAuthException.MembershipNotFound(membershipId);
+			}
+
+			if (!membership.IsValid(out IEnumerable<string> errors))
+			{
+				throw ErtisAuthException.MalformedMembership(membershipId, errors);
+			}
+			
+			// Check user
+			var currentUser = await this.userService.GetAsync(membership.Id, user.Id);
+			if (currentUser == null)
+			{
+				throw ErtisAuthException.UserNotFound(user.Id, "id");
+			}
+			
+			return await this.GenerateBearerTokenAsync(user, membership, ipAddress, userAgent);
+		}
 		
-		private async Task<BearerToken> GenerateBearerTokenAsync(User user, Membership membership, string ipAddress = null, string userAgent = null)
+		private async Task<BearerToken> GenerateBearerTokenAsync(User user, Membership membership, string ipAddress = null, string userAgent = null, bool fireEvent = true)
 		{
 			string tokenId = Guid.NewGuid().ToString();
 			var tokenClaims = new TokenClaims(tokenId, user, membership);
@@ -213,6 +230,11 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			// Save to active tokens collection
 			await this.StoreActiveTokenAsync(bearerToken, user, membership.Id, ipAddress, userAgent);
+			
+			if (fireEvent)
+			{
+				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenGenerated, user, bearerToken) { MembershipId = membership.Id });	
+			}
 			
 			return bearerToken;
 		}

@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Providers
 {
-	public class OAuthProviderDto : EntityBase, IHasMembership, IHasSysDto
+	public class ProviderDto : EntityBase, IHasMembership, IHasSysDto
 	{
 		#region Properties
 
@@ -12,6 +12,18 @@ namespace ErtisAuth.Dto.Models.Providers
 		
 		[BsonElement("description")]
 		public string Description { get; set; }
+		
+		[BsonElement("defaultRole")]
+		public string DefaultRole { get; set; }
+		
+		[BsonElement("defaultUserType")]
+		public string DefaultUserType { get; set; }
+		
+		[BsonElement("appId")]
+		public string AppId { get; set; }
+		
+		[BsonElement("isActive")]
+		public bool? IsActive { get; set; }
 		
 		[BsonElement("membership_id")]
 		public string MembershipId { get; set; }

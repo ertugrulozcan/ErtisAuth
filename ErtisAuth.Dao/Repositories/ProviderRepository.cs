@@ -6,7 +6,7 @@ using ErtisAuth.Dto.Models.Providers;
 
 namespace ErtisAuth.Dao.Repositories
 {
-	public class ProviderRepository : MongoRepositoryBase<OAuthProviderDto>, IProviderRepository
+	public class ProviderRepository : MongoRepositoryBase<ProviderDto>, IProviderRepository
 	{
 		#region Constructors
 

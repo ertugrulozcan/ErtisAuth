@@ -20,5 +20,6 @@
         <ProjectReference Include="..\ErtisAuth.Extensions.Quartz\ErtisAuth.Extensions.Quartz.csproj" />
         <ProjectReference Include="..\ErtisAuth.Identity\ErtisAuth.Identity.csproj" />
         <ProjectReference Include="..\ErtisAuth.Infrastructure\ErtisAuth.Infrastructure.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Facebook\ErtisAuth.Integrations.OAuth.Facebook.csproj" />
     </ItemGroup>
 </Project>

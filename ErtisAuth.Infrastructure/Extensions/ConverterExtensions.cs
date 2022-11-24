@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Ertis.Core.Models.Resources;
@@ -5,21 +6,40 @@ using Ertis.Schema.Serialization;
 using Ertis.Schema.Types;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
+using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Dto.Extensions;
 using ErtisAuth.Dto.Models.Mailing;
 using ErtisAuth.Dto.Models.Memberships;
+using ErtisAuth.Dto.Models.Providers;
 using ErtisAuth.Dto.Models.Resources;
 using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Dto.Models.Webhooks;
 using ErtisAuth.Extensions.Mailkit.Models;
+using ErtisAuth.Integrations.OAuth.Core;
 using MongoDB.Bson;
 
 namespace ErtisAuth.Infrastructure.Extensions
 {
     public static class ConverterExtensions
     {
+        #region Helpers Methods
+
+        private static TEnum TryParseEnum<TEnum>(string str, TEnum defaultValue = default) where TEnum : struct
+        {
+            try
+            {
+                return Enum.Parse<TEnum>(str);
+            }
+            catch
+            {
+                return defaultValue;
+            }
+        }
+
+        #endregion
+        
         #region Sys
 
         public static SysModel ToModel(this SysModelDto dto)
@@ -109,6 +129,8 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Forbidden = dto.Forbidden,
                 Permissions = dto.Permissions,
                 UserType = dto.UserType,
+                SourceProvider = string.IsNullOrEmpty(dto.SourceProvider) ? KnownProviders.ErtisAuth.ToString() : dto.SourceProvider,
+                ConnectedAccounts = dto.ConnectedAccounts,
                 MembershipId = dto.MembershipId,
                 Sys = dto.Sys?.ToModel()
             };
@@ -127,6 +149,8 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Forbidden = model.Forbidden,
                 Permissions = model.Permissions,
                 UserType = model.UserType,
+                SourceProvider = model.SourceProvider,
+                ConnectedAccounts = model.ConnectedAccounts,
                 MembershipId = model.MembershipId,
                 Sys = model.Sys?.ToDto()
             };
@@ -249,6 +273,41 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Method = model.Method,
                 Headers = model.Headers,
                 Body = body
+            };
+        }
+
+        #endregion
+
+        #region Provider
+
+        public static Provider ToModel(this ProviderDto dto)
+        {
+            return new Provider(TryParseEnum<KnownProviders>(dto.Name))
+            {
+                Id = dto.Id,
+                Description = dto.Description,
+                DefaultRole = dto.DefaultRole,
+                DefaultUserType = dto.DefaultUserType,
+                AppId = dto.AppId,
+                IsActive = dto.IsActive,
+                MembershipId = dto.MembershipId,
+                Sys = dto.Sys?.ToModel()
+            };
+        }
+        
+        public static ProviderDto ToDto(this Provider model)
+        {
+            return new ProviderDto
+            {
+                Id = model.Id,
+                Name = model.Name,
+                Description = model.Description,
+                DefaultRole = model.DefaultRole,
+                DefaultUserType = model.DefaultUserType,
+                AppId = model.AppId,
+                IsActive = model.IsActive,
+                MembershipId = model.MembershipId,
+                Sys = model.Sys?.ToDto()
             };
         }
 

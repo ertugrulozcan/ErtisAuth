@@ -127,6 +127,46 @@ namespace ErtisAuth.Infrastructure.Services
 					    },
 					    new StringFieldInfo
 					    {
+						    Name = "sourceProvider",
+						    DisplayName = "Source Provider",
+						    Description = "Initial User Provider",
+						    DefaultValue = "ErtisAuth",
+						    IsRequired = true,
+						    IsReadonly = true
+					    },
+					    new ArrayFieldInfo
+					    {
+						    Name = "connectedAccounts",
+						    DisplayName = "Connected Accounts",
+						    Description = "Connected Provider Accounts",
+						    IsRequired = false,
+						    IsReadonly = true,
+						    ItemSchema = new ObjectFieldInfo(new IFieldInfo[]
+						    {
+							    new StringFieldInfo
+							    {
+								    Name = "Provider",
+								    IsRequired = true,
+								    IsVirtual = false
+							    },
+							    new StringFieldInfo
+							    {
+								    Name = "UserId",
+								    IsRequired = true,
+								    IsVirtual = false
+							    },
+							    new StringFieldInfo
+							    {
+								    Name = "Token",
+								    IsRequired = false,
+								    IsVirtual = false
+							    },
+						    }),
+						    UniqueItems = true,
+						    UniqueBy = new[] { "Provider" }
+					    },
+					    new StringFieldInfo
+					    {
 						    Name = "membership_id",
 						    DisplayName = "Membership Id",
 						    Description = "Membership Id",

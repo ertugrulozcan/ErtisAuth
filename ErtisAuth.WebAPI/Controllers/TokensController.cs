@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Integrations.OAuth.Facebook;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Tokens;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +17,7 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		private readonly ITokenService tokenService;
 		private readonly IUserService userService;
+		private readonly IProviderService providerService;
 
 		#endregion
 
@@ -26,10 +28,12 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// </summary>
 		/// <param name="tokenService"></param>
 		/// <param name="userService"></param>
-		public TokensController(ITokenService tokenService, IUserService userService)
+		/// <param name="providerService"></param>
+		public TokensController(ITokenService tokenService, IUserService userService, IProviderService providerService)
 		{
 			this.tokenService = tokenService;
 			this.userService = userService;
+			this.providerService = providerService;
 		}
 
 		#endregion
@@ -262,6 +266,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			
 			if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices))
 			{
+				await this.providerService.LogoutAsync(token);
 				return this.NoContent();
 			}
 			else
@@ -288,12 +293,38 @@ namespace ErtisAuth.WebAPI.Controllers
 			
 			if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices))
 			{
+				await this.providerService.LogoutAsync(token);
 				return this.NoContent();
 			}
 			else
 			{
 				return this.Unauthorized();
 			}
+		}
+
+		#endregion
+
+		#region Provider Methods
+
+		[HttpPost]
+		[Route("oauth/facebook/login")]
+		public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequest request)
+		{
+			var membershipId = this.GetXErtisAlias();
+			
+			string ipAddress = null;
+			if (this.Request.Headers.ContainsKey("X-IpAddress"))
+			{
+				ipAddress = this.Request.Headers["X-IpAddress"].ToString();
+			}
+			
+			string userAgent = null;
+			if (this.Request.Headers.ContainsKey("X-UserAgent"))
+			{
+				userAgent = this.Request.Headers["X-UserAgent"].ToString();
+			}
+			
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
 		}
 
 		#endregion

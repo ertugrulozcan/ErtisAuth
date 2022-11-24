@@ -1,21 +1,31 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Ertis.MongoDB.Queries;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Helpers;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Providers;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
+using ErtisAuth.Integrations.OAuth.Core;
+using ErtisAuth.Integrations.OAuth.Extensions;
 
 namespace ErtisAuth.Infrastructure.Services
 {
-	public class ProviderService : MembershipBoundedCrudService<OAuthProvider, OAuthProviderDto>, IProviderService
+	public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDto>, IProviderService
 	{
 		#region Services
 		
+		private readonly IUserService userService;
+		private readonly ITokenService tokenService;
 		private readonly IEventService eventService;
 
 		#endregion
@@ -26,10 +36,19 @@ namespace ErtisAuth.Infrastructure.Services
 		/// Constructor
 		/// </summary>
 		/// <param name="membershipService"></param>
+		/// <param name="userService"></param>
+		/// <param name="tokenService"></param>
 		/// <param name="eventService"></param>
 		/// <param name="providerRepository"></param>
-		public ProviderService(IMembershipService membershipService, IEventService eventService, IProviderRepository providerRepository) : base(membershipService, providerRepository)
+		public ProviderService(
+			IMembershipService membershipService,
+			IUserService userService,
+			ITokenService tokenService,
+			IEventService eventService, 
+			IProviderRepository providerRepository) : base(membershipService, providerRepository)
 		{
+			this.userService = userService;
+			this.tokenService = tokenService;
 			this.eventService = eventService;
 
 			this.OnCreated += this.ProviderCreatedEventHandler;
@@ -41,7 +60,7 @@ namespace ErtisAuth.Infrastructure.Services
 	
 		#region Event Handlers
 
-		private void ProviderCreatedEventHandler(object sender, CreateResourceEventArgs<OAuthProvider> eventArgs)
+		private void ProviderCreatedEventHandler(object sender, CreateResourceEventArgs<Provider> eventArgs)
 		{
 			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
@@ -52,7 +71,7 @@ namespace ErtisAuth.Infrastructure.Services
 			});
 		}
 		
-		private void ProviderUpdatedEventHandler(object sender, UpdateResourceEventArgs<OAuthProvider> eventArgs)
+		private void ProviderUpdatedEventHandler(object sender, UpdateResourceEventArgs<Provider> eventArgs)
 		{
 			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
@@ -64,7 +83,7 @@ namespace ErtisAuth.Infrastructure.Services
 			});
 		}
 		
-		private void ProviderDeletedEventHandler(object sender, DeleteResourceEventArgs<OAuthProvider> eventArgs)
+		private void ProviderDeletedEventHandler(object sender, DeleteResourceEventArgs<Provider> eventArgs)
 		{
 			this.eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
@@ -77,9 +96,9 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#endregion
 
-		#region Methods
+		#region Base Methods
 		
-		protected override bool ValidateModel(OAuthProvider model, out IEnumerable<string> errors)
+		protected override bool ValidateModel(Provider model, out IEnumerable<string> errors)
 		{
 			var errorList = new List<string>();
 			if (string.IsNullOrEmpty(model.Name))
@@ -87,17 +106,39 @@ namespace ErtisAuth.Infrastructure.Services
 				errorList.Add("name is a required field");
 			}
 			
-			
+			if (string.IsNullOrEmpty(model.DefaultRole))
+			{
+				errorList.Add("defaultRole is a required field");
+			}
+
 			if (string.IsNullOrEmpty(model.MembershipId))
 			{
 				errorList.Add("membership_id is a required field");
+			}
+
+			if (model.IsActive != null && model.IsActive.Value)
+			{
+				if (string.IsNullOrEmpty(model.AppId))
+				{
+					errorList.Add("AppId is a required field");
+				}
+				
+				if (string.IsNullOrEmpty(model.DefaultRole))
+				{
+					errorList.Add("DefaultRole is a required field");
+				}
+				
+				if (string.IsNullOrEmpty(model.DefaultUserType))
+				{
+					errorList.Add("DefaultUserType is a required field");
+				}
 			}
 			
 			errors = errorList;
 			return !errors.Any();
 		}
 
-		protected override void Overwrite(OAuthProvider destination, OAuthProvider source)
+		protected override void Overwrite(Provider destination, Provider source)
 		{
 			destination.Id = source.Id;
 			destination.MembershipId = source.MembershipId;
@@ -108,18 +149,13 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.IdenticalDocument();
 			}
 			
-			if (string.IsNullOrEmpty(destination.Name))
-			{
-				destination.Name = source.Name;
-			}
-			
-			if (destination.Description == null)
-			{
-				destination.Description = source.Description;
-			}
+			destination.Description ??= source.Description;
+			destination.DefaultRole ??= source.DefaultRole;
+			destination.AppId ??= source.AppId;
+			destination.IsActive ??= source.IsActive;
 		}
 
-		protected override bool IsAlreadyExist(OAuthProvider model, string membershipId, OAuthProvider exclude = default)
+		protected override bool IsAlreadyExist(Provider model, string membershipId, Provider exclude = default)
 		{
 			if (exclude == null)
 			{
@@ -139,7 +175,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		protected override async Task<bool> IsAlreadyExistAsync(OAuthProvider model, string membershipId, OAuthProvider exclude = default)
+		protected override async Task<bool> IsAlreadyExistAsync(Provider model, string membershipId, Provider exclude = default)
 		{
 			if (exclude == null)
 			{
@@ -159,7 +195,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		protected override ErtisAuthException GetAlreadyExistError(OAuthProvider model)
+		protected override ErtisAuthException GetAlreadyExistError(Provider model)
 		{
 			return ErtisAuthException.ProviderWithSameNameAlreadyExists(model.Name);
 		}
@@ -169,7 +205,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return ErtisAuthException.ProviderNotFound(id);
 		}
 		
-		private OAuthProvider GetByName(string name, string membershipId)
+		private Provider GetByName(string name, string membershipId)
 		{
 			var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
 			if (dto == null)
@@ -177,10 +213,10 @@ namespace ErtisAuth.Infrastructure.Services
 				return null;
 			}
 			
-			return Mapper.Current.Map<OAuthProviderDto, OAuthProvider>(dto);
+			return Mapper.Current.Map<ProviderDto, Provider>(dto);
 		}
 		
-		private async Task<OAuthProvider> GetByNameAsync(string name, string membershipId)
+		private async Task<Provider> GetByNameAsync(string name, string membershipId)
 		{
 			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
 			if (dto == null)
@@ -188,7 +224,210 @@ namespace ErtisAuth.Infrastructure.Services
 				return null;
 			}
 			
-			return Mapper.Current.Map<OAuthProviderDto, OAuthProvider>(dto);
+			return Mapper.Current.Map<ProviderDto, Provider>(dto);
+		}
+
+		#endregion
+
+		#region Read Methods
+
+		public async Task<IEnumerable<Provider>> GetProvidersAsync(string membershipId)
+		{
+			var providerList = new List<Provider>();
+			var providers = await this.GetAsync(membershipId, null, null, false, null, null);
+			if (providers.Items.All(x => x.Name != KnownProviders.Facebook.ToString()))
+			{
+				var utilizer = new Utilizer
+				{
+					Role = ReservedRoles.Administrator,
+					Type = Utilizer.UtilizerType.System,
+					MembershipId = membershipId
+				};
+				
+				var facebookProvider = await this.CreateAsync(utilizer, membershipId, new Provider(KnownProviders.Facebook)
+				{
+					MembershipId = membershipId,
+					Description = null,
+					DefaultRole = null,
+					AppId = null,
+					IsActive = false
+				});
+				
+				providerList.Add(facebookProvider);
+			}
+			
+			providerList.AddRange(providers.Items);
+
+			return providerList;
+		}
+
+		#endregion
+
+		#region Authentication Methods
+
+		public async ValueTask<BearerToken> LoginAsync(IProviderLoginRequest request, string membershipId, string ipAddress = null, string userAgent = null)
+		{
+			try
+			{
+				var provider = await this.GetAsync(membershipId, (x) => x.MembershipId == membershipId && x.Name == request.Provider.ToString());
+				if (provider != null)
+				{
+					if (provider.IsActive != null && provider.IsActive.Value)
+					{
+						var providerAuthenticator = provider.GetAuthenticator();
+						var isVerified = await providerAuthenticator.VerifyTokenAsync(request, provider);
+						if (isVerified)
+						{
+							var utilizer = new Utilizer
+							{
+								Role = ReservedRoles.Administrator,
+								Type = Utilizer.UtilizerType.System,
+								MembershipId = membershipId
+							};
+						
+							var user = await this.FindUserAsync(request, provider, membershipId);
+							var isNewUser = user == null;
+							if (isNewUser)
+							{
+								user = request.ToUser(membershipId, provider.DefaultRole, provider.DefaultUserType) as User;
+							}
+						
+							this.EnsureConnectedAccounts(user, request, provider);
+							var dynamicUser = new DynamicObject(user);
+							this.SetAvatar(dynamicUser, request);
+						
+							var upsertedUser = isNewUser ?
+								await this.userService.CreateAsync(utilizer, membershipId, dynamicUser) :
+								await this.userService.UpdateAsync(utilizer, membershipId, user.Id, dynamicUser, false);
+						
+							return await this.tokenService.GenerateTokenAsync(upsertedUser.Deserialize<User>(), membershipId, ipAddress, userAgent);
+						}
+						else
+						{
+							throw ErtisAuthException.Unauthorized("Token was not verified by provider");
+						}
+					}
+					else
+					{
+						throw ErtisAuthException.ProviderIsDisable();
+					}
+				}
+				else
+				{
+					throw ErtisAuthException.ProviderNotConfigured();
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex);
+				throw ErtisAuthException.ProviderNotConfiguredCorrectly();
+			}
+		}
+
+		public async Task LogoutAsync(string token)
+		{
+			try
+			{
+				var user = await this.tokenService.GetTokenOwnerUserAsync(token);
+				if (user is { ConnectedAccounts: { } })
+				{
+					var clearedConnectedAccounts = new List<ProviderAccountInfo>();
+					foreach (var accountInfo in user.ConnectedAccounts)
+					{
+						if (!string.IsNullOrEmpty(accountInfo.Token))
+						{
+							var provider = await this.GetAsync(user.MembershipId, (x) => x.MembershipId == user.MembershipId && x.Name == accountInfo.Provider);
+							if (provider is { IsActive: { } } && provider.IsActive.Value)
+							{
+								var providerAuthenticator = provider.GetAuthenticator();
+								await providerAuthenticator.RevokeTokenAsync(accountInfo.Token, provider);
+							}
+						}
+					
+						clearedConnectedAccounts.Add(new ProviderAccountInfo
+						{
+							Provider = accountInfo.Provider,
+							UserId = accountInfo.UserId,
+							Token = null
+						});
+					}
+				
+					var utilizer = new Utilizer
+					{
+						Role = ReservedRoles.Administrator,
+						Type = Utilizer.UtilizerType.System,
+						MembershipId = user.MembershipId
+					};
+
+					user.ConnectedAccounts = clearedConnectedAccounts.ToArray();
+					var dynamicUser = new DynamicObject(user);
+					await this.userService.UpdateAsync(utilizer, user.MembershipId, user.Id, dynamicUser, false);
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex);
+			}
+		}
+
+		private async Task<User> FindUserAsync(IProviderLoginRequest request, Provider provider, string membershipId)
+		{
+			var query = QueryBuilder.Where(
+				QueryBuilder.Equals("membership_id", membershipId), 
+				QueryBuilder.Equals("connectedAccounts.Provider", provider.Name), 
+				QueryBuilder.Equals("connectedAccounts.UserId", request.UserId)).ToString();
+			var queryUsersResult = await this.userService.QueryAsync(membershipId, query, 0, 1);
+			if (queryUsersResult.Items.Any())
+			{
+				var dynamicUser = queryUsersResult.Items.First();
+				return dynamicUser.Deserialize<User>();
+			}
+			else
+			{
+				var query2 = QueryBuilder.Where(
+					QueryBuilder.Equals("membership_id", membershipId), 
+					QueryBuilder.Equals("email_address", request.EmailAddress)).ToString();
+				var queryUsers2Result = await this.userService.QueryAsync(membershipId, query2, 0, 1);
+				if (queryUsers2Result.Items.Any())
+				{
+					var dynamicUser = queryUsersResult.Items.First();
+					return dynamicUser.Deserialize<User>();
+				}
+			}
+
+			return null;
+		}
+
+		private void EnsureConnectedAccounts(User user, IProviderLoginRequest request, Provider provider)
+		{
+			var connectedAccounts = new List<ProviderAccountInfo>();
+			if (user.ConnectedAccounts != null)
+			{
+				connectedAccounts.AddRange(user.ConnectedAccounts);
+			}
+
+			var account = connectedAccounts.FirstOrDefault(x => x.Provider == provider.Name);
+			if (account != null)
+			{
+				connectedAccounts.Remove(account);
+			}
+							
+			connectedAccounts.Add(new ProviderAccountInfo
+			{
+				Provider = provider.Name,
+				UserId = request.UserId,
+				Token = request.Token
+			});
+
+			user.ConnectedAccounts = connectedAccounts.ToArray();
+		}
+
+		private void SetAvatar(DynamicObject dynamicUser, IProviderLoginRequest request)
+		{
+			if (!string.IsNullOrEmpty(request.AvatarUrl))
+			{
+				dynamicUser.SetValue("avatar", new Dictionary<string, object> { { "url", request.AvatarUrl } }, true);	
+			}
 		}
 
 		#endregion

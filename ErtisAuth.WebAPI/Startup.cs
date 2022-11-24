@@ -16,6 +16,7 @@ using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Adapters;
 using ErtisAuth.Infrastructure.Configuration;
 using ErtisAuth.Infrastructure.Services;
+using ErtisAuth.Integrations.OAuth.Extensions;
 using ErtisAuth.WebAPI.Adapters;
 using ErtisAuth.WebAPI.Auth;
 using ErtisAuth.WebAPI.Extensions;
@@ -113,6 +114,7 @@ namespace ErtisAuth.WebAPI
 			services.AddSingleton<IRestHandler, SystemRestHandler>();
 			services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
 			services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
+			services.AddProviders();
 			
 			// Mailkit
 			services.AddMailkit();
@@ -216,7 +218,8 @@ namespace ErtisAuth.WebAPI
 			}
 			
 			this.ResolveRequiredServices(app.ApplicationServices);
-			
+			app.UseProviders();
+
 			// Swagger
 			if (this.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
 			{
