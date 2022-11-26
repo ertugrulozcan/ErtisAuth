@@ -319,6 +319,16 @@ namespace ErtisAuth.Core.Exceptions
 		{
 			return new ErtisAuthException(HttpStatusCode.Forbidden, "Provider is not supported", "UnsupportedProvider");
 		}
+		
+		public static ErtisAuthException ProviderNameRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "Provider name is required", "ProviderNameRequired");
+		}
+		
+		public static ErtisAuthException UnknownProvider(string providerName)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "Unknown provider: " + providerName, "UnknownProvider");
+		}
 
 		#endregion
 

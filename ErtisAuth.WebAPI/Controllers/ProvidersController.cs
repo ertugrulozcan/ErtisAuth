@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Identity.Attributes;
@@ -62,16 +63,17 @@ namespace ErtisAuth.WebAPI.Controllers
 		{
 			if (string.IsNullOrEmpty(model.Name))
 			{
-				return this.BadRequest("Provider name is required!");
+				return this.BadRequest(ErtisAuthException.ProviderNameRequired().Error);
 			}
 			
-			if (Enum.TryParse<KnownProviders>(model.Name, true, out var provider))
+			if (Enum.TryParse<KnownProviders>(model.Name, true, out var providerType) && providerType != KnownProviders.ErtisAuth)
 			{
-				var providerModel = new Provider(provider)
+				var providerModel = new Provider(providerType)
 				{
 					Id = id,
 					Description = model.Description,
 					DefaultRole = model.DefaultRole,
+					DefaultUserType = model.DefaultUserType,
 					AppClientId = model.AppClientId,
 					TenantId = model.TenantId,
 					IsActive = model.IsActive,
@@ -84,7 +86,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			}
 			else
 			{
-				return this.BadRequest("Unknown provider: " + model.Name);
+				return this.BadRequest(ErtisAuthException.UnknownProvider(model.Name).Error);
 			}
 		}
 
