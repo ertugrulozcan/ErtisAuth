@@ -6,7 +6,7 @@
 
     <ItemGroup>
       <PackageReference Include="AutoMapper" Version="11.0.1" />
-      <PackageReference Include="Ertis.MongoDB.Queries" Version="5.0.9" />
+      <PackageReference Include="Ertis.MongoDB.Queries" Version="5.1.0" />
       <PackageReference Include="Ertis.Net" Version="5.1.8" />
       <PackageReference Include="Ertis.Security" Version="5.1.5" />
       <PackageReference Include="Ertis.TemplateEngine" Version="5.0.3" />
