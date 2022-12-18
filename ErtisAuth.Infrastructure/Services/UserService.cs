@@ -23,6 +23,7 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
+using ErtisAuth.Integrations.OAuth.Core;
 
 namespace ErtisAuth.Infrastructure.Services
 {
@@ -193,7 +194,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        }
         }
         
-        private async Task EnsureUserTypeAsync(string membershipId, UserType userType, DynamicObject model, string userId, string currentUserTypeName)
+        private async Task EnsureUserTypeAsync(string membershipId, UserType userType, DynamicObject model, string userId, string currentUserTypeSlug)
         {
             // Check IsAbstract
             if (userType.IsAbstract)
@@ -202,7 +203,7 @@ namespace ErtisAuth.Infrastructure.Services
             }
                     
             // User type can not changed
-            if (!string.IsNullOrEmpty(currentUserTypeName) && currentUserTypeName != userType.Name)
+            if (!string.IsNullOrEmpty(currentUserTypeSlug) && currentUserTypeSlug != userType.Slug)
             {
                 throw ErtisAuthException.UserTypeImmutable();
             }
@@ -242,25 +243,15 @@ namespace ErtisAuth.Infrastructure.Services
             return isValid;
         }
         
-        private void ClearReadonlyProperties(DynamicObject model, UserType userType, IDictionary<string, object> dictionary)
+        private void EnsureManagedProperties(DynamicObject model, string membershipId)
         {
 	        model.RemoveProperty("_id");
 	        model.RemoveProperty("password");
+	        model.RemoveProperty("password_hash");
+	        model.RemoveProperty("membership_id");
+	        model.RemoveProperty("sys");
 	        
-	        var readonlyProperties = userType.Properties.Where(x => x.IsReadonly);
-	        foreach (var fieldInfo in readonlyProperties)
-	        {
-		        var slug = fieldInfo.Path?.Split('.').LastOrDefault();
-		        model.RemoveProperty(slug);
-	        }
-
-	        if (dictionary != null)
-	        {
-		        foreach (var (key, value) in dictionary)
-		        {
-			        model.SetValue(key, value, true);
-		        }
-	        }
+	        model.SetValue("membership_id", membershipId, true);
         }
         
         #endregion
@@ -270,6 +261,11 @@ namespace ErtisAuth.Infrastructure.Services
         private async Task EnsureRoleAsync(DynamicObject model, string membershipId)
         {
 	        var roleName = model.GetValue<string>("role");
+	        if (string.IsNullOrEmpty(roleName))
+	        {
+		        throw ErtisAuthException.RoleRequired();
+	        }
+	        
 	        var role = await this._roleService.GetByNameAsync(roleName, membershipId);
 	        if (role == null)
 	        {
@@ -429,20 +425,25 @@ namespace ErtisAuth.Infrastructure.Services
         private void EnsureSys(DynamicObject model, Utilizer utilizer)
         {
             var now = DateTime.Now.ToLocalTime().Add(TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow));
+            var utilizerName = utilizer.Username;
+            if (utilizer.Type == Utilizer.UtilizerType.System)
+            {
+	            utilizerName = "system";
+            }
 
             if (model.TryGetValue<SysModel>("sys", out var sys, out _) && sys != null)
             {
                 sys.CreatedAt ??= now;
-                sys.CreatedBy ??= utilizer.Username;
+                sys.CreatedBy ??= utilizerName;
                 sys.ModifiedAt = now;
-                sys.ModifiedBy = utilizer.Username;
+                sys.ModifiedBy = utilizerName;
             }
             else
             {
                 sys = new SysModel
                 {
                     CreatedAt = now,
-                    CreatedBy = utilizer.Username,
+                    CreatedBy = utilizerName,
                 };
             }
 
@@ -490,6 +491,28 @@ namespace ErtisAuth.Infrastructure.Services
 
         #endregion
 
+        #region Provider Methods
+
+        private KnownProviders GetSourceProvider(DynamicObject model)
+        {
+	        try
+	        {
+		        if (!model.ContainsProperty("sourceProvider"))
+		        {
+			        return KnownProviders.ErtisAuth;
+		        }
+		        
+		        var sourceProviderName = model.GetValue<string>("sourceProvider");
+		        return Enum.Parse<KnownProviders>(sourceProviderName);
+	        }
+	        catch
+	        {
+		        return KnownProviders.ErtisAuth;
+	        }
+        }
+
+        #endregion
+        
         #region Read Methods
         
         public async Task<DynamicObject> GetAsync(string membershipId, string id)
@@ -596,11 +619,23 @@ namespace ErtisAuth.Infrastructure.Services
         public async Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model)
         {
 	        var membership = await this.CheckMembershipAsync(membershipId);
-	        var userType = await this.GetUserTypeAsync(model, membershipId, true);
-	        this.EnsurePassword(model, out var password);
-	        this.ClearReadonlyProperties(model, userType, new Dictionary<string, object> { { "membership_id", membershipId } });
+	        
+	        string password = null;
+	        var sourceProvider = this.GetSourceProvider(model);
+	        if (sourceProvider == KnownProviders.ErtisAuth)
+	        {
+		        this.EnsurePassword(model, out password);    
+	        }
+	        
+	        var userType = await this.GetUserTypeAsync(model, membershipId, sourceProvider == KnownProviders.ErtisAuth);
+	        this.EnsureManagedProperties(model, membershipId);
 	        await this.EnsureAndValidateAsync(utilizer, membershipId, null, userType, model, null);
-	        this.SetPasswordHash(model, membership, password);
+	        
+	        if (sourceProvider == KnownProviders.ErtisAuth)
+	        {
+		        this.SetPasswordHash(model, membership, password);    
+	        }
+	        
 	        var created = await base.CreateAsync(model);
             this.HidePasswordHash(created);
             if (created != null)
@@ -615,16 +650,16 @@ namespace ErtisAuth.Infrastructure.Services
         
         #region Update Methods
 
-        public async Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model)
+        public async Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true)
         {
 	        await this.CheckMembershipAsync(membershipId);
 	        var userType = await this.GetUserTypeAsync(model, membershipId, true);
-	        this.ClearReadonlyProperties(model, userType, new Dictionary<string, object> { { "membership_id", membershipId } });
+	        this.EnsureManagedProperties(model, membershipId);
 	        model = this.SyncModel(membershipId, userId, model, out var current);
 	        await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current);
 	        var updated = await base.UpdateAsync(userId, model);
 	        this.HidePasswordHash(updated);
-	        if (updated != null)
+	        if (updated != null && fireEvent)
 	        {
 		        await this.FireOnUpdatedEvent(membershipId, utilizer, current, updated);
 	        }

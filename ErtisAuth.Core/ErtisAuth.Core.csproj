@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
         <PackageId>ErtisAuth.Core</PackageId>
-        <PackageVersion>5.2.2</PackageVersion>
+        <PackageVersion>5.2.4</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Core</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -13,19 +13,20 @@
         <Title>ErtisAuth.Core</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>5.2.2</AssemblyVersion>
-        <FileVersion>5.2.2</FileVersion>
+        <AssemblyVersion>5.2.4</AssemblyVersion>
+        <FileVersion>5.2.4</FileVersion>
     </PropertyGroup>
     
     <ItemGroup>
-      <PackageReference Include="Ertis.Core" Version="5.1.5" />
-      <PackageReference Include="Ertis.Schema" Version="5.1.5" />
-      <PackageReference Include="Ertis.Security" Version="5.1.4" />
+      <PackageReference Include="Ertis.Core" Version="5.1.6" />
+      <PackageReference Include="Ertis.Schema" Version="5.1.8" />
+      <PackageReference Include="Ertis.Security" Version="5.1.5" />
       <PackageReference Include="Newtonsoft.Json.Schema" Version="3.0.14" />
     </ItemGroup>
     
     <ItemGroup>
       <ProjectReference Include="..\ErtisAuth.Extensions.Mailkit\ErtisAuth.Extensions.Mailkit.csproj" />
+      <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Core\ErtisAuth.Integrations.OAuth.Core.csproj" />
     </ItemGroup>
 
 </Project>

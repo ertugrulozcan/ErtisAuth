@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Ertis.Core.Models.Resources;
 using Ertis.Schema.Dynamics;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Integrations.OAuth.Core;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Users
@@ -33,6 +34,12 @@ namespace ErtisAuth.Core.Models.Users
 
 		[JsonProperty("user_type")]
 		public string UserType { get; set; }
+		
+		[JsonProperty("sourceProvider")]
+		public string SourceProvider { get; set; }
+		
+		[JsonProperty("connectedAccounts")]
+		public ProviderAccountInfo[] ConnectedAccounts { get; set; }
 		
 		[JsonProperty("sys")]
 		public SysModel Sys { get; set; }

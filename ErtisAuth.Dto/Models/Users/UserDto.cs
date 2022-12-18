@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Ertis.MongoDB.Attributes;
 using ErtisAuth.Dto.Models.Resources;
+using ErtisAuth.Integrations.OAuth.Core;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Users
@@ -39,6 +40,12 @@ namespace ErtisAuth.Dto.Models.Users
 		
 		[BsonElement("user_type")]
 		public string UserType { get; set; }
+		
+		[BsonElement("sourceProvider")]
+		public string SourceProvider { get; set; }
+		
+		[BsonElement("connectedAccounts")]
+		public ProviderAccountInfo[] ConnectedAccounts { get; set; }
 		
 		[BsonElement("password_hash")]
 		public string PasswordHash { get; set; }

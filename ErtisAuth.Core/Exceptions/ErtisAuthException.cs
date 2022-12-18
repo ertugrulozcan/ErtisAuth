@@ -249,6 +249,11 @@ namespace ErtisAuth.Core.Exceptions
 		
 		#region Role Exceptions
 		
+		public static ErtisAuthException RoleRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"Role required", "RoleRequired");
+		}
+		
 		public static ErtisAuthException RoleNotFound(string roleIdOrName, bool passedRoleName = false)
 		{
 			if (passedRoleName)
@@ -285,6 +290,46 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The provider with same name is already exists ({name})", "ProviderWithSameNameAlreadyExists");
 		}
 		
+		public static ErtisAuthException YouCanNotCreateCustomProvider()
+		{
+			return new ErtisAuthException(HttpStatusCode.Forbidden, "You can not create custom provider", "YouCanNotCreateCustomProvider");
+		}
+		
+		public static ErtisAuthException ProviderIsDisable()
+		{
+			return new ErtisAuthException(HttpStatusCode.Forbidden, "Provider is disable", "ProviderIsDisable");
+		}
+		
+		public static ErtisAuthException UntrustedProvider()
+		{
+			return new ErtisAuthException(HttpStatusCode.Forbidden, "Untrusted provider", "UntrustedProvider");
+		}
+		
+		public static ErtisAuthException ProviderNotConfigured()
+		{
+			return new ErtisAuthException(HttpStatusCode.Forbidden, "Provider not configured", "ProviderNotConfigured");
+		}
+		
+		public static ErtisAuthException ProviderNotConfiguredCorrectly(string message)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotImplemented, $"Provider not configured correctly. ({message})", "ProviderNotConfiguredCorrectly");
+		}
+		
+		public static ErtisAuthException UnsupportedProvider()
+		{
+			return new ErtisAuthException(HttpStatusCode.Forbidden, "Provider is not supported", "UnsupportedProvider");
+		}
+		
+		public static ErtisAuthException ProviderNameRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "Provider name is required", "ProviderNameRequired");
+		}
+		
+		public static ErtisAuthException UnknownProvider(string providerName)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "Unknown provider: " + providerName, "UnknownProvider");
+		}
+
 		#endregion
 
 		#region Webhook Exceptions

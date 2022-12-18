@@ -13,6 +13,8 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		
 		ValueTask<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true);
 
+		ValueTask<BearerToken> GenerateTokenAsync(User user, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true);
+
 		ValueTask<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true);
 		
 		ValueTask<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true);
@@ -26,5 +28,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		ValueTask ClearExpiredActiveTokens(string membershipId);
 		
 		ValueTask ClearRevokedTokens(string membershipId);
+
+		Task<User> GetTokenOwnerUserAsync(string bearerToken);
 	}
 }

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
+      <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Abstractions\ErtisAuth.Integrations.OAuth.Abstractions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Ertis.Net" Version="5.1.8" />
+    </ItemGroup>
+
+</Project>

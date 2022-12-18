@@ -29,7 +29,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 		
         Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model);
 		
-        Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model);
+        Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true);
         
         Task<IPaginationCollection<DynamicObject>> QueryAsync(
             string membershipId, 

@@ -2,6 +2,9 @@ using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Integrations.OAuth.Facebook;
+using ErtisAuth.Integrations.OAuth.Google;
+using ErtisAuth.Integrations.OAuth.Microsoft;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Models.Request.Tokens;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +18,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Services
 
 		private readonly ITokenService tokenService;
+		private readonly IUserService userService;
+		private readonly IProviderService providerService;
 
 		#endregion
 
@@ -24,9 +29,13 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// Constructor
 		/// </summary>
 		/// <param name="tokenService"></param>
-		public TokensController(ITokenService tokenService)
+		/// <param name="userService"></param>
+		/// <param name="providerService"></param>
+		public TokensController(ITokenService tokenService, IUserService userService, IProviderService providerService)
 		{
 			this.tokenService = tokenService;
+			this.userService = userService;
+			this.providerService = providerService;
 		}
 
 		#endregion
@@ -37,51 +46,75 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("me")]
 		public async Task<IActionResult> Me()
 		{
-			return await this.WhoAmI();
+			var token = this.GetToken();
+			var utilizer = await this.GetTokenOwnerUtilizerAsync(token);
+			if (utilizer != null)
+			{
+				if (token.TokenType == SupportedTokenTypes.Bearer)
+				{
+					var user = await this.userService.GetAsync(utilizer.MembershipId, utilizer.Id);
+					return this.Ok(user);
+				}
+				else
+				{
+					return this.Ok(utilizer);	
+				}
+			}
+			else
+			{
+				return this.InvalidToken();
+			}
 		}
 		
 		[HttpGet]
 		[Route("whoami")]
 		public async Task<IActionResult> WhoAmI()
 		{
-			string token = this.GetTokenFromHeader(out string tokenTypeStr);
-			if (string.IsNullOrEmpty(token))
+			var token = this.GetToken();
+			var utilizer = await this.GetTokenOwnerUtilizerAsync(token);
+			if (utilizer != null)
 			{
-				return this.AuthorizationHeaderMissing();
+				return this.Ok(utilizer);
+			}
+			else
+			{
+				return this.InvalidToken();
+			}
+		}
+
+		private TokenBase GetToken()
+		{
+			var stringToken = this.GetTokenFromHeader(out var tokenTypeStr);
+			if (string.IsNullOrEmpty(stringToken))
+			{
+				throw ErtisAuthException.AuthorizationHeaderMissing();
 			}
 
 			if (!TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
 			{
-				throw ErtisAuthException.UnsupportedTokenType();	
+				throw ErtisAuthException.UnsupportedTokenType();
 			}
 
-			switch (tokenType)
+			TokenBase token = tokenType switch
 			{
-				case SupportedTokenTypes.None:
-					throw ErtisAuthException.UnsupportedTokenType();
-				case SupportedTokenTypes.Basic:
-					var application = await this.tokenService.WhoAmIAsync(new BasicToken(token));
-					if (application != null)
-					{
-						return this.Ok(application);
-					}
-					else
-					{
-						return this.InvalidToken();
-					}
-				case SupportedTokenTypes.Bearer:
-					var user = await this.tokenService.WhoAmIAsync(BearerToken.CreateTemp(token));
-					if (user != null)
-					{
-						return this.Ok(user);
-					}
-					else
-					{
-						return this.InvalidToken();
-					}
-				default:
-					throw ErtisAuthException.UnsupportedTokenType();
-			}
+				SupportedTokenTypes.None => throw ErtisAuthException.UnsupportedTokenType(),
+				SupportedTokenTypes.Basic => new BasicToken(stringToken),
+				SupportedTokenTypes.Bearer => BearerToken.CreateTemp(stringToken),
+				_ => throw ErtisAuthException.UnsupportedTokenType()
+			};
+
+			return token;
+		}
+
+		private async Task<IUtilizer> GetTokenOwnerUtilizerAsync(TokenBase token)
+		{
+			return token.TokenType switch
+			{
+				SupportedTokenTypes.None => throw ErtisAuthException.UnsupportedTokenType(),
+				SupportedTokenTypes.Basic => await this.tokenService.WhoAmIAsync(token as BasicToken),
+				SupportedTokenTypes.Bearer => await this.tokenService.WhoAmIAsync(token as BearerToken),
+				_ => throw ErtisAuthException.UnsupportedTokenType()
+			};
 		}
 		
 		[HttpPost]
@@ -235,6 +268,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			
 			if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices))
 			{
+				await this.providerService.LogoutAsync(token);
 				return this.NoContent();
 			}
 			else
@@ -261,12 +295,80 @@ namespace ErtisAuth.WebAPI.Controllers
 			
 			if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices))
 			{
+				await this.providerService.LogoutAsync(token);
 				return this.NoContent();
 			}
 			else
 			{
 				return this.Unauthorized();
 			}
+		}
+
+		#endregion
+
+		#region Provider Methods
+
+		[HttpPost]
+		[Route("oauth/facebook/login")]
+		public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequest request)
+		{
+			var membershipId = this.GetXErtisAlias();
+			
+			string ipAddress = null;
+			if (this.Request.Headers.ContainsKey("X-IpAddress"))
+			{
+				ipAddress = this.Request.Headers["X-IpAddress"].ToString();
+			}
+			
+			string userAgent = null;
+			if (this.Request.Headers.ContainsKey("X-UserAgent"))
+			{
+				userAgent = this.Request.Headers["X-UserAgent"].ToString();
+			}
+			
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
+		}
+		
+		[HttpPost]
+		[Route("oauth/google/login")]
+		public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+		{
+			var membershipId = this.GetXErtisAlias();
+			
+			string ipAddress = null;
+			if (this.Request.Headers.ContainsKey("X-IpAddress"))
+			{
+				ipAddress = this.Request.Headers["X-IpAddress"].ToString();
+			}
+			
+			string userAgent = null;
+			if (this.Request.Headers.ContainsKey("X-UserAgent"))
+			{
+				userAgent = this.Request.Headers["X-UserAgent"].ToString();
+			}
+			
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
+		}
+		
+		[HttpPost]
+		[Route("oauth/microsoft/login")]
+		public async Task<IActionResult> MicrosoftLogin([FromBody] MicrosoftLoginRequest request)
+		{
+			var membershipId = this.GetXErtisAlias();
+			
+			string ipAddress = null;
+			if (this.Request.Headers.ContainsKey("X-IpAddress"))
+			{
+				ipAddress = this.Request.Headers["X-IpAddress"].ToString();
+			}
+			
+			string userAgent = null;
+			if (this.Request.Headers.ContainsKey("X-UserAgent"))
+			{
+				userAgent = this.Request.Headers["X-UserAgent"].ToString();
+			}
+			
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
 		}
 
 		#endregion
