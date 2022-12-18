@@ -19,6 +19,8 @@ namespace ErtisAuth.Identity.Cryptography
         private const int ITERATION_COUNT = 1000;
         
         private static readonly Encoding ENCODING = Encoding.ASCII;
+        
+        private static readonly HashAlgorithmName HASH_ALGORITHM = HashAlgorithmName.SHA256;
 
         #endregion
         
@@ -34,10 +36,10 @@ namespace ErtisAuth.Identity.Cryptography
             var saltStringBytes = GenerateRandomEntropy();
             var ivStringBytes = GenerateRandomEntropy();
             var plainTextBytes = ENCODING.GetBytes(plainText);
-            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, ITERATION_COUNT))
+            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, ITERATION_COUNT, HASH_ALGORITHM))
             {
                 var keyBytes = password.GetBytes(CHUNKSIZE);
-                using (var symmetricKey = new RijndaelManaged())
+                using (var symmetricKey = Aes.Create())
                 {
                     symmetricKey.BlockSize = BLOCKSIZE;
                     symmetricKey.Mode = CipherMode.CBC;
@@ -81,10 +83,10 @@ namespace ErtisAuth.Identity.Cryptography
             var ivStringBytes = cipherTextBytesWithSaltAndIv.Skip(CHUNKSIZE).Take(CHUNKSIZE).ToArray();
             var cipherTextBytes = cipherTextBytesWithSaltAndIv.Skip(CHUNKSIZE * 2).Take(cipherTextBytesWithSaltAndIv.Length - CHUNKSIZE * 2).ToArray();
 
-            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, ITERATION_COUNT))
+            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, ITERATION_COUNT, HASH_ALGORITHM))
             {
                 var keyBytes = password.GetBytes(CHUNKSIZE);
-                using (var symmetricKey = new RijndaelManaged())
+                using (var symmetricKey = Aes.Create())
                 {
                     symmetricKey.BlockSize = BLOCKSIZE;
                     symmetricKey.Mode = CipherMode.CBC;
@@ -112,7 +114,7 @@ namespace ErtisAuth.Identity.Cryptography
         private static byte[] GenerateRandomEntropy()
         {
             var randomBytes = new byte[CHUNKSIZE];
-            using (var rngCsp = new RNGCryptoServiceProvider())
+            using (var rngCsp = RandomNumberGenerator.Create())
             {
                 rngCsp.GetBytes(randomBytes);
             }

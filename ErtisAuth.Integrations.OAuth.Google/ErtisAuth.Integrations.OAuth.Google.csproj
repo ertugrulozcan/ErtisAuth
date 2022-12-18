@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
@@ -10,8 +10,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Net" Version="5.1.8" />
-      <PackageReference Include="Google.Apis.Auth" Version="1.57.0" />
+      <PackageReference Include="Ertis.Net" Version="7.0.0" />
+      <PackageReference Include="Google.Apis.Auth" Version="1.58.0" />
     </ItemGroup>
 
 </Project>

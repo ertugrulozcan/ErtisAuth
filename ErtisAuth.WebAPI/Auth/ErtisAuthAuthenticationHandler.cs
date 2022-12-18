@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
@@ -7,9 +8,11 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using Microsoft.AspNetCore.Authentication;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Extensions.Authorization.Annotations;
 using ErtisAuth.Extensions.Http.Extensions;
 using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -60,6 +63,22 @@ namespace ErtisAuth.WebAPI.Auth
 		{
 			try
 			{
+				var isAuthorizedEndpoint = false;
+				var endpoint = this.Context.GetEndpoint();
+				if (endpoint is RouteEndpoint routeEndpoint)
+				{
+					var authorizedAttribute = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(AuthorizedAttribute));
+					if (authorizedAttribute is AuthorizedAttribute)
+					{
+						isAuthorizedEndpoint = true;
+					}
+				}
+
+				if (!isAuthorizedEndpoint)
+				{
+					return AuthenticateResult.NoResult();
+				}
+				
 				var utilizer = await this.CheckAuthorizationAsync();
 				
 				var identity = new ClaimsIdentity(
@@ -100,12 +119,12 @@ namespace ErtisAuth.WebAPI.Auth
 			{
 				if (!this.Context.Response.HasStarted)
 				{
-					this.Context.Response.OnStarting(() =>
+					this.Context.Response.OnStarting(async () =>
 					{
 						this.Context.Response.StatusCode = (int) ex.StatusCode;
 						this.Context.Response.ContentType = "application/json";
 						var result = Newtonsoft.Json.JsonConvert.SerializeObject(ex.Error);
-						return this.Context.Response.WriteAsync(result);
+						await this.Context.Response.WriteAsync(result);
 					});
 				}
 				else

@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="AutoMapper" Version="11.0.1" />
-      <PackageReference Include="Ertis.MongoDB.Queries" Version="5.1.0" />
-      <PackageReference Include="Ertis.Net" Version="5.1.8" />
-      <PackageReference Include="Ertis.Security" Version="5.1.5" />
-      <PackageReference Include="Ertis.TemplateEngine" Version="5.0.3" />
+      <PackageReference Include="AutoMapper" Version="12.0.0" />
+      <PackageReference Include="Ertis.MongoDB.Queries" Version="7.0.0" />
+      <PackageReference Include="Ertis.Net" Version="7.0.0" />
+      <PackageReference Include="Ertis.Security" Version="7.0.0" />
+      <PackageReference Include="Ertis.TemplateEngine" Version="7.0.0" />
       <PackageReference Include="Mapster" Version="7.3.0" />
       <PackageReference Include="MaxMind.GeoIP2" Version="5.1.0" />
-      <PackageReference Include="MongoDB.Driver" Version="2.15.0" />
+      <PackageReference Include="MongoDB.Driver" Version="2.18.0" />
       <PackageReference Include="TinyMapper" Version="3.0.3" />
     </ItemGroup>
 

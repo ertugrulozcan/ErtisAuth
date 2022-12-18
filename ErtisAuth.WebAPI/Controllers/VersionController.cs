@@ -1,3 +1,4 @@
+using ErtisAuth.WebAPI.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
@@ -11,7 +12,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpGet("version")]
 		public IActionResult GetVersion()
 		{
-			return this.Ok(Program.GetEnvironmentParameter("Version"));
+			return this.Ok(EnvironmentParams.GetEnvironmentParameter("Version"));
 		}
 
 		#endregion
