@@ -174,6 +174,13 @@ builder.Services.AddApiVersioning(o => {
 // Quartz
 builder.Services.AddQuartzJobs();
 
+// Swagger
+if (builder.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
+{
+	var swaggerVersion = $"v{major}";
+	builder.Services.AddSwaggerGen(c => { c.SwaggerDoc(swaggerVersion, new OpenApiInfo { Title = "ErtisAuth.WebAPI", Version = swaggerVersion }); });	
+}
+
 builder.Services
 	.AddControllers()
 	.AddNewtonsoftJson(options =>
@@ -181,13 +188,6 @@ builder.Services
 		options.SerializerSettings.Converters.Add(new DynamicObjectJsonConverter());
 		options.SerializerSettings.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Utc;
 	});
-
-// Swagger
-if (builder.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
-{
-	var swaggerVersion = $"v{major}";
-	builder.Services.AddSwaggerGen(c => { c.SwaggerDoc(swaggerVersion, new OpenApiInfo { Title = "ErtisAuth.WebAPI", Version = swaggerVersion }); });	
-}
 
 builder.Services.AddRazorPages();
 
@@ -208,7 +208,6 @@ if (app.Environment.IsDevelopment() && builder.Configuration.GetSection("Documen
 app.UseProviders();
 app.UseCors(CORS_POLICY_KEY);
 app.UseHttpsRedirection();
-// app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.ConfigureGlobalExceptionHandler();
