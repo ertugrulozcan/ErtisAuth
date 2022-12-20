@@ -764,11 +764,14 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.UserNotFound(userId, "_id");
 			}
 
-			var passwordHash = this._cryptographyService.CalculatePasswordHash(membership, newPassword);
-			user.PasswordHash = passwordHash;
-
-			var updatedUser = await this.UpdateAsync(utilizer, membershipId, userId, new DynamicObject(user));
+			var dynamicObject = new DynamicObject(user);
+			this.EnsureManagedProperties(dynamicObject, membershipId);
+			dynamicObject = this.SyncModel(membershipId, userId, dynamicObject, out _);
 			
+			var passwordHash = this._cryptographyService.CalculatePasswordHash(membership, newPassword);
+			dynamicObject.SetValue("password_hash", passwordHash, true);
+
+			var updatedUser = await base.UpdateAsync(userId, dynamicObject);
 			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.UserPasswordChanged,
