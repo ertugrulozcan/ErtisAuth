@@ -22,16 +22,16 @@ namespace ErtisAuth.Dto.Models.Mailing
         [BsonElement("status")]
         public string Status { get; set; }
 		
-        [BsonElement("mail_subject")]
+        [BsonElement("mailSubject")]
         public string MailSubject { get; set; }
         
-        [BsonElement("mail_template")]
+        [BsonElement("mailTemplate")]
         public string MailTemplate { get; set; }
         
-        [BsonElement("from_name")]
+        [BsonElement("fromName")]
         public string FromName { get; set; }
         
-        [BsonElement("from_address")]
+        [BsonElement("fromAddress")]
         public string FromAddress { get; set; }
 		
         [BsonElement("sys")]

@@ -12,6 +12,7 @@ using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Mailing;
+using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Extensions.Mailkit.Services.Interfaces;
 using Newtonsoft.Json;
 
@@ -23,6 +24,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 	    private readonly IUserService userService;
 	    private readonly IMailService mailService;
+	    private readonly IEventService eventService;
 
 	    #endregion
 	    
@@ -45,7 +47,13 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			this.userService = userService;
 			this.mailService = mailService;
-			eventService.EventFired += EventServiceOnEventFired;
+			this.eventService = eventService;
+			
+			this.eventService.EventFired += EventServiceOnEventFired;
+			
+			this.OnCreated += this.MailhookCreatedEventHandler;
+			this.OnUpdated += this.MailhookUpdatedEventHandler;
+			this.OnDeleted += this.MailhookDeletedEventHandler;
 		}
 
 		#endregion
@@ -79,6 +87,40 @@ namespace ErtisAuth.Infrastructure.Services
 				Console.WriteLine(ex);
 			}
 		}
+		
+		private async void MailhookCreatedEventHandler(object sender, CreateResourceEventArgs<MailHook> eventArgs)
+		{
+			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.MailhookCreated,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Resource,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
+		}
+		
+		private async void MailhookUpdatedEventHandler(object sender, UpdateResourceEventArgs<MailHook> eventArgs)
+		{
+			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.MailhookUpdated,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Updated,
+				Prior = eventArgs.Prior,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
+		}
+		
+		private async void MailhookDeletedEventHandler(object sender, DeleteResourceEventArgs<MailHook> eventArgs)
+		{
+			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			{
+				EventType = ErtisAuthEventType.MailhookDeleted,
+				UtilizerId = eventArgs.Utilizer.Id,
+				Document = eventArgs.Resource,
+				MembershipId = eventArgs.Utilizer.MembershipId
+			});
+		}
 
 		#endregion
 		
@@ -101,20 +143,33 @@ namespace ErtisAuth.Infrastructure.Services
 							{
 								var formatter = new Ertis.TemplateEngine.Formatter();
 								var mailBody = formatter.Format(mailHook.MailTemplate, ertisAuthEvent);
+								var mailSubject = formatter.Format(mailHook.MailSubject, ertisAuthEvent);
 								await this.mailService.SendMailAsync(
 									membership.MailSettings.SmtpServer,
 									mailHook.FromName,
 									mailHook.FromAddress,
 									$"{user.FirstName} {user.LastName}",
 									user.EmailAddress,
-									mailHook.MailSubject,
+									mailSubject,
 									mailBody
 								);
+								
+								await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
+									ErtisAuthEventType.MailhookMailSent,
+									ertisAuthEvent.UtilizerId,
+									membership.Id
+								));
 							}
 							catch (Exception ex)
 							{
 								Console.WriteLine("Hook mail could not sent!");
 								Console.WriteLine(ex);
+								
+								await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
+									ErtisAuthEventType.MailhookMailFailed,
+									ertisAuthEvent.UtilizerId,
+									membership.Id
+								));
 							}
 						});	
 					}
@@ -151,6 +206,21 @@ namespace ErtisAuth.Infrastructure.Services
 			else if (model.EventType == null)
 			{
 				errorList.Add($"Unknown event type. (Supported events: [{string.Join(", ", Enum.GetNames(typeof(ErtisAuthEventType)))}])");
+			}
+			
+			if (string.IsNullOrEmpty(model.MailSubject))
+			{
+				errorList.Add("MailSubject is a required field");
+			}
+			
+			if (string.IsNullOrEmpty(model.FromName))
+			{
+				errorList.Add("FromName is a required field");
+			}
+			
+			if (string.IsNullOrEmpty(model.FromAddress))
+			{
+				errorList.Add("FromAddress is a required field");
 			}
 
 			errors = errorList;

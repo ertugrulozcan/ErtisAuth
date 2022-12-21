@@ -41,16 +41,16 @@ namespace ErtisAuth.Core.Models.Mailing
         [JsonIgnore]
         public bool IsActive => this.Status == "active";
 
-        [JsonProperty("mail_subject")]
+        [JsonProperty("mailSubject")]
         public string MailSubject { get; set; }
         
-        [JsonProperty("mail_template")]
+        [JsonProperty("mailTemplate")]
         public string MailTemplate { get; set; }
         
-        [JsonProperty("from_name")]
+        [JsonProperty("fromName")]
         public string FromName { get; set; }
         
-        [JsonProperty("from_address")]
+        [JsonProperty("fromAddress")]
         public string FromAddress { get; set; }
         
         [JsonProperty("sys")]

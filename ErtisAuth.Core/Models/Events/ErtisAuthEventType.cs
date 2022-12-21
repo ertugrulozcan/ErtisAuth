@@ -34,5 +34,11 @@ namespace ErtisAuth.Core.Models.Events
 		WebhookDeleted = 602,
 		WebhookRequestSent = 610,
 		WebhookRequestFailed = 611,
+		
+		MailhookCreated = 700,
+		MailhookUpdated = 701,
+		MailhookDeleted = 702,
+		MailhookMailSent = 710,
+		MailhookMailFailed = 711,
 	}
 }
