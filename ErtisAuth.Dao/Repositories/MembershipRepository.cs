@@ -1,12 +1,11 @@
 using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
-using Ertis.MongoDB.Repository;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Memberships;
 
 namespace ErtisAuth.Dao.Repositories
 {
-	public class MembershipRepository : MongoRepositoryBase<MembershipDto>, IMembershipRepository
+	public class MembershipRepository : RepositoryBase<MembershipDto>, IMembershipRepository
 	{
 		#region Constructors
 

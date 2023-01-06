@@ -1,12 +1,11 @@
 using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
-using Ertis.MongoDB.Repository;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Providers;
 
 namespace ErtisAuth.Dao.Repositories
 {
-	public class ProviderRepository : MongoRepositoryBase<ProviderDto>, IProviderRepository
+	public class ProviderRepository : RepositoryBase<ProviderDto>, IProviderRepository
 	{
 		#region Constructors
 

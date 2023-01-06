@@ -16,6 +16,7 @@
         <ProjectReference Include="..\ErtisAuth.Abstractions\ErtisAuth.Abstractions.csproj" />
         <ProjectReference Include="..\ErtisAuth.Dao\ErtisAuth.Dao.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Extensions.Database\ErtisAuth.Extensions.Database.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Http\ErtisAuth.Extensions.Http.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Quartz\ErtisAuth.Extensions.Quartz.csproj" />
         <ProjectReference Include="..\ErtisAuth.Identity\ErtisAuth.Identity.csproj" />

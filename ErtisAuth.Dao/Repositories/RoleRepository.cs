@@ -1,12 +1,11 @@
 using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
-using Ertis.MongoDB.Repository;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Roles;
 
 namespace ErtisAuth.Dao.Repositories
 {
-	public class RoleRepository : MongoRepositoryBase<RoleDto>, IRoleRepository
+	public class RoleRepository : RepositoryBase<RoleDto>, IRoleRepository
 	{
 		#region Constructors
 

@@ -1,12 +1,11 @@
 using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
-using Ertis.MongoDB.Repository;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Mailing;
 
 namespace ErtisAuth.Dao.Repositories
 {
-    public class MailHookRepository : MongoRepositoryBase<MailHookDto>, IMailHookRepository
+    public class MailHookRepository : RepositoryBase<MailHookDto>, IMailHookRepository
     {
         #region Constructors
 

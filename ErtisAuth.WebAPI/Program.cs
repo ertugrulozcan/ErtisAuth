@@ -18,6 +18,7 @@ using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Extensions.Authorization.Constants;
+using ErtisAuth.Extensions.Database;
 using ErtisAuth.Extensions.Mailkit.Extensions;
 using ErtisAuth.Extensions.Quartz.Extensions;
 using ErtisAuth.Identity.Jwt.Services;
@@ -204,6 +205,9 @@ if (app.Environment.IsDevelopment() && builder.Configuration.GetSection("Documen
 		options.DefaultModelsExpandDepth(-1);
 	});	
 }
+
+// Database
+app.CheckDatabaseIndexes();
 
 app.UseProviders();
 app.UseCors(CORS_POLICY_KEY);

@@ -1,12 +1,11 @@
 using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
-using Ertis.MongoDB.Repository;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Events;
 
 namespace ErtisAuth.Dao.Repositories
 {
-	public class EventRepository : MongoRepositoryBase<EventDto>, IEventRepository
+	public class EventRepository : RepositoryBase<EventDto>, IEventRepository
 	{
 		#region Constructors
 
