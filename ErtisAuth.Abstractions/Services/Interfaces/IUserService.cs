@@ -62,6 +62,10 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 
         Task<bool> CheckPasswordAsync(Utilizer utilizer, string password);
         
+        dynamic Aggregate(string membershipId, string aggregationStagesJson);
+
+        Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson);
+        
         #endregion
     }
 }

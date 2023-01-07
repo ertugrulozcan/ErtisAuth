@@ -18,6 +18,11 @@ namespace ErtisAuth.Tests.Mocks.Services
         
         public event EventHandler<DeleteResourceEventArgs<DynamicObject>> OnDeleted;
 
+        public MockUserService()
+        {
+            PreventNeverUsedEventsWarning();
+        }
+        
         private void PreventNeverUsedEventsWarning()
         {
             this.OnCreated?.Invoke(this, null);
@@ -115,6 +120,16 @@ namespace ErtisAuth.Tests.Mocks.Services
         }
 
         public Task<bool> CheckPasswordAsync(Utilizer utilizer, string password)
+        {
+            throw new NotImplementedException();
+        }
+
+        public dynamic Aggregate(string membershipId, string aggregationStagesJson)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson)
         {
             throw new NotImplementedException();
         }

@@ -1,3 +1,4 @@
+using System;
 using MongoDB.Driver;
 using Newtonsoft.Json.Linq;
 
@@ -48,10 +49,73 @@ namespace ErtisAuth.Infrastructure.Helpers
         {
             return InjectValueToQuery<TDto>(query, "membership_id", membershipId);
         }
-        
-        public static string InjectLocaleToQuery<TDto>(string query, string languageCode)
+
+        public static string InjectMembershipIdToAggregation(string query, string membershipId)
         {
-            return InjectValueToQuery<TDto>(query, "locale", languageCode);
+        	try
+        	{
+        		var jArray = JArray.Parse(query);
+        	
+        		var hasMatchToken = false;
+        		foreach (var jToken in jArray)
+        		{
+        			if (jToken is JObject jObject)
+        			{
+        				if (jObject.ContainsKey("$match") && jObject["$match"] is JObject)
+        				{
+        					hasMatchToken = true;
+        				}
+        			}
+        		}
+
+        		if (hasMatchToken)
+        		{
+        			foreach (var jToken in jArray)
+        			{
+        				if (jToken is JObject jObject)
+        				{
+        					if (jObject.ContainsKey("$match") && jObject["$match"] is JObject matchTokenObject)
+        					{
+        						if (matchTokenObject.ContainsKey("membership_id") && matchTokenObject["membership_id"] != null)
+        						{
+        							if (matchTokenObject["membership_id"].Value<string>() == membershipId)
+        							{
+        								return query;
+        							}
+        							else
+        							{
+        								matchTokenObject["membership_id"] = new JValue(membershipId);
+        								break;
+        							}
+        						}
+        						else
+        						{
+        							matchTokenObject.AddFirst(new JProperty("membership_id", new JValue(membershipId)));
+        							break;
+        						}
+        					}
+        				}
+        			}
+        		}
+        		else
+        		{
+        			var membershipIdToken = new JProperty("membership_id", new JValue(membershipId));
+        			var matchToken = new JObject
+        			{
+        				["$match"] = new JObject(membershipIdToken)
+        			};
+        		
+        			jArray.AddFirst(matchToken);	
+        		}
+        	
+        		return jArray.ToString();
+        	}
+        	catch (Exception ex)
+        	{
+        		Console.WriteLine("InjectMembershipIdToAggregation method occured an error: " + ex.Message);
+        	}
+
+        	return query;
         }
 
         #endregion

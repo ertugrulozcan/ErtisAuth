@@ -6,6 +6,7 @@ using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Repository;
 using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Infrastructure.Helpers;
 using MongoDB.Bson;
 
 namespace ErtisAuth.Infrastructure.Services
@@ -113,6 +114,20 @@ namespace ErtisAuth.Infrastructure.Services
             return isDeleted;
         }
 
+        #endregion
+        
+        #region Aggregation Methods
+
+        public dynamic Aggregate(string membershipId, string aggregationStagesJson)
+        {
+            return this._repository.Aggregate(QueryHelper.InjectMembershipIdToAggregation(membershipId, aggregationStagesJson));
+        }
+		
+        public async Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson)
+        {
+            return await this._repository.AggregateAsync(QueryHelper.InjectMembershipIdToAggregation(membershipId, aggregationStagesJson));
+        }
+		
         #endregion
     }
 }
