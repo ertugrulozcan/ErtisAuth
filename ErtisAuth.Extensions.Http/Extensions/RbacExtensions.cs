@@ -19,7 +19,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 			{
 				// Subject
 				var rbacSubjectSegment = string.IsNullOrEmpty(utilizerId) ? RbacSegment.All : new RbacSegment(utilizerId);
-				var subjectMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacSubjectAttribute));
+				var subjectMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacSubjectAttribute) || x.GetType().IsSubclassOf(typeof(RbacSubjectAttribute)));
 				if (subjectMetadata is RbacSubjectAttribute rbacSubjectAttribute)
 				{
 					rbacSubjectSegment = rbacSubjectAttribute.Value;
@@ -33,7 +33,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 				
 				// Resource
 				var rbacResourceSegment = RbacSegment.All;
-				var resourceMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacResourceAttribute));
+				var resourceMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacResourceAttribute) || x.GetType().IsSubclassOf(typeof(RbacResourceAttribute)));
 				if (resourceMetadata is RbacResourceAttribute rbacResourceAttribute)
 				{
 					rbacResourceSegment = rbacResourceAttribute.Value;
@@ -55,7 +55,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 
 				// Action
 				var rbacActionSegment = RbacSegment.All;
-				var actionMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacActionAttribute));
+				var actionMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacActionAttribute) || x.GetType().IsSubclassOf(typeof(RbacActionAttribute)));
 				if (actionMetadata is RbacActionAttribute rbacActionAttribute)
 				{
 					rbacActionSegment = rbacActionAttribute.Value;
@@ -69,7 +69,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 				
 				// Object
 				var rbacObjectSegment = RbacSegment.All;
-				var objectMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacObjectAttribute));
+				var objectMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(RbacObjectAttribute) || x.GetType().IsSubclassOf(typeof(RbacObjectAttribute)));
 				if (objectMetadata is RbacObjectAttribute rbacObjectAttribute)
 				{
 					rbacObjectSegment = rbacObjectAttribute.Value;
