@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Schema.Dynamics;
@@ -30,23 +31,23 @@ namespace ErtisAuth.Tests.Mocks.Services
             this.OnDeleted?.Invoke(this, null);
         }
         
-        public Task<DynamicObject> GetAsync(string membershipId, string id)
+        public Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
         public Task<IPaginationCollection<DynamicObject>> GetAsync(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string orderBy = null,
-            SortDirection? sortDirection = null)
+            SortDirection? sortDirection = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model)
+        public Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true)
+        public Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -56,7 +57,7 @@ namespace ErtisAuth.Tests.Mocks.Services
             throw new NotImplementedException();
         }
 
-        ValueTask<bool> IDeletableMembershipBoundedService.DeleteAsync(Utilizer utilizer, string membershipId, string id)
+        ValueTask<bool> IDeletableMembershipBoundedService.DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
@@ -66,60 +67,60 @@ namespace ErtisAuth.Tests.Mocks.Services
             throw new NotImplementedException();
         }
 
-        ValueTask<bool?> IDeletableMembershipBoundedService.BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids)
+        ValueTask<bool?> IDeletableMembershipBoundedService.BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
 
-        public Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
+        public Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids)
+        public Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
         public Task<IPaginationCollection<DynamicObject>> QueryAsync(string membershipId, string query, int? skip = null, int? limit = null, bool? withCount = null,
-            string orderBy = null, SortDirection? sortDirection = null, IDictionary<string, bool> selectFields = null)
+            string orderBy = null, SortDirection? sortDirection = null, IDictionary<string, bool> selectFields = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
         public Task<IPaginationCollection<DynamicObject>> SearchAsync(string membershipId, string keyword, int? skip = null, int? limit = null, bool? withCount = null,
-            string sortField = null, SortDirection? sortDirection = null)
+            string sortField = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<UserWithPasswordHash> GetUserWithPasswordAsync(string id, string membershipId)
+        public Task<UserWithPasswordHash> GetUserWithPasswordAsync(string id, string membershipId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<UserWithPasswordHash> GetUserWithPasswordAsync(string username, string email, string membershipId)
+        public Task<UserWithPasswordHash> GetUserWithPasswordAsync(string username, string email, string membershipId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword)
+        public Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host)
+        public Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
         public Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress,
-            string password)
+            string password, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<bool> CheckPasswordAsync(Utilizer utilizer, string password)
+        public Task<bool> CheckPasswordAsync(Utilizer utilizer, string password, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -129,7 +130,7 @@ namespace ErtisAuth.Tests.Mocks.Services
             throw new NotImplementedException();
         }
 
-        public Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson)
+        public Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

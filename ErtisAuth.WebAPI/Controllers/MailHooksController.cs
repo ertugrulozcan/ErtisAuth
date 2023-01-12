@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
@@ -51,9 +52,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] MailHook model)
+		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] MailHook model, CancellationToken cancellationToken = default)
 		{
-			var membership = await this.membershipService.GetAsync(membershipId);
+			var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				return this.MembershipNotFound(membershipId);
@@ -61,7 +62,7 @@ namespace ErtisAuth.WebAPI.Controllers
 
 			model.MembershipId = membershipId;
 			var utilizer = this.GetUtilizer();
-			var mailHook = await this.mailHookService.CreateAsync(utilizer, membershipId, model);
+			var mailHook = await this.mailHookService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{mailHook.Id}", mailHook);
 		}
 		
@@ -76,9 +77,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<ActionResult<MailHook>> Get([FromRoute] string membershipId, [FromRoute] string id)
+		public async Task<ActionResult<MailHook>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 		{
-			var mailHook = await this.mailHookService.GetAsync(membershipId, id);
+			var mailHook = await this.mailHookService.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 			if (mailHook != null)
 			{
 				return this.Ok(mailHook);
@@ -95,12 +96,12 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Get([FromRoute] string membershipId)
+		public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 		{
 			this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
 			this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
 				
-			var mailHooks = await this.mailHookService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection);
+			var mailHooks = await this.mailHookService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 			return this.Ok(mailHooks);
 		}
 		
@@ -111,14 +112,14 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public override async Task<IActionResult> Query()
+		public override async Task<IActionResult> Query(CancellationToken cancellationToken = default)
 		{
-			return await base.Query();
+			return await base.Query(cancellationToken: cancellationToken);
 		}
 		
-		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
+		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
 		{
-			return await this.mailHookService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			return await this.mailHookService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 		}
 		
 		[HttpGet("search")]
@@ -128,7 +129,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword)
+		public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(keyword.Trim()))
 			{
@@ -138,7 +139,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 			this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 			
-			return this.Ok(await this.mailHookService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection));
+			return this.Ok(await this.mailHookService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
 		}
 		
 		#endregion
@@ -153,11 +154,11 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] MailHook model)
+		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] MailHook model, CancellationToken cancellationToken = default)
 		{
 			model.MembershipId = membershipId;
 			var utilizer = this.GetUtilizer();
-			var mailHook = await this.mailHookService.UpdateAsync(utilizer, membershipId, model);
+			var mailHook = await this.mailHookService.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 			return this.Ok(mailHook);
 		}
 		
@@ -172,10 +173,10 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		[RbacAction(Rbac.CrudActions.Delete)]
-		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id)
+		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			if (await this.mailHookService.DeleteAsync(utilizer, membershipId, id))
+			if (await this.mailHookService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
 			{
 				return this.NoContent();
 			}
@@ -191,9 +192,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		[RbacAction(Rbac.CrudActions.Delete)]
-		public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids)
+		public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids, CancellationToken cancellationToken = default)
 		{
-			return await this.BulkDeleteAsync(this.mailHookService, membershipId, ids);
+			return await this.BulkDeleteAsync(this.mailHookService, membershipId, ids, cancellationToken: cancellationToken);
 		}
 
 		#endregion

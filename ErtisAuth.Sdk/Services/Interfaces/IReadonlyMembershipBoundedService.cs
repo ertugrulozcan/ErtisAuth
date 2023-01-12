@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Response;
@@ -10,14 +11,14 @@ namespace ErtisAuth.Sdk.Services.Interfaces
     {
         IResponseResult<T> Get(string modelId, TokenBase token);
 		
-        Task<IResponseResult<T>> GetAsync(string modelId, TokenBase token);
+        Task<IResponseResult<T>> GetAsync(string modelId, TokenBase token, CancellationToken cancellationToken = default);
 		
         IResponseResult<IPaginationCollection<T>> Get(TokenBase token, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null, string searchKeyword = null);
 		
-        Task<IResponseResult<IPaginationCollection<T>>> GetAsync(TokenBase token, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null, string searchKeyword = null);
+        Task<IResponseResult<IPaginationCollection<T>>> GetAsync(TokenBase token, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null, string searchKeyword = null, CancellationToken cancellationToken = default);
 		
         IResponseResult<IPaginationCollection<T>> Query(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null);
 		
-        Task<IResponseResult<IPaginationCollection<T>>> QueryAsync(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null);
+        Task<IResponseResult<IPaginationCollection<T>>> QueryAsync(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default);
     }
 }

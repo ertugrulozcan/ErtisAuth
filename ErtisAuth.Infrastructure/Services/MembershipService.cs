@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Exceptions;
@@ -159,10 +160,10 @@ namespace ErtisAuth.Infrastructure.Services
 		private IEnumerable<MembershipBoundedResource> GetMembershipBoundedResources(string membershipId, int limit = 10) =>
 			this.GetMembershipBoundedResourcesAsync(membershipId, limit).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		private async Task<IEnumerable<MembershipBoundedResource>> GetMembershipBoundedResourcesAsync(string membershipId, int limit = 10)
+		private async Task<IEnumerable<MembershipBoundedResource>> GetMembershipBoundedResourcesAsync(string membershipId, int limit = 10, CancellationToken cancellationToken = default)
 		{
 			var tasks = this.MembershipBoundedServiceCollection.Select(service => 
-				service.GetAsync<MembershipBoundedResource>(membershipId, 0, limit, false, null, null).AsTask())
+				service.GetAsync<MembershipBoundedResource>(membershipId, 0, limit, false, null, null, cancellationToken: cancellationToken).AsTask())
 				.ToArray();
 
 			await Task.WhenAll(tasks);
@@ -192,9 +193,9 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<MembershipDto, Membership>(dto);
 		}
 
-		public async Task<Membership> GetBySecretKeyAsync(string secretKey)
+		public async Task<Membership> GetBySecretKeyAsync(string secretKey, CancellationToken cancellationToken = default)
 		{
-			var dto = await this.repository.FindOneAsync(x => x.SecretKey == secretKey);
+			var dto = await this.repository.FindOneAsync(x => x.SecretKey == secretKey, cancellationToken: cancellationToken);
 			if (dto == null)
 			{
 				return null;
@@ -218,15 +219,15 @@ namespace ErtisAuth.Infrastructure.Services
 			return base.Delete(id);
 		}
 		
-		public override async ValueTask<bool> DeleteAsync(string id)
+		public override async ValueTask<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
 		{
-			var membershipBoundedResources = await this.GetMembershipBoundedResourcesAsync(id);
+			var membershipBoundedResources = await this.GetMembershipBoundedResourcesAsync(id, cancellationToken: cancellationToken);
 			if (membershipBoundedResources.Any())
 			{
 				throw ErtisAuthException.MembershipCouldNotDeleted(id);
 			}
 			
-			return await base.DeleteAsync(id);
+			return await base.DeleteAsync(id, cancellationToken: cancellationToken);
 		}
 		
 		#endregion

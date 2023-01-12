@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
@@ -22,11 +23,11 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 
 		T Get(string id);
 		
-		ValueTask<T> GetAsync(string id);
+		ValueTask<T> GetAsync(string id, CancellationToken cancellationToken = default);
 
 		IPaginationCollection<T> Get(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null);
 		
-		ValueTask<IPaginationCollection<T>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null);
+		ValueTask<IPaginationCollection<T>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default);
 		
 		IPaginationCollection<T> Search(
 			string keyword, 
@@ -44,19 +45,20 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 			int? limit = null,
 			bool? withCount = null, 
 			string sortField = null, 
-			SortDirection? sortDirection = null);
+			SortDirection? sortDirection = null, 
+			CancellationToken cancellationToken = default);
 		
 		T Create(T model);
 		
-		ValueTask<T> CreateAsync(T model);
+		ValueTask<T> CreateAsync(T model, CancellationToken cancellationToken = default);
 
 		T Update(T model);
 		
-		ValueTask<T> UpdateAsync(T model);
+		ValueTask<T> UpdateAsync(T model, CancellationToken cancellationToken = default);
 
 		bool Delete(string id);
 
-		ValueTask<bool> DeleteAsync(string id);
+		ValueTask<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
 
 		#endregion
 	}

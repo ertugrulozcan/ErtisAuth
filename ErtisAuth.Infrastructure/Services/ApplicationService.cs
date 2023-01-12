@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Applications;
@@ -9,7 +10,6 @@ using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Users;
-using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Events.EventArgs;
@@ -287,14 +287,14 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<ApplicationDto, Application>(dto);
 		}
 
-		public async ValueTask<Application> GetByIdAsync(string id)
+		public async ValueTask<Application> GetByIdAsync(string id, CancellationToken cancellationToken = default)
 		{
 			if (id == this.ServerApplication.Id)
 			{
 				return this.ServerApplication;
 			}
 			
-			var dto = await this.repository.FindOneAsync(x => x.Id == id);
+			var dto = await this.repository.FindOneAsync(x => x.Id == id, cancellationToken);
 			return Mapper.Current.Map<ApplicationDto, Application>(dto);
 		}
 		
@@ -314,20 +314,15 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<ApplicationDto, Application>(dto);
 		}
 		
-		private async Task<Application> GetApplicationByNameAsync(string name, string membershipId)
+		private async Task<Application> GetApplicationByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
 		{
 			if (name == this.ServerApplication.Name)
 			{
 				return this.ServerApplication;
 			}
 			
-			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
-			if (dto == null)
-			{
-				return null;
-			}
-			
-			return Mapper.Current.Map<ApplicationDto, Application>(dto);
+			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
+			return dto == null ? null : Mapper.Current.Map<ApplicationDto, Application>(dto);
 		}
 
 		public bool IsSystemReservedApplication(Application application)

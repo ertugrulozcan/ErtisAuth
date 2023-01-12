@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Net.Rest;
 using Ertis.Net.Services;
@@ -33,9 +34,9 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Methods
 
-		public async Task<GeoLocationInfo> LookupAsync(string ipAddress)
+		public async Task<GeoLocationInfo> LookupAsync(string ipAddress, CancellationToken cancellationToken = default)
 		{
-			var response = await this.GetAsync<Ip2LocationLookupResponse>($"https://api.ip2location.com/v2/?ip={ipAddress}&key={this.ip2LocationOptions.LicenseKey}&package={this.ip2LocationOptions.Package}");
+			var response = await this.GetAsync<Ip2LocationLookupResponse>($"https://api.ip2location.com/v2/?ip={ipAddress}&key={this.ip2LocationOptions.LicenseKey}&package={this.ip2LocationOptions.Package}", cancellationToken: cancellationToken);
 			if (response.IsSuccess)
 			{
 				double? nullableLatitude = null;

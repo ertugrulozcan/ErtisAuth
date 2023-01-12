@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Events;
@@ -90,17 +91,17 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region WhoAmI
 
-		public async ValueTask<User> WhoAmIAsync(BearerToken bearerToken)
+		public async ValueTask<User> WhoAmIAsync(BearerToken bearerToken, CancellationToken cancellationToken = default)
 		{
-			await this.VerifyBearerTokenAsync(bearerToken.AccessToken, false);
-			return await this.GetTokenOwnerUserAsync(bearerToken.AccessToken);
+			await this.VerifyBearerTokenAsync(bearerToken.AccessToken, false, cancellationToken: cancellationToken);
+			return await this.GetTokenOwnerUserAsync(bearerToken.AccessToken, cancellationToken: cancellationToken);
 		}
 
-		public async Task<User> GetTokenOwnerUserAsync(string bearerToken)
+		public async Task<User> GetTokenOwnerUserAsync(string bearerToken, CancellationToken cancellationToken = default)
 		{
 			if (this.jwtService.TryDecodeToken(bearerToken, out var securityToken))
 			{
-				return await this.GetTokenOwnerAsync(securityToken);
+				return await this.GetTokenOwnerAsync(securityToken, cancellationToken: cancellationToken);
 			}
 			else
 			{
@@ -108,13 +109,13 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		public async ValueTask<Application> WhoAmIAsync(BasicToken basicToken)
+		public async ValueTask<Application> WhoAmIAsync(BasicToken basicToken, CancellationToken cancellationToken = default)
 		{
-			await this.VerifyBasicTokenAsync(basicToken.AccessToken, false);
-			return await this.GetTokenOwnerApplicationAsync(basicToken.AccessToken);
+			await this.VerifyBasicTokenAsync(basicToken.AccessToken, false, cancellationToken: cancellationToken);
+			return await this.GetTokenOwnerApplicationAsync(basicToken.AccessToken, cancellationToken: cancellationToken);
 		}
 		
-		private async Task<Application> GetTokenOwnerApplicationAsync(string basicToken)
+		private async Task<Application> GetTokenOwnerApplicationAsync(string basicToken, CancellationToken cancellationToken = default)
 		{
 			var parts = basicToken.Split(':');
 			if (parts.Length != 2)
@@ -123,7 +124,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 
 			var applicationId = parts[0];
-			var application = await this.applicationService.GetByIdAsync(applicationId);
+			var application = await this.applicationService.GetByIdAsync(applicationId, cancellationToken: cancellationToken);
 			if (application == null)
 			{
 				throw ErtisAuthException.ApplicationNotFound(applicationId);
@@ -132,14 +133,14 @@ namespace ErtisAuth.Infrastructure.Services
 			return application;
 		}
 		
-		private async Task<User> GetTokenOwnerAsync(JwtSecurityToken securityToken)
+		private async Task<User> GetTokenOwnerAsync(JwtSecurityToken securityToken, CancellationToken cancellationToken = default)
 		{
 			if (this.TryExtractClaimValue(securityToken, JwtRegisteredClaimNames.Prn, out var membershipId) && !string.IsNullOrEmpty(membershipId))
 			{
 				var userId = securityToken.Subject;
 				if (!string.IsNullOrEmpty(userId))
 				{
-					var dynamicObject = await this.userService.GetAsync(membershipId, userId);
+					var dynamicObject = await this.userService.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
 					var user = dynamicObject.Deserialize<User>();
 					return user;
 				}
@@ -160,10 +161,10 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Generate Token
 
-		public async ValueTask<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true)
+		public async ValueTask<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default)
 		{
 			// Check membership
-			var membership = await this.membershipService.GetAsync(membershipId);
+			var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -175,7 +176,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Check user
-			var user = await this.userService.GetUserWithPasswordAsync(membership.Id, username, username);
+			var user = await this.userService.GetUserWithPasswordAsync(membership.Id, username, username, cancellationToken: cancellationToken);
 			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(username, "username or email");
@@ -189,14 +190,14 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			else
 			{
-				return await this.GenerateBearerTokenAsync(user, membership, ipAddress, userAgent);
+				return await this.GenerateBearerTokenAsync(user, membership, ipAddress, userAgent, cancellationToken: cancellationToken);
 			}
 		}
 
-		public async ValueTask<BearerToken> GenerateTokenAsync(User user, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true)
+		public async ValueTask<BearerToken> GenerateTokenAsync(User user, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default)
 		{
 			// Check membership
-			var membership = await this.membershipService.GetAsync(membershipId);
+			var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -208,16 +209,16 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Check user
-			var currentUser = await this.userService.GetAsync(membership.Id, user.Id);
+			var currentUser = await this.userService.GetAsync(membership.Id, user.Id, cancellationToken: cancellationToken);
 			if (currentUser == null)
 			{
 				throw ErtisAuthException.UserNotFound(user.Id, "id");
 			}
 			
-			return await this.GenerateBearerTokenAsync(user, membership, ipAddress, userAgent);
+			return await this.GenerateBearerTokenAsync(user, membership, ipAddress, userAgent, cancellationToken: cancellationToken);
 		}
 		
-		private async Task<BearerToken> GenerateBearerTokenAsync(User user, Membership membership, string ipAddress = null, string userAgent = null, bool fireEvent = true)
+		private async Task<BearerToken> GenerateBearerTokenAsync(User user, Membership membership, string ipAddress = null, string userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default)
 		{
 			string tokenId = Guid.NewGuid().ToString();
 			var tokenClaims = new TokenClaims(tokenId, user, membership);
@@ -229,11 +230,11 @@ namespace ErtisAuth.Infrastructure.Services
 			var bearerToken = new BearerToken(accessToken, tokenClaims.ExpiresIn, refreshToken, refreshExpiresIn);
 			
 			// Save to active tokens collection
-			await this.StoreActiveTokenAsync(bearerToken, user, membership.Id, ipAddress, userAgent);
+			await this.StoreActiveTokenAsync(bearerToken, user, membership.Id, ipAddress, userAgent, cancellationToken: cancellationToken);
 			
 			if (fireEvent)
 			{
-				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenGenerated, user, bearerToken) { MembershipId = membership.Id });	
+				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenGenerated, user, bearerToken) { MembershipId = membership.Id }, cancellationToken: cancellationToken);	
 			}
 			
 			return bearerToken;
@@ -262,7 +263,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		private async Task StoreActiveTokenAsync(BearerToken token, User user, string membershipId, string ipAddress = null, string userAgent = null)
+		private async Task StoreActiveTokenAsync(BearerToken token, User user, string membershipId, string ipAddress = null, string userAgent = null, CancellationToken cancellationToken = default)
 		{
 			await this.activeTokensRepository.InsertAsync(new ActiveTokenDto
 			{
@@ -278,8 +279,8 @@ namespace ErtisAuth.Infrastructure.Services
 				FirstName = user.FirstName,
 				LastName = user.LastName,
 				MembershipId = membershipId,
-				ClientInfo = ConvertToClientInfoDto(await this.GetClientInfo(ipAddress, userAgent))
-			});
+				ClientInfo = ConvertToClientInfoDto(await this.GetClientInfo(ipAddress, userAgent, cancellationToken: cancellationToken))
+			}, cancellationToken: cancellationToken);
 		}
 
 		private static ClientInfoDto ConvertToClientInfoDto(ClientInfo clientInfo)
@@ -312,7 +313,7 @@ namespace ErtisAuth.Infrastructure.Services
 			};
 		}
 		
-		private async Task<ClientInfo> GetClientInfo(string ipAddress, string userAgent)
+		private async Task<ClientInfo> GetClientInfo(string ipAddress, string userAgent, CancellationToken cancellationToken = default)
 		{
 			var clientInfo = new ClientInfo
 			{
@@ -324,7 +325,7 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				if (this.geoLocationOptions.Enabled && !string.IsNullOrEmpty(ipAddress))
 				{
-					clientInfo.GeoLocation = await this.geoLocationService.LookupAsync(ipAddress);
+					clientInfo.GeoLocation = await this.geoLocationService.LookupAsync(ipAddress, cancellationToken: cancellationToken);
 				}
 			}
 			catch (Exception ex)
@@ -339,22 +340,22 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Verify Token
 
-		public async ValueTask<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true)
+		public async ValueTask<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true, CancellationToken cancellationToken = default)
 		{
 			switch (tokenType)
 			{
 				case SupportedTokenTypes.Bearer:
-					return await this.VerifyBearerTokenAsync(token, fireEvent);
+					return await this.VerifyBearerTokenAsync(token, fireEvent, cancellationToken: cancellationToken);
 				case SupportedTokenTypes.Basic:
-					return await this.VerifyBasicTokenAsync(token, fireEvent);
+					return await this.VerifyBasicTokenAsync(token, fireEvent, cancellationToken: cancellationToken);
 				default:
 					throw ErtisAuthException.UnsupportedTokenType();
 			}
 		}
 		
-		public async ValueTask<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true)
+		public async ValueTask<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true, CancellationToken cancellationToken = default)
 		{
-			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token.AccessToken == token);
+			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token.AccessToken == token, cancellationToken: cancellationToken);
 			if (revokedToken != null)
 			{
 				throw ErtisAuthException.TokenWasRevoked();
@@ -365,12 +366,12 @@ namespace ErtisAuth.Infrastructure.Services
 				var expireTime = securityToken.ValidTo.ToLocalTime();
 				if (DateTime.Now <= expireTime)
 				{
-					var user = await this.GetTokenOwnerAsync(securityToken);
+					var user = await this.GetTokenOwnerAsync(securityToken, cancellationToken: cancellationToken);
 					if (user != null)
 					{
 						if (this.TryExtractClaimValue(securityToken, JwtRegisteredClaimNames.Prn, out var membershipId) && !string.IsNullOrEmpty(membershipId))
 						{
-							var membership = await this.membershipService.GetAsync(membershipId);
+							var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 							if (membership != null)
 							{
 								var encoding = membership.GetEncoding();
@@ -396,7 +397,7 @@ namespace ErtisAuth.Infrastructure.Services
 						
 						if (fireEvent)
 						{
-							await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }) { MembershipId = membershipId });	
+							await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }) { MembershipId = membershipId }, cancellationToken: cancellationToken);	
 						}
 				
 						return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
@@ -421,7 +422,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public async ValueTask<BasicTokenValidationResult> VerifyBasicTokenAsync(string basicToken, bool fireEvent = true)
+		public async ValueTask<BasicTokenValidationResult> VerifyBasicTokenAsync(string basicToken, bool fireEvent = true, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(basicToken))
 			{
@@ -437,18 +438,18 @@ namespace ErtisAuth.Infrastructure.Services
 			var applicationId = parts[0];
 			var secret = parts[1];
 
-			var application = await this.applicationService.GetByIdAsync(applicationId);
+			var application = await this.applicationService.GetByIdAsync(applicationId, cancellationToken: cancellationToken);
 			if (application == null)
 			{
 				throw ErtisAuthException.ApplicationNotFound(applicationId);
 			}
 
-			var membership = await this.membershipService.GetAsync(application.MembershipId);
+			var membership = await this.membershipService.GetAsync(application.MembershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				if (this.applicationService.IsSystemReservedApplication(application)) 
 				{
-					membership = await this.membershipService.GetBySecretKeyAsync(secret);
+					membership = await this.membershipService.GetBySecretKeyAsync(secret, cancellationToken: cancellationToken);
 					var onTheFlyApplication = new Application
 					{
 						Id = application.Id,
@@ -476,7 +477,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 			if (fireEvent)
 			{
-				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, application, new { basicToken }) { MembershipId = membership.Id });	
+				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, application, new { basicToken }) { MembershipId = membership.Id }, cancellationToken: cancellationToken);	
 			}
 			
 			return new BasicTokenValidationResult(true, basicToken, application);
@@ -486,9 +487,9 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Refresh Token
 
-		public async ValueTask<BearerToken> RefreshTokenAsync(string refreshToken, bool revokeBefore = true, bool fireEvent = true)
+		public async ValueTask<BearerToken> RefreshTokenAsync(string refreshToken, bool revokeBefore = true, bool fireEvent = true, CancellationToken cancellationToken = default)
 		{
-			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token.AccessToken == refreshToken);
+			var revokedToken = await this.revokedTokensRepository.FindOneAsync(x => x.Token.AccessToken == refreshToken, cancellationToken: cancellationToken);
 			if (revokedToken != null)
 			{
 				throw ErtisAuthException.RefreshTokenWasRevoked();
@@ -503,27 +504,27 @@ namespace ErtisAuth.Infrastructure.Services
 					{
 						if (this.TryExtractClaimValue(securityToken, JwtRegisteredClaimNames.Prn, out var membershipId) && !string.IsNullOrEmpty(membershipId))
 						{
-							var membership = await this.membershipService.GetAsync(membershipId);
+							var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 							if (membership != null)
 							{
 								var userId = securityToken.Subject;
 								if (!string.IsNullOrEmpty(userId))
 								{
-									var dynamicObject = await this.userService.GetAsync(membershipId, userId);
+									var dynamicObject = await this.userService.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
 									var user = dynamicObject.Deserialize<User>();
 									if (user != null)
 									{
-										var originalActiveToken = await this.activeTokensRepository.FindOneAsync(x => x.RefreshToken == refreshToken);
-										var token = await this.GenerateBearerTokenAsync(user, membership, originalActiveToken?.ClientInfo?.IPAddress, originalActiveToken?.ClientInfo?.UserAgent);
+										var originalActiveToken = await this.activeTokensRepository.FindOneAsync(x => x.RefreshToken == refreshToken, cancellationToken: cancellationToken);
+										var token = await this.GenerateBearerTokenAsync(user, membership, originalActiveToken?.ClientInfo?.IPAddress, originalActiveToken?.ClientInfo?.UserAgent, cancellationToken: cancellationToken);
 
 										if (revokeBefore)
 										{
-											await this.RevokeTokenAsync(refreshToken);
+											await this.RevokeTokenAsync(refreshToken, cancellationToken: cancellationToken);
 										}
 
 										if (fireEvent)
 										{
-											await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRefreshed, user, token, new { refreshToken }) { MembershipId = membershipId });	
+											await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRefreshed, user, token, new { refreshToken }) { MembershipId = membershipId }, cancellationToken: cancellationToken);	
 										}
 				
 										return token;
@@ -575,13 +576,13 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Revoke Token
 
-		public async ValueTask<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true)
+		public async ValueTask<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true, CancellationToken cancellationToken = default)
 		{
 			User user;
 			
 			try
 			{
-				var validationResult = await this.VerifyBearerTokenAsync(token, false);
+				var validationResult = await this.VerifyBearerTokenAsync(token, false, cancellationToken: cancellationToken);
 				user = validationResult.User;
 				if (!validationResult.IsValidated)
 				{
@@ -603,7 +604,7 @@ namespace ErtisAuth.Infrastructure.Services
 				return false;
 			}
 
-			var activeTokenDtos = await this.GetActiveTokensByUser(user.Id, user.MembershipId);
+			var activeTokenDtos = await this.GetActiveTokensByUser(user.Id, user.MembershipId, cancellationToken: cancellationToken);
 			var filteredActiveTokenDtos = logoutFromAllDevices ? activeTokenDtos : new[] { activeTokenDtos.FirstOrDefault(x => x.AccessToken == token) };
 			var activeTokens = filteredActiveTokenDtos.Where(x => x != null).ToArray();
 
@@ -628,9 +629,9 @@ namespace ErtisAuth.Infrastructure.Services
 						LastName = user.LastName,
 						MembershipId = user.MembershipId,
 						TokenType = isRefreshToken ? "refresh_token" : "bearer_token"
-					});
+					}, cancellationToken: cancellationToken);
 			
-					var membership = await this.membershipService.GetAsync(user.MembershipId);
+					var membership = await this.membershipService.GetAsync(user.MembershipId, cancellationToken: cancellationToken);
 					if (membership == null)
 					{
 						throw ErtisAuthException.MembershipNotFound(user.MembershipId);
@@ -641,22 +642,22 @@ namespace ErtisAuth.Infrastructure.Services
 						var refreshToken = this.StimulateRefreshToken(activeTokenDto.AccessToken, user, membership);
 						if (!string.IsNullOrEmpty(refreshToken))
 						{
-							await this.RevokeRefreshTokenAsync(refreshToken);	
+							await this.RevokeRefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);	
 						}				
 					}
 
-					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, user, new { activeTokenDto.AccessToken }) { MembershipId = membership.Id });
+					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, user, new { activeTokenDto.AccessToken }) { MembershipId = membership.Id }, cancellationToken: cancellationToken);
 				}
 
-				await this.activeTokensRepository.BulkDeleteAsync(activeTokens);
+				await this.activeTokensRepository.BulkDeleteAsync(activeTokens, cancellationToken: cancellationToken);
 			}
 
 			return true;
 		}
 
-		private async Task RevokeRefreshTokenAsync(string refreshToken)
+		private async Task RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
 		{
-			await this.RevokeTokenAsync(refreshToken, false, false);
+			await this.RevokeTokenAsync(refreshToken, false, false, cancellationToken: cancellationToken);
 		}
 		
 		private string StimulateRefreshToken(string accessToken, User user, Membership membership)
@@ -683,21 +684,21 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Cleaning
 
-		private async Task<IEnumerable<ActiveTokenDto>> GetActiveTokensByUser(string userId, string membershipId)
+		private async Task<IEnumerable<ActiveTokenDto>> GetActiveTokensByUser(string userId, string membershipId, CancellationToken cancellationToken = default)
 		{
-			var expiredActiveTokensResult = await this.activeTokensRepository.FindAsync(x => x.UserId == userId && x.MembershipId == membershipId);
+			var expiredActiveTokensResult = await this.activeTokensRepository.FindAsync(x => x.UserId == userId && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 			return expiredActiveTokensResult.Items;
 		}
 		
-		public async ValueTask ClearExpiredActiveTokens(string membershipId)
+		public async ValueTask ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default)
 		{
 			try
 			{
-				var expiredActiveTokensResult = await this.activeTokensRepository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.Now);
+				var expiredActiveTokensResult = await this.activeTokensRepository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.Now, cancellationToken: cancellationToken);
 				var expiredActiveTokens = expiredActiveTokensResult.Items.ToArray();
 				if (expiredActiveTokens.Any())
 				{
-					var isDeleted = await this.activeTokensRepository.BulkDeleteAsync(expiredActiveTokens);
+					var isDeleted = await this.activeTokensRepository.BulkDeleteAsync(expiredActiveTokens, cancellationToken: cancellationToken);
 					if (isDeleted)
 					{
 						Console.WriteLine($"{expiredActiveTokens.Length} expired active token cleared");
@@ -710,15 +711,15 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		public async ValueTask ClearRevokedTokens(string membershipId)
+		public async ValueTask ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default)
 		{
 			try
 			{
-				var revokedTokensResult = await this.revokedTokensRepository.FindAsync(x => x.MembershipId == membershipId && x.RevokedAt < DateTime.Now.AddHours(24));
+				var revokedTokensResult = await this.revokedTokensRepository.FindAsync(x => x.MembershipId == membershipId && x.RevokedAt < DateTime.Now.AddHours(24), cancellationToken: cancellationToken);
 				var revokedTokens = revokedTokensResult.Items.ToArray();
 				if (revokedTokens.Any())
 				{
-					var isDeleted = await this.revokedTokensRepository.BulkDeleteAsync(revokedTokens);
+					var isDeleted = await this.revokedTokensRepository.BulkDeleteAsync(revokedTokens, cancellationToken: cancellationToken);
 					if (isDeleted)
 					{
 						Console.WriteLine($"{revokedTokens.Length} revoked token cleared");

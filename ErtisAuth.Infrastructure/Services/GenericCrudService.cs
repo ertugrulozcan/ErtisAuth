@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Data.Models;
@@ -76,14 +77,14 @@ namespace ErtisAuth.Infrastructure.Services
 			return dto == null ? null : Mapper.Current.Map<TDto, TModel>(dto);
 		}
 		
-		public async ValueTask<TModel> GetAsync(string id)
+		public async ValueTask<TModel> GetAsync(string id, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(id))
 			{
 				return null;
 			}
 			
-			var dto = await this.repository.FindOneAsync(id);
+			var dto = await this.repository.FindOneAsync(id, cancellationToken: cancellationToken);
 			return dto == null ? null : Mapper.Current.Map<TDto, TModel>(dto);
 		}
 		
@@ -104,9 +105,9 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public async ValueTask<IPaginationCollection<TModel>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null)
+		public async ValueTask<IPaginationCollection<TModel>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default)
 		{
-			var paginatedDtoCollection = await this.repository.FindAsync(expression: null, skip, limit, withCount, orderBy, sortDirection);
+			var paginatedDtoCollection = await this.repository.FindAsync(expression: null, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 			if (paginatedDtoCollection?.Items != null)
 			{
 				return new PaginationCollection<TModel>
@@ -128,9 +129,10 @@ namespace ErtisAuth.Infrastructure.Services
 			bool? withCount = null, 
 			string sortField = null, 
 			SortDirection? sortDirection = null,
-			IDictionary<string, bool> selectFields = null)
+			IDictionary<string, bool> selectFields = null, 
+			CancellationToken cancellationToken = default)
 		{
-			return await this.repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			return await this.repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 		}
 
 		#endregion
@@ -168,9 +170,10 @@ namespace ErtisAuth.Infrastructure.Services
 			int? limit = null,
 			bool? withCount = null,
 			string sortField = null,
-			SortDirection? sortDirection = null)
+			SortDirection? sortDirection = null, 
+			CancellationToken cancellationToken = default)
 		{
-			var paginatedDtoCollection = await this.repository.SearchAsync(keyword, options, skip, limit, withCount, sortField, sortDirection);
+			var paginatedDtoCollection = await this.repository.SearchAsync(keyword, options, skip, limit, withCount, sortField, sortDirection, cancellationToken: cancellationToken);
 			if (paginatedDtoCollection?.Items != null)
 			{
 				return new PaginationCollection<TModel>
@@ -213,7 +216,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return inserted;
 		}
 		
-		public virtual async ValueTask<TModel> CreateAsync(TModel model)
+		public virtual async ValueTask<TModel> CreateAsync(TModel model, CancellationToken cancellationToken = default)
 		{
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -229,7 +232,7 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			// Insert to database
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var insertedDto = await this.repository.InsertAsync(dto);
+			var insertedDto = await this.repository.InsertAsync(dto, cancellationToken: cancellationToken);
 			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
 			
 			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(inserted));
@@ -273,10 +276,10 @@ namespace ErtisAuth.Infrastructure.Services
 			return updated;
 		}
 		
-		public virtual async ValueTask<TModel> UpdateAsync(TModel model)
+		public virtual async ValueTask<TModel> UpdateAsync(TModel model, CancellationToken cancellationToken = default)
 		{
 			// Overwrite
-			var current = await this.GetAsync(model.Id);
+			var current = await this.GetAsync(model.Id, cancellationToken: cancellationToken);
 			if (current == null)
 			{
 				throw this.GetNotFoundError(model.Id);
@@ -297,7 +300,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var updatedDto = await this.repository.UpdateAsync(dto);
+			var updatedDto = await this.repository.UpdateAsync(dto, cancellationToken: cancellationToken);
 			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
 
 			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(current, updated));
@@ -328,12 +331,12 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public virtual async ValueTask<bool> DeleteAsync(string id)
+		public virtual async ValueTask<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
 		{
-			var current = await this.GetAsync(id);
+			var current = await this.GetAsync(id, cancellationToken: cancellationToken);
 			if (current != null)
 			{
-				var isDeleted = await this.repository.DeleteAsync(id);
+				var isDeleted = await this.repository.DeleteAsync(id, cancellationToken: cancellationToken);
 				if (isDeleted)
 				{
 					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(current));	

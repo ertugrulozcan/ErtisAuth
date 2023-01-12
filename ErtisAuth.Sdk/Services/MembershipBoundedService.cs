@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
@@ -58,14 +59,15 @@ namespace ErtisAuth.Sdk.Services
 		public IResponseResult<T> Create<TCreateModel>(TCreateModel model, TokenBase token) where TCreateModel : T =>
 			this.CreateAsync(model, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<T>> CreateAsync<TCreateModel>(TCreateModel model, TokenBase token) where TCreateModel : T
+		public async Task<IResponseResult<T>> CreateAsync<TCreateModel>(TCreateModel model, TokenBase token, CancellationToken cancellationToken = default) where TCreateModel : T
 		{
 			return await this.ExecuteRequestAsync<T>(
 				HttpMethod.Post, 
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(model));
+				new JsonRequestBody(model),
+				cancellationToken: cancellationToken);
 		}
 
 		#endregion
@@ -75,7 +77,7 @@ namespace ErtisAuth.Sdk.Services
 		public IResponseResult<T> Update(T model, TokenBase token) =>
 			this.UpdateAsync(model, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<T>> UpdateAsync(T model, TokenBase token)
+		public async Task<IResponseResult<T>> UpdateAsync(T model, TokenBase token, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(model.Id))
 			{
@@ -87,7 +89,8 @@ namespace ErtisAuth.Sdk.Services
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/{model.Id}", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(model));
+				new JsonRequestBody(model),
+				cancellationToken: cancellationToken);
 		}
 
 		#endregion
@@ -97,26 +100,28 @@ namespace ErtisAuth.Sdk.Services
 		public IResponseResult Delete(string modelId, TokenBase token) =>
 			this.DeleteAsync(modelId, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult> DeleteAsync(string modelId, TokenBase token)
+		public async Task<IResponseResult> DeleteAsync(string modelId, TokenBase token, CancellationToken cancellationToken = default)
 		{
 			return await this.ExecuteRequestAsync<T>(
 				HttpMethod.Delete, 
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/{modelId}", 
 				null, 
-				HeaderCollection.Add("Authorization", token.ToString()));
+				HeaderCollection.Add("Authorization", token.ToString()),
+				cancellationToken: cancellationToken);
 		}
 		
 		public IResponseResult BulkDelete(IEnumerable<string> modelIds, TokenBase token) =>
 			this.BulkDeleteAsync(modelIds, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult> BulkDeleteAsync(IEnumerable<string> modelIds, TokenBase token)
+		public async Task<IResponseResult> BulkDeleteAsync(IEnumerable<string> modelIds, TokenBase token, CancellationToken cancellationToken = default)
 		{
 			return await this.ExecuteRequestAsync<T>(
 				HttpMethod.Delete, 
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(modelIds));
+				new JsonRequestBody(modelIds),
+				cancellationToken: cancellationToken);
 		}
 
 		#endregion

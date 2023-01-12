@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Response;
@@ -16,6 +17,7 @@ namespace ErtisAuth.Sdk.Services
 	{
 		#region Properties
 
+		// ReSharper disable once MemberCanBePrivate.Global
 		protected string AuthApiBaseUrl { get; }
 		
 		#endregion
@@ -39,14 +41,15 @@ namespace ErtisAuth.Sdk.Services
 		public IResponseResult<Membership> CreateMembership(Membership membership, TokenBase token) =>
 			this.CreateMembershipAsync(membership, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<Membership>> CreateMembershipAsync(Membership membership, TokenBase token)
+		public async Task<IResponseResult<Membership>> CreateMembershipAsync(Membership membership, TokenBase token, CancellationToken cancellationToken = default)
 		{
 			return await this.ExecuteRequestAsync<Membership>(
 				HttpMethod.Post, 
 				$"{this.AuthApiBaseUrl}/memberships", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(membership));
+				new JsonRequestBody(membership),
+				cancellationToken: cancellationToken);
 		}
 
 		#endregion
@@ -56,13 +59,14 @@ namespace ErtisAuth.Sdk.Services
 		public IResponseResult<Membership> GetMembership(string membershipId, TokenBase token) =>
 			this.GetMembershipAsync(membershipId, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<Membership>> GetMembershipAsync(string membershipId, TokenBase token)
+		public async Task<IResponseResult<Membership>> GetMembershipAsync(string membershipId, TokenBase token, CancellationToken cancellationToken = default)
 		{
 			return await this.ExecuteRequestAsync<Membership>(
 				HttpMethod.Get, 
 				$"{this.AuthApiBaseUrl}/memberships/{membershipId}", 
 				null, 
-				HeaderCollection.Add("Authorization", token.ToString()));
+				HeaderCollection.Add("Authorization", token.ToString()),
+				cancellationToken: cancellationToken);
 		}
 		
 		public IResponseResult<IPaginationCollection<Membership>> GetMemberships(
@@ -90,7 +94,8 @@ namespace ErtisAuth.Sdk.Services
 			bool? withCount = null,
 			string orderBy = null,
 			SortDirection? sortDirection = null,
-			string searchKeyword = null)
+			string searchKeyword = null, 
+			CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(searchKeyword) || string.IsNullOrEmpty(searchKeyword.Trim()))
 			{
@@ -98,7 +103,8 @@ namespace ErtisAuth.Sdk.Services
 					HttpMethod.Get, 
 					$"{this.AuthApiBaseUrl}/memberships", 
 					QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
-					HeaderCollection.Add("Authorization", token.ToString()));	
+					HeaderCollection.Add("Authorization", token.ToString()),
+					cancellationToken: cancellationToken);	
 			}
 			else
 			{
@@ -106,7 +112,8 @@ namespace ErtisAuth.Sdk.Services
 					HttpMethod.Get, 
 					$"{this.AuthApiBaseUrl}/memberships/search", 
 					QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection).Add("keyword", searchKeyword), 
-					HeaderCollection.Add("Authorization", token.ToString()));
+					HeaderCollection.Add("Authorization", token.ToString()),
+					cancellationToken: cancellationToken);
 			}
 		}
 		
@@ -139,14 +146,16 @@ namespace ErtisAuth.Sdk.Services
 			int? limit = null,
 			bool? withCount = null,
 			string orderBy = null,
-			SortDirection? sortDirection = null)
+			SortDirection? sortDirection = null, 
+			CancellationToken cancellationToken = default)
 		{
 			return await this.ExecuteRequestAsync<PaginationCollection<Membership>>(
 				HttpMethod.Post, 
 				$"{this.AuthApiBaseUrl}/memberships/_query", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)));
+				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)),
+				cancellationToken: cancellationToken);
 		}
 		
 		#endregion
@@ -156,7 +165,7 @@ namespace ErtisAuth.Sdk.Services
 		public IResponseResult<Membership> UpdateMembership(Membership membership, TokenBase token) =>
 			this.UpdateMembershipAsync(membership, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<Membership>> UpdateMembershipAsync(Membership membership, TokenBase token)
+		public async Task<IResponseResult<Membership>> UpdateMembershipAsync(Membership membership, TokenBase token, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(membership.Id))
 			{
@@ -168,7 +177,8 @@ namespace ErtisAuth.Sdk.Services
 				$"{this.AuthApiBaseUrl}/memberships/{membership.Id}", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(membership));
+				new JsonRequestBody(membership),
+				cancellationToken: cancellationToken);
 		}
 		
 		#endregion
@@ -178,13 +188,14 @@ namespace ErtisAuth.Sdk.Services
 		public IResponseResult DeleteMembership(string membershipId, TokenBase token) =>
 			this.DeleteMembershipAsync(membershipId, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult> DeleteMembershipAsync(string membershipId, TokenBase token)
+		public async Task<IResponseResult> DeleteMembershipAsync(string membershipId, TokenBase token, CancellationToken cancellationToken = default)
 		{
 			return await this.ExecuteRequestAsync<Membership>(
 				HttpMethod.Delete, 
 				$"{this.AuthApiBaseUrl}/memberships/{membershipId}", 
 				null, 
-				HeaderCollection.Add("Authorization", token.ToString()));
+				HeaderCollection.Add("Authorization", token.ToString()),
+				cancellationToken: cancellationToken);
 		}
 		
 		#endregion

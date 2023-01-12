@@ -6,10 +6,10 @@
 
     <ItemGroup>
       <PackageReference Include="AutoMapper" Version="12.0.0" />
-      <PackageReference Include="Ertis.MongoDB.Queries" Version="7.0.0" />
-      <PackageReference Include="Ertis.Net" Version="7.0.0" />
-      <PackageReference Include="Ertis.Security" Version="7.0.0" />
-      <PackageReference Include="Ertis.TemplateEngine" Version="7.0.0" />
+      <PackageReference Include="Ertis.MongoDB.Queries" Version="7.0.2" />
+      <PackageReference Include="Ertis.Net" Version="7.0.2" />
+      <PackageReference Include="Ertis.Security" Version="7.0.2" />
+      <PackageReference Include="Ertis.TemplateEngine" Version="7.0.2" />
       <PackageReference Include="Mapster" Version="7.3.0" />
       <PackageReference Include="MaxMind.GeoIP2" Version="5.1.0" />
       <PackageReference Include="MongoDB.Driver" Version="2.18.0" />

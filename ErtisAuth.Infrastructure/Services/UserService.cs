@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Resources;
@@ -152,9 +153,9 @@ namespace ErtisAuth.Infrastructure.Services
         
         #region Membership Methods
         
-        private async Task<Membership> CheckMembershipAsync(string membershipId)
+        private async Task<Membership> CheckMembershipAsync(string membershipId, CancellationToken cancellationToken = default)
         {
-            var membership = await this._membershipService.GetAsync(membershipId);
+            var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
             if (membership == null)
             {
                 throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -172,11 +173,11 @@ namespace ErtisAuth.Infrastructure.Services
 
         #region UserType Methods
 
-        private async Task<UserType> GetUserTypeAsync(DynamicObject model, string membershipId, bool fallbackWithOriginUserType = false)
+        private async Task<UserType> GetUserTypeAsync(DynamicObject model, string membershipId, bool fallbackWithOriginUserType = false, CancellationToken cancellationToken = default)
         {
 	        if (model.TryGetValue("user_type", out string userTypeName, out _) && !string.IsNullOrEmpty(userTypeName))
             {
-	            var userType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, userTypeName);
+	            var userType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, userTypeName, cancellationToken: cancellationToken);
 	            if (userType == null)
 	            {
 		            throw ErtisAuthException.UserTypeNotFound(userTypeName, "name");
@@ -186,7 +187,7 @@ namespace ErtisAuth.Infrastructure.Services
             }
             else if (fallbackWithOriginUserType)
             {
-	            return await this._userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG);
+	            return await this._userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG, cancellationToken: cancellationToken);
             }
 	        else
 	        {
@@ -258,7 +259,7 @@ namespace ErtisAuth.Infrastructure.Services
 
         #region Role Methods
 
-        private async Task EnsureRoleAsync(DynamicObject model, string membershipId)
+        private async Task EnsureRoleAsync(DynamicObject model, string membershipId, CancellationToken cancellationToken = default)
         {
 	        var roleName = model.GetValue<string>("role");
 	        if (string.IsNullOrEmpty(roleName))
@@ -266,7 +267,7 @@ namespace ErtisAuth.Infrastructure.Services
 		        throw ErtisAuthException.RoleRequired();
 	        }
 	        
-	        var role = await this._roleService.GetByNameAsync(roleName, membershipId);
+	        var role = await this._roleService.GetByNameAsync(roleName, membershipId, cancellationToken: cancellationToken);
 	        if (role == null)
 	        {
 		        throw ErtisAuthException.RoleNotFound(roleName, true);
@@ -316,7 +317,7 @@ namespace ErtisAuth.Infrastructure.Services
 
         #region Reference Methods
 
-        private async Task EmbedReferencesAsync(UserType userType, DynamicObject model)
+        private async Task EmbedReferencesAsync(UserType userType, DynamicObject model, CancellationToken cancellationToken = default)
         {
             var referenceProperties = userType.GetReferenceProperties();
             foreach (var referenceProperty in referenceProperties)
@@ -330,14 +331,14 @@ namespace ErtisAuth.Infrastructure.Services
                     {
                         if (model.TryGetValue(path, out var value, out _) && value is string referenceId && !string.IsNullOrEmpty(referenceId))
                         {
-                            var referenceItem = await this.GetAsync(userType.MembershipId, referenceId);
+                            var referenceItem = await this.GetAsync(userType.MembershipId, referenceId, cancellationToken: cancellationToken);
                             if (referenceItem != null)
                             {
                                 if (!string.IsNullOrEmpty(referenceProperty.ContentType))
                                 {
                                     if (referenceItem.TryGetValue("user_type", out string referenceItemUserType, out _))
                                     {
-                                        if (await this._userTypeService.IsInheritFromAsync(userType.MembershipId, referenceItemUserType, referenceProperty.ContentType))
+                                        if (await this._userTypeService.IsInheritFromAsync(userType.MembershipId, referenceItemUserType, referenceProperty.ContentType, cancellationToken: cancellationToken))
                                         {
                                             model.TrySetValue(path, referenceItem.ToDynamic(), out Exception _);   
                                         }
@@ -374,14 +375,14 @@ namespace ErtisAuth.Infrastructure.Services
                             var referenceItems = new List<object>();
                             foreach (var referenceId in referenceIds)
                             {
-                                var referenceItem = await this.GetAsync(userType.MembershipId, referenceId);
+                                var referenceItem = await this.GetAsync(userType.MembershipId, referenceId, cancellationToken: cancellationToken);
                                 if (referenceItem != null)
                                 {
                                     if (!string.IsNullOrEmpty(referenceProperty.ContentType))
                                     {
                                         if (referenceItem.TryGetValue("user_type", out string referenceItemUserType, out _))
                                         {
-                                            if (await this._userTypeService.IsInheritFromAsync(userType.MembershipId, referenceItemUserType, referenceProperty.ContentType))
+                                            if (await this._userTypeService.IsInheritFromAsync(userType.MembershipId, referenceItemUserType, referenceProperty.ContentType, cancellationToken: cancellationToken))
                                             {
                                                 referenceItems.Add(referenceItem.ToDynamic());
                                             }
@@ -515,9 +516,9 @@ namespace ErtisAuth.Infrastructure.Services
         
         #region Read Methods
         
-        public async Task<DynamicObject> GetAsync(string membershipId, string id)
+        public async Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
         {
-            await this.CheckMembershipAsync(membershipId);
+            await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
             return await base.FindOneAsync(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.ObjectId(id));
         }
         
@@ -527,15 +528,16 @@ namespace ErtisAuth.Infrastructure.Services
             int? limit = null, 
             bool withCount = false, 
             string orderBy = null,
-            SortDirection? sortDirection = null)
+            SortDirection? sortDirection = null, 
+            CancellationToken cancellationToken = default)
         {
-            await this.CheckMembershipAsync(membershipId);
+            await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
             var queries = new[]
             {
                 QueryBuilder.Equals("membership_id", membershipId)
             };
                 
-            return await base.GetAsync(queries, skip, limit, withCount, orderBy, sortDirection);
+            return await base.GetAsync(queries, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
         }
 
         public async Task<IPaginationCollection<DynamicObject>> QueryAsync(
@@ -546,11 +548,12 @@ namespace ErtisAuth.Infrastructure.Services
             bool? withCount = null,
             string orderBy = null, 
             SortDirection? sortDirection = null, 
-            IDictionary<string, bool> selectFields = null)
+            IDictionary<string, bool> selectFields = null, 
+            CancellationToken cancellationToken = default)
         {
-            await this.CheckMembershipAsync(membershipId);
+            await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
             query = Helpers.QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId);
-            return await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields);
+            return await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, cancellationToken: cancellationToken);
         }
 
         public async Task<IPaginationCollection<DynamicObject>> SearchAsync(
@@ -560,20 +563,21 @@ namespace ErtisAuth.Infrastructure.Services
 	        int? limit = null,
 	        bool? withCount = null,
 	        string orderBy = null,
-	        SortDirection? sortDirection = null)
+	        SortDirection? sortDirection = null, 
+	        CancellationToken cancellationToken = default)
         {
-	        await this.CheckMembershipAsync(membershipId);
+	        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
 	        var query = QueryBuilder.And(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.FullTextSearch(keyword)).ToString();
-	        return await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection);
+	        return await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
         }
         
-        public async Task<UserWithPasswordHash> GetUserWithPasswordAsync(string membershipId, string id)
+        public async Task<UserWithPasswordHash> GetUserWithPasswordAsync(string membershipId, string id, CancellationToken cancellationToken = default)
         {
-	        var dynamicObject = await this.GetAsync(membershipId, id);
+	        var dynamicObject = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 	        return dynamicObject?.Deserialize<UserWithPasswordHash>();
         }
         
-        public async Task<UserWithPasswordHash> GetUserWithPasswordAsync(string membershipId, string username, string email)
+        public async Task<UserWithPasswordHash> GetUserWithPasswordAsync(string membershipId, string username, string email, CancellationToken cancellationToken = default)
         {
 	        var dynamicObject = await this.FindOneAsync(
 		        QueryBuilder.And(
@@ -600,7 +604,8 @@ namespace ErtisAuth.Infrastructure.Services
 	        string id, 
 	        UserType userType,
 	        DynamicObject model, 
-	        DynamicObject current)
+	        DynamicObject current, 
+	        CancellationToken cancellationToken = default)
         {
 	        this.EnsureMembershipId(model, membershipId);
 	        this.EnsureId(model);
@@ -608,17 +613,17 @@ namespace ErtisAuth.Infrastructure.Services
 	        this.EnsureUbacs(model);
 	        
 	        await this.EnsureUserTypeAsync(membershipId, userType, model, id, current?.GetValue<string>("user_type"));
-	        await this.EmbedReferencesAsync(userType, model);
-	        await this.EnsureRoleAsync(model, membershipId);
+	        await this.EmbedReferencesAsync(userType, model, cancellationToken: cancellationToken);
+	        await this.EnsureRoleAsync(model, membershipId, cancellationToken: cancellationToken);
         }
 
         #endregion
         
         #region Create Methods
         
-        public async Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model)
+        public async Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, CancellationToken cancellationToken = default)
         {
-	        var membership = await this.CheckMembershipAsync(membershipId);
+	        var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
 	        
 	        string password = null;
 	        var sourceProvider = this.GetSourceProvider(model);
@@ -627,16 +632,16 @@ namespace ErtisAuth.Infrastructure.Services
 		        this.EnsurePassword(model, out password);    
 	        }
 	        
-	        var userType = await this.GetUserTypeAsync(model, membershipId, sourceProvider == KnownProviders.ErtisAuth);
+	        var userType = await this.GetUserTypeAsync(model, membershipId, sourceProvider == KnownProviders.ErtisAuth, cancellationToken: cancellationToken);
 	        this.EnsureManagedProperties(model, membershipId);
-	        await this.EnsureAndValidateAsync(utilizer, membershipId, null, userType, model, null);
+	        await this.EnsureAndValidateAsync(utilizer, membershipId, null, userType, model, null, cancellationToken: cancellationToken);
 	        
 	        if (sourceProvider == KnownProviders.ErtisAuth)
 	        {
 		        this.SetPasswordHash(model, membership, password);    
 	        }
 	        
-	        var created = await base.CreateAsync(model);
+	        var created = await base.CreateAsync(model, cancellationToken: cancellationToken);
             this.HidePasswordHash(created);
             if (created != null)
             {
@@ -650,14 +655,14 @@ namespace ErtisAuth.Infrastructure.Services
         
         #region Update Methods
 
-        public async Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true)
+        public async Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true, CancellationToken cancellationToken = default)
         {
-	        await this.CheckMembershipAsync(membershipId);
-	        var userType = await this.GetUserTypeAsync(model, membershipId, true);
+	        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+	        var userType = await this.GetUserTypeAsync(model, membershipId, true, cancellationToken: cancellationToken);
 	        this.EnsureManagedProperties(model, membershipId);
 	        model = this.SyncModel(membershipId, userId, model, out var current);
-	        await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current);
-	        var updated = await base.UpdateAsync(userId, model);
+	        await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current, cancellationToken: cancellationToken);
+	        var updated = await base.UpdateAsync(userId, model, cancellationToken: cancellationToken);
 	        this.HidePasswordHash(updated);
 	        if (updated != null && fireEvent)
 	        {
@@ -689,17 +694,17 @@ namespace ErtisAuth.Infrastructure.Services
         public bool Delete(Utilizer utilizer, string membershipId, string id) =>
 	        this.DeleteAsync(utilizer, membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
         
-        public async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
+        public async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
         {
-            var current = await this.GetAsync(membershipId, id);
+            var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
             if (current == null)
             {
                 throw ErtisAuthException.UserNotFound(id, "_id");
             }
             
-            await this.CheckMembershipAsync(membershipId);
+            await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
             
-            var isDeleted = await base.DeleteAsync(id);
+            var isDeleted = await base.DeleteAsync(id, cancellationToken: cancellationToken);
             if (isDeleted)
             {
                 await this.FireOnDeletedEvent(membershipId, utilizer, current);
@@ -711,15 +716,15 @@ namespace ErtisAuth.Infrastructure.Services
         public bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids) =>
 			this.BulkDeleteAsync(utilizer, membershipId, ids).ConfigureAwait(false).GetAwaiter().GetResult();
         
-        public async ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids)
+        public async ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
         {
-	        await this.CheckMembershipAsync(membershipId);
+	        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
 
 	        var isAllDeleted = true;
 	        var isAllFailed = true;
 	        foreach (var id in ids)
 	        {
-		        var isDeleted = await base.DeleteAsync(id);
+		        var isDeleted = await base.DeleteAsync(id, cancellationToken: cancellationToken);
 		        isAllDeleted &= isDeleted;
 		        isAllFailed &= !isDeleted;
 	        }
@@ -742,7 +747,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Change Password
 
-		public async Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword)
+		public async Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(newPassword))
 			{
@@ -752,13 +757,13 @@ namespace ErtisAuth.Infrastructure.Services
 				});
 			}
 			
-			var membership = await this._membershipService.GetAsync(membershipId);
+			var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 
-			var user = await this.GetUserWithPasswordAsync(membershipId, userId);
+			var user = await this.GetUserWithPasswordAsync(membershipId, userId, cancellationToken: cancellationToken);
 			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(userId, "_id");
@@ -771,7 +776,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var passwordHash = this._cryptographyService.CalculatePasswordHash(membership, newPassword);
 			dynamicObject.SetValue("password_hash", passwordHash, true);
 
-			var updatedUser = await base.UpdateAsync(userId, dynamicObject);
+			var updatedUser = await base.UpdateAsync(userId, dynamicObject, cancellationToken: cancellationToken);
 			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.UserPasswordChanged,
@@ -779,7 +784,7 @@ namespace ErtisAuth.Infrastructure.Services
 				Document = updatedUser,
 				Prior = user,
 				MembershipId = membershipId
-			});
+			}, cancellationToken: cancellationToken);
 
 			return updatedUser;
 		}
@@ -788,7 +793,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Forgot Password
 
-		public async Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host)
+		public async Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(emailAddress))
 			{
@@ -798,13 +803,13 @@ namespace ErtisAuth.Infrastructure.Services
 				});
 			}
 			
-			var membership = await this._membershipService.GetAsync(membershipId);
+			var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 
-			var user = await this.GetUserWithPasswordAsync(membershipId, emailAddress, emailAddress);
+			var user = await this.GetUserWithPasswordAsync(membershipId, emailAddress, emailAddress, cancellationToken: cancellationToken);
 			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(emailAddress, "email_address");
@@ -839,7 +844,7 @@ namespace ErtisAuth.Infrastructure.Services
 					UtilizerId = user.Id,
 					Document = eventPayload,
 					MembershipId = membershipId
-				});
+				}, cancellationToken: cancellationToken);
 
 				return resetPasswordToken;
 			}
@@ -869,7 +874,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return resetPasswordLink;
 		}
 
-		public async Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password)
+		public async Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(usernameOrEmailAddress))
 			{
@@ -879,13 +884,13 @@ namespace ErtisAuth.Infrastructure.Services
 				});
 			}
 			
-			var membership = await this._membershipService.GetAsync(membershipId);
+			var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 
-			var user = await this.GetUserWithPasswordAsync(membershipId, usernameOrEmailAddress, usernameOrEmailAddress);
+			var user = await this.GetUserWithPasswordAsync(membershipId, usernameOrEmailAddress, usernameOrEmailAddress, cancellationToken: cancellationToken);
 			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(usernameOrEmailAddress, "username or email_address");
@@ -902,7 +907,7 @@ namespace ErtisAuth.Infrastructure.Services
 						throw ErtisAuthException.TokenWasExpired();	
 					}
 
-					await this.ChangePasswordAsync(utilizer, membershipId, user.Id, password);
+					await this.ChangePasswordAsync(utilizer, membershipId, user.Id, password, cancellationToken: cancellationToken);
 				}
 				else
 				{
@@ -920,20 +925,20 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Check Password
 
-		public async Task<bool> CheckPasswordAsync(Utilizer utilizer, string password)
+		public async Task<bool> CheckPasswordAsync(Utilizer utilizer, string password, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(password))
 			{
 				return false;
 			}
 			
-			var membership = await this._membershipService.GetAsync(utilizer.MembershipId);
+			var membership = await this._membershipService.GetAsync(utilizer.MembershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(utilizer.MembershipId);
 			}
 
-			var user = await this.GetUserWithPasswordAsync(utilizer.MembershipId, utilizer.Id);
+			var user = await this.GetUserWithPasswordAsync(utilizer.MembershipId, utilizer.Id, cancellationToken: cancellationToken);
 			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(utilizer.Id, "_id");

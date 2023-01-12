@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Exceptions;
@@ -47,9 +48,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Get([FromRoute] string membershipId)
+		public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 		{
-			return this.Ok(await this.providerService.GetProvidersAsync(membershipId));
+			return this.Ok(await this.providerService.GetProvidersAsync(membershipId, cancellationToken: cancellationToken));
 		}
 
 		#endregion
@@ -59,7 +60,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpPut("{id}")]
 		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Update)]
-		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateProviderFormModel model)
+		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateProviderFormModel model, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(model.Name))
 			{
@@ -81,7 +82,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				};
 			
 				var utilizer = this.GetUtilizer();
-				var providerInstance = await this.providerService.UpdateAsync(utilizer, membershipId, providerModel);
+				var providerInstance = await this.providerService.UpdateAsync(utilizer, membershipId, providerModel, cancellationToken: cancellationToken);
 				return this.Ok(providerInstance);
 			}
 			else
@@ -97,10 +98,10 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpDelete("{id}")]
 		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Delete)]
-		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id)
+		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			if (await this.providerService.DeleteAsync(utilizer, membershipId, id))
+			if (await this.providerService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
 			{
 				return this.NoContent();
 			}

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Data.Repository;
 using Ertis.MongoDB.Configuration;
@@ -38,7 +39,7 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
 
 	#region Index Methods
 
-	public async Task CreateIndexesAsync()
+	public async Task CreateIndexesAsync(CancellationToken cancellationToken = default)
 	{
 		if (!this.Indexes.Any())
 		{
@@ -47,7 +48,7 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
         
 		try
 		{
-			var currentIndexes = (await this.GetIndexesAsync()).ToArray();
+			var currentIndexes = (await this.GetIndexesAsync(cancellationToken)).ToArray();
 			var missingIndexes = new List<IIndexDefinition>();
 			foreach (var index in this.Indexes)
 			{
@@ -59,7 +60,7 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
 
 			if (missingIndexes.Any())
 			{
-				await this.CreateManyIndexAsync(missingIndexes);
+				await this.CreateManyIndexAsync(missingIndexes, cancellationToken);
 
 				foreach (var index in missingIndexes)
 				{

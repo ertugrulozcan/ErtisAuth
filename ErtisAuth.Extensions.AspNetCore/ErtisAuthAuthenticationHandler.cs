@@ -20,6 +20,7 @@ using IAuthenticationService = ErtisAuth.Sdk.Services.Interfaces.IAuthentication
 
 namespace ErtisAuth.Extensions.AspNetCore
 {
+	// ReSharper disable once ClassNeverInstantiated.Global
 	public class ErtisAuthAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 	{
 		#region Services

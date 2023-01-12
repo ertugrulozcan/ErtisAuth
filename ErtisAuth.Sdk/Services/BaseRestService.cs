@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
@@ -42,12 +43,13 @@ namespace ErtisAuth.Sdk.Services
 			HttpMethod method,
 			string url,
 			IHeaderCollection headers = null,
-			IRequestBody body = null)
+			IRequestBody body = null, 
+			CancellationToken cancellationToken = default)
 		{
-			return await this.restHandler.ExecuteRequestAsync<TResult>(method, url, headers, body);
+			return await this.restHandler.ExecuteRequestAsync<TResult>(method, url, headers, body, cancellationToken: cancellationToken);
 		}
-        
-		public IResponseResult<TResult> ExecuteRequest<TResult>(
+
+		protected IResponseResult<TResult> ExecuteRequest<TResult>(
 			HttpMethod method,
 			string baseUrl,
 			IQueryString queryString = null,
@@ -56,15 +58,16 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return this.restHandler.ExecuteRequest<TResult>(method, baseUrl, queryString, headers, body);
 		}
-        
-		public async Task<IResponseResult<TResult>> ExecuteRequestAsync<TResult>(
+
+		protected async Task<IResponseResult<TResult>> ExecuteRequestAsync<TResult>(
 			HttpMethod method,
 			string baseUrl,
 			IQueryString queryString = null,
 			IHeaderCollection headers = null,
-			IRequestBody body = null)
+			IRequestBody body = null, 
+			CancellationToken cancellationToken = default)
 		{
-			return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body);
+			return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken);
 		}
         
 		public IResponseResult ExecuteRequest(
@@ -80,12 +83,13 @@ namespace ErtisAuth.Sdk.Services
 			HttpMethod method,
 			string url,
 			IHeaderCollection headers = null,
-			IRequestBody body = null)
+			IRequestBody body = null, 
+			CancellationToken cancellationToken = default)
 		{
-			return await this.restHandler.ExecuteRequestAsync(method, url, headers, body);
+			return await this.restHandler.ExecuteRequestAsync(method, url, headers, body, cancellationToken: cancellationToken);
 		}
-        
-		public IResponseResult ExecuteRequest(
+
+		protected IResponseResult ExecuteRequest(
 			HttpMethod method,
 			string baseUrl,
 			IQueryString queryString = null,
@@ -94,15 +98,16 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return this.restHandler.ExecuteRequest(method, baseUrl, queryString, headers, body);
 		}
-        
-		public async Task<IResponseResult> ExecuteRequestAsync(
+
+		protected async Task<IResponseResult> ExecuteRequestAsync(
 			HttpMethod method,
 			string baseUrl,
 			IQueryString queryString = null,
 			IHeaderCollection headers = null,
-			IRequestBody body = null)
+			IRequestBody body = null, 
+			CancellationToken cancellationToken = default)
 		{
-			return await this.restHandler.ExecuteRequestAsync(method, baseUrl, queryString, headers, body);
+			return await this.restHandler.ExecuteRequestAsync(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken);
 		}
 
 		#endregion

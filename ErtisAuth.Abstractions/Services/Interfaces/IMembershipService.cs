@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using ErtisAuth.Core.Models;
@@ -17,10 +18,11 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 			bool? withCount = null, 
 			string sortField = null, 
 			SortDirection? sortDirection = null,
-			IDictionary<string, bool> selectFields = null);
+			IDictionary<string, bool> selectFields = null,
+			CancellationToken cancellationToken = default);
 
 		Membership GetBySecretKey(string secretKey);
 		
-		Task<Membership> GetBySecretKeyAsync(string secretKey);
+		Task<Membership> GetBySecretKeyAsync(string secretKey, CancellationToken cancellationToken = default);
 	}
 }

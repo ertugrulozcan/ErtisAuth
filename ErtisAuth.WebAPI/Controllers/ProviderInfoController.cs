@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -36,9 +37,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Get([FromRoute] string membershipId)
+		public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 		{
-			var providers = await this.providerService.GetProvidersAsync(membershipId);
+			var providers = await this.providerService.GetProvidersAsync(membershipId, cancellationToken: cancellationToken);
 			var activeProviders = providers.Where(x => x.IsActive != null && x.IsActive.Value);
 			return this.Ok(activeProviders.Select(x => new
 			{

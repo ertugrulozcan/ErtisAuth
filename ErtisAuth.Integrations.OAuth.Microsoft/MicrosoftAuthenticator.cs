@@ -1,5 +1,5 @@
-using System;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
@@ -43,14 +43,16 @@ namespace ErtisAuth.Integrations.OAuth.Microsoft
 
 		#region Methods
 
+		// ReSharper disable once UnusedMember.Local
 		private async Task<IResponseResult> ExecuteRequestAsync(
 			HttpMethod method,
 			string baseUrl,
 			IQueryString queryString = null,
 			IHeaderCollection headers = null,
-			IRequestBody body = null)
+			IRequestBody body = null,
+			CancellationToken cancellationToken = default)
 		{
-			return await this.restHandler.ExecuteRequestAsync(method, baseUrl, queryString, headers, body);
+			return await this.restHandler.ExecuteRequestAsync(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken);
 		}
 		
 		private async Task<IResponseResult<TResult>> ExecuteRequestAsync<TResult>(
@@ -58,24 +60,26 @@ namespace ErtisAuth.Integrations.OAuth.Microsoft
 			string baseUrl,
 			IQueryString queryString = null,
 			IHeaderCollection headers = null,
-			IRequestBody body = null)
+			IRequestBody body = null,
+			CancellationToken cancellationToken = default)
 		{
-			return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body);
+			return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken);
 		}
 		
-		public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider)
+		public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
 		{
-			return await this.VerifyTokenAsync(request as MicrosoftLoginRequest, provider);
+			return await this.VerifyTokenAsync(request as MicrosoftLoginRequest, provider, cancellationToken: cancellationToken);
 		}
 		
-		public async Task<bool> VerifyTokenAsync(MicrosoftLoginRequest request, Provider provider)
+		public async Task<bool> VerifyTokenAsync(MicrosoftLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
 		{
 			if (provider.AppClientId == request.ClientId)
 			{
 				var response = await this.ExecuteRequestAsync<MicrosoftUser>(
 					HttpMethod.Get, 
 					$"{MICROSOFT_GRAPH_API_URL}/me",
-					headers: HeaderCollection.Add("Authorization", $"Bearer {request.AccessToken}"));
+					headers: HeaderCollection.Add("Authorization", $"Bearer {request.AccessToken}"),
+					cancellationToken: cancellationToken);
 
 				if (response.IsSuccess)
 				{
@@ -90,7 +94,7 @@ namespace ErtisAuth.Integrations.OAuth.Microsoft
 			}
 		}
 
-		public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider)
+		public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider, CancellationToken cancellationToken = default)
 		{
 			/*
 			 * https://learn.microsoft.com/en-us/azure/active-directory/develop/active-directory-configurable-token-lifetimes#access-tokens

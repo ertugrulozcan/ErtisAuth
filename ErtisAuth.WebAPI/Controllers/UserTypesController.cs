@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
@@ -48,9 +49,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<ActionResult<UserType>> Get([FromRoute] string membershipId, [FromRoute] string id)
+		public async Task<ActionResult<UserType>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 		{
-			var userType = await this.userTypeService.GetAsync(membershipId, id);
+			var userType = await this.userTypeService.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 			if (userType != null)
 			{
 				return this.Ok(userType);
@@ -68,9 +69,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<ActionResult<UserType>> GetFieldInfoOwnerRelations([FromRoute] string membershipId, [FromRoute] string id)
+		public async Task<ActionResult<UserType>> GetFieldInfoOwnerRelations([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 		{
-			var relations = await this.userTypeService.GetFieldInfoOwnerRelationsAsync(membershipId, id);
+			var relations = await this.userTypeService.GetFieldInfoOwnerRelationsAsync(membershipId, id, cancellationToken: cancellationToken);
 			if (relations != null)
 			{
 				return this.Ok(relations);
@@ -87,12 +88,12 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Get([FromRoute] string membershipId)
+		public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 		{
 			this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
 			this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
 				
-			var userTypes = await this.userTypeService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection);
+			var userTypes = await this.userTypeService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 			return this.Ok(userTypes);
 		}
 		
@@ -102,13 +103,13 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> GetAll([FromRoute] string membershipId)
+		public async Task<IActionResult> GetAll([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 		{
-			var userTypes = await this.userTypeService.GetAsync(membershipId, null, null, false, null, null);
+			var userTypes = await this.userTypeService.GetAsync(membershipId, null, null, false, null, null, cancellationToken: cancellationToken);
 			var allUserTypes = new List<UserType>();
 			allUserTypes.AddRange(userTypes.Items);
 			
-			var originUserType = await this.userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG);
+			var originUserType = await this.userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG, cancellationToken: cancellationToken);
 			if (originUserType != null)
 			{
 				allUserTypes.Add(originUserType);	
@@ -130,14 +131,14 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public override async Task<IActionResult> Query()
+		public override async Task<IActionResult> Query(CancellationToken cancellationToken = default)
 		{
-			return await base.Query();
+			return await base.Query(cancellationToken: cancellationToken);
 		}
 		
-		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
+		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
 		{
-			return await this.userTypeService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			return await this.userTypeService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 		}
 		
 		#endregion
@@ -151,10 +152,10 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] UserType model)
+		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] UserType model, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			var userType = await this.userTypeService.CreateAsync(utilizer, membershipId, model);
+			var userType = await this.userTypeService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{userType.Id}", userType);
 		}
 		
@@ -165,11 +166,11 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpPut("{id}")]
 		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Update)]
-		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UserType model)
+		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UserType model, CancellationToken cancellationToken = default)
 		{
 			model.Id = id;
 			var utilizer = this.GetUtilizer();
-			var userType = await this.userTypeService.UpdateAsync(utilizer, membershipId, model);
+			var userType = await this.userTypeService.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 			return this.Ok(userType);
 		}
 
@@ -180,10 +181,10 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpDelete("{id}")]
 		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Delete)]
-		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id)
+		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			if (await this.userTypeService.DeleteAsync(utilizer, membershipId, id))
+			if (await this.userTypeService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
 			{
 				return this.NoContent();
 			}

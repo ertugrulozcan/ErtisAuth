@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.MongoDB.Queries;
 using Ertis.Schema.Extensions;
@@ -288,7 +289,7 @@ namespace ErtisAuth.Infrastructure.Services
         
         #region Methods
 
-        public async ValueTask<Dictionary<string, List<string>>> GetFieldInfoOwnerRelationsAsync(string membershipId, string id)
+        public async ValueTask<Dictionary<string, List<string>>> GetFieldInfoOwnerRelationsAsync(string membershipId, string id, CancellationToken cancellationToken = default)
         {
 	        var fieldInfoOwnerRelationDictionary = new Dictionary<string, List<string>>();
 
@@ -303,7 +304,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        }
 	        else
 	        {
-		        userType = await base.GetAsync(membershipId, id);
+		        userType = await base.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 	        }
 	        
 	        if (userType == null)
@@ -311,7 +312,7 @@ namespace ErtisAuth.Infrastructure.Services
 		        return null;
 	        }
 	        
-	        var ancestors = await this.GetGenealogyAsync(userType);
+	        var ancestors = await this.GetGenealogyAsync(userType, cancellationToken: cancellationToken);
 	        foreach (var fieldInfo in userType.Properties)
 	        {
 		        var ancestor = ancestors.LastOrDefault(x => x.Properties.Any(y => y.Name == fieldInfo.Name));
@@ -330,13 +331,13 @@ namespace ErtisAuth.Infrastructure.Services
 	        return fieldInfoOwnerRelationDictionary;
         }
         
-        private async ValueTask<List<UserType>> GetGenealogyAsync(UserType userType)
+        private async ValueTask<List<UserType>> GetGenealogyAsync(UserType userType, CancellationToken cancellationToken = default)
         {
 	        var ancestors = new List<UserType> { userType };
 	        var pivotUserType = userType;
 	        do
 	        {
-		        pivotUserType = await this.GetBaseUserTypeAsync(userType.MembershipId, pivotUserType.BaseUserType);
+		        pivotUserType = await this.GetBaseUserTypeAsync(userType.MembershipId, pivotUserType.BaseUserType, cancellationToken: cancellationToken);
 		        if (pivotUserType != null)
 		        {
 			        ancestors.Add(pivotUserType);
@@ -363,20 +364,20 @@ namespace ErtisAuth.Infrastructure.Services
 	        }
         }
         
-        protected override async Task<UserType> TouchAsync(UserType model, CrudOperation crudOperation)
+        protected override async Task<UserType> TouchAsync(UserType model, CrudOperation crudOperation, CancellationToken cancellationToken = default)
         {
-	        model = await this.EnsureBaseUserTypeAsync(model, crudOperation);
+	        model = await this.EnsureBaseUserTypeAsync(model, crudOperation, cancellationToken: cancellationToken);
 	        return model;
         }
 
-        private async Task<UserType> EnsureBaseUserTypeAsync(UserType model, CrudOperation crudOperation)
+        private async Task<UserType> EnsureBaseUserTypeAsync(UserType model, CrudOperation crudOperation, CancellationToken cancellationToken = default)
         {
 	        if (string.IsNullOrEmpty(model.BaseUserType))
 	        {
 		        model.BaseUserType = OriginUserType.Slug;
 	        }
 
-	        var baseUserType = await this.GetBaseUserTypeAsync(model.MembershipId, model.BaseUserType);
+	        var baseUserType = await this.GetBaseUserTypeAsync(model.MembershipId, model.BaseUserType, cancellationToken: cancellationToken);
 	        if (baseUserType == null)
 	        {
 		        throw ErtisAuthException.InheritedTypeNotFound(model.BaseUserType);
@@ -392,7 +393,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        return model;
         }
 		
-        private async Task<UserType> GetBaseUserTypeAsync(string membershipId, string baseUserTypeName)
+        private async Task<UserType> GetBaseUserTypeAsync(string membershipId, string baseUserTypeName, CancellationToken cancellationToken = default)
         {
 	        if (baseUserTypeName == OriginUserType.Name || baseUserTypeName == OriginUserType.Slug)
 	        {
@@ -403,10 +404,10 @@ namespace ErtisAuth.Infrastructure.Services
 		        }
 	        }
 			
-	        return await this.GetByNameOrSlugAsync(membershipId, baseUserTypeName);
+	        return await this.GetByNameOrSlugAsync(membershipId, baseUserTypeName, cancellationToken: cancellationToken);
         }
 
-        public async Task<UserType> GetByNameOrSlugAsync(string membershipId, string nameOrSlug)
+        public async Task<UserType> GetByNameOrSlugAsync(string membershipId, string nameOrSlug, CancellationToken cancellationToken = default)
 		{
 			if (nameOrSlug == OriginUserType.Name || nameOrSlug == OriginUserType.Slug)
 			{
@@ -417,10 +418,10 @@ namespace ErtisAuth.Infrastructure.Services
 				}
 			}
 
-			return await this.GetAsync(membershipId, x => x.Name == nameOrSlug || x.Slug == nameOrSlug);
+			return await this.GetAsync(membershipId, x => x.Name == nameOrSlug || x.Slug == nameOrSlug, cancellationToken: cancellationToken);
 		}
 
-        public async Task<bool> IsInheritFromAsync(string membershipId, string childUserTypeName, string parentUserTypeName)
+        public async Task<bool> IsInheritFromAsync(string membershipId, string childUserTypeName, string parentUserTypeName, CancellationToken cancellationToken = default)
         {
 	        if (string.IsNullOrEmpty(childUserTypeName))
 	        {
@@ -439,7 +440,7 @@ namespace ErtisAuth.Infrastructure.Services
 		        return true;
 	        }
 
-	        var allUserTypes = await this.GetAsync(membershipId, null, null, false, null, null);
+	        var allUserTypes = await this.GetAsync(membershipId, null, null, false, null, null, cancellationToken: cancellationToken);
 	        var childUserType = allUserTypes.Items.FirstOrDefault(x => x.Slug == childUserTypeName);
 	        if (childUserType == null)
 	        {
@@ -571,7 +572,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return base.Delete(utilizer, membershipId, id);
 		}
 
-		public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
+		public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 		{
 			// Is Deletable?
 			if (!this.IsDeletable(id, membershipId, out var _))
@@ -579,7 +580,7 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.UserTypeCanNotBeDelete();
 			}
 			
-			return await base.DeleteAsync(utilizer, membershipId, id);
+			return await base.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken);
 		}
 
 		// ReSharper disable once OutParameterValueIsAlwaysDiscarded.Local

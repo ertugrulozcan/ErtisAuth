@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
@@ -46,9 +47,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpGet("{id}")]
 		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public async Task<ActionResult<ErtisAuthEvent>> Get([FromRoute] string membershipId, [FromRoute] string id)
+		public async Task<ActionResult<ErtisAuthEvent>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 		{
-			var ertisAuthEvent = await this.eventService.GetDynamicAsync(membershipId, id);
+			var ertisAuthEvent = await this.eventService.GetDynamicAsync(membershipId, id, cancellationToken: cancellationToken);
 			if (ertisAuthEvent != null)
 			{
 				return this.Ok(ertisAuthEvent);
@@ -61,25 +62,25 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpGet]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public async Task<IActionResult> Get([FromRoute] string membershipId)
+		public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 		{
 			this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
 			this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
 				
-			var events = await this.eventService.GetDynamicAsync(membershipId, skip, limit, withCount, orderBy, sortDirection);
+			var events = await this.eventService.GetDynamicAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 			return this.Ok(events);
 		}
 
 		[HttpPost("_query")]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public override async Task<IActionResult> Query()
+		public override async Task<IActionResult> Query(CancellationToken cancellationToken = default)
 		{
-			return await base.Query();
+			return await base.Query(cancellationToken: cancellationToken);
 		}
 
-		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
+		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
 		{
-			return await this.eventService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			return await this.eventService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 		}
 		
 		#endregion
@@ -88,9 +89,9 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		[HttpPost]
 		[RbacAction(Rbac.CrudActions.Create)]
-		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] ErtisAuthCustomEvent model)
+		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] ErtisAuthCustomEvent model, CancellationToken cancellationToken = default)
 		{
-			var membership = await this.membershipService.GetAsync(membershipId);
+			var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				return this.MembershipNotFound(membershipId);
@@ -121,7 +122,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				UtilizerId = utilizerId
 			};
 				
-			var ertisAuthEvent = await this.eventService.FireEventAsync(this, ertisAuthCustomEvent);
+			var ertisAuthEvent = await this.eventService.FireEventAsync(this, ertisAuthCustomEvent, cancellationToken: cancellationToken);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{ertisAuthEvent.Id}", ertisAuthEvent);
 		}
 

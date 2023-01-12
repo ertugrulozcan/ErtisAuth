@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Resources;
@@ -115,7 +116,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public Role Get(string membershipId, string id) => this.GetAsync(membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async ValueTask<Role> GetAsync(string membershipId, string id)
+		public async ValueTask<Role> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 		{
 			await Task.CompletedTask;
 			return this.MockRepository.FirstOrDefault(x => x.MembershipId == membershipId && x.Id == id);
@@ -124,7 +125,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 		public IPaginationCollection<Role> Get(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection) =>
 			this.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async ValueTask<IPaginationCollection<Role>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
+		public async ValueTask<IPaginationCollection<Role>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection, CancellationToken cancellationToken = default)
 		{
 			await Task.CompletedTask;
 			var filteredItems = this.MockRepository.Where(x => x.MembershipId == membershipId);
@@ -166,7 +167,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 		}
 
 		public ValueTask<IPaginationCollection<Role>> SearchAsync(string membershipId, string keyword, int? skip = null, int? limit = null, bool? withCount = null,
-			string sortField = null, SortDirection? sortDirection = null)
+			string sortField = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default)
 		{
 			throw new NotImplementedException();
 		}
@@ -176,14 +177,14 @@ namespace ErtisAuth.Tests.Mocks.Services
 			throw new NotImplementedException();
 		}
 
-		public Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson)
+		public Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default)
 		{
 			throw new NotImplementedException();
 		}
 
 		public Role GetByName(string name, string membershipId) => this.GetByNameAsync(name, membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async ValueTask<Role> GetByNameAsync(string name, string membershipId)
+		public async ValueTask<Role> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
 		{
 			await Task.CompletedTask;
 			return this.MockRepository.FirstOrDefault(x => x.MembershipId == membershipId && x.Name == name);
@@ -218,7 +219,8 @@ namespace ErtisAuth.Tests.Mocks.Services
 			bool? withCount = null, 
 			string sortField = null, 
 			SortDirection? sortDirection = null,
-			IDictionary<string, bool> selectFields = null)
+			IDictionary<string, bool> selectFields = null, 
+			CancellationToken cancellationToken = default)
 		{
 			await Task.CompletedTask;
 			throw new NotImplementedException();
@@ -230,7 +232,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public Role Create(Utilizer utilizer, string membershipId, Role model) => this.CreateAsync(utilizer, membershipId, model).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async ValueTask<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model)
+		public async ValueTask<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
 		{
 			model.MembershipId = membershipId;
 			model.Sys = new SysModel
@@ -250,10 +252,10 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public Role Update(Utilizer utilizer, string membershipId, Role model) => this.UpdateAsync(utilizer, membershipId, model).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async ValueTask<Role> UpdateAsync(Utilizer utilizer, string membershipId, Role model)
+		public async ValueTask<Role> UpdateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
 		{
 			model.MembershipId = membershipId;
-			var current = await this.GetAsync(membershipId, model.Id);
+			var current = await this.GetAsync(membershipId, model.Id, cancellationToken);
 			if (current != null)
 			{
 				model.Sys = new SysModel
@@ -287,7 +289,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 
 		public bool Delete(Utilizer utilizer, string membershipId, string id) => this.DeleteAsync(utilizer, membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
+		public async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 		{
 			var index = this.MockRepository.FindIndex(x => x.MembershipId == membershipId && x.Id == id);
 			if (index >= 0)
@@ -307,7 +309,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 			throw new NotImplementedException();
 		}
 
-		public ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids)
+		public ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
 		{
 			throw new NotImplementedException();
 		}
@@ -319,7 +321,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 			throw new NotImplementedException();
 		}
 
-		public ValueTask<TModel> GetAsync<TModel>(string membershipId, string id) where TModel : class, IHasMembership
+		public ValueTask<TModel> GetAsync<TModel>(string membershipId, string id, CancellationToken cancellationToken = default) where TModel : class, IHasMembership
 		{
 			throw new NotImplementedException();
 		}
@@ -331,7 +333,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 		}
 
 		public ValueTask<IPaginationCollection<TModel>> GetAsync<TModel>(string membershipId, int? skip, int? limit, bool withCount, string orderBy,
-			SortDirection? sortDirection) where TModel : class, IHasMembership
+			SortDirection? sortDirection, CancellationToken cancellationToken = default) where TModel : class, IHasMembership
 		{
 			throw new NotImplementedException();
 		}

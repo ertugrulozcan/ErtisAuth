@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Extensions;
@@ -36,12 +37,12 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		[HttpGet("memberships")]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public async Task<IActionResult> GetMemberships()
+		public async Task<IActionResult> GetMemberships(CancellationToken cancellationToken = default)
 		{
 			this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 			this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 
-			var getMembershipsResult = await this.membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection);
+			var getMembershipsResult = await this.membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 			if (getMembershipsResult?.Items != null)
 			{
 				return this.Ok(new PaginationCollection<dynamic>

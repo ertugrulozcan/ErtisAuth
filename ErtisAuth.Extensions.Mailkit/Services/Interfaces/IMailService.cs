@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Extensions.Mailkit.Models;
 
@@ -12,6 +13,7 @@ namespace ErtisAuth.Extensions.Mailkit.Services.Interfaces
             string toName, 
             string toAddress,
             string subject, 
-            string htmlBody);
+            string htmlBody,
+            CancellationToken cancellationToken = default);
     }
 }

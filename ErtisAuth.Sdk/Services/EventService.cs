@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
@@ -37,7 +38,7 @@ namespace ErtisAuth.Sdk.Services
 		public IResponseResult<ErtisAuthCustomEvent> FireCustomEvent(string eventType, string utilizerId, object document, object prior, TokenBase token) =>
 			this.FireCustomEventAsync(eventType, utilizerId, document, prior, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<ErtisAuthCustomEvent>> FireCustomEventAsync(string eventType, string utilizerId, object document, object prior, TokenBase token)
+		public async Task<IResponseResult<ErtisAuthCustomEvent>> FireCustomEventAsync(string eventType, string utilizerId, object document, object prior, TokenBase token, CancellationToken cancellationToken = default)
 		{
 			var ertisAuthCustomEvent = new ErtisAuthCustomEvent
 			{
@@ -53,7 +54,8 @@ namespace ErtisAuth.Sdk.Services
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/events", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(ertisAuthCustomEvent));	
+				new JsonRequestBody(ertisAuthCustomEvent), 
+				cancellationToken: cancellationToken);	
 		}
 		
 		#endregion

@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Extensions.Mailkit.Models;
 using ErtisAuth.Extensions.Mailkit.Services.Interfaces;
@@ -18,7 +19,8 @@ namespace ErtisAuth.Extensions.Mailkit.Services
             string toName, 
             string toAddress, 
             string subject, 
-            string htmlBody)
+            string htmlBody,
+            CancellationToken cancellationToken = default)
         {
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(fromName, fromAddress));
@@ -32,17 +34,16 @@ namespace ErtisAuth.Extensions.Mailkit.Services
             {
                 if (server.TlsEnabled)
                 {
-                    await client.ConnectAsync(server.Host, server.Port, SecureSocketOptions.StartTlsWhenAvailable);    
+                    await client.ConnectAsync(server.Host, server.Port, SecureSocketOptions.StartTlsWhenAvailable, cancellationToken: cancellationToken);    
                 }
                 else
                 {
-                    await client.ConnectAsync(server.Host, server.Port);
+                    await client.ConnectAsync(server.Host, server.Port, cancellationToken: cancellationToken);
                 }
                 
-                await client.AuthenticateAsync(server.Username, server.Password);
-
-                await client.SendAsync(message);
-                await client.DisconnectAsync(true);
+                await client.AuthenticateAsync(server.Username, server.Password, cancellationToken: cancellationToken);
+                await client.SendAsync(message, cancellationToken: cancellationToken);
+                await client.DisconnectAsync(true, cancellationToken: cancellationToken);
             }
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Data.Models;
 using Ertis.Data.Repository;
@@ -39,7 +40,7 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 
 	#region Index Methods
 
-	public async Task CreateIndexesAsync()
+	public async Task CreateIndexesAsync(CancellationToken cancellationToken = default)
 	{
 		if (!this.Indexes.Any())
 		{
@@ -48,7 +49,7 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
         
 		try
 		{
-			var currentIndexes = (await this.GetIndexesAsync()).ToArray();
+			var currentIndexes = (await this.GetIndexesAsync(cancellationToken)).ToArray();
 			var missingIndexes = new List<IIndexDefinition>();
 			foreach (var index in this.Indexes)
 			{
@@ -60,7 +61,7 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 
 			if (missingIndexes.Any())
 			{
-				await this.CreateManyIndexAsync(missingIndexes);
+				await this.CreateManyIndexAsync(missingIndexes, cancellationToken);
 
 				foreach (var index in missingIndexes)
 				{

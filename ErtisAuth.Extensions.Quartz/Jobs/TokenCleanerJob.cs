@@ -43,7 +43,7 @@ namespace ErtisAuth.Extensions.Quartz.Jobs
 			try
 			{
 				var dataMap = context.JobDetail.JobDataMap;
-				string membershipId = dataMap.GetString("membership_id");
+				var membershipId = dataMap.GetString("membership_id");
 				var membership = await this.membershipService.GetAsync(membershipId);
 				if (membership != null)
 				{

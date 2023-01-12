@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.GeoLocation;
@@ -28,7 +29,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Methods
 		
-		public async Task<GeoLocationInfo> LookupAsync(string ipAddress)
+		public async Task<GeoLocationInfo> LookupAsync(string ipAddress, CancellationToken cancellationToken = default)
 		{
 			using var client = new MaxMind.GeoIP2.WebServiceClient(this.maxMindOptions.AccountId, this.maxMindOptions.LicenseKey, host: "geolite.info", timeout: 10000);
 			var response = await client.CityAsync(ipAddress);

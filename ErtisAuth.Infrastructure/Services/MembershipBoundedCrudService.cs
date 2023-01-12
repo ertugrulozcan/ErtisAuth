@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Data.Models;
 using Ertis.MongoDB.Repository;
@@ -65,7 +66,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return model;
 		}
 		
-		protected virtual async Task<TModel> TouchAsync(TModel model, CrudOperation crudOperation)
+		protected virtual async Task<TModel> TouchAsync(TModel model, CrudOperation crudOperation, CancellationToken cancellationToken = default)
 		{
 			await Task.CompletedTask;
 			return model;
@@ -113,10 +114,10 @@ namespace ErtisAuth.Infrastructure.Services
 			return inserted;
 		}
 		
-		public virtual async ValueTask<TModel> CreateAsync(Utilizer utilizer, string membershipId, TModel model)
+		public virtual async ValueTask<TModel> CreateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
 		{
 			// Check membership
-			var membership = await this.membershipService.GetAsync(membershipId);
+			var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -127,7 +128,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Touch model
-			model = await this.TouchAsync(model, CrudOperation.Create);
+			model = await this.TouchAsync(model, CrudOperation.Create, cancellationToken: cancellationToken);
 			
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -143,7 +144,7 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			// Insert to database
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var insertedDto = await this.repository.InsertAsync(dto);
+			var insertedDto = await this.repository.InsertAsync(dto, cancellationToken: cancellationToken);
 			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
 			
 			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(utilizer, inserted));
@@ -202,10 +203,10 @@ namespace ErtisAuth.Infrastructure.Services
 			return updated;
 		}
 		
-		public virtual async ValueTask<TModel> UpdateAsync(Utilizer utilizer, string membershipId, TModel model)
+		public virtual async ValueTask<TModel> UpdateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
 		{
 			// Check membership
-			var membership = await this.membershipService.GetAsync(membershipId);
+			var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -216,7 +217,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Overwrite
-			var current = await this.GetAsync(membershipId, model.Id);
+			var current = await this.GetAsync(membershipId, model.Id, cancellationToken: cancellationToken);
 			if (current == null)
 			{
 				throw this.GetNotFoundError(model.Id);
@@ -225,7 +226,7 @@ namespace ErtisAuth.Infrastructure.Services
 			this.Overwrite(model, current);
 			
 			// Touch model
-			model = await this.TouchAsync(model, CrudOperation.Update);
+			model = await this.TouchAsync(model, CrudOperation.Update, cancellationToken: cancellationToken);
 			
 			// Model validation
 			if (!this.ValidateModel(model, out var errors))
@@ -241,7 +242,7 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			model.MembershipId = membershipId;
 			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var updatedDto = await this.repository.UpdateAsync(dto);
+			var updatedDto = await this.repository.UpdateAsync(dto, cancellationToken: cancellationToken);
 			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
 			
 			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated));
@@ -316,12 +317,12 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public virtual async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id)
+		public virtual async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 		{
-			var current = await this.GetAsync(membershipId, id);
+			var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 			if (current != null)
 			{
-				var isDeleted = await this.repository.DeleteAsync(id);
+				var isDeleted = await this.repository.DeleteAsync(id, cancellationToken: cancellationToken);
 				if (isDeleted)
 				{
 					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));
@@ -370,17 +371,17 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public virtual async ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids)
+		public virtual async ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
 		{
 			var isAllDeleted = true;
 			var isAllFailed = true;
 			
 			foreach (var id in ids)
 			{
-				var current = await this.GetAsync(membershipId, id);
+				var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 				if (current != null)
 				{
-					var isDeleted = await this.repository.DeleteAsync(id);
+					var isDeleted = await this.repository.DeleteAsync(id, cancellationToken: cancellationToken);
 					if (isDeleted)
 					{
 						this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));		

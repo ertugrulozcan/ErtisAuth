@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
@@ -44,15 +45,15 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		[HttpGet]
 		[Route("me")]
-		public async Task<IActionResult> Me()
+		public async Task<IActionResult> Me(CancellationToken cancellationToken = default)
 		{
 			var token = this.GetToken();
-			var utilizer = await this.GetTokenOwnerUtilizerAsync(token);
+			var utilizer = await this.GetTokenOwnerUtilizerAsync(token, cancellationToken: cancellationToken);
 			if (utilizer != null)
 			{
 				if (token.TokenType == SupportedTokenTypes.Bearer)
 				{
-					var user = await this.userService.GetAsync(utilizer.MembershipId, utilizer.Id);
+					var user = await this.userService.GetAsync(utilizer.MembershipId, utilizer.Id, cancellationToken: cancellationToken);
 					return this.Ok(user);
 				}
 				else
@@ -68,10 +69,10 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpGet]
 		[Route("whoami")]
-		public async Task<IActionResult> WhoAmI()
+		public async Task<IActionResult> WhoAmI(CancellationToken cancellationToken = default)
 		{
 			var token = this.GetToken();
-			var utilizer = await this.GetTokenOwnerUtilizerAsync(token);
+			var utilizer = await this.GetTokenOwnerUtilizerAsync(token, cancellationToken: cancellationToken);
 			if (utilizer != null)
 			{
 				return this.Ok(utilizer);
@@ -106,20 +107,20 @@ namespace ErtisAuth.WebAPI.Controllers
 			return token;
 		}
 
-		private async Task<IUtilizer> GetTokenOwnerUtilizerAsync(TokenBase token)
+		private async Task<IUtilizer> GetTokenOwnerUtilizerAsync(TokenBase token, CancellationToken cancellationToken = default)
 		{
 			return token.TokenType switch
 			{
 				SupportedTokenTypes.None => throw ErtisAuthException.UnsupportedTokenType(),
-				SupportedTokenTypes.Basic => await this.tokenService.WhoAmIAsync(token as BasicToken),
-				SupportedTokenTypes.Bearer => await this.tokenService.WhoAmIAsync(token as BearerToken),
+				SupportedTokenTypes.Basic => await this.tokenService.WhoAmIAsync(token as BasicToken, cancellationToken: cancellationToken),
+				SupportedTokenTypes.Bearer => await this.tokenService.WhoAmIAsync(token as BearerToken, cancellationToken: cancellationToken),
 				_ => throw ErtisAuthException.UnsupportedTokenType()
 			};
 		}
 		
 		[HttpPost]
 		[Route("generate-token")]
-		public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenFormModel model)
+		public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenFormModel model, CancellationToken cancellationToken = default)
 		{
 			var membershipId = this.GetXErtisAlias();
 			if (string.IsNullOrEmpty(membershipId))
@@ -142,7 +143,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				userAgent = this.Request.Headers["X-UserAgent"].ToString();
 			}
 			
-			var token = await this.tokenService.GenerateTokenAsync(username, password, membershipId, ipAddress: ipAddress, userAgent: userAgent);
+			var token = await this.tokenService.GenerateTokenAsync(username, password, membershipId, ipAddress: ipAddress, userAgent: userAgent, cancellationToken: cancellationToken);
 			if (token != null)
 			{
 				return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
@@ -155,7 +156,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpGet]
 		[Route("verify-token")]
-		public async Task<IActionResult> VerifyToken()
+		public async Task<IActionResult> VerifyToken(CancellationToken cancellationToken = default)
 		{
 			string token = this.GetTokenFromHeader(out string tokenTypeStr);
 			if (string.IsNullOrEmpty(token))
@@ -168,7 +169,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				throw ErtisAuthException.UnsupportedTokenType();	
 			}
 
-			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false);
+			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false, cancellationToken: cancellationToken);
 			if (validationResult.IsValidated)
 			{
 				return this.Ok(validationResult);
@@ -181,7 +182,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpPost]
 		[Route("verify-token")]
-		public async Task<IActionResult> VerifyToken([FromBody] VerifyTokenFormModel model)
+		public async Task<IActionResult> VerifyToken([FromBody] VerifyTokenFormModel model, CancellationToken cancellationToken = default)
 		{
 			string token = this.GetTokenFromHeader(out string tokenTypeStr);
 			if (string.IsNullOrEmpty(token))
@@ -199,7 +200,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.AuthorizationHeaderMissing();
 			}
 
-			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false);
+			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false, cancellationToken: cancellationToken);
 			if (validationResult.IsValidated)
 			{
 				return this.Ok(validationResult);
@@ -212,7 +213,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpGet]
 		[Route("refresh-token")]
-		public async Task<IActionResult> RefreshToken()
+		public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken = default)
 		{
 			string refreshToken = this.GetTokenFromHeader(out string _);
 			if (string.IsNullOrEmpty(refreshToken))
@@ -226,13 +227,13 @@ namespace ErtisAuth.WebAPI.Controllers
 				revokeBefore = this.Request.Query["revoke"] == "true";
 			}
 
-			var token = await this.tokenService.RefreshTokenAsync(refreshToken, revokeBefore);
+			var token = await this.tokenService.RefreshTokenAsync(refreshToken, revokeBefore, cancellationToken: cancellationToken);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 		}
 		
 		[HttpPost]
 		[Route("refresh-token")]
-		public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenFormModel model)
+		public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenFormModel model, CancellationToken cancellationToken = default)
 		{
 			string refreshToken = this.GetTokenFromHeader(out string _);
 			if (string.IsNullOrEmpty(refreshToken))
@@ -246,13 +247,13 @@ namespace ErtisAuth.WebAPI.Controllers
 				revokeBefore = this.Request.Query["revoke"] == "true";
 			}
 
-			var token = await this.tokenService.RefreshTokenAsync(refreshToken, revokeBefore);
+			var token = await this.tokenService.RefreshTokenAsync(refreshToken, revokeBefore, cancellationToken: cancellationToken);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 		}
 		
 		[HttpGet]
 		[Route("revoke-token")]
-		public async Task<IActionResult> RevokeToken()
+		public async Task<IActionResult> RevokeToken(CancellationToken cancellationToken = default)
 		{
 			string token = this.GetTokenFromHeader(out string _);
 			if (string.IsNullOrEmpty(token))
@@ -266,9 +267,9 @@ namespace ErtisAuth.WebAPI.Controllers
 				bool.TryParse(this.Request.Query["logout-all"], out logoutFromAllDevices);
 			}
 			
-			if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices))
+			if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices, cancellationToken: cancellationToken))
 			{
-				await this.providerService.LogoutAsync(token);
+				await this.providerService.LogoutAsync(token, cancellationToken: cancellationToken);
 				return this.NoContent();
 			}
 			else
@@ -279,7 +280,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpPost]
 		[Route("revoke-token")]
-		public async Task<IActionResult> RevokeToken([FromBody] RevokeTokenFormModel model)
+		public async Task<IActionResult> RevokeToken([FromBody] RevokeTokenFormModel model, CancellationToken cancellationToken = default)
 		{
 			string token = this.GetTokenFromHeader(out string _);
 			if (string.IsNullOrEmpty(token))
@@ -293,9 +294,9 @@ namespace ErtisAuth.WebAPI.Controllers
 				bool.TryParse(this.Request.Query["logout-all"], out logoutFromAllDevices);
 			}
 			
-			if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices))
+			if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices, cancellationToken: cancellationToken))
 			{
-				await this.providerService.LogoutAsync(token);
+				await this.providerService.LogoutAsync(token, cancellationToken: cancellationToken);
 				return this.NoContent();
 			}
 			else
@@ -310,7 +311,7 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		[HttpPost]
 		[Route("oauth/facebook/login")]
-		public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequest request)
+		public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequest request, CancellationToken cancellationToken = default)
 		{
 			var membershipId = this.GetXErtisAlias();
 			
@@ -326,12 +327,12 @@ namespace ErtisAuth.WebAPI.Controllers
 				userAgent = this.Request.Headers["X-UserAgent"].ToString();
 			}
 			
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent, cancellationToken: cancellationToken));
 		}
 		
 		[HttpPost]
 		[Route("oauth/google/login")]
-		public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+		public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken = default)
 		{
 			var membershipId = this.GetXErtisAlias();
 			
@@ -347,12 +348,12 @@ namespace ErtisAuth.WebAPI.Controllers
 				userAgent = this.Request.Headers["X-UserAgent"].ToString();
 			}
 			
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent, cancellationToken: cancellationToken));
 		}
 		
 		[HttpPost]
 		[Route("oauth/microsoft/login")]
-		public async Task<IActionResult> MicrosoftLogin([FromBody] MicrosoftLoginRequest request)
+		public async Task<IActionResult> MicrosoftLogin([FromBody] MicrosoftLoginRequest request, CancellationToken cancellationToken = default)
 		{
 			var membershipId = this.GetXErtisAlias();
 			
@@ -368,7 +369,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				userAgent = this.Request.Headers["X-UserAgent"].ToString();
 			}
 			
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent, cancellationToken: cancellationToken));
 		}
 
 		#endregion

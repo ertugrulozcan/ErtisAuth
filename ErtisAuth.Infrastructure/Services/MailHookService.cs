@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
@@ -126,14 +127,14 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Methods
 		
-		private async void SendHookMailAsync(MailHook mailHook, IErtisAuthEvent ertisAuthEvent)
+		private async void SendHookMailAsync(MailHook mailHook, IErtisAuthEvent ertisAuthEvent, CancellationToken cancellationToken = default)
 		{
 			if (mailHook.IsActive)
 			{
-				var membership = await this.membershipService.GetAsync(mailHook.MembershipId);
+				var membership = await this.membershipService.GetAsync(mailHook.MembershipId, cancellationToken: cancellationToken);
 				if (membership?.MailSettings?.SmtpServer != null)
 				{
-					var dynamicObject = await this.userService.GetAsync(membership.Id, ertisAuthEvent.UtilizerId);
+					var dynamicObject = await this.userService.GetAsync(membership.Id, ertisAuthEvent.UtilizerId, cancellationToken: cancellationToken);
 					var user = dynamicObject.Deserialize<User>();
 					if (user != null)
 					{
@@ -151,14 +152,15 @@ namespace ErtisAuth.Infrastructure.Services
 									$"{user.FirstName} {user.LastName}",
 									user.EmailAddress,
 									mailSubject,
-									mailBody
+									mailBody, 
+									cancellationToken: cancellationToken
 								);
 								
 								await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
 									ErtisAuthEventType.MailhookMailSent,
 									ertisAuthEvent.UtilizerId,
 									membership.Id
-								));
+								), cancellationToken: cancellationToken);
 							}
 							catch (Exception ex)
 							{
@@ -169,9 +171,9 @@ namespace ErtisAuth.Infrastructure.Services
 									ErtisAuthEventType.MailhookMailFailed,
 									ertisAuthEvent.UtilizerId,
 									membership.Id
-								));
+								), cancellationToken: cancellationToken);
 							}
-						});	
+						}, cancellationToken);	
 					}
 				}
 			}

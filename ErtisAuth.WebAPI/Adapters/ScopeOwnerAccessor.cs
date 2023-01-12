@@ -59,7 +59,7 @@ namespace ErtisAuth.WebAPI.Adapters
 				}
 			}
 
-			if (this.httpContextAccessor.HttpContext.Items.ContainsKey("SysUtilizer"))
+			if (this.httpContextAccessor.HttpContext != null && this.httpContextAccessor.HttpContext.Items.ContainsKey("SysUtilizer"))
 			{
 				return this.httpContextAccessor.HttpContext.Items["SysUtilizer"].ToString();
 			}
@@ -71,7 +71,7 @@ namespace ErtisAuth.WebAPI.Adapters
 		{
 			try
 			{
-				accessToken = this.httpContextAccessor.HttpContext.Request.GetTokenFromHeader(out string _);
+				accessToken = this.httpContextAccessor.HttpContext?.Request.GetTokenFromHeader(out string _);
 				return true;
 			}
 			catch

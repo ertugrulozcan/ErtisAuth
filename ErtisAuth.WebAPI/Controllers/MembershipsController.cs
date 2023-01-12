@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
@@ -47,9 +48,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpPost]
 		[RbacAction(Rbac.CrudActions.Create)]
-		public async Task<IActionResult> Create([FromBody] CreateMembershipFormModel model)
+		public async Task<IActionResult> Create([FromBody] CreateMembershipFormModel model, CancellationToken cancellationToken = default)
 		{
-			var membership = await this.membershipService.CreateAsync(model.ToMembership());
+			var membership = await this.membershipService.CreateAsync(model.ToMembership(), cancellationToken: cancellationToken);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{membership.Id}", membership);
 		}
 		
@@ -60,9 +61,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpGet("{id}")]
 		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public async Task<IActionResult> Get([FromRoute] string id)
+		public async Task<IActionResult> Get([FromRoute] string id, CancellationToken cancellationToken = default)
 		{
-			var membership = await this.membershipService.GetAsync(id);
+			var membership = await this.membershipService.GetAsync(id, cancellationToken: cancellationToken);
 			if (membership != null)
 			{
 				return this.Ok(membership);
@@ -75,25 +76,25 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpGet]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public async Task<IActionResult> Get()
+		public async Task<IActionResult> Get(CancellationToken cancellationToken = default)
 		{
 			this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
 			this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
 				
-			var memberships = await this.membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection);
+			var memberships = await this.membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 			return this.Ok(memberships);
 		}
 		
 		[HttpPost("_query")]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public override async Task<IActionResult> Query()
+		public override async Task<IActionResult> Query(CancellationToken cancellationToken = default)
 		{
-			return await base.Query();
+			return await base.Query(cancellationToken: cancellationToken);
 		}
 		
-		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields)
+		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
 		{
-			return await this.membershipService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			return await this.membershipService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 		}
 		
 		[HttpGet("search")]
@@ -103,7 +104,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword)
+		public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(keyword.Trim()))
 			{
@@ -113,7 +114,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 			this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 			
-			return this.Ok(await this.membershipService.SearchAsync(keyword, null, skip, limit, withCount, orderBy, sortDirection));
+			return this.Ok(await this.membershipService.SearchAsync(keyword, null, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
 		}
 
 		#endregion
@@ -123,9 +124,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpPut("{id}")]
 		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Update)]
-		public async Task<IActionResult> Update([FromRoute] string id, [FromBody] UpdateMembershipFormModel model)
+		public async Task<IActionResult> Update([FromRoute] string id, [FromBody] UpdateMembershipFormModel model, CancellationToken cancellationToken = default)
 		{
-			var user = await this.membershipService.UpdateAsync(model.ToMembership(id));
+			var user = await this.membershipService.UpdateAsync(model.ToMembership(id), cancellationToken: cancellationToken);
 			return this.Ok(user);
 		}
 
@@ -136,9 +137,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpDelete("{id}")]
 		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Delete)]
-		public async Task<IActionResult> Delete([FromRoute] string id)
+		public async Task<IActionResult> Delete([FromRoute] string id, CancellationToken cancellationToken = default)
 		{
-			if (await this.membershipService.DeleteAsync(id))
+			if (await this.membershipService.DeleteAsync(id, cancellationToken: cancellationToken))
 			{
 				return this.NoContent();
 			}

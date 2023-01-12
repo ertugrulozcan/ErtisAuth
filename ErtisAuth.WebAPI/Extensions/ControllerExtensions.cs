@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
+// ReSharper disable MemberCanBePrivate.Global
 namespace ErtisAuth.WebAPI.Extensions
 {
 	public static class ControllerExtensions
@@ -170,12 +172,12 @@ namespace ErtisAuth.WebAPI.Extensions
 			return controller.BadRequest(ErtisAuthException.SearchKeywordRequired().Error);
 		}
 		
-		public static async Task<IActionResult> BulkDeleteAsync(this ControllerBase controller, IDeletableMembershipBoundedService service, string membershipId, string[] ids)
+		public static async Task<IActionResult> BulkDeleteAsync(this ControllerBase controller, IDeletableMembershipBoundedService service, string membershipId, string[] ids, CancellationToken cancellationToken = default)
 		{
 			var utilizer = controller.GetUtilizer();
 			if (ids != null)
 			{
-				var isDeleted = await service.BulkDeleteAsync(utilizer, membershipId, ids);
+				var isDeleted = await service.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
 				if (isDeleted != null)
 				{
 					if (isDeleted.Value)

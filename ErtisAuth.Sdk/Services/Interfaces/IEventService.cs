@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
 using ErtisAuth.Core.Models.Events;
@@ -12,6 +13,6 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 	{
 		IResponseResult<ErtisAuthCustomEvent> FireCustomEvent(string eventType, string utilizerId, object document, object prior, TokenBase token);
 		
-		Task<IResponseResult<ErtisAuthCustomEvent>> FireCustomEventAsync(string eventType, string utilizerId, object document, object prior, TokenBase token);
+		Task<IResponseResult<ErtisAuthCustomEvent>> FireCustomEventAsync(string eventType, string utilizerId, object document, object prior, TokenBase token, CancellationToken cancellationToken = default);
 	}
 }

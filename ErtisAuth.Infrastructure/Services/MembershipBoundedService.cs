@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Data.Models;
@@ -61,9 +62,10 @@ namespace ErtisAuth.Infrastructure.Services
 			bool? withCount = null, 
 			string sortField = null,
 			SortDirection? sortDirection = null, 
-			IDictionary<string, bool> selectFields = null)
+			IDictionary<string, bool> selectFields = null, 
+			CancellationToken cancellationToken = default)
 		{
-			return await this.repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+			return await this.repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 		}
 		
 		#endregion
@@ -82,27 +84,27 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<TDto, TModel>(dto);
 		}
 
-		public virtual async ValueTask<TModel> GetAsync(string membershipId, string id)
+		public virtual async ValueTask<TModel> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 		{
-			var membership = await this.membershipService.GetAsync(membershipId);
+			var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 			
-			var dto = await this.repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId);
+			var dto = await this.repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 			return Mapper.Current.Map<TDto, TModel>(dto);
 		}
 		
-		protected async ValueTask<TModel> GetAsync(string membershipId, Expression<Func<TDto, bool>> expression)
+		protected async ValueTask<TModel> GetAsync(string membershipId, Expression<Func<TDto, bool>> expression, CancellationToken cancellationToken = default)
 		{
-			var membership = await this.membershipService.GetAsync(membershipId);
+			var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 			
-			var entities = await this.repository.FindAsync(expression);
+			var entities = await this.repository.FindAsync(expression, cancellationToken: cancellationToken);
 			var entity = entities.Items.FirstOrDefault(x => x.MembershipId == membershipId);
 			return Mapper.Current.Map<TDto, TModel>(entity);
 		}
@@ -130,15 +132,15 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public virtual async ValueTask<IPaginationCollection<TModel>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection)
+		public virtual async ValueTask<IPaginationCollection<TModel>> GetAsync(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection, CancellationToken cancellationToken = default)
 		{
-			var membership = await this.membershipService.GetAsync(membershipId);
+			var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 			
-			var paginatedDtoCollection = await this.repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
+			var paginatedDtoCollection = await this.repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 			if (paginatedDtoCollection?.Items != null)
 			{
 				return new PaginationCollection<TModel>
@@ -158,9 +160,9 @@ namespace ErtisAuth.Infrastructure.Services
 			return this.Get(membershipId, id) as T;
 		}
 		
-		public async ValueTask<T> GetAsync<T>(string membershipId, string id) where T : class, Core.Models.IHasMembership
+		public async ValueTask<T> GetAsync<T>(string membershipId, string id, CancellationToken cancellationToken = default) where T : class, Core.Models.IHasMembership
 		{
-			return await this.GetAsync(membershipId, id) as T;
+			return await this.GetAsync(membershipId, id, cancellationToken: cancellationToken) as T;
 		}
 
 		public IPaginationCollection<T> Get<T>(
@@ -181,10 +183,11 @@ namespace ErtisAuth.Infrastructure.Services
 			int? limit, 
 			bool withCount, 
 			string orderBy, 
-			SortDirection? sortDirection)
+			SortDirection? sortDirection,
+			CancellationToken cancellationToken = default)
 			where T : class, Core.Models.IHasMembership
 		{
-			return await this.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection) as IPaginationCollection<T>;
+			return await this.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken) as IPaginationCollection<T>;
 		}
 
 		#endregion
@@ -241,9 +244,10 @@ namespace ErtisAuth.Infrastructure.Services
 			int? limit = null,
 			bool? withCount = null,
 			string sortField = null,
-			SortDirection? sortDirection = null)
+			SortDirection? sortDirection = null,
+			CancellationToken cancellationToken = default)
 		{
-			var membership = await this.membershipService.GetAsync(membershipId);
+			var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -262,7 +266,7 @@ namespace ErtisAuth.Infrastructure.Services
 				IsDiacriticSensitive = false
 			};
 			
-			var paginatedDtoCollection = await this.repository.SearchAsync(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection);
+			var paginatedDtoCollection = await this.repository.SearchAsync(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection, cancellationToken: cancellationToken);
 			if (paginatedDtoCollection?.Items != null)
 			{
 				return new PaginationCollection<TModel>
@@ -286,9 +290,9 @@ namespace ErtisAuth.Infrastructure.Services
 			return this.repository.Aggregate(QueryHelper.InjectMembershipIdToAggregation(membershipId, aggregationStagesJson));
 		}
 		
-		public async Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson)
+		public async Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default)
 		{
-			return await this.repository.AggregateAsync(QueryHelper.InjectMembershipIdToAggregation(membershipId, aggregationStagesJson));
+			return await this.repository.AggregateAsync(QueryHelper.InjectMembershipIdToAggregation(membershipId, aggregationStagesJson), cancellationToken: cancellationToken);
 		}
 		
 		#endregion

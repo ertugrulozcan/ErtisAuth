@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.MongoDB.Queries;
 using Ertis.Schema.Dynamics;
@@ -213,9 +214,9 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<ProviderDto, Provider>(dto);
 		}
 		
-		private async Task<Provider> GetByNameAsync(string name, string membershipId)
+		private async Task<Provider> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
 		{
-			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
+			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 			if (dto == null)
 			{
 				return null;
@@ -228,10 +229,10 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Read Methods
 
-		public async Task<IEnumerable<Provider>> GetProvidersAsync(string membershipId)
+		public async Task<IEnumerable<Provider>> GetProvidersAsync(string membershipId, CancellationToken cancellationToken = default)
 		{
 			var providerList = new List<Provider>();
-			var providers = await this.GetAsync(membershipId, null, null, false, null, null);
+			var providers = await this.GetAsync(membershipId, null, null, false, null, null, cancellationToken: cancellationToken);
 			
 			var utilizer = new Utilizer
 			{
@@ -261,7 +262,7 @@ namespace ErtisAuth.Infrastructure.Services
 							DefaultRole = null,
 							DefaultUserType = null,
 							IsActive = false
-						});
+						}, cancellationToken: cancellationToken);
 				
 						providerList.Add(provider);
 					}
@@ -281,17 +282,17 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Authentication Methods
 
-		public async ValueTask<BearerToken> LoginAsync(IProviderLoginRequest request, string membershipId, string ipAddress = null, string userAgent = null)
+		public async ValueTask<BearerToken> LoginAsync(IProviderLoginRequest request, string membershipId, string ipAddress = null, string userAgent = null, CancellationToken cancellationToken = default)
 		{
 			try
 			{
-				var provider = await this.GetAsync(membershipId, (x) => x.MembershipId == membershipId && x.Name == request.Provider.ToString());
+				var provider = await this.GetAsync(membershipId, (x) => x.MembershipId == membershipId && x.Name == request.Provider.ToString(), cancellationToken: cancellationToken);
 				if (provider != null)
 				{
 					if (provider.IsActive != null && provider.IsActive.Value)
 					{
 						var providerAuthenticator = provider.GetAuthenticator();
-						var isVerified = await providerAuthenticator.VerifyTokenAsync(request, provider);
+						var isVerified = await providerAuthenticator.VerifyTokenAsync(request, provider, cancellationToken: cancellationToken);
 						if (isVerified)
 						{
 							var utilizer = new Utilizer
@@ -301,7 +302,7 @@ namespace ErtisAuth.Infrastructure.Services
 								MembershipId = membershipId
 							};
 						
-							var user = await this.FindUserAsync(request, provider, membershipId);
+							var user = await this.FindUserAsync(request, provider, membershipId, cancellationToken: cancellationToken);
 							var isNewUser = user == null;
 							if (isNewUser)
 							{
@@ -313,10 +314,10 @@ namespace ErtisAuth.Infrastructure.Services
 							this.SetAvatar(dynamicUser, request);
 						
 							var upsertedUser = isNewUser ?
-								await this.userService.CreateAsync(utilizer, membershipId, dynamicUser) :
-								await this.userService.UpdateAsync(utilizer, membershipId, user.Id, dynamicUser, false);
+								await this.userService.CreateAsync(utilizer, membershipId, dynamicUser, cancellationToken: cancellationToken) :
+								await this.userService.UpdateAsync(utilizer, membershipId, user.Id, dynamicUser, false, cancellationToken: cancellationToken);
 						
-							return await this.tokenService.GenerateTokenAsync(upsertedUser.Deserialize<User>(), membershipId, ipAddress, userAgent);
+							return await this.tokenService.GenerateTokenAsync(upsertedUser.Deserialize<User>(), membershipId, ipAddress, userAgent, cancellationToken: cancellationToken);
 						}
 						else
 						{
@@ -340,11 +341,11 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		public async Task LogoutAsync(string token)
+		public async Task LogoutAsync(string token, CancellationToken cancellationToken = default)
 		{
 			try
 			{
-				var user = await this.tokenService.GetTokenOwnerUserAsync(token);
+				var user = await this.tokenService.GetTokenOwnerUserAsync(token, cancellationToken: cancellationToken);
 				if (user is { ConnectedAccounts: { } })
 				{
 					var clearedConnectedAccounts = new List<ProviderAccountInfo>();
@@ -352,11 +353,11 @@ namespace ErtisAuth.Infrastructure.Services
 					{
 						if (!string.IsNullOrEmpty(accountInfo.Token))
 						{
-							var provider = await this.GetAsync(user.MembershipId, (x) => x.MembershipId == user.MembershipId && x.Name == accountInfo.Provider);
+							var provider = await this.GetAsync(user.MembershipId, (x) => x.MembershipId == user.MembershipId && x.Name == accountInfo.Provider, cancellationToken: cancellationToken);
 							if (provider is { IsActive: { } } && provider.IsActive.Value)
 							{
 								var providerAuthenticator = provider.GetAuthenticator();
-								await providerAuthenticator.RevokeTokenAsync(accountInfo.Token, provider);
+								await providerAuthenticator.RevokeTokenAsync(accountInfo.Token, provider, cancellationToken: cancellationToken);
 							}
 						}
 					
@@ -377,7 +378,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 					user.ConnectedAccounts = clearedConnectedAccounts.ToArray();
 					var dynamicUser = new DynamicObject(user);
-					await this.userService.UpdateAsync(utilizer, user.MembershipId, user.Id, dynamicUser, false);
+					await this.userService.UpdateAsync(utilizer, user.MembershipId, user.Id, dynamicUser, false, cancellationToken: cancellationToken);
 				}
 			}
 			catch (Exception ex)
@@ -386,13 +387,13 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
-		private async Task<User> FindUserAsync(IProviderLoginRequest request, Provider provider, string membershipId)
+		private async Task<User> FindUserAsync(IProviderLoginRequest request, Provider provider, string membershipId, CancellationToken cancellationToken = default)
 		{
 			var query = QueryBuilder.Where(
 				QueryBuilder.Equals("membership_id", membershipId), 
 				QueryBuilder.Equals("connectedAccounts.Provider", provider.Name), 
 				QueryBuilder.Equals("connectedAccounts.UserId", request.UserId)).ToString();
-			var queryUsersResult = await this.userService.QueryAsync(membershipId, query, 0, 1);
+			var queryUsersResult = await this.userService.QueryAsync(membershipId, query, 0, 1, cancellationToken: cancellationToken);
 			if (queryUsersResult.Items.Any())
 			{
 				var dynamicUser = queryUsersResult.Items.First();
@@ -403,7 +404,7 @@ namespace ErtisAuth.Infrastructure.Services
 				var query2 = QueryBuilder.Where(
 					QueryBuilder.Equals("membership_id", membershipId), 
 					QueryBuilder.Equals("email_address", request.EmailAddress)).ToString();
-				var queryUsers2Result = await this.userService.QueryAsync(membershipId, query2, 0, 1);
+				var queryUsers2Result = await this.userService.QueryAsync(membershipId, query2, 0, 1, cancellationToken: cancellationToken);
 				if (queryUsers2Result.Items.Any())
 				{
 					var dynamicUser = queryUsersResult.Items.First();

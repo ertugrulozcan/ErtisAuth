@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
@@ -47,9 +48,10 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 			string baseUrl,
 			IQueryString queryString = null,
 			IHeaderCollection headers = null,
-			IRequestBody body = null)
+			IRequestBody body = null,
+			CancellationToken cancellationToken = default)
 		{
-			return await this.restHandler.ExecuteRequestAsync(method, baseUrl, queryString, headers, body);
+			return await this.restHandler.ExecuteRequestAsync(method, baseUrl, queryString, headers, body, cancellationToken);
 		}
 		
 		private async Task<IResponseResult<TResult>> ExecuteRequestAsync<TResult>(
@@ -57,17 +59,18 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 			string baseUrl,
 			IQueryString queryString = null,
 			IHeaderCollection headers = null,
-			IRequestBody body = null)
+			IRequestBody body = null,
+			CancellationToken cancellationToken = default)
 		{
-			return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body);
+			return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, cancellationToken);
 		}
 		
-		public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider)
+		public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
 		{
-			return await this.VerifyTokenAsync(request as FacebookLoginRequest, provider);
+			return await this.VerifyTokenAsync(request as FacebookLoginRequest, provider, cancellationToken);
 		}
 		
-		public async Task<bool> VerifyTokenAsync(FacebookLoginRequest request, Provider provider)
+		public async Task<bool> VerifyTokenAsync(FacebookLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
 		{
 			if (!request.IsValid())
 			{
@@ -79,7 +82,10 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 				var response = await this.ExecuteRequestAsync<VerifyTokenResponse>(
 					HttpMethod.Get, 
 					$"{FACEBOOK_GRAPH_API_URL}/debug_token",
-					QueryString.Add("input_token", request.User.AccessToken).Add("access_token", request.User.AccessToken));
+					QueryString
+						.Add("input_token", request.User.AccessToken)
+						.Add("access_token", request.User.AccessToken), 
+					cancellationToken: cancellationToken);
 
 				return
 					response.IsSuccess &&
@@ -93,12 +99,13 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 			}
 		}
 
-		public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider)
+		public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider, CancellationToken cancellationToken = default)
 		{
 			var response = await this.ExecuteRequestAsync(
 				HttpMethod.Delete, 
 				$"{FACEBOOK_GRAPH_API_URL}/{provider.AppClientId}/permissions",
-				QueryString.Add("access_token", accessToken));
+				QueryString.Add("access_token", accessToken),
+				cancellationToken: cancellationToken);
 
 			return response.IsSuccess;
 		}

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
@@ -34,9 +35,9 @@ namespace ErtisAuth.Infrastructure.Services
         
         #region Read Methods
 
-        public virtual async Task<DynamicObject> GetAsync(string id)
+        public virtual async Task<DynamicObject> GetAsync(string id, CancellationToken cancellationToken = default)
         {
-            var item = await this._repository.FindOneAsync(id);
+            var item = await this._repository.FindOneAsync(id, cancellationToken: cancellationToken);
             return item == null ? null : new DynamicObject(item);
         }
 
@@ -54,10 +55,11 @@ namespace ErtisAuth.Infrastructure.Services
             int? limit = null, 
             bool withCount = false, 
             string orderBy = null,
-            SortDirection? sortDirection = null)
+            SortDirection? sortDirection = null, 
+            CancellationToken cancellationToken = default)
         {
             var query = QueryBuilder.Where(queries);
-            var paginatedCollection = await this._repository.FindAsync(query.ToString(), skip, limit, withCount, orderBy, sortDirection);
+            var paginatedCollection = await this._repository.FindAsync(query.ToString(), skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
             return new PaginationCollection<DynamicObject>
             {
                 Count = paginatedCollection.Count,
@@ -72,9 +74,10 @@ namespace ErtisAuth.Infrastructure.Services
             bool? withCount = null, 
             string orderBy = null,
             SortDirection? sortDirection = null, 
-            IDictionary<string, bool> selectFields = null)
+            IDictionary<string, bool> selectFields = null, 
+            CancellationToken cancellationToken = default)
         {
-            var paginatedCollection = await this._repository.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields);
+            var paginatedCollection = await this._repository.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, cancellationToken: cancellationToken);
             return new PaginationCollection<DynamicObject>
             {
                 Count = paginatedCollection.Count,
@@ -86,10 +89,10 @@ namespace ErtisAuth.Infrastructure.Services
         
         #region Crate Methods
         
-        public virtual async Task<DynamicObject> CreateAsync(DynamicObject model)
+        public virtual async Task<DynamicObject> CreateAsync(DynamicObject model, CancellationToken cancellationToken = default)
         {
             var bsonDocument = BsonDocument.Create(model.ToDynamic());
-            var insertedDocument = await this._repository.InsertAsync(bsonDocument) as BsonDocument;
+            var insertedDocument = await this._repository.InsertAsync(bsonDocument, cancellationToken: cancellationToken) as BsonDocument;
             return DynamicObject.Create(BsonTypeMapper.MapToDotNetValue(insertedDocument) as Dictionary<string, object>);
         }
 
@@ -97,20 +100,20 @@ namespace ErtisAuth.Infrastructure.Services
         
         #region Update Methods
 
-        public virtual async Task<DynamicObject> UpdateAsync(string id, DynamicObject model)
+        public virtual async Task<DynamicObject> UpdateAsync(string id, DynamicObject model, CancellationToken cancellationToken = default)
         {
             var bsonDocument = BsonDocument.Create(model.ToDynamic());
-            var updatedDocument = await this._repository.UpdateAsync(bsonDocument, id);
-            return updatedDocument != null ? await this.GetAsync(id) : null;
+            var updatedDocument = await this._repository.UpdateAsync(bsonDocument, id, cancellationToken: cancellationToken);
+            return updatedDocument != null ? await this.GetAsync(id, cancellationToken: cancellationToken) : null;
         }
 
         #endregion
         
         #region Delete Methods
 
-        public virtual async Task<bool> DeleteAsync(string id)
+        public virtual async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
-            var isDeleted = await this._repository.DeleteAsync(id);
+            var isDeleted = await this._repository.DeleteAsync(id, cancellationToken: cancellationToken);
             return isDeleted;
         }
 
@@ -123,9 +126,9 @@ namespace ErtisAuth.Infrastructure.Services
             return this._repository.Aggregate(QueryHelper.InjectMembershipIdToAggregation(membershipId, aggregationStagesJson));
         }
 		
-        public async Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson)
+        public async Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default)
         {
-            return await this._repository.AggregateAsync(QueryHelper.InjectMembershipIdToAggregation(membershipId, aggregationStagesJson));
+            return await this._repository.AggregateAsync(QueryHelper.InjectMembershipIdToAggregation(membershipId, aggregationStagesJson), cancellationToken: cancellationToken);
         }
 		
         #endregion

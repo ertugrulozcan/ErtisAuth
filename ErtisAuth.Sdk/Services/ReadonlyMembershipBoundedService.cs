@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Response;
@@ -39,13 +40,14 @@ namespace ErtisAuth.Sdk.Services
 		public IResponseResult<T> Get(string modelId, TokenBase token) =>
 			this.GetAsync(modelId, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async Task<IResponseResult<T>> GetAsync(string modelId, TokenBase token)
+		public async Task<IResponseResult<T>> GetAsync(string modelId, TokenBase token, CancellationToken cancellationToken = default)
 		{
 			return await this.ExecuteRequestAsync<T>(
 				HttpMethod.Get, 
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/{modelId}", 
 				null, 
-				HeaderCollection.Add("Authorization", token.ToString()));
+				HeaderCollection.Add("Authorization", token.ToString()),
+				cancellationToken: cancellationToken);
 		}
 
 		public IResponseResult<IPaginationCollection<T>> Get(
@@ -66,7 +68,8 @@ namespace ErtisAuth.Sdk.Services
 			bool? withCount = null, 
 			string orderBy = null, 
 			SortDirection? sortDirection = null,
-			string searchKeyword = null)
+			string searchKeyword = null, 
+			CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(searchKeyword) || string.IsNullOrEmpty(searchKeyword.Trim()))
 			{
@@ -74,7 +77,8 @@ namespace ErtisAuth.Sdk.Services
 					HttpMethod.Get, 
 					$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}", 
 					QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
-					HeaderCollection.Add("Authorization", token.ToString()));
+					HeaderCollection.Add("Authorization", token.ToString()),
+					cancellationToken: cancellationToken);
 			}
 			else
 			{
@@ -82,7 +86,8 @@ namespace ErtisAuth.Sdk.Services
 					HttpMethod.Get, 
 					$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/search", 
 					QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection).Add("keyword", searchKeyword), 
-					HeaderCollection.Add("Authorization", token.ToString()));
+					HeaderCollection.Add("Authorization", token.ToString()),
+					cancellationToken: cancellationToken);
 			}
 		}
 
@@ -115,14 +120,16 @@ namespace ErtisAuth.Sdk.Services
 			int? limit = null,
 			bool? withCount = null,
 			string orderBy = null,
-			SortDirection? sortDirection = null)
+			SortDirection? sortDirection = null, 
+			CancellationToken cancellationToken = default)
 		{
 			return await this.ExecuteRequestAsync<PaginationCollection<T>>(
 				HttpMethod.Post, 
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/_query", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)));
+				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)),
+				cancellationToken: cancellationToken);
 		}
 
 		#endregion

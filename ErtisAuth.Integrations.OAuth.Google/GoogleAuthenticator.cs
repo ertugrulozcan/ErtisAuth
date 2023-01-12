@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
@@ -15,12 +16,12 @@ namespace ErtisAuth.Integrations.OAuth.Google
 	{
 		#region Methods
 
-		public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider)
+		public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
 		{
-			return await this.VerifyTokenAsync(request as GoogleLoginRequest, provider);
+			return await this.VerifyTokenAsync(request as GoogleLoginRequest, provider, cancellationToken: cancellationToken);
 		}
 		
-		public async Task<bool> VerifyTokenAsync(GoogleLoginRequest request, Provider provider)
+		public async Task<bool> VerifyTokenAsync(GoogleLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
 		{
 			if (provider.AppClientId == request.ClientId)
 			{
@@ -56,7 +57,7 @@ namespace ErtisAuth.Integrations.OAuth.Google
 			}
 		}
 
-		public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider)
+		public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider, CancellationToken cancellationToken = default)
 		{
 			// Google ID tokens not revoke, they already have a short lifetime.
 			await Task.CompletedTask;

@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Response;
@@ -53,7 +54,8 @@ namespace ErtisAuth.Sdk.Services
 			int? limit = null, 
 			bool? withCount = null, 
 			string orderBy = null, 
-			SortDirection? sortDirection = null)
+			SortDirection? sortDirection = null, 
+			CancellationToken cancellationToken = default)
 		{
 			var query = "{ 'where': { 'user_id': '" + userId + "', 'membership_id': '" + this.MembershipId + "' } }";
 			return await this.ExecuteRequestAsync<PaginationCollection<ActiveToken>>(
@@ -61,7 +63,8 @@ namespace ErtisAuth.Sdk.Services
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/active-tokens/_query", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)));
+				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)),
+				cancellationToken: cancellationToken);
 		}
 
 		#endregion
@@ -85,7 +88,8 @@ namespace ErtisAuth.Sdk.Services
 			int? limit = null, 
 			bool? withCount = null, 
 			string orderBy = null, 
-			SortDirection? sortDirection = null)
+			SortDirection? sortDirection = null, 
+			CancellationToken cancellationToken = default)
 		{
 			var query = "{ 'where': { 'user_id': '" + userId + "', 'membership_id': '" + this.MembershipId + "', 'token_type': 'bearer_token' } }";
 			return await this.ExecuteRequestAsync<PaginationCollection<RevokedToken>>(
@@ -93,7 +97,8 @@ namespace ErtisAuth.Sdk.Services
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/revoked-tokens/_query", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)));
+				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)),
+				cancellationToken: cancellationToken);
 		}
 
 		#endregion

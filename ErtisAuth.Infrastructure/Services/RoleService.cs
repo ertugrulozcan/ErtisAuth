@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Abstractions.Services.Interfaces;
@@ -260,11 +261,11 @@ namespace ErtisAuth.Infrastructure.Services
 				base.Get(membershipId, id);
 		}
 
-		public override async ValueTask<Role> GetAsync(string membershipId, string id)
+		public override async ValueTask<Role> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 		{
 			return id == ReservedRoles.Server ? 
-				await this.GetServerRoleAsync(membershipId) : 
-				await base.GetAsync(membershipId, id);
+				await this.GetServerRoleAsync(membershipId, cancellationToken: cancellationToken) : 
+				await base.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 		}
 
 		public Role GetByName(string name, string membershipId)
@@ -283,14 +284,14 @@ namespace ErtisAuth.Infrastructure.Services
 			return Mapper.Current.Map<RoleDto, Role>(dto);
 		}
 		
-		public async ValueTask<Role> GetByNameAsync(string name, string membershipId)
+		public async ValueTask<Role> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
 		{
 			if (name == ReservedRoles.Server)
 			{
-				return await this.GetServerRoleAsync(membershipId);
+				return await this.GetServerRoleAsync(membershipId, cancellationToken: cancellationToken);
 			}
 			
-			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
+			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 			if (dto == null)
 			{
 				return null;
@@ -302,7 +303,7 @@ namespace ErtisAuth.Infrastructure.Services
 		private Role GetServerRole(string membershipId) =>
 			this.GetServerRoleAsync(membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
 		
-		private async Task<Role> GetServerRoleAsync(string membershipId)
+		private async Task<Role> GetServerRoleAsync(string membershipId, CancellationToken cancellationToken = default)
 		{
 			if (this.ServerRoleDictionary.ContainsKey(membershipId))
 			{
@@ -310,7 +311,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			// Check membership
-			var membership = await this.membershipService.GetAsync(membershipId);
+			var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 			if (membership == null)
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);

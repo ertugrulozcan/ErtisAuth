@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Memberships;
@@ -45,19 +46,19 @@ namespace ErtisAuth.Extensions.Quartz.Services
 
 		#region Methods
 
-		public async ValueTask ScheduleTokenCleanerJobsAsync()
+		public async ValueTask ScheduleTokenCleanerJobsAsync(CancellationToken cancellationToken = default)
 		{
 			try
 			{
-				var scheduler = await this.schedulerFactory.GetScheduler();
-				await scheduler.Start();
+				var scheduler = await this.schedulerFactory.GetScheduler(cancellationToken: cancellationToken);
+				await scheduler.Start(cancellationToken: cancellationToken);
 			
-				var memberships = await this.membershipService.GetAsync();
+				var memberships = await this.membershipService.GetAsync(cancellationToken: cancellationToken);
 				if (memberships?.Items != null)
 				{
 					foreach (var membership in memberships.Items)
 					{
-						await this.ScheduleJobAsync(scheduler, membership);
+						await this.ScheduleJobAsync(scheduler, membership, cancellationToken: cancellationToken);
 					}
 				}
 			}
@@ -71,13 +72,12 @@ namespace ErtisAuth.Extensions.Quartz.Services
 		{
 			return $"Quartz:{membership.Name}";
 		}
-		
-		public async Task ScheduleJobAsync(IScheduler scheduler, Membership membership)
+
+		private async Task ScheduleJobAsync(IScheduler scheduler, Membership membership, CancellationToken cancellationToken = default)
 		{
 			try
 			{
-				string jobName = GenerateJobName(membership);
-					
+				var jobName = GenerateJobName(membership);
 				var job = JobBuilder.Create<TokenCleanerJob>()
 					.WithIdentity(new JobKey(jobName))
 					.UsingJobData("membership_id", membership.Id)
@@ -91,7 +91,7 @@ namespace ErtisAuth.Extensions.Quartz.Services
 					.StartNow()
 					.Build();
 	  
-				await scheduler.ScheduleJob(job, trigger);
+				await scheduler.ScheduleJob(job, trigger, cancellationToken: cancellationToken);
 			
 				// ReSharper disable once PositionalPropertyUsedProblem
 				this.logger.Log(LogLevel.Information, "Job scheduled ({0})", jobName);
@@ -102,19 +102,19 @@ namespace ErtisAuth.Extensions.Quartz.Services
 			}
 		}
 
-		public async Task RescheduleJobAsync(IScheduler scheduler, Membership membership)
+		private async Task RescheduleJobAsync(IScheduler scheduler, Membership membership, CancellationToken cancellationToken = default)
 		{
 			this.logger.Log(LogLevel.Information, "Job re-scheduling...");
-			await this.DeleteJobAsync(scheduler, membership);
-			await this.ScheduleJobAsync(scheduler, membership);
+			await this.DeleteJobAsync(scheduler, membership, cancellationToken: cancellationToken);
+			await this.ScheduleJobAsync(scheduler, membership, cancellationToken: cancellationToken);
 		}
 
-		public async Task DeleteJobAsync(IScheduler scheduler, Membership membership)
+		private async Task DeleteJobAsync(IScheduler scheduler, Membership membership, CancellationToken cancellationToken = default)
 		{
 			try
 			{
-				string jobName = GenerateJobName(membership);
-				await scheduler.DeleteJob(new JobKey(jobName));
+				var jobName = GenerateJobName(membership);
+				await scheduler.DeleteJob(new JobKey(jobName), cancellationToken: cancellationToken);
 			
 				// ReSharper disable once PositionalPropertyUsedProblem
 				this.logger.Log(LogLevel.Information, "Job deleted ({0})", jobName);

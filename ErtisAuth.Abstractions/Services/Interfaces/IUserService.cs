@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Schema.Dynamics;
@@ -23,13 +24,13 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
         
         #region Methods
         
-        Task<DynamicObject> GetAsync(string membershipId, string id);
+        Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default);
 
-        Task<IPaginationCollection<DynamicObject>> GetAsync(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null);
+        Task<IPaginationCollection<DynamicObject>> GetAsync(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default);
 		
-        Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model);
+        Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, CancellationToken cancellationToken = default);
 		
-        Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true);
+        Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true, CancellationToken cancellationToken = default);
         
         Task<IPaginationCollection<DynamicObject>> QueryAsync(
             string membershipId, 
@@ -39,7 +40,8 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
             bool? withCount = null,
             string orderBy = null,
             SortDirection? sortDirection = null,
-            IDictionary<string, bool> selectFields = null);
+            IDictionary<string, bool> selectFields = null, 
+            CancellationToken cancellationToken = default);
         
         Task<IPaginationCollection<DynamicObject>> SearchAsync(
             string membershipId, 
@@ -48,23 +50,24 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
             int? limit = null,
             bool? withCount = null, 
             string sortField = null, 
-            SortDirection? sortDirection = null);
+            SortDirection? sortDirection = null, 
+            CancellationToken cancellationToken = default);
         
-        Task<UserWithPasswordHash> GetUserWithPasswordAsync(string membershipId, string id);
+        Task<UserWithPasswordHash> GetUserWithPasswordAsync(string membershipId, string id, CancellationToken cancellationToken = default);
         
-        Task<UserWithPasswordHash> GetUserWithPasswordAsync(string membershipId, string username, string email);
+        Task<UserWithPasswordHash> GetUserWithPasswordAsync(string membershipId, string username, string email, CancellationToken cancellationToken = default);
         
-        Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword);
+        Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default);
         
-        Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host);
+        Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host, CancellationToken cancellationToken = default);
         
-        Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password);
+        Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default);
 
-        Task<bool> CheckPasswordAsync(Utilizer utilizer, string password);
+        Task<bool> CheckPasswordAsync(Utilizer utilizer, string password, CancellationToken cancellationToken = default);
         
         dynamic Aggregate(string membershipId, string aggregationStagesJson);
 
-        Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson);
+        Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default);
         
         #endregion
     }
