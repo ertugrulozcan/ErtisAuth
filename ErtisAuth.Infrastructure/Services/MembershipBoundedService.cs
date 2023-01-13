@@ -287,12 +287,12 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public dynamic Aggregate(string membershipId, string aggregationStagesJson)
 		{
-			return this.repository.Aggregate(QueryHelper.InjectMembershipIdToAggregation(membershipId, aggregationStagesJson));
+			return this.repository.Aggregate(QueryHelper.InjectMembershipIdToAggregation(aggregationStagesJson, membershipId));
 		}
 		
 		public async Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default)
 		{
-			return await this.repository.AggregateAsync(QueryHelper.InjectMembershipIdToAggregation(membershipId, aggregationStagesJson), cancellationToken: cancellationToken);
+			return await this.repository.AggregateAsync(QueryHelper.InjectMembershipIdToAggregation(aggregationStagesJson, membershipId), cancellationToken: cancellationToken);
 		}
 		
 		#endregion
