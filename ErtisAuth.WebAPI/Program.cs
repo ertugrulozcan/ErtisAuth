@@ -1,5 +1,3 @@
-// Branch: dotnet7 -> master
-
 using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
