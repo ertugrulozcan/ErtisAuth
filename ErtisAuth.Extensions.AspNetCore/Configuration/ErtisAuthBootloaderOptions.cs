@@ -29,7 +29,7 @@ namespace ErtisAuth.Extensions.AspNetCore.Configuration
 		internal ErtisAuthBootloaderOptions()
 		{
 			this.ConfigurationSectionName = "ErtisAuth";
-			this.RestHandlerType = typeof(SystemRestHandler);
+			this.RestHandlerType = typeof(RestHandler);
 			this.AuthorizationSchemeName = Constants.Schemes.ErtisAuthAuthorizationSchemeName;
 			this.AuthorizationPolicyName = Policies.ErtisAuthAuthorizationPolicyName;
 		}

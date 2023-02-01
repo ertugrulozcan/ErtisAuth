@@ -93,7 +93,7 @@ builder.Services.AddSingleton<IMailHookService, MailHookService>();
 builder.Services.AddSingleton<IEventService, EventService>();
 builder.Services.AddSingleton<IMigrationService, MigrationService>();
 
-builder.Services.AddSingleton<IRestHandler, SystemRestHandler>();
+builder.Services.AddSingleton<IRestHandler, RestHandler>();
 builder.Services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
 builder.Services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
 builder.Services.AddProviders();

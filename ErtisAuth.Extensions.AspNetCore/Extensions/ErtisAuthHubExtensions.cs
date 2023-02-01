@@ -20,7 +20,7 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			services.AddScoped<IErtisAuthOptions, ScopedErtisAuthOptions>();
 			
 			// RestHandler registration
-			services.AddScoped<IRestHandler, SystemRestHandler>();
+			services.AddScoped<IRestHandler, RestHandler>();
 
 			// Service registrations
 			InitializeServices(services);

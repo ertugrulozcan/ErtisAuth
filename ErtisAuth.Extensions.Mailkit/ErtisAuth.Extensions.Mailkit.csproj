@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
         <PackageId>ErtisAuth.Extensions.Mailkit</PackageId>
-        <PackageVersion>7.0.8</PackageVersion>
+        <PackageVersion>7.0.9</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Extensions.Mailkit</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -13,12 +13,12 @@
         <Title>ErtisAuth.Extensions.Mailkit</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>7.0.8</AssemblyVersion>
-        <FileVersion>7.0.8</FileVersion>
+        <AssemblyVersion>7.0.9</AssemblyVersion>
+        <FileVersion>7.0.9</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="MailKit" Version="3.4.3" />
+      <PackageReference Include="MailKit" Version="3.5.0" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     </ItemGroup>
