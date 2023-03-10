@@ -57,14 +57,15 @@ namespace ErtisAuth.WebAPI.Controllers
 			}
 			
 			var applicationModel = new Application
-			{
-				Name = model.Name,
+			{ 
+				Name = model.Name, 
 				Role = model.Role,
 				MembershipId = membershipId
 			};
 			
 			var utilizer = this.GetUtilizer();
 			var app = await this.applicationService.CreateAsync(utilizer, membershipId, applicationModel, cancellationToken: cancellationToken);
+			
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{app.Id}", app);
 		}
 		

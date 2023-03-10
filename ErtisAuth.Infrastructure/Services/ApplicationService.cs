@@ -9,20 +9,29 @@ using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Helpers;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services
 {
 	public class ApplicationService : MembershipBoundedCrudService<Application, ApplicationDto>, IApplicationService
 	{
+		#region Constants
+
+		private const string CACHE_KEY = "applications";
+
+		#endregion
+		
 		#region Services
 
 		private readonly IRoleService roleService;
 		private readonly IEventService eventService;
+		private readonly IMemoryCache _memoryCache;
 
 		#endregion
 		
@@ -57,15 +66,18 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="membershipService"></param>
 		/// <param name="roleService"></param>
 		/// <param name="eventService"></param>
+		/// <param name="memoryCache"></param>
 		/// <param name="applicationRepository"></param>
 		public ApplicationService(
 			IMembershipService membershipService, 
 			IRoleService roleService, 
 			IEventService eventService,
+			IMemoryCache memoryCache,
 			IApplicationRepository applicationRepository) : base(membershipService, applicationRepository)
 		{
 			this.roleService = roleService;
 			this.eventService = eventService;
+			this._memoryCache = memoryCache;
 			
 			this.OnCreated += this.ApplicationCreatedEventHandler;
 			this.OnUpdated += this.ApplicationUpdatedEventHandler;
@@ -276,6 +288,83 @@ namespace ErtisAuth.Infrastructure.Services
 			return ErtisAuthException.ApplicationNotFound(id);
 		}
 
+		public bool IsSystemReservedApplication(Application application)
+		{
+			if (application != null)
+			{
+				return this.ServerApplication.Id == application.Id && this.ServerApplication.Name == application.Name;
+			}
+
+			return false;
+		}
+
+		#endregion
+		
+		#region Cache Methods
+
+		private static string GetCacheKey(string membershipId, string applicationId)
+		{
+			return $"{CACHE_KEY}.{membershipId}.{applicationId}";
+		}
+		
+		private static MemoryCacheEntryOptions GetCacheTTL()
+		{
+			return new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(1));
+		}
+
+		private void PurgeAllCache(string membershipId) => this.PurgeAllCacheAsync(membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
+		
+		private async ValueTask PurgeAllCacheAsync(string membershipId, CancellationToken cancellationToken = default)
+		{
+			var applications = await this.GetAsync(
+				membershipId, 
+				null, null, false, null, null,
+				cancellationToken: cancellationToken);
+			foreach (var application in applications.Items)
+			{
+				var cacheKey1 = GetCacheKey(membershipId, application.Id);
+				this._memoryCache.Remove(cacheKey1);
+			}
+		}
+
+		#endregion
+
+		#region Read Methods
+
+		public override Application Get(string membershipId, string id)
+		{
+			var cacheKey = GetCacheKey(membershipId, id);
+			if (!this._memoryCache.TryGetValue<Application>(cacheKey, out var application))
+			{
+				application = base.Get(membershipId, id);
+				if (application == null)
+				{
+					return null;
+				}
+
+				this._memoryCache.Set(cacheKey, application, GetCacheTTL());
+			}
+			
+			return application;
+		}
+
+		public override async ValueTask<Application> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+		{
+			var cacheKey = GetCacheKey(membershipId, id);
+			if (!this._memoryCache.TryGetValue<Application>(cacheKey, out var application))
+			{
+				application = await base.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+				if (application == null)
+				{
+					return null;
+				}
+
+				this._memoryCache.Set(cacheKey, application, GetCacheTTL());
+			}
+			
+			return application;
+		}
+
 		public Application GetById(string id)
 		{
 			if (id == this.ServerApplication.Id)
@@ -283,8 +372,20 @@ namespace ErtisAuth.Infrastructure.Services
 				return this.ServerApplication;
 			}
 			
-			var dto = this.repository.FindOne(x => x.Id == id);
-			return Mapper.Current.Map<ApplicationDto, Application>(dto);
+			var cacheKey = GetCacheKey("*", id);
+			if (!this._memoryCache.TryGetValue<Application>(cacheKey, out var application))
+			{
+				var dto = this.repository.FindOne(x => x.Id == id);
+				if (dto == null)
+				{
+					return null;
+				}
+				
+				application = Mapper.Current.Map<ApplicationDto, Application>(dto);
+				this._memoryCache.Set(cacheKey, application, GetCacheTTL());
+			}
+			
+			return application;
 		}
 
 		public async ValueTask<Application> GetByIdAsync(string id, CancellationToken cancellationToken = default)
@@ -294,8 +395,20 @@ namespace ErtisAuth.Infrastructure.Services
 				return this.ServerApplication;
 			}
 			
-			var dto = await this.repository.FindOneAsync(x => x.Id == id, cancellationToken);
-			return Mapper.Current.Map<ApplicationDto, Application>(dto);
+			var cacheKey = GetCacheKey("*", id);
+			if (!this._memoryCache.TryGetValue<Application>(cacheKey, out var application))
+			{
+				var dto = await this.repository.FindOneAsync(x => x.Id == id, cancellationToken);
+				if (dto == null)
+				{
+					return null;
+				}
+				
+				application = Mapper.Current.Map<ApplicationDto, Application>(dto);
+				this._memoryCache.Set(cacheKey, application, GetCacheTTL());
+			}
+			
+			return application;
 		}
 		
 		private Application GetApplicationByName(string name, string membershipId)
@@ -325,16 +438,54 @@ namespace ErtisAuth.Infrastructure.Services
 			return dto == null ? null : Mapper.Current.Map<ApplicationDto, Application>(dto);
 		}
 
-		public bool IsSystemReservedApplication(Application application)
-		{
-			if (application != null)
-			{
-				return this.ServerApplication.Id == application.Id && this.ServerApplication.Name == application.Name;
-			}
+		#endregion
+		
+		#region Create Methods
 
-			return false;
+		public override Application Create(Utilizer utilizer, string membershipId, Application model)
+		{
+			this.PurgeAllCache(membershipId);
+			return base.Create(utilizer, membershipId, model);
 		}
 
+		public override async ValueTask<Application> CreateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
+		{
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
+		}
+
+		#endregion
+
+		#region Update Methods
+
+		public override Application Update(Utilizer utilizer, string membershipId, Application model)
+		{
+			this.PurgeAllCache(membershipId);
+			return base.Update(utilizer, membershipId, model);
+		}
+
+		public override async ValueTask<Application> UpdateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
+		{
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
+		}
+
+		#endregion
+		
+		#region Delete Methods
+
+		public override bool Delete(Utilizer utilizer, string membershipId, string id)
+		{
+			this.PurgeAllCache(membershipId);
+			return base.Delete(utilizer, membershipId, id);
+		}
+
+		public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+		{
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+		}
+		
 		#endregion
 	}
 }

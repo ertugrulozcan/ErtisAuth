@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,11 +10,24 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Memberships;
 using ErtisAuth.Infrastructure.Mapping;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services
 {
 	public class MembershipService : GenericCrudService<Membership, MembershipDto>, IMembershipService
 	{
+		#region Constants
+
+		private const string CACHE_KEY = "memberships";
+
+		#endregion
+		
+		#region Services
+
+		private readonly IMemoryCache _memoryCache;
+
+		#endregion
+		
 		#region Properties
 
 		private List<IMembershipBoundedService> MembershipBoundedServiceCollection { get; }
@@ -26,9 +40,11 @@ namespace ErtisAuth.Infrastructure.Services
 		/// Constructor
 		/// </summary>
 		/// <param name="membershipRepository"></param>
-		public MembershipService(IMembershipRepository membershipRepository) : base(membershipRepository)
+		/// <param name="memoryCache"></param>
+		public MembershipService(IMembershipRepository membershipRepository, IMemoryCache memoryCache) : base(membershipRepository)
 		{
 			this.MembershipBoundedServiceCollection = new List<IMembershipBoundedService>();
+			this._memoryCache = memoryCache;
 		}
 
 		#endregion
@@ -180,28 +196,137 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#endregion
 
+		#region Cache Methods
+
+		private static string GetCacheKey(string membershipId)
+		{
+			return $"{CACHE_KEY}.{membershipId}";
+		}
+		
+		private static MemoryCacheEntryOptions GetCacheTTL()
+		{
+			return new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(24));
+		}
+
+		private void PurgeAllCache() => this.PurgeAllCacheAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+		
+		private async ValueTask PurgeAllCacheAsync(CancellationToken cancellationToken = default)
+		{
+			var memberships = await this.GetAsync(cancellationToken: cancellationToken);
+			foreach (var membership in memberships.Items)
+			{
+				var cacheKey1 = GetCacheKey(membership.Id);
+				this._memoryCache.Remove(cacheKey1);
+				
+				var cacheKey2 = GetCacheKey(membership.SecretKey);
+				this._memoryCache.Remove(cacheKey2);
+			}
+		}
+
+		#endregion
+
 		#region Read Methods
+
+		public override Membership Get(string id)
+		{
+			var cacheKey = GetCacheKey(id);
+			if (!this._memoryCache.TryGetValue<Membership>(cacheKey, out var membership))
+			{
+				membership = base.Get(id);
+				if (membership == null)
+				{
+					return null;
+				}
+				
+				this._memoryCache.Set(cacheKey, membership, GetCacheTTL());
+			}
+			
+			return membership;
+		}
+
+		public override async ValueTask<Membership> GetAsync(string id, CancellationToken cancellationToken = default)
+		{
+			var cacheKey = GetCacheKey(id);
+			if (!this._memoryCache.TryGetValue<Membership>(cacheKey, out var membership))
+			{
+				membership = await base.GetAsync(id, cancellationToken);
+				if (membership == null)
+				{
+					return null;
+				}
+				
+				this._memoryCache.Set(cacheKey, membership, GetCacheTTL());
+			}
+			
+			return membership;
+		}
 
 		public Membership GetBySecretKey(string secretKey)
 		{
-			var dto = this.repository.FindOne(x => x.SecretKey == secretKey);
-			if (dto == null)
+			var cacheKey = GetCacheKey(secretKey);
+			if (!this._memoryCache.TryGetValue<Membership>(cacheKey, out var membership))
 			{
-				return null;
-			}
+				var dto = this.repository.FindOne(x => x.SecretKey == secretKey);
+				if (dto == null)
+				{
+					return null;
+				}
 
-			return Mapper.Current.Map<MembershipDto, Membership>(dto);
+				membership = Mapper.Current.Map<MembershipDto, Membership>(dto);
+				this._memoryCache.Set(cacheKey, membership, GetCacheTTL());
+			}
+			
+			return membership;
 		}
 
 		public async Task<Membership> GetBySecretKeyAsync(string secretKey, CancellationToken cancellationToken = default)
 		{
-			var dto = await this.repository.FindOneAsync(x => x.SecretKey == secretKey, cancellationToken: cancellationToken);
-			if (dto == null)
+			var cacheKey = GetCacheKey(secretKey);
+			if (!this._memoryCache.TryGetValue<Membership>(cacheKey, out var membership))
 			{
-				return null;
-			}
+				var dto = await this.repository.FindOneAsync(x => x.SecretKey == secretKey, cancellationToken: cancellationToken);
+				if (dto == null)
+				{
+					return null;
+				}
 
-			return Mapper.Current.Map<MembershipDto, Membership>(dto);
+				membership = Mapper.Current.Map<MembershipDto, Membership>(dto);
+				this._memoryCache.Set(cacheKey, membership, GetCacheTTL());
+			}
+			
+			return membership;
+		}
+
+		#endregion
+
+		#region Create Methods
+
+		public override Membership Create(Membership model)
+		{
+			this.PurgeAllCache();
+			return base.Create(model);
+		}
+
+		public override async ValueTask<Membership> CreateAsync(Membership model, CancellationToken cancellationToken = default)
+		{
+			await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
+			return await base.CreateAsync(model, cancellationToken: cancellationToken);
+		}
+
+		#endregion
+
+		#region Update Methods
+
+		public override Membership Update(Membership model)
+		{
+			this.PurgeAllCache();
+			return base.Update(model);
+		}
+
+		public override async ValueTask<Membership> UpdateAsync(Membership model, CancellationToken cancellationToken = default)
+		{
+			await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
+			return await base.UpdateAsync(model, cancellationToken: cancellationToken);
 		}
 
 		#endregion
@@ -216,6 +341,7 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.MembershipCouldNotDeleted(id);
 			}
 			
+			this.PurgeAllCache();
 			return base.Delete(id);
 		}
 		
@@ -227,6 +353,7 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.MembershipCouldNotDeleted(id);
 			}
 			
+			await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
 			return await base.DeleteAsync(id, cancellationToken: cancellationToken);
 		}
 		

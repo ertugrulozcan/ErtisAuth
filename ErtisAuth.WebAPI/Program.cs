@@ -98,6 +98,8 @@ builder.Services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
 builder.Services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
 builder.Services.AddProviders();
 
+builder.Services.AddMemoryCache();
+
 // Mailkit
 builder.Services.AddMailkit();
 

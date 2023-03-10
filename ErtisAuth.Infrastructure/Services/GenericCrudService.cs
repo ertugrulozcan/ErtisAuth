@@ -66,7 +66,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		#region Read Methods
 
-		public TModel Get(string id)
+		public virtual TModel Get(string id)
 		{
 			if (string.IsNullOrEmpty(id))
 			{
@@ -77,7 +77,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return dto == null ? null : Mapper.Current.Map<TDto, TModel>(dto);
 		}
 		
-		public async ValueTask<TModel> GetAsync(string id, CancellationToken cancellationToken = default)
+		public virtual async ValueTask<TModel> GetAsync(string id, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(id))
 			{
@@ -88,7 +88,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return dto == null ? null : Mapper.Current.Map<TDto, TModel>(dto);
 		}
 		
-		public IPaginationCollection<TModel> Get(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null)
+		public virtual IPaginationCollection<TModel> Get(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null)
 		{
 			var paginatedDtoCollection = this.repository.Find(expression: null, skip, limit, withCount, orderBy, sortDirection);
 			if (paginatedDtoCollection?.Items != null)
@@ -105,7 +105,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public async ValueTask<IPaginationCollection<TModel>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default)
+		public virtual async ValueTask<IPaginationCollection<TModel>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default)
 		{
 			var paginatedDtoCollection = await this.repository.FindAsync(expression: null, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 			if (paginatedDtoCollection?.Items != null)
@@ -122,7 +122,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 		
-		public async Task<IPaginationCollection<dynamic>> QueryAsync(
+		public virtual async Task<IPaginationCollection<dynamic>> QueryAsync(
 			string query, 
 			int? skip = null, 
 			int? limit = null, 

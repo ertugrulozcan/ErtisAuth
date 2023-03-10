@@ -12,6 +12,7 @@
       <PackageReference Include="Ertis.TemplateEngine" Version="7.0.3" />
       <PackageReference Include="Mapster" Version="7.3.0" />
       <PackageReference Include="MaxMind.GeoIP2" Version="5.1.0" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
       <PackageReference Include="MongoDB.Driver" Version="2.19.0" />
       <PackageReference Include="TinyMapper" Version="3.0.3" />
     </ItemGroup>
