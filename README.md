@@ -2,11 +2,7 @@
 
 ### **Open Source Identity and Access Management API**
 
-<br/>
-
 ## Get Started
-
-<br/>
 
 **ErtisAuth** is a free and open-source OpenID-Connect framework and high performer identity and access management API.
 It's designed to provide a common way to authenticate requests to all of your applications, whether they're web, native, mobile, or Web API endpoints.
@@ -14,19 +10,15 @@ It is based on the RBAC (Role based access control) and UBAC (User based access 
 ErtisAuth incorporates features needed to integrate token-based authentication, SSO and API access control in your applications for authorization and authentication.
 It is licensed under MIT License (an OSI approved license).
 
-<br/>
-
 ## Documentation
 
 For developer guide and API documentation, please visit [wiki page](https://github.com/ertugrulozcan/ErtisAuth/wiki).
 
-<br/>
-
 ## Installation
 
-### Install & Build on Mac, Linux or Windows
+### Standalone Build & Installation on Linux or Windows or Mac OS
 
-* Install the latest .NET Core 3.1 SDK
+* Install the latest .NET 7 SDK
 * Install Git
 * Clone this repo
 * Install MongoDB
@@ -35,8 +27,6 @@ For developer guide and API documentation, please visit [wiki page](https://gith
 * Start ErtisAuth Server
 * Migrate
 * Enjoy with ErtisAuth
-
-<br/>
 
 ## ErtisAuth on Docker
 
@@ -250,7 +240,7 @@ Status Code : `400 Bad Request`
 <hr>
 <br/>
 
-## Me
+## Me / Whoami
 
 <br/>
 
@@ -414,9 +404,7 @@ curl --location --request POST '{{base_url}}/api/v1/refresh-token' \
 ```
 
 > &nbsp;
->
 > If you want to revoke the current token besides the token refresh, add "?revoke=true" to the query string
->
 > &nbsp;
 
 <br/>
@@ -473,9 +461,7 @@ curl --location --request POST '{{base_url}}/api/v1/revoke-token' \
 ```
 
 > &nbsp;
->
 > If you want to log out of all sessions, add "?logout-all=true" to the query string. This operation will be signed-out of all sessions for the owner of the token on all devices.
->
 > &nbsp;
 
 <br/>
@@ -490,6 +476,132 @@ Failed Response (Invalid or already revoked token)
 
 Status Code : `401 Unauthorized`
 
-<br/>
 <hr>
 <br/>
+
+## Social Media Providers
+
+ErtisAuth allows their customers to sign-up by using their email address and a password to create what's called a local account. Or, they can sign-up and sign in by using their Google, Facebook, or Microsoft accounts as their identity provider. By serving as the central authentication authority for your web applications, mobile apps, and APIs, ErtisAuth enables you to build a single sign-on (SSO) solution for them all. In addition to that, your customers can select sign in with their personal social media accounts. When users select social media login, they're redirected to a sign-in page hosted by provider. After the login process, ErtisAuth takes over the session and user management and resumes the transactions for you.
+
+> &nbsp;
+> In order to use social media providers, the necessary settings must be applied on the providers API and the provider must be activated. For details on the subject, see the providers section in the documentation.
+> &nbsp;
+
+### Login with Facebook
+
+Request Model
+
+```yaml
+curl --location --request POST '{{base_url}}/api/v1/oauth/facebook/login' \
+--header 'X-Ertis-Alias: {{membership_id}}' \
+--header 'X-IpAddress: {{client_ip}}' \
+--header 'X-UserAgent: {{user_agent}}' \
+--header 'Content-Type: application/json' \
+  --data-raw '{
+    "user": {{facebookUserPayload}},
+    "appId": "{{facebookAppId}}"
+}'
+```
+
+Facebook User Model
+```typescript
+{
+    id: string
+    userID: string
+    accessToken: string
+    name?: string
+    email?: string
+    picture?: | {
+        data: {
+            height?: number
+            is_silhouette?: boolean
+            url?: string
+            width?: number
+        };
+    }
+}
+```
+
+<br/>
+
+### Login with Google
+
+Request Model
+
+```yaml
+curl --location --request POST '{{base_url}}/api/v1/oauth/google/login' \
+--header 'X-Ertis-Alias: {{membership_id}}' \
+--header 'X-IpAddress: {{client_ip}}' \
+--header 'X-UserAgent: {{user_agent}}' \
+--header 'Content-Type: application/json' \
+  --data-raw '{
+    "token": {{googleCredentialsPayload}},
+    "clientId": "{{googleClientId}}"
+}'
+```
+
+Google Credentials Model
+```typescript
+{
+    idToken: string
+    clientId: string
+}
+```
+
+<br/>
+
+### Login with Microsoft
+
+Request Model
+
+```yaml
+curl --location --request POST '{{base_url}}/api/v1/oauth/microsoft/login' \
+--header 'X-Ertis-Alias: {{membership_id}}' \
+--header 'X-IpAddress: {{client_ip}}' \
+--header 'X-UserAgent: {{user_agent}}' \
+--header 'Content-Type: application/json' \
+  --data-raw '{
+    "token": {{microsoftCredentialsPayload}},
+    "clientId": "{{microsoftClientId}}"
+}'
+```
+
+Microsoft Credentials Model
+- uniqueId               - `oid` or `sub` claim from ID token
+- tenantId               - `tid` claim from ID token
+- scopes                 - Scopes that are validated for the respective token
+- account                - An account object representation of the currently signed-in user
+- idToken                - Id token received as part of the response
+- idTokenClaims          - MSAL-relevant ID token claims
+- accessToken            - Access token or SSH certificate received as part of the response
+- fromCache              - Boolean denoting whether token came from cache
+- expiresOn              - Javascript Date object representing relative expiration of access token
+- extExpiresOn           - Javascript Date object representing extended relative expiration of access token in case of server outage
+- state                  - Value passed in by user in request
+- familyId               - Family ID identifier, usually only used for refresh tokens
+- requestId              - Request ID returned as part of the response
+
+```typescript
+{
+    authority: string;
+    uniqueId: string;
+    tenantId: string;
+    scopes: Array<string>;
+    account: AccountInfo | null;
+    idToken: string;
+    idTokenClaims: object;
+    accessToken: string;
+    fromCache: boolean;
+    expiresOn: Date | null;
+    tokenType: string;
+    correlationId: string;
+    requestId?: string;
+    extExpiresOn?: Date;
+    state?: string;
+    familyId?: string;
+    cloudGraphHostName?: string;
+    msGraphHost?: string;
+    code?: string;
+    fromNativeBroker?: boolean;
+}
+```
