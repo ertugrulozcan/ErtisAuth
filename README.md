@@ -16,7 +16,7 @@ For developer guide and API documentation, please visit [wiki page](https://gith
 
 ## Installation
 
-### Standalone Build & Installation on Linux or Windows or Mac OS
+### Standalone Build & Installation on Linux, Windows or Mac OS
 
 * Install the latest .NET 7 SDK
 * Install Git
