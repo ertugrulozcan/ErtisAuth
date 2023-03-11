@@ -575,33 +575,85 @@ Microsoft Credentials Model
 - idTokenClaims          - MSAL-relevant ID token claims
 - accessToken            - Access token or SSH certificate received as part of the response
 - fromCache              - Boolean denoting whether token came from cache
-- expiresOn              - Javascript Date object representing relative expiration of access token
-- extExpiresOn           - Javascript Date object representing extended relative expiration of access token in case of server outage
+- expiresOn              - Relative expiration date of access token
+- extExpiresOn           - Extended relative expiration date of access token in case of server outage
 - state                  - Value passed in by user in request
 - familyId               - Family ID identifier, usually only used for refresh tokens
 - requestId              - Request ID returned as part of the response
+- homeAccountId          - Home account identifier for this account object
+- environment            - Entity which issued the token represented by the domain of the issuer (e.g. login.microsoftonline.com)
+- tenantId               - Full tenant or organizational id that this account belongs to
+- username               - preferred_username claim of the id_token that represents this account
+- localAccountId         - Local, tenant-specific account identifer for this account object, usually used in legacy cases
+- name                   - Full name for the account, including given name and family name
+- idToken                - Raw ID token
+- idTokenClaims          - Object contains claims from ID token
+- localAccountId         - The user's account ID
+- nativeAccountId        - The user's native account ID
 
 ```typescript
 {
-    authority: string;
-    uniqueId: string;
-    tenantId: string;
-    scopes: Array<string>;
-    account: AccountInfo | null;
-    idToken: string;
-    idTokenClaims: object;
-    accessToken: string;
-    fromCache: boolean;
-    expiresOn: Date | null;
-    tokenType: string;
-    correlationId: string;
-    requestId?: string;
-    extExpiresOn?: Date;
-    state?: string;
-    familyId?: string;
-    cloudGraphHostName?: string;
-    msGraphHost?: string;
-    code?: string;
-    fromNativeBroker?: boolean;
+    authority: string
+    uniqueId: string
+    tenantId: string
+    scopes: string[]
+    account: {
+        homeAccountId: string
+        environment: string
+        tenantId: string
+        username: string
+        localAccountId: string
+        name?: string
+        idToken?: string
+        idTokenClaims?: {
+            aud?: string
+            iss?: string
+            iat?: number
+            nbf?: number
+            oid?: string
+            sub?: string
+            tid?: string
+            ver?: string
+            upn?: string
+            preferred_username?: string
+            login_hint?: string
+            emails?: string[]
+            name?: string
+            nonce?: string
+            exp?: number
+            home_oid?: string
+            sid?: string
+            cloud_instance_host_name?: string
+            cnf?: {
+                kid: string
+            }
+            x5c_ca?: string[]
+            ts?: number
+            at?: string
+            u?: string
+            p?: string
+            m?: string
+            roles?: string[]
+            amr?: string[]
+            idp?: string
+            auth_time?: number
+        }
+        nativeAccountId?: string
+    }
+    idToken: string
+    idTokenClaims: object
+    accessToken: string
+    fromCache: boolean
+    expiresOn: Date
+    tokenType: string
+    correlationId: string
+    requestId?: string
+    extExpiresOn?: Date
+    state?: string
+    familyId?: string
+    cloudGraphHostName?: string
+    msGraphHost?: string
+    code?: string
+    fromNativeBroker?: boolean
 }
 ```
