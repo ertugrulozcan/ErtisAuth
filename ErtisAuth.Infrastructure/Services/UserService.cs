@@ -519,7 +519,7 @@ namespace ErtisAuth.Infrastructure.Services
         public async Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
         {
             await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-            return await base.FindOneAsync(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.ObjectId(id));
+            return await base.FindOneAsync(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("_id", QueryBuilder.ObjectId(id)));
         }
         
         public async Task<IPaginationCollection<DynamicObject>> GetAsync(
