@@ -113,7 +113,7 @@ namespace ErtisAuth.Infrastructure.Services
 			// 3. User Type
 			var userType = await this.userTypeService.CreateAsync(utilizer, membership.Id, new UserType
 			{
-				Name = _user.UserType,
+				Name = string.IsNullOrEmpty(_user.UserType) ? "User" : _user.UserType,
 				Properties = Array.Empty<IFieldInfo>(),
 				IsAbstract = false,
 				AllowAdditionalProperties = false,

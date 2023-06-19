@@ -107,7 +107,8 @@ curl --location --request POST '{{base_url}}/api/v1/migrate' \
         "firstname": "{{first_name}}",
         "lastname": "{{last_name}}",
         "email_address": "{{email_address}}",
-        "password": "{{password}}"
+        "password": "{{password}}",
+        "user_type": "User"
     },
     "application": {
         "name": "{{application_name}}",
