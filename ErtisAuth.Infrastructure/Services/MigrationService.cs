@@ -1,7 +1,9 @@
+using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Ertis.MongoDB.Configuration;
+using Ertis.Schema.Types;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
@@ -22,6 +24,7 @@ namespace ErtisAuth.Infrastructure.Services
 		private readonly IMembershipService membershipService;
 		private readonly IRoleService roleService;
 		private readonly IUserService userService;
+		private readonly IUserTypeService userTypeService;
 		private readonly IApplicationService applicationService;
 
 		#endregion
@@ -35,18 +38,21 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="membershipService"></param>
 		/// <param name="roleService"></param>
 		/// <param name="userService"></param>
+		/// <param name="userTypeService"></param>
 		/// <param name="applicationService"></param>
 		public MigrationService(
 			IDatabaseSettings databaseSettings,
 			IMembershipService membershipService,
 			IRoleService roleService,
 			IUserService userService,
+			IUserTypeService userTypeService,
 			IApplicationService applicationService)
 		{
 			this.databaseSettings = databaseSettings;
 			this.membershipService = membershipService;
 			this.roleService = roleService;
 			this.userService = userService;
+			this.userTypeService = userTypeService;
 			this.applicationService = applicationService;
 		}
 
@@ -103,8 +109,19 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				adminRole = currentAdminRole;
 			}
+			
+			// 3. User Type
+			var userType = await this.userTypeService.CreateAsync(utilizer, membership.Id, new UserType
+			{
+				Name = _user.UserType,
+				Properties = Array.Empty<IFieldInfo>(),
+				IsAbstract = false,
+				AllowAdditionalProperties = false,
+				BaseUserType = UserType.ORIGIN_USER_TYPE_SLUG,
+				MembershipId = membership.Id,
+			});
 
-			// 3. User (admin)
+			// 4. User (admin)
 			var adminUser = await this.userService.CreateAsync(utilizer, membership.Id, new UserWithPassword
 			{
 				Username = _user.Username,
@@ -112,11 +129,12 @@ namespace ErtisAuth.Infrastructure.Services
 				LastName = _user.LastName,
 				EmailAddress = _user.EmailAddress,
 				Role = adminRole.Name,
+				UserType = userType.Slug,
 				MembershipId = membership.Id,
 				Password = _user.Password
 			});
 			
-			// 4. Application
+			// 5. Application
 			if (_application != null)
 			{
 				var application = await this.applicationService.CreateAsync(utilizer, membership.Id, new Application
