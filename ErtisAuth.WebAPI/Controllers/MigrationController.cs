@@ -64,13 +64,13 @@ namespace ErtisAuth.WebAPI.Controllers
 				SecretKey = model.Membership.SecretKey,
 			};
 			
-			var user = new UserWithPasswordHash
+			var user = new UserWithPassword
 			{
 				Username = model.User.Username,
 				EmailAddress = model.User.EmailAddress,
 				FirstName = model.User.FirstName,
 				LastName = model.User.LastName,
-				PasswordHash = model.User.Password,
+				Password = model.User.Password,
 				Role = model.User.Role,
 				Forbidden = model.User.Forbidden,
 				Permissions = model.User.Permissions

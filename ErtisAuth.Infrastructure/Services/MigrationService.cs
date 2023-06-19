@@ -23,7 +23,6 @@ namespace ErtisAuth.Infrastructure.Services
 		private readonly IRoleService roleService;
 		private readonly IUserService userService;
 		private readonly IApplicationService applicationService;
-		private readonly ICryptographyService cryptographyService;
 
 		#endregion
 
@@ -37,28 +36,25 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="roleService"></param>
 		/// <param name="userService"></param>
 		/// <param name="applicationService"></param>
-		/// <param name="cryptographyService"></param>
 		public MigrationService(
 			IDatabaseSettings databaseSettings,
 			IMembershipService membershipService,
 			IRoleService roleService,
 			IUserService userService,
-			IApplicationService applicationService,
-			ICryptographyService cryptographyService)
+			IApplicationService applicationService)
 		{
 			this.databaseSettings = databaseSettings;
 			this.membershipService = membershipService;
 			this.roleService = roleService;
 			this.userService = userService;
 			this.applicationService = applicationService;
-			this.cryptographyService = cryptographyService;
 		}
 
 		#endregion
 		
 		#region Methods
 
-		public async ValueTask<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPasswordHash _user, Application _application)
+		public async ValueTask<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPassword _user, Application _application)
 		{
 			// Validation
 			var databaseInformation = Ertis.MongoDB.Helpers.ConnectionStringHelper.ParseConnectionString(connectionString);
@@ -109,7 +105,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 
 			// 3. User (admin)
-			var adminUser = await this.userService.CreateAsync(utilizer, membership.Id, new UserWithPasswordHash
+			var adminUser = await this.userService.CreateAsync(utilizer, membership.Id, new UserWithPassword
 			{
 				Username = _user.Username,
 				FirstName = _user.FirstName,
@@ -117,7 +113,7 @@ namespace ErtisAuth.Infrastructure.Services
 				EmailAddress = _user.EmailAddress,
 				Role = adminRole.Name,
 				MembershipId = membership.Id,
-				PasswordHash = this.cryptographyService.CalculatePasswordHash(membership, _user.PasswordHash)
+				Password = _user.Password
 			});
 			
 			// 4. Application
