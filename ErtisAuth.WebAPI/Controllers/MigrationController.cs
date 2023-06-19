@@ -72,6 +72,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				LastName = model.User.LastName,
 				Password = model.User.Password,
 				Role = model.User.Role,
+				UserType = model.User.UserType,
 				Forbidden = model.User.Forbidden,
 				Permissions = model.User.Permissions
 			};
