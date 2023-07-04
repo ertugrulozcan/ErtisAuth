@@ -407,7 +407,7 @@ namespace ErtisAuth.Infrastructure.Services
 				var queryUsers2Result = await this.userService.QueryAsync(membershipId, query2, 0, 1, cancellationToken: cancellationToken);
 				if (queryUsers2Result.Items.Any())
 				{
-					var dynamicUser = queryUsersResult.Items.First();
+					var dynamicUser = queryUsers2Result.Items.First();
 					return dynamicUser.Deserialize<User>();
 				}
 			}
