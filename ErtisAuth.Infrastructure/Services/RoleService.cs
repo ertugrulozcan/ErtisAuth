@@ -16,14 +16,22 @@ using ErtisAuth.Dto.Models.Roles;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.Infrastructure.Mapping;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services
 {
 	public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleService
 	{
+		#region Constants
+
+		private const string CACHE_KEY = "roles";
+
+		#endregion
+		
 		#region Services
 
 		private readonly IEventService eventService;
+		private readonly IMemoryCache _memoryCache;
 
 		#endregion
 
@@ -40,10 +48,16 @@ namespace ErtisAuth.Infrastructure.Services
 		/// </summary>
 		/// <param name="membershipService"></param>
 		/// <param name="eventService"></param>
+		/// <param name="memoryCache"></param>
 		/// <param name="roleRepository"></param>
-		public RoleService(IMembershipService membershipService, IEventService eventService, IRoleRepository roleRepository) : base(membershipService, roleRepository)
+		public RoleService(
+			IMembershipService membershipService, 
+			IEventService eventService, 
+			IMemoryCache memoryCache,
+			IRoleRepository roleRepository) : base(membershipService, roleRepository)
 		{
 			this.eventService = eventService;
+			this._memoryCache = memoryCache;
 
 			this.Initialize();
 			
@@ -126,6 +140,39 @@ namespace ErtisAuth.Infrastructure.Services
 				Document = eventArgs.Resource,
 				MembershipId = eventArgs.Utilizer.MembershipId
 			});
+		}
+
+		#endregion
+		
+		#region Cache Methods
+
+		private static string GetCacheKey(string membershipId, string roleId)
+		{
+			return $"{CACHE_KEY}.{membershipId}.{roleId}";
+		}
+		
+		private static MemoryCacheEntryOptions GetCacheTTL()
+		{
+			return new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(12));
+		}
+
+		private void PurgeAllCache(string membershipId) => this.PurgeAllCacheAsync(membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
+		
+		private async ValueTask PurgeAllCacheAsync(string membershipId, CancellationToken cancellationToken = default)
+		{
+			var roles = await this.GetAsync(
+				membershipId, 
+				null, null, false, null, null,
+				cancellationToken: cancellationToken);
+			
+			foreach (var role in roles.Items)
+			{
+				var cacheKey1 = GetCacheKey(membershipId, role.Id);
+				this._memoryCache.Remove(cacheKey1);
+				
+				var cacheKey2 = GetCacheKey(membershipId, role.Name);
+				this._memoryCache.Remove(cacheKey2);
+			}
 		}
 
 		#endregion
@@ -254,18 +301,52 @@ namespace ErtisAuth.Infrastructure.Services
 			return ErtisAuthException.RoleNotFound(id);
 		}
 
+		#endregion
+
+		#region Read Methods
+
 		public override Role Get(string membershipId, string id)
 		{
-			return id == ReservedRoles.Server ? 
-				this.GetServerRole(membershipId) : 
-				base.Get(membershipId, id);
+			if (id == ReservedRoles.Server)
+			{
+				return this.GetServerRole(membershipId);
+			}
+
+			var cacheKey = GetCacheKey(membershipId, id);
+			if (!this._memoryCache.TryGetValue<Role>(cacheKey, out var role))
+			{
+				role = base.Get(membershipId, id);
+				if (role == null)
+				{
+					return null;
+				}
+
+				this._memoryCache.Set(cacheKey, role, GetCacheTTL());
+			}
+			
+			return role;
 		}
 
 		public override async ValueTask<Role> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 		{
-			return id == ReservedRoles.Server ? 
-				await this.GetServerRoleAsync(membershipId, cancellationToken: cancellationToken) : 
-				await base.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			if (id == ReservedRoles.Server)
+			{
+				return await this.GetServerRoleAsync(membershipId, cancellationToken: cancellationToken);
+			}
+			
+			var cacheKey = GetCacheKey(membershipId, id);
+			if (!this._memoryCache.TryGetValue<Role>(cacheKey, out var role))
+			{
+				role = await base.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+				if (role == null)
+				{
+					return null;
+				}
+
+				this._memoryCache.Set(cacheKey, role, GetCacheTTL());
+			}
+			
+			return role;
 		}
 
 		public Role GetByName(string name, string membershipId)
@@ -275,13 +356,20 @@ namespace ErtisAuth.Infrastructure.Services
 				return this.GetServerRole(membershipId);
 			}
 			
-			var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
-			if (dto == null)
+			var cacheKey = GetCacheKey(membershipId, name);
+			if (!this._memoryCache.TryGetValue<Role>(cacheKey, out var role))
 			{
-				return null;
+				var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
+				if (dto == null)
+				{
+					return null;
+				}
+				
+				role = Mapper.Current.Map<RoleDto, Role>(dto);
+				this._memoryCache.Set(cacheKey, role, GetCacheTTL());
 			}
 			
-			return Mapper.Current.Map<RoleDto, Role>(dto);
+			return role;
 		}
 		
 		public async ValueTask<Role> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
@@ -291,13 +379,20 @@ namespace ErtisAuth.Infrastructure.Services
 				return await this.GetServerRoleAsync(membershipId, cancellationToken: cancellationToken);
 			}
 			
-			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-			if (dto == null)
+			var cacheKey = GetCacheKey(membershipId, name);
+			if (!this._memoryCache.TryGetValue<Role>(cacheKey, out var role))
 			{
-				return null;
+				var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
+				if (dto == null)
+				{
+					return null;
+				}
+				
+				role = Mapper.Current.Map<RoleDto, Role>(dto);
+				this._memoryCache.Set(cacheKey, role, GetCacheTTL());
 			}
 			
-			return Mapper.Current.Map<RoleDto, Role>(dto);
+			return role;
 		}
 
 		private Role GetServerRole(string membershipId) =>
@@ -305,9 +400,9 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private async Task<Role> GetServerRoleAsync(string membershipId, CancellationToken cancellationToken = default)
 		{
-			if (this.ServerRoleDictionary.ContainsKey(membershipId))
+			if (this.ServerRoleDictionary.TryGetValue(membershipId, out var role))
 			{
-				return this.ServerRoleDictionary[membershipId];
+				return role;
 			}
 			
 			// Check membership
@@ -340,6 +435,54 @@ namespace ErtisAuth.Infrastructure.Services
 			return serverRole;
 		}
 
+		#endregion
+		
+		#region Create Methods
+
+		public override Role Create(Utilizer utilizer, string membershipId, Role model)
+		{
+			this.PurgeAllCache(membershipId);
+			return base.Create(utilizer, membershipId, model);
+		}
+
+		public override async ValueTask<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
+		{
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
+		}
+
+		#endregion
+
+		#region Update Methods
+
+		public override Role Update(Utilizer utilizer, string membershipId, Role model)
+		{
+			this.PurgeAllCache(membershipId);
+			return base.Update(utilizer, membershipId, model);
+		}
+
+		public override async ValueTask<Role> UpdateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
+		{
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
+		}
+
+		#endregion
+		
+		#region Delete Methods
+
+		public override bool Delete(Utilizer utilizer, string membershipId, string id)
+		{
+			this.PurgeAllCache(membershipId);
+			return base.Delete(utilizer, membershipId, id);
+		}
+
+		public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+		{
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+		}
+		
 		#endregion
 	}
 }
