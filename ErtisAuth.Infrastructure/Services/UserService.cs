@@ -663,6 +663,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        model = this.SyncModel(membershipId, userId, model, out var current);
 	        await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current, cancellationToken: cancellationToken);
 	        var updated = await base.UpdateAsync(userId, model, cancellationToken: cancellationToken);
+	        this.HidePasswordHash(current);
 	        this.HidePasswordHash(updated);
 	        if (updated != null && fireEvent)
 	        {
