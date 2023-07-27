@@ -3,6 +3,7 @@ using ErtisAuth.Extensions.Quartz.Jobs;
 using ErtisAuth.Extensions.Quartz.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
+using Quartz.AspNetCore;
 
 namespace ErtisAuth.Extensions.Quartz.Extensions
 {
