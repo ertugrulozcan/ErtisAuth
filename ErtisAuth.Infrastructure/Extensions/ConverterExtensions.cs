@@ -4,12 +4,16 @@ using System.Linq;
 using Ertis.Core.Models.Resources;
 using Ertis.Schema.Serialization;
 using Ertis.Schema.Types;
+using ErtisAuth.Core.Models.GeoLocation;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Dto.Extensions;
+using ErtisAuth.Dto.Models.GeoLocation;
+using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Dto.Models.Mailing;
 using ErtisAuth.Dto.Models.Memberships;
 using ErtisAuth.Dto.Models.Providers;
@@ -390,6 +394,130 @@ namespace ErtisAuth.Infrastructure.Extensions
                 TlsEnabled = model.TlsEnabled,
                 Username = model.Username,
                 Password = model.Password
+            };
+        }
+
+        #endregion
+
+        #region ActiveToken
+
+        public static ActiveToken ToModel(this ActiveTokenDto dto)
+        {
+            return new ActiveToken
+            {
+                Id = dto.Id,
+                MembershipId = dto.MembershipId,
+                AccessToken = dto.AccessToken,
+                RefreshToken = dto.RefreshToken,
+                ExpiresIn = dto.ExpiresIn,
+                RefreshTokenExpiresIn = dto.RefreshTokenExpiresIn,
+                TokenType = dto.TokenType,
+                CreatedAt = dto.CreatedAt,
+                UserId = dto.UserId,
+                UserName = dto.UserName,
+                EmailAddress = dto.EmailAddress,
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                ClientInfo = dto.ClientInfo?.ToModel()
+            };
+        }
+		
+        public static ActiveTokenDto ToDto(this ActiveToken model)
+        {
+            return new ActiveTokenDto
+            {
+                Id = model.Id,
+                AccessToken = model.AccessToken,
+                RefreshToken = model.RefreshToken,
+                ExpiresIn = model.ExpiresIn,
+                RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
+                TokenType = model.TokenType,
+                CreatedAt = model.CreatedAt,
+                UserId = model.UserId,
+                UserName = model.UserName,
+                EmailAddress = model.EmailAddress,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                MembershipId = model.MembershipId,
+                ClientInfo = model.ClientInfo?.ToDto()
+            };
+        }
+
+        #endregion
+
+        #region RevokedTokens
+
+        public static RevokedToken ToModel(this RevokedTokenDto dto)
+        {
+            return new RevokedToken
+            {
+                Id = dto.Id,
+                MembershipId = dto.MembershipId,
+                Token = dto.Token.AccessToken,
+                UserId = dto.UserId,
+                UserName = dto.UserName,
+                EmailAddress = dto.EmailAddress,
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                TokenType = dto.TokenType,
+                RevokedAt = dto.RevokedAt
+            };
+        }
+
+        #endregion
+
+        #region ClientInfo
+
+        private static ClientInfo ToModel(this ClientInfoDto dto)
+        {
+            return new ClientInfo
+            {
+                IPAddress = dto.IPAddress,
+                UserAgent = dto.UserAgent,
+                GeoLocation = dto.GeoLocation != null ? new GeoLocationInfo
+                {
+                    City = dto.GeoLocation.City,
+                    Country = dto.GeoLocation.Country,
+                    CountryCode = dto.GeoLocation.CountryCode,
+                    PostalCode = dto.GeoLocation.PostalCode,
+                    Location = dto.GeoLocation.Location != null ? new Coordinate
+                    {
+                        Latitude = dto.GeoLocation.Location.Latitude,
+                        Longitude = dto.GeoLocation.Location.Longitude
+                    } : null,
+                    Isp = dto.GeoLocation.Isp,
+                    IspDomain = dto.GeoLocation.IspDomain
+                } : null
+            };
+        }
+		
+        public static ClientInfoDto ToDto(this ClientInfo clientInfo)
+        {
+            var geoLocation = clientInfo.GeoLocation;
+            GeoLocationInfoDto geoLocationDto = null;
+            if (geoLocation != null)
+            {
+                geoLocationDto = new GeoLocationInfoDto
+                {
+                    City = geoLocation.City,
+                    Country = geoLocation.Country,
+                    CountryCode = geoLocation.CountryCode,
+                    PostalCode = geoLocation.PostalCode,
+                    Location = geoLocation.Location != null ? new CoordinateDto
+                    {
+                        Latitude = geoLocation.Location.Latitude,
+                        Longitude = geoLocation.Location.Longitude
+                    } : null,
+                    Isp = geoLocation.Isp,
+                    IspDomain = geoLocation.IspDomain
+                };
+            }
+			
+            return new ClientInfoDto
+            {
+                IPAddress = clientInfo.IPAddress,
+                UserAgent = clientInfo.UserAgent,
+                GeoLocation = geoLocationDto
             };
         }
 

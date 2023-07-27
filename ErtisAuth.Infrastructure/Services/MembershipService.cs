@@ -83,6 +83,12 @@ namespace ErtisAuth.Infrastructure.Services
 				errorList.Add("secret_key is a required field");
 			}
 
+			var current = this.GetByName(model.Name);
+			if (current != null && current.Id != model.Id)
+			{
+				errorList.Add(ErtisAuthException.MembershipAlreadyExists(model.Name).Message);
+			}
+
 			errors = errorList;
 			return !errors.Any();
 		}
@@ -261,6 +267,17 @@ namespace ErtisAuth.Infrastructure.Services
 			return membership;
 		}
 
+		private Membership GetByName(string name)
+		{
+			var dto = this.repository.FindOne(x => x.Name == name.Trim());
+			if (dto == null)
+			{
+				return null;
+			}
+
+			return Mapper.Current.Map<MembershipDto, Membership>(dto);
+		}
+		
 		public Membership GetBySecretKey(string secretKey)
 		{
 			var cacheKey = GetCacheKey(secretKey);
@@ -303,14 +320,16 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public override Membership Create(Membership model)
 		{
+			var created = base.Create(model);
 			this.PurgeAllCache();
-			return base.Create(model);
+			return created;
 		}
 
 		public override async ValueTask<Membership> CreateAsync(Membership model, CancellationToken cancellationToken = default)
 		{
+			var created = await base.CreateAsync(model, cancellationToken: cancellationToken);
 			await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
-			return await base.CreateAsync(model, cancellationToken: cancellationToken);
+			return created;
 		}
 
 		#endregion
@@ -319,14 +338,16 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public override Membership Update(Membership model)
 		{
+			var updated = base.Update(model);
 			this.PurgeAllCache();
-			return base.Update(model);
+			return updated;
 		}
 
 		public override async ValueTask<Membership> UpdateAsync(Membership model, CancellationToken cancellationToken = default)
 		{
+			var updated = await base.UpdateAsync(model, cancellationToken: cancellationToken);
 			await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
-			return await base.UpdateAsync(model, cancellationToken: cancellationToken);
+			return updated;
 		}
 
 		#endregion
@@ -340,9 +361,14 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				throw ErtisAuthException.MembershipCouldNotDeleted(id);
 			}
+
+			var isDeleted = base.Delete(id);
+			if (isDeleted)
+			{
+				this.PurgeAllCache();	
+			}
 			
-			this.PurgeAllCache();
-			return base.Delete(id);
+			return isDeleted;
 		}
 		
 		public override async ValueTask<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
@@ -353,8 +379,13 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.MembershipCouldNotDeleted(id);
 			}
 			
-			await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
-			return await base.DeleteAsync(id, cancellationToken: cancellationToken);
+			var isDeleted = await base.DeleteAsync(id, cancellationToken: cancellationToken);
+			if (isDeleted)
+			{
+				await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);	
+			}
+
+			return isDeleted;
 		}
 		
 		#endregion

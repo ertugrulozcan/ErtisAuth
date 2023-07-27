@@ -18,14 +18,22 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Events.EventArgs;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services
 {
     public class UserTypeService : MembershipBoundedCrudService<UserType, UserTypeDto>, IUserTypeService
     {
+	    #region Constants
+
+	    private const string CACHE_KEY = "user-types";
+
+	    #endregion
+	    
 	    #region Services
 
 	    private readonly IEventService eventService;
+	    private readonly IMemoryCache _memoryCache;
 
 	    #endregion
 	    
@@ -234,13 +242,16 @@ namespace ErtisAuth.Infrastructure.Services
         /// <param name="membershipService"></param>
         /// <param name="eventService"></param>
         /// <param name="repository"></param>
+        /// <param name="memoryCache"></param>
         public UserTypeService(
             IMembershipService membershipService,
             IEventService eventService,
-            IUserTypeRepository repository)
+            IUserTypeRepository repository,
+            IMemoryCache memoryCache)
             : base(membershipService, repository)
         {
 	        this.eventService = eventService;
+	        this._memoryCache = memoryCache;
 	        
 	        this.OnCreated += this.UserTypeCreatedEventHandler;
 	        this.OnUpdated += this.UserTypeUpdatedEventHandler;
@@ -411,14 +422,26 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			if (nameOrSlug == OriginUserType.Name || nameOrSlug == OriginUserType.Slug)
 			{
-				if (OriginUserType.Clone() is UserType userType)
+				if (OriginUserType.Clone() is UserType originUserType_)
 				{
-					userType.MembershipId = membershipId;
-					return userType;
+					originUserType_.MembershipId = membershipId;
+					return originUserType_;
 				}
 			}
+			
+			var cacheKey = GetCacheKey(membershipId, nameOrSlug);
+			if (!this._memoryCache.TryGetValue<UserType>(cacheKey, out var userType))
+			{
+				userType = await this.GetAsync(membershipId, x => x.Name == nameOrSlug || x.Slug == nameOrSlug, cancellationToken: cancellationToken);
+				if (userType == null)
+				{
+					return null;
+				}
 
-			return await this.GetAsync(membershipId, x => x.Name == nameOrSlug || x.Slug == nameOrSlug, cancellationToken: cancellationToken);
+				this._memoryCache.Set(cacheKey, userType, GetCacheTTL());
+			}
+			
+			return userType;
 		}
 
         public async Task<bool> IsInheritFromAsync(string membershipId, string childUserTypeName, string parentUserTypeName, CancellationToken cancellationToken = default)
@@ -560,29 +583,7 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			return ErtisAuthException.UserTypeNotFound(id, "id");
 		}
-
-		public override bool Delete(Utilizer utilizer, string membershipId, string id)
-		{
-			// Is Deletable?
-			if (!this.IsDeletable(id, membershipId, out var _))
-			{
-				throw ErtisAuthException.UserTypeCanNotBeDelete();
-			}
-			
-			return base.Delete(utilizer, membershipId, id);
-		}
-
-		public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
-		{
-			// Is Deletable?
-			if (!this.IsDeletable(id, membershipId, out var _))
-			{
-				throw ErtisAuthException.UserTypeCanNotBeDelete();
-			}
-			
-			return await base.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken);
-		}
-
+		
 		// ReSharper disable once OutParameterValueIsAlwaysDiscarded.Local
 		private bool IsDeletable(string id, string membershipId, out IEnumerable<string> errors)
 		{
@@ -612,6 +613,104 @@ namespace ErtisAuth.Infrastructure.Services
 
 			errors = null;
 			return true;
+		}
+
+		#endregion
+		
+		#region Create Methods
+
+		public override UserType Create(Utilizer utilizer, string membershipId, UserType model)
+		{
+			var created = base.Create(utilizer, membershipId, model);
+			this.PurgeAllCache(membershipId);
+			return created;
+		}
+
+		public override async ValueTask<UserType> CreateAsync(Utilizer utilizer, string membershipId, UserType model, CancellationToken cancellationToken = default)
+		{
+			var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return created;
+		}
+
+		#endregion
+
+		#region Update Methods
+
+		public override UserType Update(Utilizer utilizer, string membershipId, UserType model)
+		{
+			var updated = base.Update(utilizer, membershipId, model);
+			this.PurgeAllCache(membershipId);
+			return updated;
+		}
+
+		public override async ValueTask<UserType> UpdateAsync(Utilizer utilizer, string membershipId, UserType model, CancellationToken cancellationToken = default)
+		{
+			var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return updated;
+		}
+
+		#endregion
+		
+		#region Delete Methods
+
+		public override bool Delete(Utilizer utilizer, string membershipId, string id)
+		{
+			// Is Deletable?
+			if (!this.IsDeletable(id, membershipId, out var _))
+			{
+				throw ErtisAuthException.UserTypeCanNotBeDelete();
+			}
+			
+			var isDeleted = base.Delete(utilizer, membershipId, id);
+			this.PurgeAllCache(membershipId);
+			return isDeleted;
+		}
+
+		public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+		{
+			// Is Deletable?
+			if (!this.IsDeletable(id, membershipId, out var _))
+			{
+				throw ErtisAuthException.UserTypeCanNotBeDelete();
+			}
+			
+			var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return isDeleted;
+		}
+		
+		#endregion
+		
+		#region Cache Methods
+
+		private static string GetCacheKey(string membershipId, string userTypeNameOrSlug)
+		{
+			return $"{CACHE_KEY}.{membershipId}.{userTypeNameOrSlug}";
+		}
+		
+		private static MemoryCacheEntryOptions GetCacheTTL()
+		{
+			return new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(12));
+		}
+
+		private void PurgeAllCache(string membershipId) => this.PurgeAllCacheAsync(membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
+		
+		private async ValueTask PurgeAllCacheAsync(string membershipId, CancellationToken cancellationToken = default)
+		{
+			var userTypes = await this.GetAsync(
+				membershipId, 
+				null, null, false, null, null,
+				cancellationToken: cancellationToken);
+			foreach (var userType in userTypes.Items)
+			{
+				var cacheKey1 = GetCacheKey(membershipId, userType.Name);
+				this._memoryCache.Remove(cacheKey1);
+				
+				var cacheKey2 = GetCacheKey(membershipId, userType.Slug);
+				this._memoryCache.Remove(cacheKey2);
+			}
 		}
 
 		#endregion

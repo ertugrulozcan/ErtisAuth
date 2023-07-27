@@ -271,6 +271,11 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The role with same name is already exists ({name})", "RoleWithSameNameAlreadyExists");
 		}
 		
+		public static ErtisAuthException ReservedRoleName(string name)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"This role name is reserved by the system ({name})", "ReservedRoleName");
+		}
+		
 		public static ErtisAuthException UbacsConflicted(string message)
 		{
 			return new ErtisAuthException(HttpStatusCode.Conflict, message, "UbacsConflicted");

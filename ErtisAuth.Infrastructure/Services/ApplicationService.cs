@@ -322,8 +322,8 @@ namespace ErtisAuth.Infrastructure.Services
 				cancellationToken: cancellationToken);
 			foreach (var application in applications.Items)
 			{
-				var cacheKey1 = GetCacheKey(membershipId, application.Id);
-				this._memoryCache.Remove(cacheKey1);
+				var cacheKey = GetCacheKey(membershipId, application.Id);
+				this._memoryCache.Remove(cacheKey);
 			}
 		}
 
@@ -444,14 +444,16 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public override Application Create(Utilizer utilizer, string membershipId, Application model)
 		{
+			var created = base.Create(utilizer, membershipId, model);
 			this.PurgeAllCache(membershipId);
-			return base.Create(utilizer, membershipId, model);
+			return created;
 		}
 
 		public override async ValueTask<Application> CreateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
 		{
+			var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
 			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
-			return await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
+			return created;
 		}
 
 		#endregion
@@ -460,14 +462,16 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public override Application Update(Utilizer utilizer, string membershipId, Application model)
 		{
+			var updated = base.Update(utilizer, membershipId, model);
 			this.PurgeAllCache(membershipId);
-			return base.Update(utilizer, membershipId, model);
+			return updated;
 		}
 
 		public override async ValueTask<Application> UpdateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
 		{
+			var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
 			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
-			return await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
+			return updated;
 		}
 
 		#endregion
@@ -476,14 +480,24 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public override bool Delete(Utilizer utilizer, string membershipId, string id)
 		{
-			this.PurgeAllCache(membershipId);
-			return base.Delete(utilizer, membershipId, id);
+			var isDeleted = base.Delete(utilizer, membershipId, id);
+			if (isDeleted)
+			{
+				this.PurgeAllCache(membershipId);	
+			}
+
+			return isDeleted;
 		}
 
 		public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 		{
-			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
-			return await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+			var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+			if (isDeleted)
+			{
+				await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);	
+			}
+			
+			return isDeleted;
 		}
 		
 		#endregion

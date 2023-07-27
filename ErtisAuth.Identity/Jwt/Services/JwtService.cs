@@ -138,7 +138,7 @@ namespace ErtisAuth.Identity.Jwt.Services
                 {
                     if (!claims.Exists(x => x.Type == additionalClaim.Key) && additionalClaim.Value != null)
                     {
-                        claims.Add(new Claim(additionalClaim.Key, additionalClaim.Value.ToString()));
+                        claims.Add(new Claim(additionalClaim.Key, additionalClaim.Value.ToString() ?? string.Empty));
                     }
                 }
             }

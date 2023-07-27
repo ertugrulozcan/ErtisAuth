@@ -441,14 +441,26 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public override Role Create(Utilizer utilizer, string membershipId, Role model)
 		{
+			if (model.Name is ReservedRoles.Administrator or ReservedRoles.Server && utilizer.Type != Utilizer.UtilizerType.System)
+			{
+				throw ErtisAuthException.ReservedRoleName(model.Name);
+			}
+			
+			var created = base.Create(utilizer, membershipId, model);
 			this.PurgeAllCache(membershipId);
-			return base.Create(utilizer, membershipId, model);
+			return created;
 		}
 
 		public override async ValueTask<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
 		{
+			if (model.Name is ReservedRoles.Administrator or ReservedRoles.Server && utilizer.Type != Utilizer.UtilizerType.System)
+			{
+				throw ErtisAuthException.ReservedRoleName(model.Name);
+			}
+			
+			var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
 			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
-			return await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
+			return created;
 		}
 
 		#endregion
@@ -457,14 +469,16 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public override Role Update(Utilizer utilizer, string membershipId, Role model)
 		{
+			var updated = base.Update(utilizer, membershipId, model);
 			this.PurgeAllCache(membershipId);
-			return base.Update(utilizer, membershipId, model);
+			return updated;
 		}
 
 		public override async ValueTask<Role> UpdateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
 		{
+			var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
 			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
-			return await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
+			return updated;
 		}
 
 		#endregion
@@ -473,14 +487,24 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public override bool Delete(Utilizer utilizer, string membershipId, string id)
 		{
-			this.PurgeAllCache(membershipId);
-			return base.Delete(utilizer, membershipId, id);
+			var isDeleted = base.Delete(utilizer, membershipId, id);
+			if (isDeleted)
+			{
+				this.PurgeAllCache(membershipId);	
+			}
+			
+			return isDeleted;
 		}
 
 		public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 		{
-			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
-			return await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+			var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+			if (isDeleted)
+			{
+				await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);	
+			}
+			
+			return isDeleted;
 		}
 		
 		#endregion

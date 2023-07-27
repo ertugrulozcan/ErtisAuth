@@ -25,11 +25,18 @@ using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Integrations.OAuth.Core;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services
 {
     public class UserService : DynamicObjectCrudService, IUserService
     {
+	    #region Constants
+
+	    private const string CACHE_KEY = "users";
+
+	    #endregion
+	    
         #region Services
         
         private readonly IUserTypeService _userTypeService;
@@ -38,6 +45,7 @@ namespace ErtisAuth.Infrastructure.Services
         private readonly IEventService _eventService;
         private readonly IJwtService _jwtService;
         private readonly ICryptographyService _cryptographyService;
+        private readonly IMemoryCache _memoryCache;
 
         #endregion
         
@@ -53,6 +61,7 @@ namespace ErtisAuth.Infrastructure.Services
         /// <param name="jwtService"></param>
         /// <param name="cryptographyService"></param>
         /// <param name="repository"></param>
+        /// <param name="memoryCache"></param>
         [SuppressMessage("ReSharper", "SuggestBaseTypeForParameterInConstructor")]
         public UserService(
             IUserTypeService userTypeService, 
@@ -61,7 +70,8 @@ namespace ErtisAuth.Infrastructure.Services
             IEventService eventService,
             IJwtService jwtService,
             ICryptographyService cryptographyService,
-            IUserRepository repository) : base(repository)
+            IUserRepository repository,
+            IMemoryCache memoryCache) : base(repository)
         {
             this._userTypeService = userTypeService;
             this._membershipService = membershipService;
@@ -69,6 +79,7 @@ namespace ErtisAuth.Infrastructure.Services
             this._eventService = eventService;
             this._jwtService = jwtService;
             this._cryptographyService = cryptographyService;
+            this._memoryCache = memoryCache;
         }
 
         #endregion
@@ -518,8 +529,20 @@ namespace ErtisAuth.Infrastructure.Services
         
         public async Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
         {
-            await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-            return await base.FindOneAsync(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("_id", QueryBuilder.ObjectId(id)));
+	        var cacheKey = GetCacheKey(membershipId, id);
+	        if (!this._memoryCache.TryGetValue<DynamicObject>(cacheKey, out var user))
+	        {
+		        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+		        user = await base.FindOneAsync(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("_id", QueryBuilder.ObjectId(id)));
+		        if (user == null)
+		        {
+			        return null;
+		        }
+
+		        this._memoryCache.Set(cacheKey, user, GetCacheTTL());
+	        }
+			
+	        return user;
         }
         
         public async Task<IPaginationCollection<DynamicObject>> GetAsync(
@@ -669,6 +692,8 @@ namespace ErtisAuth.Infrastructure.Services
 	        {
 		        await this.FireOnUpdatedEvent(membershipId, utilizer, current, updated);
 	        }
+	        
+	        this.PurgeUserCache(membershipId, userId);
             
 	        return updated;
         }
@@ -697,7 +722,7 @@ namespace ErtisAuth.Infrastructure.Services
         
         public async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
         {
-            var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+	        var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
             if (current == null)
             {
                 throw ErtisAuthException.UserNotFound(id, "_id");
@@ -709,6 +734,7 @@ namespace ErtisAuth.Infrastructure.Services
             if (isDeleted)
             {
                 await this.FireOnDeletedEvent(membershipId, utilizer, current);
+                this.PurgeUserCache(membershipId, id);
             }
             
             return isDeleted;
@@ -730,6 +756,11 @@ namespace ErtisAuth.Infrastructure.Services
 		        isAllFailed &= !isDeleted;
 	        }
 
+	        foreach (var id in ids)
+	        {
+		        this.PurgeUserCache(membershipId, id);
+	        }
+	        
 	        if (isAllDeleted)
 	        {
 		        return true;
@@ -763,7 +794,7 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
-
+			
 			var user = await this.GetUserWithPasswordAsync(membershipId, userId, cancellationToken: cancellationToken);
 			if (user == null)
 			{
@@ -787,6 +818,8 @@ namespace ErtisAuth.Infrastructure.Services
 				MembershipId = membershipId
 			}, cancellationToken: cancellationToken);
 
+			this.PurgeUserCache(membershipId, userId);
+			
 			return updatedUser;
 		}
 
@@ -949,6 +982,26 @@ namespace ErtisAuth.Infrastructure.Services
 			return user.PasswordHash == passwordHash;
 		}
 		
+		#endregion
+		
+		#region Cache Methods
+
+		private static string GetCacheKey(string membershipId, string userId)
+		{
+			return $"{CACHE_KEY}.{membershipId}.{userId}";
+		}
+		
+		private static MemoryCacheEntryOptions GetCacheTTL()
+		{
+			return new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(12));
+		}
+		
+		private void PurgeUserCache(string membershipId, string userId)
+		{
+			var cacheKey = GetCacheKey(membershipId, userId);
+			this._memoryCache.Remove(cacheKey);
+		}
+
 		#endregion
     }
 }
