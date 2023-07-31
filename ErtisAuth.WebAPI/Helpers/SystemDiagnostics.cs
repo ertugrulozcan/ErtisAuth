@@ -29,7 +29,7 @@ internal static class SystemDiagnostics
 		    var totalMsPassed = (endTime - startTime).TotalMilliseconds;
 		    var cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * totalMsPassed);
 	    
-		    return Math.Round(cpuUsageTotal * 100, 2);
+		    return cpuUsageTotal * 100.0;
 	    }
 	    catch (Exception e)
 	    {
@@ -49,8 +49,7 @@ internal static class SystemDiagnostics
 		    var totalMemory = GetTotalMemoryInKb() * 1024;
 		    var usedMemory = GetUsedMemoryForAllProcesses();
 	    
-		    var percentage = (usedMemory * 100.0) / totalMemory;
-		    return Math.Round(percentage, 2);
+		    return (usedMemory * 100.0) / totalMemory;
 	    }
 	    catch (Exception e)
 	    {
