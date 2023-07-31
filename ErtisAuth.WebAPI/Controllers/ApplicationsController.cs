@@ -76,9 +76,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpGet("{id}")]
 		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public async Task<ActionResult<Application>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+		public async Task<ActionResult<Application>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			var app = await this.applicationService.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			var app = await this.applicationService.GetAsync(membershipId, id);
 			if (app != null)
 			{
 				return this.Ok(app);

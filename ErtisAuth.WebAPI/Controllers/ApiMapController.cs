@@ -65,19 +65,13 @@ namespace ErtisAuth.WebAPI.Controllers
 					var httpMethodAttribute = methodInfo.CustomAttributes.FirstOrDefault(x => x.AttributeType.BaseType == typeof(HttpMethodAttribute));
 					if (httpMethodAttribute != null)
 					{
-						string httpMethod = httpMethodAttribute.AttributeType.Name.Replace("Http", string.Empty).Replace("Attribute", string.Empty).ToUpper();
-						string methodRoute;
+						var httpMethod = httpMethodAttribute.AttributeType.Name.Replace("Http", string.Empty).Replace("Attribute", string.Empty).ToUpper();
 						var routeAttribute = methodInfo.CustomAttributes.FirstOrDefault(x => x.AttributeType == typeof(RouteAttribute));
-						if (routeAttribute != null)
-						{
-							methodRoute = routeAttribute.ConstructorArguments.FirstOrDefault(x => x.ArgumentType == typeof(string)).Value?.ToString();
-						}
-						else
-						{
-							methodRoute = httpMethodAttribute.ConstructorArguments.FirstOrDefault(x => x.ArgumentType == typeof(string)).Value?.ToString();
-						}
+						var methodRoute = routeAttribute != null ? 
+							routeAttribute.ConstructorArguments.FirstOrDefault(x => x.ArgumentType == typeof(string)).Value?.ToString() : 
+							httpMethodAttribute.ConstructorArguments.FirstOrDefault(x => x.ArgumentType == typeof(string)).Value?.ToString();
 
-						string route = string.IsNullOrEmpty(methodRoute) ? controllerRoute : $"{controllerRoute}/{methodRoute}";
+						var route = string.IsNullOrEmpty(methodRoute) ? controllerRoute : $"{controllerRoute}/{methodRoute}";
 						if (!string.IsNullOrEmpty(route))
 						{
 							if (!apiMapDictionary.ContainsKey(route))

@@ -80,9 +80,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpGet("{id}")]
 		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public async Task<ActionResult<Role>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+		public async Task<ActionResult<Role>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			var role = await this.roleService.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			var role = await this.roleService.GetAsync(membershipId, id);
 			if (role != null)
 			{
 				return this.Ok(role);
@@ -197,9 +197,9 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		[HttpGet("{id}/check-permission")]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public async Task<IActionResult> CheckPermissionByRole([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+		public async Task<IActionResult> CheckPermissionByRole([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			var role = await this.roleService.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			var role = await this.roleService.GetAsync(membershipId, id);
 			if (role != null)
 			{
 				var utilizer = this.GetUtilizer();
@@ -227,10 +227,10 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpGet("check-permission")]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public async Task<IActionResult> CheckPermissionByToken([FromRoute] string membershipId, CancellationToken cancellationToken = default)
+		public async Task<IActionResult> CheckPermissionByToken([FromRoute] string membershipId)
 		{
 			var utilizer = this.GetUtilizer();
-			var role = await this.roleService.GetByNameAsync(utilizer.Role, membershipId, cancellationToken: cancellationToken);
+			var role = await this.roleService.GetByNameAsync(utilizer.Role, membershipId);
 			if (role != null)
 			{
 				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))

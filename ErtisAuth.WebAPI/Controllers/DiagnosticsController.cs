@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 using ErtisAuth.WebAPI.Helpers;
 using Microsoft.AspNetCore.Mvc;
 

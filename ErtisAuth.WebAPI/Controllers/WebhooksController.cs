@@ -93,9 +93,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<ActionResult<Webhook>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+		public async Task<ActionResult<Webhook>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			var webhook = await this.webhookService.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			var webhook = await this.webhookService.GetAsync(membershipId, id);
 			if (webhook != null)
 			{
 				return this.Ok(webhook);

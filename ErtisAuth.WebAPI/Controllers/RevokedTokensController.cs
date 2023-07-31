@@ -60,6 +60,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
 		{
+			// ReSharper disable once IdentifierTypo
 			var dtos = await this.revokedTokenService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 			return QueryHelper.FixTimeZoneOffsetInQueryResult(dtos);
 		}

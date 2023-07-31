@@ -51,9 +51,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<ActionResult<User>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+		public async Task<ActionResult<User>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			var user = await this.userService.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			var user = await this.userService.GetAsync(membershipId, id);
 			if (user != null)
 			{
 				return this.Ok(user);
@@ -93,9 +93,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
 		{
-			if (this.Request.RouteValues.ContainsKey("membershipId"))
+			if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdSegment))
 			{
-				var membershipId = this.Request.RouteValues["membershipId"]?.ToString();
+				var membershipId = membershipIdSegment?.ToString();
 				return await this.userService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 			}
 			else

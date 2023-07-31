@@ -45,9 +45,9 @@ namespace ErtisAuth.WebAPI.Controllers
 		[HttpGet("{id}")]
 		[RbacObject("{id}")]
 		[RbacAction(Rbac.CrudActions.Read)]
-		public async Task<ActionResult<ActiveToken>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+		public async Task<ActionResult<ActiveToken>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			var activeToken = await this.activeTokenService.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			var activeToken = await this.activeTokenService.GetAsync(membershipId, id);
 			if (activeToken != null)
 			{
 				return this.Ok(activeToken);
@@ -78,6 +78,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
 		{
+			// ReSharper disable once IdentifierTypo
 			var dtos = await this.activeTokenService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 			return QueryHelper.FixTimeZoneOffsetInQueryResult(dtos);
 		}

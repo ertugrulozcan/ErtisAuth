@@ -45,15 +45,15 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		[HttpGet]
 		[Route("me")]
-		public async Task<IActionResult> Me(CancellationToken cancellationToken = default)
+		public async Task<IActionResult> Me()
 		{
 			var token = this.GetToken();
-			var utilizer = await this.GetTokenOwnerUtilizerAsync(token, cancellationToken: cancellationToken);
+			var utilizer = await this.GetTokenOwnerUtilizerAsync(token);
 			if (utilizer != null)
 			{
 				if (token.TokenType == SupportedTokenTypes.Bearer)
 				{
-					var user = await this.userService.GetAsync(utilizer.MembershipId, utilizer.Id, cancellationToken: cancellationToken);
+					var user = await this.userService.GetAsync(utilizer.MembershipId, utilizer.Id);
 					return this.Ok(user);
 				}
 				else
@@ -69,10 +69,10 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpGet]
 		[Route("whoami")]
-		public async Task<IActionResult> WhoAmI(CancellationToken cancellationToken = default)
+		public async Task<IActionResult> WhoAmI()
 		{
 			var token = this.GetToken();
-			var utilizer = await this.GetTokenOwnerUtilizerAsync(token, cancellationToken: cancellationToken);
+			var utilizer = await this.GetTokenOwnerUtilizerAsync(token);
 			if (utilizer != null)
 			{
 				return this.Ok(utilizer);
@@ -120,7 +120,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpPost]
 		[Route("generate-token")]
-		public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenFormModel model, CancellationToken cancellationToken = default)
+		public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenFormModel model)
 		{
 			var membershipId = this.GetXErtisAlias();
 			if (string.IsNullOrEmpty(membershipId))
@@ -132,18 +132,18 @@ namespace ErtisAuth.WebAPI.Controllers
 			string password = model.Password;
 
 			string ipAddress = null;
-			if (this.Request.Headers.ContainsKey("X-IpAddress"))
+			if (this.Request.Headers.TryGetValue("X-IpAddress", out var ipAddressHeader))
 			{
-				ipAddress = this.Request.Headers["X-IpAddress"].ToString();
+				ipAddress = ipAddressHeader.ToString();
 			}
 			
 			string userAgent = null;
-			if (this.Request.Headers.ContainsKey("X-UserAgent"))
+			if (this.Request.Headers.TryGetValue("X-UserAgent", out var userAgentHeader))
 			{
-				userAgent = this.Request.Headers["X-UserAgent"].ToString();
+				userAgent = userAgentHeader.ToString();
 			}
 			
-			var token = await this.tokenService.GenerateTokenAsync(username, password, membershipId, ipAddress: ipAddress, userAgent: userAgent, cancellationToken: cancellationToken);
+			var token = await this.tokenService.GenerateTokenAsync(username, password, membershipId, ipAddress: ipAddress, userAgent: userAgent);
 			if (token != null)
 			{
 				return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
@@ -156,7 +156,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpGet]
 		[Route("verify-token")]
-		public async Task<IActionResult> VerifyToken(CancellationToken cancellationToken = default)
+		public async Task<IActionResult> VerifyToken()
 		{
 			string token = this.GetTokenFromHeader(out string tokenTypeStr);
 			if (string.IsNullOrEmpty(token))
@@ -169,7 +169,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				throw ErtisAuthException.UnsupportedTokenType();	
 			}
 
-			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false, cancellationToken: cancellationToken);
+			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false);
 			if (validationResult.IsValidated)
 			{
 				return this.Ok(validationResult);
@@ -182,7 +182,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpPost]
 		[Route("verify-token")]
-		public async Task<IActionResult> VerifyToken([FromBody] VerifyTokenFormModel model, CancellationToken cancellationToken = default)
+		public async Task<IActionResult> VerifyToken([FromBody] VerifyTokenFormModel model)
 		{
 			string token = this.GetTokenFromHeader(out string tokenTypeStr);
 			if (string.IsNullOrEmpty(token))
@@ -200,7 +200,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.AuthorizationHeaderMissing();
 			}
 
-			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false, cancellationToken: cancellationToken);
+			var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false);
 			if (validationResult.IsValidated)
 			{
 				return this.Ok(validationResult);
@@ -213,7 +213,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpGet]
 		[Route("refresh-token")]
-		public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken = default)
+		public async Task<IActionResult> RefreshToken()
 		{
 			string refreshToken = this.GetTokenFromHeader(out string _);
 			if (string.IsNullOrEmpty(refreshToken))
@@ -227,13 +227,13 @@ namespace ErtisAuth.WebAPI.Controllers
 				revokeBefore = this.Request.Query["revoke"] == "true";
 			}
 
-			var token = await this.tokenService.RefreshTokenAsync(refreshToken, revokeBefore, cancellationToken: cancellationToken);
+			var token = await this.tokenService.RefreshTokenAsync(refreshToken, revokeBefore);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 		}
 		
 		[HttpPost]
 		[Route("refresh-token")]
-		public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenFormModel model, CancellationToken cancellationToken = default)
+		public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenFormModel model)
 		{
 			string refreshToken = this.GetTokenFromHeader(out string _);
 			if (string.IsNullOrEmpty(refreshToken))
@@ -247,7 +247,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				revokeBefore = this.Request.Query["revoke"] == "true";
 			}
 
-			var token = await this.tokenService.RefreshTokenAsync(refreshToken, revokeBefore, cancellationToken: cancellationToken);
+			var token = await this.tokenService.RefreshTokenAsync(refreshToken, revokeBefore);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 		}
 		
@@ -311,65 +311,65 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		[HttpPost]
 		[Route("oauth/facebook/login")]
-		public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequest request, CancellationToken cancellationToken = default)
+		public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequest request)
 		{
 			var membershipId = this.GetXErtisAlias();
 			
 			string ipAddress = null;
-			if (this.Request.Headers.ContainsKey("X-IpAddress"))
+			if (this.Request.Headers.TryGetValue("X-IpAddress", out var ipAddressHeader))
 			{
-				ipAddress = this.Request.Headers["X-IpAddress"].ToString();
+				ipAddress = ipAddressHeader.ToString();
 			}
 			
 			string userAgent = null;
-			if (this.Request.Headers.ContainsKey("X-UserAgent"))
+			if (this.Request.Headers.TryGetValue("X-UserAgent", out var userAgentHeader))
 			{
-				userAgent = this.Request.Headers["X-UserAgent"].ToString();
+				userAgent = userAgentHeader.ToString();
 			}
 			
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent, cancellationToken: cancellationToken));
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
 		}
 		
 		[HttpPost]
 		[Route("oauth/google/login")]
-		public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken = default)
+		public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
 		{
 			var membershipId = this.GetXErtisAlias();
 			
 			string ipAddress = null;
-			if (this.Request.Headers.ContainsKey("X-IpAddress"))
+			if (this.Request.Headers.TryGetValue("X-IpAddress", out var ipAddressHeader))
 			{
-				ipAddress = this.Request.Headers["X-IpAddress"].ToString();
+				ipAddress = ipAddressHeader.ToString();
 			}
 			
 			string userAgent = null;
-			if (this.Request.Headers.ContainsKey("X-UserAgent"))
+			if (this.Request.Headers.TryGetValue("X-UserAgent", out var userAgentHeader))
 			{
-				userAgent = this.Request.Headers["X-UserAgent"].ToString();
+				userAgent = userAgentHeader.ToString();
 			}
 			
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent, cancellationToken: cancellationToken));
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
 		}
 		
 		[HttpPost]
 		[Route("oauth/microsoft/login")]
-		public async Task<IActionResult> MicrosoftLogin([FromBody] MicrosoftLoginRequest request, CancellationToken cancellationToken = default)
+		public async Task<IActionResult> MicrosoftLogin([FromBody] MicrosoftLoginRequest request)
 		{
 			var membershipId = this.GetXErtisAlias();
 			
 			string ipAddress = null;
-			if (this.Request.Headers.ContainsKey("X-IpAddress"))
+			if (this.Request.Headers.TryGetValue("X-IpAddress", out var ipAddressHeader))
 			{
-				ipAddress = this.Request.Headers["X-IpAddress"].ToString();
+				ipAddress = ipAddressHeader.ToString();
 			}
 			
 			string userAgent = null;
-			if (this.Request.Headers.ContainsKey("X-UserAgent"))
+			if (this.Request.Headers.TryGetValue("X-UserAgent", out var userAgentHeader))
 			{
-				userAgent = this.Request.Headers["X-UserAgent"].ToString();
+				userAgent = userAgentHeader.ToString();
 			}
 			
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent, cancellationToken: cancellationToken));
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
 		}
 
 		#endregion
