@@ -30,8 +30,9 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 	/// </summary>
 	/// <param name="settings"></param>
 	/// <param name="collectionName"></param>
+	/// <param name="clientSettings"></param>
 	/// <param name="actionBinder"></param>
-	protected RepositoryBase(IDatabaseSettings settings, string collectionName, IRepositoryActionBinder actionBinder) : base(settings, collectionName, actionBinder)
+	protected RepositoryBase(IDatabaseSettings settings, string collectionName, IClientSettings clientSettings, IRepositoryActionBinder actionBinder) : base(settings, collectionName, clientSettings, actionBinder)
 	{
 		this.CollectionName = collectionName;
 	}

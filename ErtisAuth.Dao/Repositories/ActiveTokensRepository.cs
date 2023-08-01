@@ -12,7 +12,8 @@ namespace ErtisAuth.Dao.Repositories
 		/// Constructor
 		/// </summary>
 		/// <param name="settings"></param>
-		public ActiveTokensRepository(IDatabaseSettings settings) : base(settings, "active_tokens", null)
+		/// <param name="clientSettings"></param>
+		public ActiveTokensRepository(IDatabaseSettings settings, IClientSettings clientSettings) : base(settings, "active_tokens", clientSettings, null)
 		{
 			
 		}

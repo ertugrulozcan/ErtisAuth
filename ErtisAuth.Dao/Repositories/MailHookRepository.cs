@@ -13,8 +13,9 @@ namespace ErtisAuth.Dao.Repositories
         /// Constructor
         /// </summary>
         /// <param name="settings"></param>
+        /// <param name="clientSettings"></param>
         /// <param name="actionBinder"></param>
-        public MailHookRepository(IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(settings, "mailhooks", actionBinder)
+        public MailHookRepository(IDatabaseSettings settings, IClientSettings clientSettings, IRepositoryActionBinder actionBinder) : base(settings, "mailhooks", clientSettings, actionBinder)
         {
 			
         }

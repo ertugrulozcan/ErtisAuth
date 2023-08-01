@@ -22,7 +22,8 @@ namespace ErtisAuth.Dao.Repositories
 		/// Constructor
 		/// </summary>
 		/// <param name="settings"></param>
-		public RevokedTokensRepository(IDatabaseSettings settings) : base(settings, "revoked_tokens", null)
+		/// <param name="clientSettings"></param>
+		public RevokedTokensRepository(IDatabaseSettings settings, IClientSettings clientSettings) : base(settings, "revoked_tokens", clientSettings, null)
 		{
 			
 		}

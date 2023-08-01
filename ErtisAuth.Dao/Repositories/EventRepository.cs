@@ -13,8 +13,9 @@ namespace ErtisAuth.Dao.Repositories
 		/// Constructor
 		/// </summary>
 		/// <param name="settings"></param>
+		/// <param name="clientSettings"></param>
 		/// <param name="actionBinder"></param>
-		public EventRepository(IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(settings, "events", actionBinder)
+		public EventRepository(IDatabaseSettings settings, IClientSettings clientSettings, IRepositoryActionBinder actionBinder) : base(settings, "events", clientSettings, actionBinder)
 		{
 			
 		}

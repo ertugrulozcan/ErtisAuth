@@ -59,9 +59,13 @@ builder.Services.AddSingleton<IDatabaseSettings>(serviceProvider =>
 	return databaseSettings;
 });
 
+builder.Services.Configure<ClientOptions>(builder.Configuration.GetSection("Database:ClientSettings"));
+builder.Services.AddSingleton<IClientOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value);
+
 builder.Services.Configure<ApiVersionOptions>(builder.Configuration.GetSection("ApiVersion"));
 builder.Services.AddSingleton<IApiVersionOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<ApiVersionOptions>>().Value);
 
+builder.Services.AddSingleton<IClientSettings, ClientSettings>();
 builder.Services.AddSingleton<IMongoDatabase, MongoDatabase>();
 builder.Services.AddSingleton<IMembershipRepository, MembershipRepository>();
 builder.Services.AddSingleton<IUserTypeRepository, UserTypeRepository>();

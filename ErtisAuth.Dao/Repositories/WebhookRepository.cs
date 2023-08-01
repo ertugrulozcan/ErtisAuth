@@ -13,8 +13,9 @@ namespace ErtisAuth.Dao.Repositories
 		/// Constructor
 		/// </summary>
 		/// <param name="settings"></param>
+		/// <param name="clientSettings"></param>
 		/// <param name="actionBinder"></param>
-		public WebhookRepository(IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(settings, "webhooks", actionBinder)
+		public WebhookRepository(IDatabaseSettings settings, IClientSettings clientSettings, IRepositoryActionBinder actionBinder) : base(settings, "webhooks", clientSettings, actionBinder)
 		{
 			
 		}

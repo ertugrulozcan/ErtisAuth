@@ -13,8 +13,9 @@ namespace ErtisAuth.Dao.Repositories
         /// Constructor
         /// </summary>
         /// <param name="settings"></param>
+        /// <param name="clientSettings"></param>
         /// <param name="actionBinder"></param>
-        public UserTypeRepository(IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(settings, "user-types", actionBinder)
+        public UserTypeRepository(IDatabaseSettings settings, IClientSettings clientSettings, IRepositoryActionBinder actionBinder) : base(settings, "user-types", clientSettings, actionBinder)
         {
 			
         }

@@ -29,8 +29,9 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
 	/// </summary>
 	/// <param name="settings"></param>
 	/// <param name="collectionName"></param>
+	/// <param name="clientSettings"></param>
 	/// <param name="actionBinder"></param>
-	protected DynamicRepositoryBase(IDatabaseSettings settings, string collectionName, IRepositoryActionBinder actionBinder) : base(settings, collectionName, actionBinder)
+	protected DynamicRepositoryBase(IDatabaseSettings settings, string collectionName, IClientSettings clientSettings, IRepositoryActionBinder actionBinder) : base(settings, collectionName, clientSettings, actionBinder)
 	{
 		this.CollectionName = collectionName;
 	}

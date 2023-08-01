@@ -13,8 +13,9 @@ namespace ErtisAuth.Dao.Repositories
 		/// Constructor
 		/// </summary>
 		/// <param name="settings"></param>
+		/// <param name="clientSettings"></param>
 		/// <param name="actionBinder"></param>
-		public RoleRepository(IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(settings, "roles", actionBinder)
+		public RoleRepository(IDatabaseSettings settings, IClientSettings clientSettings, IRepositoryActionBinder actionBinder) : base(settings, "roles", clientSettings, actionBinder)
 		{
 			
 		}
