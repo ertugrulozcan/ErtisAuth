@@ -1,6 +1,7 @@
 using Ertis.MongoDB.Configuration;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Identity;
+using MongoDB.Driver.Core.Events;
 
 namespace ErtisAuth.Dao.Repositories
 {
@@ -13,7 +14,9 @@ namespace ErtisAuth.Dao.Repositories
 		/// </summary>
 		/// <param name="settings"></param>
 		/// <param name="clientSettings"></param>
-		public ActiveTokensRepository(IDatabaseSettings settings, IClientSettings clientSettings) : base(settings, "active_tokens", clientSettings, null)
+		/// <param name="eventSubscriber"></param>
+		public ActiveTokensRepository(IDatabaseSettings settings, IClientSettings clientSettings, IEventSubscriber eventSubscriber) : 
+			base(settings, "active_tokens", clientSettings, null, eventSubscriber)
 		{
 			
 		}

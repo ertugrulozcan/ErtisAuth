@@ -31,6 +31,7 @@ using ErtisAuth.WebAPI.Adapters;
 using ErtisAuth.WebAPI.Auth;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Helpers;
+using MongoDB.Driver.Core.Events;
 
 const string CORS_POLICY_KEY = "cors-policy";
 
@@ -67,6 +68,7 @@ builder.Services.AddSingleton<IApiVersionOptions>(serviceProvider => serviceProv
 
 builder.Services.AddSingleton<IClientSettings, ClientSettings>();
 builder.Services.AddSingleton<IMongoDatabase, MongoDatabase>();
+builder.Services.AddSingleton<IEventSubscriber, MongoEventSubscriber>();
 builder.Services.AddSingleton<IMembershipRepository, MembershipRepository>();
 builder.Services.AddSingleton<IUserTypeRepository, UserTypeRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();

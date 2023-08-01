@@ -9,6 +9,7 @@ using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using MongoDB.Driver.Core.Events;
 
 namespace ErtisAuth.Dao.Repositories;
 
@@ -32,7 +33,9 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 	/// <param name="collectionName"></param>
 	/// <param name="clientSettings"></param>
 	/// <param name="actionBinder"></param>
-	protected RepositoryBase(IDatabaseSettings settings, string collectionName, IClientSettings clientSettings, IRepositoryActionBinder actionBinder) : base(settings, collectionName, clientSettings, actionBinder)
+	/// <param name="eventSubscriber"></param>
+	protected RepositoryBase(IDatabaseSettings settings, string collectionName, IClientSettings clientSettings, IRepositoryActionBinder actionBinder, IEventSubscriber eventSubscriber) : 
+		base(settings, collectionName, clientSettings, actionBinder, eventSubscriber)
 	{
 		this.CollectionName = collectionName;
 	}

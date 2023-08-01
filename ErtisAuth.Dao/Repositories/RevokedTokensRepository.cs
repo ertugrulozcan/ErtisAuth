@@ -2,6 +2,7 @@ using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Identity;
+using MongoDB.Driver.Core.Events;
 
 namespace ErtisAuth.Dao.Repositories
 {
@@ -23,7 +24,9 @@ namespace ErtisAuth.Dao.Repositories
 		/// </summary>
 		/// <param name="settings"></param>
 		/// <param name="clientSettings"></param>
-		public RevokedTokensRepository(IDatabaseSettings settings, IClientSettings clientSettings) : base(settings, "revoked_tokens", clientSettings, null)
+		/// <param name="eventSubscriber"></param>
+		public RevokedTokensRepository(IDatabaseSettings settings, IClientSettings clientSettings, IEventSubscriber eventSubscriber) : 
+			base(settings, "revoked_tokens", clientSettings, null, eventSubscriber)
 		{
 			
 		}
