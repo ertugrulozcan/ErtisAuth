@@ -1,8 +1,8 @@
 using Ertis.Data.Repository;
+using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Users;
-using MongoDB.Driver.Core.Events;
 
 namespace ErtisAuth.Dao.Repositories
 {
@@ -13,12 +13,11 @@ namespace ErtisAuth.Dao.Repositories
         /// <summary>
         /// Constructor
         /// </summary>
+        /// <param name="clientProvider"></param>
         /// <param name="settings"></param>
-        /// <param name="clientSettings"></param>
         /// <param name="actionBinder"></param>
-        /// <param name="eventSubscriber"></param>
-        public UserTypeRepository(IDatabaseSettings settings, IClientSettings clientSettings, IRepositoryActionBinder actionBinder, IEventSubscriber eventSubscriber) : 
-            base(settings, "user-types", clientSettings, actionBinder, eventSubscriber)
+        public UserTypeRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : 
+            base(clientProvider, settings, "user-types", actionBinder)
         {
 			
         }

@@ -5,11 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Data.Models;
 using Ertis.Data.Repository;
+using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using MongoDB.Driver.Core.Events;
 
 namespace ErtisAuth.Dao.Repositories;
 
@@ -29,13 +29,12 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 	/// <summary>
 	/// Constructor
 	/// </summary>
+	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
 	/// <param name="collectionName"></param>
-	/// <param name="clientSettings"></param>
 	/// <param name="actionBinder"></param>
-	/// <param name="eventSubscriber"></param>
-	protected RepositoryBase(IDatabaseSettings settings, string collectionName, IClientSettings clientSettings, IRepositoryActionBinder actionBinder, IEventSubscriber eventSubscriber) : 
-		base(settings, collectionName, clientSettings, actionBinder, eventSubscriber)
+	protected RepositoryBase(IMongoClientProvider clientProvider, IDatabaseSettings settings, string collectionName, IRepositoryActionBinder actionBinder = null) : 
+		base(clientProvider, settings, collectionName, actionBinder)
 	{
 		this.CollectionName = collectionName;
 	}

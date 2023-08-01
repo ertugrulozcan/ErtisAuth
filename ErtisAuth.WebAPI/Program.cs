@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Ertis.Data.Repository;
 using Ertis.Extensions.AspNetCore.Versioning;
+using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Database;
 using Ertis.Net.Rest;
@@ -31,7 +32,9 @@ using ErtisAuth.WebAPI.Adapters;
 using ErtisAuth.WebAPI.Auth;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Helpers;
+using MongoDB.Driver;
 using MongoDB.Driver.Core.Events;
+using IMongoDatabase = Ertis.MongoDB.Database.IMongoDatabase;
 
 const string CORS_POLICY_KEY = "cors-policy";
 
@@ -52,23 +55,20 @@ EnvironmentParams.SetEnvironmentParameter("Version", builder.Configuration.GetVa
 EnvironmentParams.SetEnvironmentParameter("Environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
 
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("Database"));
-builder.Services.AddSingleton<IDatabaseSettings>(serviceProvider =>
-{
-	var databaseSettings = serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value;
-	var connectionString = Ertis.MongoDB.Helpers.ConnectionStringHelper.GenerateConnectionString(databaseSettings);
-	Console.WriteLine($"ConnectionString: '{connectionString}'");
-	return databaseSettings;
-});
+builder.Services.AddSingleton<IDatabaseSettings>(serviceProvider => serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value);
 
-builder.Services.Configure<ClientOptions>(builder.Configuration.GetSection("Database:ClientSettings"));
-builder.Services.AddSingleton<IClientOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value);
+// builder.Services.AddSingleton<IEventSubscriber, MongoEventSubscriber>();
+builder.Services.AddSingleton<IMongoClientProvider>(serviceProvider =>
+{
+	var databaseSettings = serviceProvider.GetRequiredService<IDatabaseSettings>();
+	var eventSubscriber = serviceProvider.GetService<IEventSubscriber>();
+	return new MongoClientProvider(MongoClientSettings.FromConnectionString(databaseSettings.ConnectionString), eventSubscriber);
+});
 
 builder.Services.Configure<ApiVersionOptions>(builder.Configuration.GetSection("ApiVersion"));
 builder.Services.AddSingleton<IApiVersionOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<ApiVersionOptions>>().Value);
 
-builder.Services.AddSingleton<IClientSettings, ClientSettings>();
 builder.Services.AddSingleton<IMongoDatabase, MongoDatabase>();
-builder.Services.AddSingleton<IEventSubscriber, MongoEventSubscriber>();
 builder.Services.AddSingleton<IMembershipRepository, MembershipRepository>();
 builder.Services.AddSingleton<IUserTypeRepository, UserTypeRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();

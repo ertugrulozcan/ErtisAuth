@@ -1,8 +1,8 @@
 using Ertis.Data.Repository;
+using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Mailing;
-using MongoDB.Driver.Core.Events;
 
 namespace ErtisAuth.Dao.Repositories
 {
@@ -13,12 +13,11 @@ namespace ErtisAuth.Dao.Repositories
         /// <summary>
         /// Constructor
         /// </summary>
+        /// <param name="clientProvider"></param>
         /// <param name="settings"></param>
-        /// <param name="clientSettings"></param>
         /// <param name="actionBinder"></param>
-        /// <param name="eventSubscriber"></param>
-        public MailHookRepository(IDatabaseSettings settings, IClientSettings clientSettings, IRepositoryActionBinder actionBinder, IEventSubscriber eventSubscriber) : 
-            base(settings, "mailhooks", clientSettings, actionBinder, eventSubscriber)
+        public MailHookRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : 
+            base(clientProvider, settings, "mailhooks", actionBinder)
         {
 			
         }

@@ -63,11 +63,7 @@ namespace ErtisAuth.Infrastructure.Services
 		public async ValueTask<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPassword _user, Application _application)
 		{
 			// Validation
-			var databaseInformation = Ertis.MongoDB.Helpers.ConnectionStringHelper.ParseConnectionString(connectionString);
-			var connectionString1 = Ertis.MongoDB.Helpers.ConnectionStringHelper.GenerateConnectionString(this.databaseSettings);
-			var connectionString2 = Ertis.MongoDB.Helpers.ConnectionStringHelper.GenerateConnectionString(databaseInformation);
-			
-			if (connectionString1 != connectionString2)
+			if (connectionString != this.databaseSettings.ConnectionString)
 			{
 				throw ErtisAuthException.MigrationRejected("Connection string could not validated");
 			}

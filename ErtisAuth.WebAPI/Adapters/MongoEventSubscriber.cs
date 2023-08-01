@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using MongoDB.Driver.Core.Events;
 using Newtonsoft.Json;
 
@@ -303,8 +302,6 @@ public class MongoEventSubscriber : IEventSubscriber
 
 internal class MongoLogger
 {
-    private const bool ENABLE = false; 
-    
     #region Fields
 
     private static MongoLogger _self;
@@ -335,21 +332,15 @@ internal class MongoLogger
     #endregion
 
     #region Methods
-
-    [SuppressMessage("ReSharper", "HeuristicUnreachableCode")]
+    
     public void Log(string message, LogType logType)
     {
-        if (ENABLE)
-#pragma warning disable CS0162
+        this.LogList.Add(new MongoLog
         {
-            this.LogList.Add(new MongoLog
-            {
-                LogTime = DateTime.Now,
-                Message = message,
-                Type = logType
-            });   
-        }
-#pragma warning restore CS0162
+            LogTime = DateTime.Now,
+            Message = message,
+            Type = logType
+        });
     }
 
     #endregion
