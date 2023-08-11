@@ -45,14 +45,7 @@ $ docker run -p 9716:80 ertugrulozcan/ertisauth:latest
 For database configuration with environment variables;
 
 ```shell
-$ docker run -p 9716:80 /
-    -e Database__Scheme=<DB_SCHEME> /
-    -e Database__Host=<DB_HOST> /
-    -e Database__Port=<DB_PORT> /
-    -e Database__Username=<DB_USERNAME> /
-    -e Database__Password=<DB_PASSWORD> /
-    -e Database__DefaultAuthDatabase=<DB_DATABASE> /
-ertugrulozcan/ertisauth:latest
+$ docker run -p 9716:80 -e Database__ConnectionString=<ConnectionString> ertugrulozcan/ertisauth:latest
 ```
 
 - `DB_SCHEME`: Specify name of the schema prefix string to use for DB that support schemas (optional, default is 'mongodb').

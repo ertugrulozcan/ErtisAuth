@@ -15,7 +15,7 @@ services:
         ports:
             - "9716:80"
         environment:
-            - Database__Host=ertisauth_mongo
+            - Database__ConnectionString=mongodb://ertisauth_mongo/ertisauth
         depends_on:
             - mongo
         volumes:
