@@ -48,6 +48,11 @@ For database configuration with environment variables;
 $ docker run -p 9716:80 -e Database__ConnectionString=<ConnectionString> ertugrulozcan/ertisauth:latest
 ```
 
+#### Connection String Format
+```shell
+<DB_SCHEME>://[<DB_USERNAME>:<DB_PASSWORD>@]<DB_HOST>[:<DB_PORT>][,...hostN[:portN]][/[<DB_DATABASE>][?options]]
+```
+
 - `DB_SCHEME`: Specify name of the schema prefix string to use for DB that support schemas (optional, default is 'mongodb').
 - `DB_HOST`: Specify hostname of the database (optional). ErtisAuth will append DB_PORT (if specify) to the hosts without port, otherwise it will append the default port 27017, again to the address without port only.
 - `DB_PORT`: Specify port of the database (optional, default is 27017)
