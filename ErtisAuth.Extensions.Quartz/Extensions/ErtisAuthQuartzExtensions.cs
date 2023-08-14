@@ -14,10 +14,7 @@ namespace ErtisAuth.Extensions.Quartz.Extensions
 		public static void AddQuartzJobs(this IServiceCollection services)
 		{
 			// Quartz
-			services.AddQuartz(quartz =>
-			{
-				quartz.UseMicrosoftDependencyInjectionJobFactory();
-			});
+			services.AddQuartz();
 
 			// Quartz on ASP.NET Core hosting
 			services.AddQuartzServer(options =>
