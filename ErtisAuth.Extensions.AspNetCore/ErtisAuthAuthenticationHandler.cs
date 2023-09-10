@@ -6,17 +6,14 @@ using System.Threading.Tasks;
 using Ertis.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
-using ErtisAuth.Extensions.AspNetCore.Helpers;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.Extensions.Http.Extensions;
-using ErtisAuth.Sdk.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using IAuthenticationService = ErtisAuth.Sdk.Services.Interfaces.IAuthenticationService;
 
 namespace ErtisAuth.Extensions.AspNetCore
 {
@@ -25,10 +22,9 @@ namespace ErtisAuth.Extensions.AspNetCore
 	{
 		#region Services
 
-		private readonly IAuthenticationService authenticationService;
-		private readonly IApplicationService applicationService;
-		private readonly IRoleService roleService;
-		
+		private readonly IAuthorizationHandler<BasicToken> _basicAuthorizationHandler;
+		private readonly IAuthorizationHandler<BearerToken> _bearerAuthorizationHandler;
+
 		#endregion
 		
 		#region Constructors
@@ -36,26 +32,23 @@ namespace ErtisAuth.Extensions.AspNetCore
 		/// <summary>
 		/// Constructor
 		/// </summary>
+		/// <param name="basicAuthorizationHandler"></param>
+		/// <param name="bearerAuthorizationHandler"></param>
 		/// <param name="options"></param>
-		/// <param name="authenticationService"></param>
-		/// <param name="applicationService"></param>
-		/// <param name="roleService"></param>
 		/// <param name="logger"></param>
 		/// <param name="encoder"></param>
 		/// <param name="clock"></param>
 		public ErtisAuthAuthenticationHandler(
-			IOptionsMonitor<AuthenticationSchemeOptions> options, 
-			IAuthenticationService authenticationService,
-			IApplicationService applicationService,
-			IRoleService roleService,
+			IAuthorizationHandler<BasicToken> basicAuthorizationHandler,
+			IAuthorizationHandler<BearerToken> bearerAuthorizationHandler,
+			IOptionsMonitor<AuthenticationSchemeOptions> options,
 			ILoggerFactory logger, 
 			UrlEncoder encoder, 
 			ISystemClock clock) : 
 			base(options, logger, encoder, clock)
 		{
-			this.authenticationService = authenticationService;
-			this.applicationService = applicationService;
-			this.roleService = roleService;
+			this._basicAuthorizationHandler = basicAuthorizationHandler;
+			this._bearerAuthorizationHandler = bearerAuthorizationHandler;
 		}
 		
 		#endregion
@@ -147,75 +140,41 @@ namespace ErtisAuth.Extensions.AspNetCore
 				throw ErtisAuthException.AuthorizationHeaderMissing();
 			}
 			
-			if (string.IsNullOrEmpty(tokenType))
+			if (string.IsNullOrEmpty(tokenType) || !TokenTypeExtensions.TryParseTokenType(tokenType, out var _tokenType))
 			{
 				throw ErtisAuthException.UnsupportedTokenType();
 			}
 			
-			TokenTypeExtensions.TryParseTokenType(tokenType, out var _tokenType);
 			switch (_tokenType)
 			{
 				case SupportedTokenTypes.None:
 					throw ErtisAuthException.UnsupportedTokenType();
 				case SupportedTokenTypes.Basic:
+				{
 					var basicToken = new BasicToken(token);
-					var applicationId = token.Split(':')[0];
-					var getApplicationResponse = await this.applicationService.GetAsync(applicationId, basicToken);
-					if (getApplicationResponse.IsSuccess)
+					var authorizationResult = await this._basicAuthorizationHandler.CheckAuthorizationAsync(basicToken, this.Context);
+					if (authorizationResult.IsAuthorized)
 					{
-						var rbacDefinition = this.Context.GetRbacDefinition(getApplicationResponse.Data.Id);
-						var rbac = rbacDefinition.ToString();
-						var isPermittedForAction = await this.roleService.CheckPermissionAsync(rbac, basicToken);
-						if (!isPermittedForAction)
-						{
-							throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({rbac})");
-						}
-
-						Utilizer utilizer = getApplicationResponse.Data;
-						utilizer.Token = token;
-						utilizer.TokenType = _tokenType;
-						
-						return utilizer;
+						return authorizationResult.Utilizer;
 					}
 					else
 					{
-						var errorMessage = getApplicationResponse.Message;
-						if (ResponseHelper.TryParseError(getApplicationResponse.Message, out var error))
-						{
-							errorMessage = error.Message;
-						}
-						
-						throw ErtisAuthException.Unauthorized(errorMessage);
+						throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({authorizationResult.Rbac})");	
 					}
+				}
 				case SupportedTokenTypes.Bearer:
+				{
 					var bearerToken = BearerToken.CreateTemp(token);
-					var meResponse = await this.authenticationService.WhoAmIAsync(bearerToken);
-					if (meResponse.IsSuccess)
+					var authorizationResult = await this._bearerAuthorizationHandler.CheckAuthorizationAsync(bearerToken, this.Context);
+					if (authorizationResult.IsAuthorized)
 					{
-						var rbacDefinition = this.Context.GetRbacDefinition(meResponse.Data.Id);
-						var rbac = rbacDefinition.ToString();
-						var isPermittedForAction = await this.roleService.CheckPermissionAsync(rbac, bearerToken);
-						if (!isPermittedForAction)
-						{
-							throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({rbac})");
-						}
-				
-						Utilizer utilizer = meResponse.Data;
-						utilizer.Token = token;
-						utilizer.TokenType = _tokenType;
-						
-						return utilizer;
+						return authorizationResult.Utilizer;
 					}
 					else
 					{
-						var errorMessage = meResponse.Message;
-						if (ResponseHelper.TryParseError(meResponse.Message, out var error))
-						{
-							errorMessage = error.Message;
-						}
-						
-						throw ErtisAuthException.Unauthorized(errorMessage);
+						throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({authorizationResult.Rbac})");	
 					}
+				}
 				default:
 					throw ErtisAuthException.UnsupportedTokenType();
 			}

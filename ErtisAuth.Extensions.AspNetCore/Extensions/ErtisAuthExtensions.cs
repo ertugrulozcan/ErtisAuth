@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
 using Ertis.Net.Rest;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.AspNetCore.Configuration;
+using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Sdk.Attributes;
 using ErtisAuth.Sdk.Configuration;
 using Microsoft.AspNetCore.Authentication;
@@ -31,6 +33,9 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			var configuration = BuildConfiguration(options.Environment);
 			services.Configure<ErtisAuthOptions>(configuration.GetSection(options.ConfigurationSectionName));
 			services.AddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);
+			
+			services.AddSingleton<IAuthorizationHandler<BasicToken>, BasicAuthorizationHandler>();
+			services.AddSingleton<IAuthorizationHandler<BearerToken>, BearerAuthorizationHandler>();
 
 			// RestHandler registration
 			services.AddSingleton(typeof(IRestHandler), options.RestHandlerType);

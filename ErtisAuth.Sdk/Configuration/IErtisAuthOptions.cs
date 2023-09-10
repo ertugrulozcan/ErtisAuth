@@ -11,6 +11,8 @@ namespace ErtisAuth.Sdk.Configuration
 		string BaseUrl { get; }
 		
 		string MembershipId { get; }
+		
+		int? CacheTTL { get; }
 
 		#endregion
 	}
@@ -24,6 +26,8 @@ namespace ErtisAuth.Sdk.Configuration
 		
 		// ReSharper disable once UnusedAutoPropertyAccessor.Global
 		public string MembershipId { get; set; }
+		
+		public int? CacheTTL { get; set; }
 
 		#endregion
 	}
@@ -83,6 +87,8 @@ namespace ErtisAuth.Sdk.Configuration
 				return null;
 			}
 		}
+		
+		public int? CacheTTL { get; set; }
 
 		#endregion
 
