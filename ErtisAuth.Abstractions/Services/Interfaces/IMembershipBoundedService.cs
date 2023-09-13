@@ -20,6 +20,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 	public interface IMembershipBoundedService<TModel> : IMembershipBoundedService where TModel : IHasMembership
 	{
 		IPaginationCollection<dynamic> Query(
+			string membershipId, 
 			string query, 
 			int? skip = null, 
 			int? limit = null,
@@ -29,6 +30,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 			IDictionary<string, bool> selectFields = null);
 		
 		ValueTask<IPaginationCollection<dynamic>> QueryAsync(
+			string membershipId, 
 			string query, 
 			int? skip = null, 
 			int? limit = null,

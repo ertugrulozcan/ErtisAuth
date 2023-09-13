@@ -69,7 +69,7 @@ namespace ErtisAuth.Infrastructure.Services
 				};
 				
 				var query = QueryBuilder.Where(expressions);
-				var webhooksDynamicCollection = this.Query(query.ToString());
+				var webhooksDynamicCollection = this.Query(ertisAuthEvent.MembershipId, query.ToString());
 				var webhooks = JsonConvert.DeserializeObject<PaginationCollection<Webhook>>(JsonConvert.SerializeObject(webhooksDynamicCollection));
 				if (webhooks != null)
 				{

@@ -600,7 +600,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			
 			var query = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("base_type", userType.Slug));
-			var inheritedUserTypes = this.QueryAsync(query.ToString()).ConfigureAwait(false).GetAwaiter().GetResult();
+			var inheritedUserTypes = this.QueryAsync(membershipId, query.ToString()).ConfigureAwait(false).GetAwaiter().GetResult();
 			if (inheritedUserTypes.Items.Any())
 			{
 				errors = new[]

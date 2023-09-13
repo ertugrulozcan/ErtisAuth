@@ -105,6 +105,11 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.NotFound, $"Membership not found in db by given membership_id: <{membershipId}>", "MembershipNotFound");
 		}
 		
+		public static ErtisAuthException MembershipIdRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"Membership id required", "MembershipIdRequired");
+		}
+		
 		public static ValidationException MalformedMembership(string membershipId, IEnumerable<string> errors)
 		{
 			return new ValidationException(HttpStatusCode.NotImplemented, $"Membership is not configured properly (membership_id: '{membershipId}')", "MalformedMembership")

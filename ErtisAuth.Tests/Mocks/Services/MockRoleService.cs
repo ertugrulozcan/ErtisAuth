@@ -195,6 +195,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 		#region Query Methods
 
 		public IPaginationCollection<dynamic> Query(
+			string membershipId, 
 			string query, 
 			int? skip = null, 
 			int? limit = null, 
@@ -203,6 +204,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 			SortDirection? sortDirection = null,
 			IDictionary<string, bool> selectFields = null) =>
 			this.QueryAsync(
+				membershipId, 
 				query, 
 				skip, 
 				limit, 
@@ -213,6 +215,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 				.ConfigureAwait(false).GetAwaiter().GetResult();
 
 		public async ValueTask<IPaginationCollection<dynamic>> QueryAsync(
+			string membershipId, 
 			string query, 
 			int? skip = null, 
 			int? limit = null, 

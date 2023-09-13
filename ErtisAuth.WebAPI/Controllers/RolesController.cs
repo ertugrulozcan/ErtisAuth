@@ -6,6 +6,7 @@ using Ertis.Core.Models.Response;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Identity.Attributes;
 using ErtisAuth.Extensions.Authorization.Annotations;
@@ -113,7 +114,14 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
 		{
-			return await this.roleService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
+			if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipId) && membershipId is string)
+			{
+				return await this.roleService.QueryAsync(membershipId.ToString(), query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			}
+			else
+			{
+				throw ErtisAuthException.MembershipIdRequired();
+			}
 		}
 		
 		[HttpGet("search")]

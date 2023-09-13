@@ -5,6 +5,7 @@ using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.Authorization.Annotations;
@@ -78,9 +79,15 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
 		{
-			// ReSharper disable once IdentifierTypo
-			var dtos = await this.activeTokenService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
-			return QueryHelper.FixTimeZoneOffsetInQueryResult(dtos);
+			if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipId) && membershipId is string)
+			{
+				var dtos = await this.activeTokenService.QueryAsync(membershipId.ToString(), query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
+				return QueryHelper.FixTimeZoneOffsetInQueryResult(dtos);	
+			}
+			else
+			{
+				throw ErtisAuthException.MembershipIdRequired();
+			}
 		}
 		
 		[HttpPost("_aggregate")]

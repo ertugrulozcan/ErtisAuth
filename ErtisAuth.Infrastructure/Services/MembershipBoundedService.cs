@@ -44,6 +44,7 @@ namespace ErtisAuth.Infrastructure.Services
 		#region Query Methods
 
 		public IPaginationCollection<dynamic> Query(
+			string membershipId, 
 			string query, 
 			int? skip = null, 
 			int? limit = null, 
@@ -56,6 +57,7 @@ namespace ErtisAuth.Infrastructure.Services
 		}
 		
 		public async ValueTask<IPaginationCollection<dynamic>> QueryAsync(
+			string membershipId, 
 			string query, 
 			int? skip = null, 
 			int? limit = null, 
@@ -65,6 +67,7 @@ namespace ErtisAuth.Infrastructure.Services
 			IDictionary<string, bool> selectFields = null, 
 			CancellationToken cancellationToken = default)
 		{
+			query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId);
 			return await this.repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 		}
 		
