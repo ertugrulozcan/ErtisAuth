@@ -1,6 +1,6 @@
 using System.Net.Mail;
 using System.Threading.Tasks;
-using ErtisAuth.Extensions.Mailkit.Models;
+using ErtisAuth.Extensions.Mailkit.Providers;
 using MailKit.Security;
 using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
@@ -10,7 +10,7 @@ namespace ErtisAuth.Extensions.Mailkit.Extensions
     {
         #region Methods
 
-        public static async Task TestConnectionAsync(this SmtpServer server)
+        public static async Task TestConnectionAsync(this SmtpServerProvider server)
         {
             if (string.IsNullOrEmpty(server.Host))
             {

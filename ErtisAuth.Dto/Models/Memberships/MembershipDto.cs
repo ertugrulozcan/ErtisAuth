@@ -1,5 +1,6 @@
 using Ertis.MongoDB.Attributes;
 using ErtisAuth.Dto.Models.Resources;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Memberships
@@ -30,8 +31,8 @@ namespace ErtisAuth.Dto.Models.Memberships
 		[BsonElement("default_language")]
 		public string DefaultLanguage { get; set; }
 
-		[BsonElement("mail_settings")]
-		public MembershipMailSettingsDto MailSettings { get; set; }
+		[BsonElement("mail_providers")]
+		public BsonDocument[] MailProviders { get; set; }
 
 		[BsonElement("sys")]
 		public SysModelDto Sys { get; set; }

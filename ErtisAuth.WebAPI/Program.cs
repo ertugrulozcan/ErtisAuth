@@ -21,6 +21,7 @@ using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Extensions.Authorization.Constants;
 using ErtisAuth.Extensions.Database;
 using ErtisAuth.Extensions.Mailkit.Extensions;
+using ErtisAuth.Extensions.Mailkit.Serialization;
 using ErtisAuth.Extensions.Quartz.Extensions;
 using ErtisAuth.Identity.Jwt.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
@@ -195,6 +196,7 @@ builder.Services
 	.AddNewtonsoftJson(options =>
 	{
 		options.SerializerSettings.Converters.Add(new DynamicObjectJsonConverter());
+		options.SerializerSettings.Converters.Add(new MailProviderJsonConverter());
 		options.SerializerSettings.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Utc;
 	});
 

@@ -1,16 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
-      <ProjectReference Include="..\ErtisAuth.Events\ErtisAuth.Events.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Events\ErtisAuth.Events.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.MongoDB.Queries" Version="7.0.6" />
+        <PackageReference Include="Ertis.MongoDB.Queries" Version="7.0.6" />
     </ItemGroup>
-
 </Project>

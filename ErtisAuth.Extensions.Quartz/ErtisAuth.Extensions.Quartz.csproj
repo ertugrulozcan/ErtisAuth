@@ -1,17 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Quartz" Version="3.7.0" />
-      <PackageReference Include="Quartz.AspNetCore" Version="3.7.0" />
-      <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.7.0" />
+        <PackageReference Include="Quartz" Version="3.7.0" />
+        <PackageReference Include="Quartz.AspNetCore" Version="3.7.0" />
+        <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.7.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ErtisAuth.Abstractions\ErtisAuth.Abstractions.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Abstractions\ErtisAuth.Abstractions.csproj" />
     </ItemGroup>
-
 </Project>

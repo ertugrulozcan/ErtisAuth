@@ -20,7 +20,8 @@ using ErtisAuth.Dto.Models.Providers;
 using ErtisAuth.Dto.Models.Resources;
 using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Dto.Models.Webhooks;
-using ErtisAuth.Extensions.Mailkit.Models;
+using ErtisAuth.Extensions.Mailkit.Providers;
+using ErtisAuth.Extensions.Mailkit.Serialization;
 using ErtisAuth.Integrations.OAuth.Core;
 using MongoDB.Bson;
 
@@ -94,7 +95,7 @@ namespace ErtisAuth.Infrastructure.Extensions
                 ExpiresIn = dto.ExpiresIn,
                 SecretKey = dto.SecretKey,
                 RefreshTokenExpiresIn = dto.RefreshTokenExpiresIn,
-                MailSettings = dto.MailSettings?.ToModel(),
+                MailProviders = dto.MailProviders?.Select(ToMailProvider).ToArray(),
                 Sys = dto.Sys?.ToModel()
             };
         }
@@ -111,7 +112,7 @@ namespace ErtisAuth.Infrastructure.Extensions
                 ExpiresIn = model.ExpiresIn,
                 SecretKey = model.SecretKey,
                 RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
-                MailSettings = model.MailSettings?.ToDto(),
+                MailProviders = model.MailProviders?.Select(x => MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(Newtonsoft.Json.JsonConvert.SerializeObject(x))).ToArray(),
                 Sys = model.Sys?.ToDto()
             };
         }
@@ -334,6 +335,7 @@ namespace ErtisAuth.Infrastructure.Extensions
                 MailTemplate = dto.MailTemplate,
                 FromName = dto.FromName,
                 FromAddress = dto.FromAddress,
+                MailProvider = dto.MailProvider,
                 MembershipId = dto.MembershipId,
                 Sys = dto.Sys?.ToModel()
             };
@@ -352,49 +354,15 @@ namespace ErtisAuth.Infrastructure.Extensions
                 MailTemplate = model.MailTemplate,
                 FromName = model.FromName,
                 FromAddress = model.FromAddress,
+                MailProvider = model.MailProvider,
                 MembershipId = model.MembershipId,
                 Sys = model.Sys?.ToDto()
             };
         }
         
-        public static MembershipMailSettings ToModel(this MembershipMailSettingsDto dto)
+        private static IMailProvider ToMailProvider(BsonDocument bsonDocument)
         {
-            return new MembershipMailSettings
-            {
-                SmtpServer = dto.SmtpServer?.ToModel()
-            };
-        }
-        
-        public static MembershipMailSettingsDto ToDto(this MembershipMailSettings model)
-        {
-            return new MembershipMailSettingsDto
-            {
-                SmtpServer = model.SmtpServer?.ToDto()
-            };
-        }
-        
-        public static SmtpServer ToModel(this SmtpServerDto dto)
-        {
-            return new SmtpServer
-            {
-                Host = dto.Host,
-                Port = dto.Port,
-                TlsEnabled = dto.TlsEnabled,
-                Username = dto.Username,
-                Password = dto.Password
-            };
-        }
-        
-        public static SmtpServerDto ToDto(this SmtpServer model)
-        {
-            return new SmtpServerDto
-            {
-                Host = model.Host,
-                Port = model.Port,
-                TlsEnabled = model.TlsEnabled,
-                Username = model.Username,
-                Password = model.Password
-            };
+            return MailProviderJsonConverter.Deserialize(bsonDocument.ToJson());
         }
 
         #endregion

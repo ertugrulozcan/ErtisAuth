@@ -1,9 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
         <PackageId>ErtisAuth.Integrations.OAuth.Core</PackageId>
-        <PackageVersion>7.3.6</PackageVersion>
+        <PackageVersion>7.3.7</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Integrations.OAuth.Core</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -13,12 +12,11 @@
         <Title>ErtisAuth.Integrations.OAuth.Core</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>7.3.6</AssemblyVersion>
-        <FileVersion>7.3.6</FileVersion>
+        <AssemblyVersion>7.3.7</AssemblyVersion>
+        <FileVersion>7.3.7</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
-
 </Project>

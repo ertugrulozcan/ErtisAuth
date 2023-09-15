@@ -1,11 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ErtisAuth.Dto\ErtisAuth.Dto.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Dto\ErtisAuth.Dto.csproj" />
     </ItemGroup>
-
 </Project>

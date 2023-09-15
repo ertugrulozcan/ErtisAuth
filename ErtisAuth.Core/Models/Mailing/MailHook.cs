@@ -53,6 +53,9 @@ namespace ErtisAuth.Core.Models.Mailing
         [JsonProperty("fromAddress")]
         public string FromAddress { get; set; }
         
+        [JsonProperty("mailProvider")]
+        public string MailProvider { get; set; }
+        
         [JsonProperty("sys")]
         public SysModel Sys { get; set; }
         

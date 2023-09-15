@@ -1,16 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Net" Version="7.0.6" />
+        <PackageReference Include="Ertis.Net" Version="7.0.6" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
-      <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Abstractions\ErtisAuth.Integrations.OAuth.Abstractions.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Abstractions\ErtisAuth.Integrations.OAuth.Abstractions.csproj" />
     </ItemGroup>
-
 </Project>

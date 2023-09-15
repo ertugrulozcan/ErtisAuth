@@ -1,5 +1,5 @@
 using ErtisAuth.Core.Models.Memberships;
-using ErtisAuth.Core.Models.Users;
+using ErtisAuth.Extensions.Mailkit.Providers;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.WebAPI.Models.Request.Memberships
@@ -29,8 +29,8 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		[JsonProperty("default_language")]
 		public string DefaultLanguage { get; set; }
 		
-		[JsonProperty("mail_settings")]
-		public MembershipMailSettings MailSettings { get; set; }
+		[JsonProperty("mail_providers")]
+		public IMailProvider[] MailProviders { get; set; }
 		
 		#endregion
 		
@@ -48,7 +48,7 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 				HashAlgorithm = this.HashAlgorithm,
 				DefaultEncoding = this.DefaultEncoding,
 				DefaultLanguage = this.DefaultLanguage,
-				MailSettings = this.MailSettings,
+				MailProviders = this.MailProviders,
 			};
 		}
 

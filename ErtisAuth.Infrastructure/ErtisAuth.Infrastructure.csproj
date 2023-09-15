@@ -1,30 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="AutoMapper" Version="12.0.1" />
-      <PackageReference Include="Ertis.MongoDB.Queries" Version="7.0.6" />
-      <PackageReference Include="Ertis.Net" Version="7.0.6" />
-      <PackageReference Include="Ertis.Security" Version="7.0.4" />
-      <PackageReference Include="Ertis.TemplateEngine" Version="7.0.4" />
-      <PackageReference Include="Mapster" Version="7.3.0" />
-      <PackageReference Include="MaxMind.GeoIP2" Version="5.1.0" />
-      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
-      <PackageReference Include="TinyMapper" Version="3.0.3" />
+        <PackageReference Include="Ertis.TemplateEngine" Version="7.0.4" />
+        <PackageReference Include="AutoMapper" Version="12.0.1" />
+        <PackageReference Include="TinyMapper" Version="3.0.3" />
+        <PackageReference Include="Mapster" Version="7.3.0" />
+        <PackageReference Include="MaxMind.GeoIP2" Version="5.1.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ErtisAuth.Abstractions\ErtisAuth.Abstractions.csproj" />
-      <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
-      <ProjectReference Include="..\ErtisAuth.Dao\ErtisAuth.Dao.csproj" />
-      <ProjectReference Include="..\ErtisAuth.Dto\ErtisAuth.Dto.csproj" />
-      <ProjectReference Include="..\ErtisAuth.Events\ErtisAuth.Events.csproj" />
-      <ProjectReference Include="..\ErtisAuth.Identity\ErtisAuth.Identity.csproj" />
-      <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Facebook\ErtisAuth.Integrations.OAuth.Facebook.csproj" />
-      <ProjectReference Include="..\ErtisAuth.Integrations.OAuth\ErtisAuth.Integrations.OAuth.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Abstractions\ErtisAuth.Abstractions.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Dao\ErtisAuth.Dao.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Identity\ErtisAuth.Identity.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Integrations.OAuth\ErtisAuth.Integrations.OAuth.csproj" />
     </ItemGroup>
-
 </Project>

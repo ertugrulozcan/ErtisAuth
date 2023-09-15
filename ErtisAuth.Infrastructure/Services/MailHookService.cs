@@ -132,7 +132,8 @@ namespace ErtisAuth.Infrastructure.Services
 			if (mailHook.IsActive)
 			{
 				var membership = await this.membershipService.GetAsync(mailHook.MembershipId, cancellationToken: cancellationToken);
-				if (membership?.MailSettings?.SmtpServer != null)
+				var mailProvider = membership?.MailProviders.FirstOrDefault(x => x.Slug == mailHook.MailProvider);
+				if (mailProvider != null)
 				{
 					var dynamicObject = await this.userService.GetAsync(membership.Id, ertisAuthEvent.UtilizerId, cancellationToken: cancellationToken);
 					var user = dynamicObject.Deserialize<User>();
@@ -146,7 +147,7 @@ namespace ErtisAuth.Infrastructure.Services
 								var mailBody = formatter.Format(mailHook.MailTemplate, ertisAuthEvent);
 								var mailSubject = formatter.Format(mailHook.MailSubject, ertisAuthEvent);
 								await this.mailService.SendMailAsync(
-									membership.MailSettings.SmtpServer,
+									mailProvider,
 									mailHook.FromName,
 									mailHook.FromAddress,
 									$"{user.FirstName} {user.LastName}",
@@ -164,7 +165,7 @@ namespace ErtisAuth.Infrastructure.Services
 							}
 							catch (Exception ex)
 							{
-								Console.WriteLine("Hook mail could not sent!");
+								Console.WriteLine("The hook mail could not be sent!");
 								Console.WriteLine(ex);
 								
 								await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
@@ -190,6 +191,11 @@ namespace ErtisAuth.Infrastructure.Services
 			if (string.IsNullOrEmpty(model.MembershipId))
 			{
 				errorList.Add("membership_id is a required field");
+			}
+			
+			if (string.IsNullOrEmpty(model.MailProvider))
+			{
+				errorList.Add("Mail provider is a required field");
 			}
 
 			if (string.IsNullOrEmpty(model.Status))
@@ -278,6 +284,11 @@ namespace ErtisAuth.Infrastructure.Services
 			if (string.IsNullOrEmpty(destination.FromAddress))
 			{
 				destination.FromAddress = source.FromAddress;
+			}
+			
+			if (string.IsNullOrEmpty(destination.MailProvider))
+			{
+				destination.MailProvider = source.MailProvider;
 			}
 		}
 		

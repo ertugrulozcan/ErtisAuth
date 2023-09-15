@@ -1,10 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-using ErtisAuth.Extensions.Mailkit.Models;
+using ErtisAuth.Extensions.Mailkit.Providers;
 using ErtisAuth.Extensions.Mailkit.Services.Interfaces;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
 
 namespace ErtisAuth.Extensions.Mailkit.Services
 {
@@ -13,7 +10,7 @@ namespace ErtisAuth.Extensions.Mailkit.Services
         #region Methods
 
         public async Task SendMailAsync(
-            SmtpServer server, 
+            IMailProvider mailProvider, 
             string fromName, 
             string fromAddress, 
             string toName, 
@@ -22,29 +19,14 @@ namespace ErtisAuth.Extensions.Mailkit.Services
             string htmlBody,
             CancellationToken cancellationToken = default)
         {
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(fromName, fromAddress));
-            message.To.Add(new MailboxAddress(toName, toAddress));
-            message.Subject = subject;
-
-            var builder = new BodyBuilder { HtmlBody = htmlBody };
-            message.Body = builder.ToMessageBody();
-
-            using (var client = new SmtpClient())
-            {
-                if (server.TlsEnabled)
-                {
-                    await client.ConnectAsync(server.Host, server.Port, SecureSocketOptions.StartTlsWhenAvailable, cancellationToken: cancellationToken);    
-                }
-                else
-                {
-                    await client.ConnectAsync(server.Host, server.Port, cancellationToken: cancellationToken);
-                }
-                
-                await client.AuthenticateAsync(server.Username, server.Password, cancellationToken: cancellationToken);
-                await client.SendAsync(message, cancellationToken: cancellationToken);
-                await client.DisconnectAsync(true, cancellationToken: cancellationToken);
-            }
+            await mailProvider.SendMailAsync(
+                fromName,
+                fromAddress,
+                toName,
+                toAddress,
+                subject,
+                htmlBody,
+                cancellationToken: cancellationToken);
         }
 
         #endregion

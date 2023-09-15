@@ -1,16 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.MongoDB" Version="7.2.3" />
-      <PackageReference Include="MongoDB.Driver" Version="2.21.0" />
+        <PackageReference Include="Ertis.MongoDB" Version="7.2.3" />
+        <PackageReference Include="MongoDB.Driver" Version="2.21.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
     </ItemGroup>
-
 </Project>

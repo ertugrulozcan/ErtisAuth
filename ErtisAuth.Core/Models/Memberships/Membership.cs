@@ -1,5 +1,5 @@
 using Ertis.Core.Models.Resources;
-using ErtisAuth.Core.Models.Users;
+using ErtisAuth.Extensions.Mailkit.Providers;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Memberships
@@ -29,8 +29,8 @@ namespace ErtisAuth.Core.Models.Memberships
 		[JsonProperty("default_language")]
 		public string DefaultLanguage { get; set; }
 
-		[JsonProperty("mail_settings")]
-		public MembershipMailSettings MailSettings { get; set; }
+		[JsonProperty("mail_providers")]
+		public IMailProvider[] MailProviders { get; set; }
 
 		[JsonProperty("sys")]
 		public SysModel Sys { get; set; }
