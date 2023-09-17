@@ -214,6 +214,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Test Methods
 
 		[HttpPost("smtp-server-test")]
+		[RbacAction(Rbac.CrudActions.Read)]
 		public async Task<IActionResult> TestSmtpServerConnectionAsync([FromBody] SmtpServerProvider server)
 		{
 			try
