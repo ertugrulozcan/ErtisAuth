@@ -41,6 +41,9 @@ namespace ErtisAuth.Core.Models.Users
 		[JsonProperty("connectedAccounts")]
 		public ProviderAccountInfo[] ConnectedAccounts { get; set; }
 		
+		[JsonProperty("isActive")]
+		public bool IsActive { get; set; }
+		
 		[JsonProperty("sys")]
 		public SysModel Sys { get; set; }
 

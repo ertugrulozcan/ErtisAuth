@@ -127,16 +127,17 @@ namespace ErtisAuth.Infrastructure.Extensions
             return new User
             {
                 Id = dto.Id,
-                Username = dto.Username,
-                EmailAddress = dto.EmailAddress,
                 FirstName = dto.FirstName,
                 LastName = dto.LastName,
+                Username = dto.Username,
+                EmailAddress = dto.EmailAddress,
                 Role = dto.Role,
-                Forbidden = dto.Forbidden,
                 Permissions = dto.Permissions,
+                Forbidden = dto.Forbidden,
                 UserType = dto.UserType,
                 SourceProvider = string.IsNullOrEmpty(dto.SourceProvider) ? KnownProviders.ErtisAuth.ToString() : dto.SourceProvider,
                 ConnectedAccounts = dto.ConnectedAccounts,
+                IsActive = dto.IsActive,
                 MembershipId = dto.MembershipId,
                 Sys = dto.Sys?.ToModel()
             };
@@ -147,16 +148,17 @@ namespace ErtisAuth.Infrastructure.Extensions
             return new UserDto
             {
                 Id = model.Id,
-                Username = model.Username,
-                EmailAddress = model.EmailAddress,
                 FirstName = model.FirstName,
                 LastName = model.LastName,
+                Username = model.Username,
+                EmailAddress = model.EmailAddress,
                 Role = model.Role,
-                Forbidden = model.Forbidden,
                 Permissions = model.Permissions,
+                Forbidden = model.Forbidden,
                 UserType = model.UserType,
                 SourceProvider = model.SourceProvider,
                 ConnectedAccounts = model.ConnectedAccounts,
+                IsActive = model.IsActive,
                 MembershipId = model.MembershipId,
                 Sys = model.Sys?.ToDto()
             };

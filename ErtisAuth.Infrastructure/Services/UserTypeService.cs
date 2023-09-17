@@ -174,6 +174,14 @@ namespace ErtisAuth.Infrastructure.Services
 						    UniqueItems = true,
 						    UniqueBy = new[] { "Provider" }
 					    },
+					    new BooleanFieldInfo
+					    {
+						    Name = "isActive",
+						    DisplayName = "Is Active",
+						    DefaultValue = false,
+						    IsRequired = true,
+						    IsReadonly = true
+					    },
 					    new StringFieldInfo
 					    {
 						    Name = "membership_id",

@@ -46,7 +46,8 @@ namespace ErtisAuth.Core.Models.Identity
 		/// <param name="tokenId"></param>
 		/// <param name="user"></param>
 		/// <param name="membership"></param>
-		public TokenClaims(string tokenId, User user, Membership membership)
+		/// <param name="expiresIn"></param>
+		public TokenClaims(string tokenId, User user, Membership membership, TimeSpan? expiresIn = null)
 		{
 			this.SecretKey = membership.SecretKey;
 			this.Issuer = membership.Name;
@@ -54,7 +55,7 @@ namespace ErtisAuth.Core.Models.Identity
 			this.Subject = user.Id;
 			this.TokenId = tokenId;
 			this.Principal = membership.Id;
-			this.ExpiresIn = TimeSpan.FromSeconds(membership.ExpiresIn);
+			this.ExpiresIn = expiresIn ?? TimeSpan.FromSeconds(membership.ExpiresIn);
 			this.FirstName = user.FirstName;
 			this.LastName = user.LastName;
 			this.Username = user.Username;
@@ -76,12 +77,8 @@ namespace ErtisAuth.Core.Models.Identity
 		
 		public TokenClaims RemoveClaim(string name)
 		{
-			if (this.OtherClaims.ContainsKey(name))
-			{
-				this.OtherClaims.Remove(name);
-			}
-			
-			return this;
+            this.OtherClaims.Remove(name);
+            return this;
 		}
 
 		#endregion

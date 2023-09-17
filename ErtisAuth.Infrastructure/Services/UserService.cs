@@ -675,6 +675,44 @@ namespace ErtisAuth.Infrastructure.Services
         }
 
         #endregion
+
+        #region User Activation Methods
+
+        private async Task<ActivationToken> GenerateActivationTokenAsync(User user, CancellationToken cancellationToken = default)
+        {
+	        var membership = await this._membershipService.GetAsync(user.MembershipId, cancellationToken: cancellationToken);
+	        if (membership == null)
+	        {
+		        throw ErtisAuthException.MembershipNotFound(user.MembershipId);
+	        }
+	        
+	        var expiresIn = TimeSpan.FromHours(72);
+	        var tokenClaims = new TokenClaims(user.Id, user, membership, expiresIn);
+	        tokenClaims.AddClaim("token_type", "activation_token");
+	        var token = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
+	        var activationToken = new ActivationToken(token, expiresIn);
+
+	        return activationToken;
+        }
+        
+        private static string GenerateActivationLink(ActivationToken activationToken, Membership membership, string host)
+        {
+	        var encryptedActivationToken = Identity.Cryptography.StringCipher.Encrypt(activationToken.Token, membership.Id);
+	        var encryptedSecretKey = Identity.Cryptography.StringCipher.Encrypt(membership.SecretKey, membership.Id);
+	        var payloadDictionary = new Dictionary<string, string>
+	        {
+		        { "encryptedResetPasswordToken", encryptedActivationToken },
+		        { "encryptedSecretKey", encryptedSecretKey },
+		        { "membershipId", membership.Id },
+	        };
+
+	        var encodedPayload = Identity.Cryptography.StringCipher.Encrypt(string.Join('&', payloadDictionary.Select(x => $"{x.Key}={x.Value}")), membership.Id);
+	        var activationTokenPayload = $"{membership.Id}:{encodedPayload}";
+	        var urlEncodedPayload = System.Web.HttpUtility.UrlEncode(activationTokenPayload, Encoding.ASCII);
+	        return $"https://{host}/activation/{urlEncodedPayload}";
+        }
+
+        #endregion
         
         #region Update Methods
 
@@ -851,10 +889,11 @@ namespace ErtisAuth.Infrastructure.Services
 
 			if (utilizer.Role is ReservedRoles.Administrator or ReservedRoles.Server || utilizer.Id == user.Id)
 			{
-				var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership);
+				var expiresIn = TimeSpan.FromHours(1);
+				var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, expiresIn);
 				tokenClaims.AddClaim("token_type", "reset_token");
 				var resetToken = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
-				var resetPasswordToken = new ResetPasswordToken(resetToken, TimeSpan.FromHours(1));
+				var resetPasswordToken = new ResetPasswordToken(resetToken, expiresIn);
 
 				var resetPasswordLink = GenerateResetPasswordTokenMailLink(
 					emailAddress, 

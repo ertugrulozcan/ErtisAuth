@@ -127,7 +127,8 @@ namespace ErtisAuth.Infrastructure.Services
 				Role = adminRole.Name,
 				UserType = userType.Slug,
 				MembershipId = membership.Id,
-				Password = _user.Password
+				Password = _user.Password,
+				IsActive = true
 			});
 			
 			// 5. Application

@@ -47,6 +47,9 @@ namespace ErtisAuth.Dto.Models.Users
 		[BsonElement("connectedAccounts")]
 		public ProviderAccountInfo[] ConnectedAccounts { get; set; }
 		
+		[BsonElement("isActive")]
+		public bool IsActive { get; set; }
+		
 		[BsonElement("password_hash")]
 		public string PasswordHash { get; set; }
 		
