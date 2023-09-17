@@ -20,6 +20,7 @@ using ErtisAuth.Dto.Models.Providers;
 using ErtisAuth.Dto.Models.Resources;
 using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Dto.Models.Webhooks;
+using ErtisAuth.Extensions.Mailkit.Models;
 using ErtisAuth.Extensions.Mailkit.Providers;
 using ErtisAuth.Extensions.Mailkit.Serialization;
 using ErtisAuth.Integrations.OAuth.Core;
@@ -333,6 +334,8 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Status = dto.Status,
                 MailSubject = dto.MailSubject,
                 MailTemplate = dto.MailTemplate,
+                SendToUtilizer = dto.SendToUtilizer,
+                Recipients = dto.Recipients?.Select(ToModel).ToArray(),
                 FromName = dto.FromName,
                 FromAddress = dto.FromAddress,
                 MailProvider = dto.MailProvider,
@@ -352,11 +355,31 @@ namespace ErtisAuth.Infrastructure.Extensions
                 Status = model.Status,
                 MailSubject = model.MailSubject,
                 MailTemplate = model.MailTemplate,
+                SendToUtilizer = model.SendToUtilizer,
+                Recipients = model.Recipients?.Select(ToDto).ToArray(),
                 FromName = model.FromName,
                 FromAddress = model.FromAddress,
                 MailProvider = model.MailProvider,
                 MembershipId = model.MembershipId,
                 Sys = model.Sys?.ToDto()
+            };
+        }
+
+        private static Recipient ToModel(this RecipientDto dto)
+        {
+            return new Recipient
+            {
+                DisplayName = dto.DisplayName,
+                EmailAddress = dto.EmailAddress
+            };
+        }
+
+        private static RecipientDto ToDto(this Recipient model)
+        {
+            return new RecipientDto
+            {
+                DisplayName = model.DisplayName,
+                EmailAddress = model.EmailAddress
             };
         }
         

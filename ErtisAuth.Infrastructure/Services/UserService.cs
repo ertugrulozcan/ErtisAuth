@@ -109,7 +109,7 @@ namespace ErtisAuth.Infrastructure.Services
                 });	
             }
             
-            this.OnCreated?.Invoke(this, new CreateResourceEventArgs<DynamicObject>(utilizer, inserted));
+            this.OnCreated?.Invoke(this, new CreateResourceEventArgs<DynamicObject>(utilizer, inserted, membershipId));
         }
 		
         private async Task FireOnUpdatedEvent(string membershipId, Utilizer utilizer, DynamicObject prior, DynamicObject updated)
@@ -127,7 +127,7 @@ namespace ErtisAuth.Infrastructure.Services
                 });	
             }
             
-            this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<DynamicObject>(utilizer, prior, updated));
+            this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<DynamicObject>(utilizer, prior, updated, membershipId));
         }
 		
         private async Task FireOnDeletedEvent(string membershipId, Utilizer utilizer, DynamicObject deleted)
@@ -145,7 +145,7 @@ namespace ErtisAuth.Infrastructure.Services
                 });	
             }
             
-            this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<DynamicObject>(utilizer, deleted));
+            this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<DynamicObject>(utilizer, deleted, membershipId));
         }
 
         #endregion

@@ -34,6 +34,12 @@ namespace ErtisAuth.Dto.Models.Mailing
         [BsonElement("fromAddress")]
         public string FromAddress { get; set; }
         
+        [BsonElement("sendToUtilizer")]
+        public bool SendToUtilizer { get; set; }
+        
+        [BsonElement("recipients")]
+        public RecipientDto[] Recipients { get; set; }
+        
         [BsonElement("mailProvider")]
         public string MailProvider { get; set; }
 		

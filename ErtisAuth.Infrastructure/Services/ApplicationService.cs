@@ -95,7 +95,7 @@ namespace ErtisAuth.Infrastructure.Services
 				EventType = ErtisAuthEventType.ApplicationCreated,
 				UtilizerId = eventArgs.Utilizer.Id,
 				Document = eventArgs.Resource,
-				MembershipId = eventArgs.Utilizer.MembershipId
+				MembershipId = eventArgs.MembershipId
 			});
 		}
 		
@@ -107,7 +107,7 @@ namespace ErtisAuth.Infrastructure.Services
 				UtilizerId = eventArgs.Utilizer.Id,
 				Document = eventArgs.Updated,
 				Prior = eventArgs.Prior,
-				MembershipId = eventArgs.Utilizer.MembershipId
+				MembershipId = eventArgs.MembershipId
 			});
 		}
 		
@@ -118,7 +118,7 @@ namespace ErtisAuth.Infrastructure.Services
 				EventType = ErtisAuthEventType.ApplicationDeleted,
 				UtilizerId = eventArgs.Utilizer.Id,
 				Document = eventArgs.Resource,
-				MembershipId = eventArgs.Utilizer.MembershipId
+				MembershipId = eventArgs.MembershipId
 			});
 		}
 

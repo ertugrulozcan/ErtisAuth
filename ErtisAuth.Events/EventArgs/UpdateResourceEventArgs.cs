@@ -11,11 +11,13 @@ namespace ErtisAuth.Events.EventArgs
 		public TModel Prior { get; }
 		
 		public TModel Updated { get; }
+		
+		public string MembershipId { get; }
 
 		#endregion
 
 		#region Constructors
-
+		
 		/// <summary>
 		/// Constructor
 		/// </summary>
@@ -26,6 +28,19 @@ namespace ErtisAuth.Events.EventArgs
 			this.Prior = prior;
 			this.Updated = updated;
 		}
+
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="prior"></param>
+		/// <param name="updated"></param>
+		/// <param name="membershipId"></param>
+		public UpdateResourceEventArgs(TModel prior, TModel updated, string membershipId)
+		{
+			this.Prior = prior;
+			this.Updated = updated;
+			this.MembershipId = membershipId;
+		}
 		
 		/// <summary>
 		/// Constructor
@@ -33,11 +48,13 @@ namespace ErtisAuth.Events.EventArgs
 		/// <param name="utilizer"></param>
 		/// <param name="prior"></param>
 		/// <param name="updated"></param>
-		public UpdateResourceEventArgs(Utilizer utilizer, TModel prior, TModel updated)
+		/// <param name="membershipId"></param>
+		public UpdateResourceEventArgs(Utilizer utilizer, TModel prior, TModel updated, string membershipId)
 		{
 			this.Utilizer = utilizer;
 			this.Prior = prior;
 			this.Updated = updated;
+			this.MembershipId = membershipId;
 		}
 
 		#endregion

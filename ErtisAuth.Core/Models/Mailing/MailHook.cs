@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Events;
+using ErtisAuth.Extensions.Mailkit.Models;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Mailing
@@ -52,6 +53,12 @@ namespace ErtisAuth.Core.Models.Mailing
         
         [JsonProperty("fromAddress")]
         public string FromAddress { get; set; }
+        
+        [JsonProperty("sendToUtilizer")]
+        public bool SendToUtilizer { get; set; }
+        
+        [JsonProperty("recipients")]
+        public Recipient[] Recipients { get; set; }
         
         [JsonProperty("mailProvider")]
         public string MailProvider { get; set; }

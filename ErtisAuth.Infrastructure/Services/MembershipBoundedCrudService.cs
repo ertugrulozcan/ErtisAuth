@@ -109,7 +109,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var insertedDto = this.repository.Insert(dto);
 			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
 
-			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(utilizer, inserted));
+			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(utilizer, inserted, membershipId));
 
 			return inserted;
 		}
@@ -147,7 +147,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var insertedDto = await this.repository.InsertAsync(dto, cancellationToken: cancellationToken);
 			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
 			
-			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(utilizer, inserted));
+			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(utilizer, inserted, membershipId));
 
 			return inserted;
 		}
@@ -198,7 +198,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var updatedDto = this.repository.Update(dto);
 			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
 			
-			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated));
+			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated, membershipId));
 
 			return updated;
 		}
@@ -245,7 +245,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var updatedDto = await this.repository.UpdateAsync(dto, cancellationToken: cancellationToken);
 			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
 			
-			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated));
+			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated, membershipId));
 
 			return updated;
 		}
@@ -306,7 +306,7 @@ namespace ErtisAuth.Infrastructure.Services
 				var isDeleted = this.repository.Delete(id);
 				if (isDeleted)
 				{
-					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));		
+					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current, membershipId));		
 				}
 
 				return isDeleted;
@@ -325,7 +325,7 @@ namespace ErtisAuth.Infrastructure.Services
 				var isDeleted = await this.repository.DeleteAsync(id, cancellationToken: cancellationToken);
 				if (isDeleted)
 				{
-					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));
+					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current, membershipId));
 				}
 
 				return isDeleted;
@@ -349,7 +349,7 @@ namespace ErtisAuth.Infrastructure.Services
 					var isDeleted = this.repository.Delete(id);
 					if (isDeleted)
 					{
-						this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));		
+						this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current, membershipId));		
 					}
 
 					isAllDeleted &= isDeleted;
@@ -384,7 +384,7 @@ namespace ErtisAuth.Infrastructure.Services
 					var isDeleted = await this.repository.DeleteAsync(id, cancellationToken: cancellationToken);
 					if (isDeleted)
 					{
-						this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current));		
+						this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current, membershipId));		
 					}
 
 					isAllDeleted &= isDeleted;

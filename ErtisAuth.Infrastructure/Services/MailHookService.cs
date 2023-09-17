@@ -14,6 +14,7 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Mailing;
 using ErtisAuth.Events.EventArgs;
+using ErtisAuth.Extensions.Mailkit.Models;
 using ErtisAuth.Extensions.Mailkit.Services.Interfaces;
 using Newtonsoft.Json;
 
@@ -96,7 +97,7 @@ namespace ErtisAuth.Infrastructure.Services
 				EventType = ErtisAuthEventType.MailhookCreated,
 				UtilizerId = eventArgs.Utilizer.Id,
 				Document = eventArgs.Resource,
-				MembershipId = eventArgs.Utilizer.MembershipId
+				MembershipId = eventArgs.MembershipId
 			});
 		}
 		
@@ -108,7 +109,7 @@ namespace ErtisAuth.Infrastructure.Services
 				UtilizerId = eventArgs.Utilizer.Id,
 				Document = eventArgs.Updated,
 				Prior = eventArgs.Prior,
-				MembershipId = eventArgs.Utilizer.MembershipId
+				MembershipId = eventArgs.MembershipId
 			});
 		}
 		
@@ -119,7 +120,7 @@ namespace ErtisAuth.Infrastructure.Services
 				EventType = ErtisAuthEventType.MailhookDeleted,
 				UtilizerId = eventArgs.Utilizer.Id,
 				Document = eventArgs.Resource,
-				MembershipId = eventArgs.Utilizer.MembershipId
+				MembershipId = eventArgs.MembershipId
 			});
 		}
 
@@ -135,9 +136,28 @@ namespace ErtisAuth.Infrastructure.Services
 				var mailProvider = membership?.MailProviders.FirstOrDefault(x => x.Slug == mailHook.MailProvider);
 				if (mailProvider != null)
 				{
-					var dynamicObject = await this.userService.GetAsync(membership.Id, ertisAuthEvent.UtilizerId, cancellationToken: cancellationToken);
-					var user = dynamicObject.Deserialize<User>();
-					if (user != null)
+					var recipients = new List<Recipient>();
+					if (mailHook.SendToUtilizer)
+					{
+						var dynamicObject = await this.userService.GetAsync(membership.Id, ertisAuthEvent.UtilizerId, cancellationToken: cancellationToken);
+						var user = dynamicObject.Deserialize<User>();
+						if (user != null)
+						{
+							recipients.Add(new Recipient
+							{
+								DisplayName = $"{user.FirstName} {user.LastName}",
+								EmailAddress = user.EmailAddress
+							});	
+						}
+					}
+
+					if (mailHook.Recipients != null)
+					{
+						recipients.AddRange(mailHook.Recipients);
+					}
+
+					recipients = recipients.DistinctBy(x => x.EmailAddress).ToList();
+					if (recipients.Any())
 					{
 						await Task.Run(async () =>
 						{
@@ -150,8 +170,7 @@ namespace ErtisAuth.Infrastructure.Services
 									mailProvider,
 									mailHook.FromName,
 									mailHook.FromAddress,
-									$"{user.FirstName} {user.LastName}",
-									user.EmailAddress,
+									recipients,
 									mailSubject,
 									mailBody, 
 									cancellationToken: cancellationToken
@@ -160,7 +179,11 @@ namespace ErtisAuth.Infrastructure.Services
 								await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
 									ErtisAuthEventType.MailhookMailSent,
 									ertisAuthEvent.UtilizerId,
-									membership.Id
+									ertisAuthEvent.MembershipId,
+									new
+									{
+										recipients
+									}
 								), cancellationToken: cancellationToken);
 							}
 							catch (Exception ex)
@@ -171,10 +194,15 @@ namespace ErtisAuth.Infrastructure.Services
 								await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
 									ErtisAuthEventType.MailhookMailFailed,
 									ertisAuthEvent.UtilizerId,
-									membership.Id
+									ertisAuthEvent.MembershipId,
+									new
+									{
+										recipients,
+										error = ex.Message 
+									}
 								), cancellationToken: cancellationToken);
 							}
-						}, cancellationToken);	
+						}, cancellationToken);
 					}
 				}
 			}
@@ -215,20 +243,28 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				errorList.Add($"Unknown event type. (Supported events: [{string.Join(", ", Enum.GetNames(typeof(ErtisAuthEventType)))}])");
 			}
-			
-			if (string.IsNullOrEmpty(model.MailSubject))
+
+			if (!string.IsNullOrEmpty(model.Id))
 			{
-				errorList.Add("MailSubject is a required field");
-			}
+				if (string.IsNullOrEmpty(model.MailSubject))
+				{
+					errorList.Add("MailSubject is a required field");
+				}
+				
+				if (!model.SendToUtilizer && (model.Recipients == null || !model.Recipients.Any()))
+				{
+					errorList.Add("Recipients list is empty");
+				}
 			
-			if (string.IsNullOrEmpty(model.FromName))
-			{
-				errorList.Add("FromName is a required field");
-			}
+				if (string.IsNullOrEmpty(model.FromName))
+				{
+					errorList.Add("FromName is a required field");
+				}
 			
-			if (string.IsNullOrEmpty(model.FromAddress))
-			{
-				errorList.Add("FromAddress is a required field");
+				if (string.IsNullOrEmpty(model.FromAddress))
+				{
+					errorList.Add("FromAddress is a required field");
+				}	
 			}
 
 			errors = errorList;

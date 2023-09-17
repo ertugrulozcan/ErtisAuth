@@ -1,6 +1,9 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Helpers;
+using ErtisAuth.Extensions.Mailkit.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using MailKit.Net.Smtp;
@@ -65,15 +68,14 @@ public class SmtpServerProvider : IMailProvider
 	public async Task SendMailAsync(
 		string fromName,
 		string fromAddress,
-		string toName,
-		string toAddress,
+		IEnumerable<Recipient> recipients,
 		string subject,
 		string htmlBody,
 		CancellationToken cancellationToken = default)
 	{
 		var message = new MimeMessage();
 		message.From.Add(new MailboxAddress(fromName, fromAddress));
-		message.To.Add(new MailboxAddress(toName, toAddress));
+		message.To.AddRange(recipients.Select(x => new MailboxAddress(x.DisplayName, x.EmailAddress)));
 		message.Subject = subject;
 
 		var builder = new BodyBuilder { HtmlBody = htmlBody };

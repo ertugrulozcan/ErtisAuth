@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using ErtisAuth.Extensions.Mailkit.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -29,8 +31,7 @@ public interface IMailProvider
 	Task SendMailAsync(
 		string fromName,
 		string fromAddress,
-		string toName,
-		string toAddress,
+		IEnumerable<Recipient> recipients,
 		string subject,
 		string htmlBody,
 		CancellationToken cancellationToken = default);

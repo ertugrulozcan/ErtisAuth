@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Helpers;
+using ErtisAuth.Extensions.Mailkit.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using SendGrid;
@@ -53,8 +56,7 @@ public class SendGridProvider : IMailProvider
 	public async Task SendMailAsync(
 		string fromName,
 		string fromAddress,
-		string toName,
-		string toAddress,
+		IEnumerable<Recipient> recipients,
 		string subject,
 		string htmlBody,
 		CancellationToken cancellationToken = default)
@@ -72,7 +74,7 @@ public class SendGridProvider : IMailProvider
 			HtmlContent = htmlBody
 		};
 		
-		email.AddTo(new EmailAddress(toAddress, toName));
+		email.AddTos(recipients.Select(x => new EmailAddress(x.EmailAddress, x.DisplayName)).ToList());
 		await client.SendEmailAsync(email, cancellationToken: cancellationToken);
 	}
 

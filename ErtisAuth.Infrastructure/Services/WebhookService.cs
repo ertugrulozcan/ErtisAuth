@@ -92,7 +92,7 @@ namespace ErtisAuth.Infrastructure.Services
 				EventType = ErtisAuthEventType.WebhookCreated,
 				UtilizerId = eventArgs.Utilizer.Id,
 				Document = eventArgs.Resource,
-				MembershipId = eventArgs.Utilizer.MembershipId
+				MembershipId = eventArgs.MembershipId
 			});
 		}
 		
@@ -104,7 +104,7 @@ namespace ErtisAuth.Infrastructure.Services
 				UtilizerId = eventArgs.Utilizer.Id,
 				Document = eventArgs.Updated,
 				Prior = eventArgs.Prior,
-				MembershipId = eventArgs.Utilizer.MembershipId
+				MembershipId = eventArgs.MembershipId
 			});
 		}
 		
@@ -115,7 +115,7 @@ namespace ErtisAuth.Infrastructure.Services
 				EventType = ErtisAuthEventType.WebhookDeleted,
 				UtilizerId = eventArgs.Utilizer.Id,
 				Document = eventArgs.Resource,
-				MembershipId = eventArgs.Utilizer.MembershipId
+				MembershipId = eventArgs.MembershipId
 			});
 		}
 
