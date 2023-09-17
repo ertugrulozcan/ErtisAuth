@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
+using Ertis.Core.Models.Response;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services.Interfaces;
@@ -10,6 +12,8 @@ using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Identity.Attributes;
 using ErtisAuth.Extensions.Authorization.Annotations;
+using ErtisAuth.Extensions.Mailkit.Extensions;
+using ErtisAuth.Extensions.Mailkit.Providers;
 using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -203,6 +207,29 @@ namespace ErtisAuth.WebAPI.Controllers
 		public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids, CancellationToken cancellationToken = default)
 		{
 			return await this.BulkDeleteAsync(this.mailHookService, membershipId, ids, cancellationToken: cancellationToken);
+		}
+
+		#endregion
+
+		#region Test Methods
+
+		[HttpPost("smtp-server-test")]
+		public async Task<IActionResult> TestSmtpServerConnectionAsync([FromBody] SmtpServerProvider server)
+		{
+			try
+			{
+				await server.TestConnectionAsync();
+				return this.Ok();
+			}
+			catch (Exception ex)
+			{
+				return this.StatusCode(500, new ErrorModel
+				{
+					Message = ex.Message,
+					ErrorCode = "SmtpServerConnectionError",
+					StatusCode = 500
+				});
+			}
 		}
 
 		#endregion
