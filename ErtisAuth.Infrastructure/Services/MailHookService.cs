@@ -140,7 +140,7 @@ namespace ErtisAuth.Infrastructure.Services
 					if (mailHook.SendToUtilizer)
 					{
 						var dynamicObject = await this.userService.GetAsync(membership.Id, ertisAuthEvent.UtilizerId, cancellationToken: cancellationToken);
-						var user = dynamicObject.Deserialize<User>();
+						var user = dynamicObject?.Deserialize<User>();
 						if (user != null)
 						{
 							recipients.Add(new Recipient
