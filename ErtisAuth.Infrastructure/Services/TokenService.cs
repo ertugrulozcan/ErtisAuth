@@ -129,7 +129,7 @@ namespace ErtisAuth.Infrastructure.Services
 				if (!string.IsNullOrEmpty(userId))
 				{
 					var dynamicObject = await this.userService.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
-					var user = dynamicObject.Deserialize<User>();
+					var user = dynamicObject?.Deserialize<User>();
 					return user;
 				}
 				else
@@ -168,6 +168,11 @@ namespace ErtisAuth.Infrastructure.Services
 			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(username, "username or email");
+			}
+			
+			if (!user.IsActive)
+			{
+				throw ErtisAuthException.UserInactive(user.Id);
 			}
 			
 			// Check password
@@ -284,6 +289,11 @@ namespace ErtisAuth.Infrastructure.Services
 					var user = await this.GetTokenOwnerAsync(securityToken, cancellationToken: cancellationToken);
 					if (user != null)
 					{
+						if (!user.IsActive)
+						{
+							throw ErtisAuthException.UserInactive(user.Id);
+						}
+						
 						if (this.TryExtractClaimValue(securityToken, JwtRegisteredClaimNames.Prn, out var membershipId) && !string.IsNullOrEmpty(membershipId))
 						{
 							var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
@@ -426,9 +436,14 @@ namespace ErtisAuth.Infrastructure.Services
 								if (!string.IsNullOrEmpty(userId))
 								{
 									var dynamicObject = await this.userService.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
-									var user = dynamicObject.Deserialize<User>();
+									var user = dynamicObject?.Deserialize<User>();
 									if (user != null)
 									{
+										if (!user.IsActive)
+										{
+											throw ErtisAuthException.UserInactive(user.Id);
+										}
+										
 										var originalActiveToken = await this.activeTokenService.GetByRefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
 										var token = await this.GenerateBearerTokenAsync(user, membership, originalActiveToken?.ClientInfo?.IPAddress, originalActiveToken?.ClientInfo?.UserAgent, cancellationToken: cancellationToken);
 
