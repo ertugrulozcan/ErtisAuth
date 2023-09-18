@@ -27,9 +27,13 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
         Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default);
 
         Task<IPaginationCollection<DynamicObject>> GetAsync(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default);
+
+        Task<User> GetByUsernameOrEmailAddressAsync(string membershipId, string usernameOrEmailAddress);
+        
+        Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, string host = null, CancellationToken cancellationToken = default);
 		
-        Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, CancellationToken cancellationToken = default);
-		
+        Task<string> SendActivationMailAsync(string membershipId, string userId, string host = null, CancellationToken cancellationToken = default);
+        
         Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true, CancellationToken cancellationToken = default);
         
         Task<IPaginationCollection<DynamicObject>> QueryAsync(

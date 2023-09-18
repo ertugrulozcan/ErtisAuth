@@ -33,6 +33,9 @@ namespace ErtisAuth.Dto.Models.Memberships
 
 		[BsonElement("mail_providers")]
 		public BsonDocument[] MailProviders { get; set; }
+		
+		[BsonElement("user_activation")]
+		public string UserActivation { get; set; }
 
 		[BsonElement("sys")]
 		public SysModelDto Sys { get; set; }

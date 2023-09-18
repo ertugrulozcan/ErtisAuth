@@ -4,6 +4,7 @@ using System.Linq;
 using Ertis.Core.Models.Resources;
 using Ertis.Schema.Serialization;
 using Ertis.Schema.Types;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.GeoLocation;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Mailing;
@@ -97,6 +98,7 @@ namespace ErtisAuth.Infrastructure.Extensions
                 SecretKey = dto.SecretKey,
                 RefreshTokenExpiresIn = dto.RefreshTokenExpiresIn,
                 MailProviders = dto.MailProviders?.Select(ToMailProvider).ToArray(),
+                UserActivation = dto.UserActivation is "active" or "Active" ? Status.Active : Status.Passive,
                 Sys = dto.Sys?.ToModel()
             };
         }
@@ -114,6 +116,7 @@ namespace ErtisAuth.Infrastructure.Extensions
                 SecretKey = model.SecretKey,
                 RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
                 MailProviders = model.MailProviders?.Select(x => MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(Newtonsoft.Json.JsonConvert.SerializeObject(x))).ToArray(),
+                UserActivation = model.UserActivation.ToString().ToLower(),
                 Sys = model.Sys?.ToDto()
             };
         }

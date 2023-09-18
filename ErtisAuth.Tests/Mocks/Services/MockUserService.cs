@@ -41,8 +41,18 @@ namespace ErtisAuth.Tests.Mocks.Services
         {
             throw new NotImplementedException();
         }
+        
+        public Task<User> GetByUsernameOrEmailAddressAsync(string membershipId, string usernameOrEmailAddress)
+        {
+            throw new NotImplementedException();
+        }
 
-        public Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, CancellationToken cancellationToken = default)
+        public Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, string host = null, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> SendActivationMailAsync(string membershipId, string userId, string host = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

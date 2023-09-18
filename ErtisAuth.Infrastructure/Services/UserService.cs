@@ -18,14 +18,19 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Helpers;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Models.Events;
+using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
+using ErtisAuth.Infrastructure.Extensions;
 using ErtisAuth.Integrations.OAuth.Core;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services
 {
@@ -45,7 +50,9 @@ namespace ErtisAuth.Infrastructure.Services
         private readonly IEventService _eventService;
         private readonly IJwtService _jwtService;
         private readonly ICryptographyService _cryptographyService;
+        private readonly IMailHookService _mailHookService;
         private readonly IMemoryCache _memoryCache;
+        private readonly ILogger<UserService> _logger;
 
         #endregion
         
@@ -60,8 +67,10 @@ namespace ErtisAuth.Infrastructure.Services
         /// <param name="eventService"></param>
         /// <param name="jwtService"></param>
         /// <param name="cryptographyService"></param>
+        /// <param name="mailHookService"></param>
         /// <param name="repository"></param>
         /// <param name="memoryCache"></param>
+        /// <param name="logger"></param>
         [SuppressMessage("ReSharper", "SuggestBaseTypeForParameterInConstructor")]
         public UserService(
             IUserTypeService userTypeService, 
@@ -70,8 +79,10 @@ namespace ErtisAuth.Infrastructure.Services
             IEventService eventService,
             IJwtService jwtService,
             ICryptographyService cryptographyService,
+            IMailHookService mailHookService,
             IUserRepository repository,
-            IMemoryCache memoryCache) : base(repository)
+            IMemoryCache memoryCache,
+            ILogger<UserService> logger) : base(repository)
         {
             this._userTypeService = userTypeService;
             this._membershipService = membershipService;
@@ -79,7 +90,9 @@ namespace ErtisAuth.Infrastructure.Services
             this._eventService = eventService;
             this._jwtService = jwtService;
             this._cryptographyService = cryptographyService;
+            this._mailHookService = mailHookService;
             this._memoryCache = memoryCache;
+            this._logger = logger;
         }
 
         #endregion
@@ -617,6 +630,21 @@ namespace ErtisAuth.Infrastructure.Services
 	        return dynamicObject?.Deserialize<UserWithPasswordHash>();
         }
         
+        public async Task<User> GetByUsernameOrEmailAddressAsync(string membershipId, string usernameOrEmailAddress)
+        {
+	        var dynamicObject = await this.FindOneAsync(
+		        QueryBuilder.And(
+			        QueryBuilder.Equals("membership_id", membershipId), 
+			        QueryBuilder.Or(
+				        QueryBuilder.Equals("username", usernameOrEmailAddress),
+				        QueryBuilder.Equals("email_address", usernameOrEmailAddress)
+			        )
+		        )
+	        );
+	        
+	        return dynamicObject?.Deserialize<UserDto>()?.ToModel();
+        }
+        
         #endregion
 
         #region Validation Methods
@@ -644,10 +672,12 @@ namespace ErtisAuth.Infrastructure.Services
         
         #region Create Methods
         
-        public async Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, CancellationToken cancellationToken = default)
+        public async Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, string host = null, CancellationToken cancellationToken = default)
         {
 	        var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-	        
+	        var activationMailHook = await this.EnsureUserActivationAsync(membership, cancellationToken: cancellationToken);
+	        model.SetValue("isActive", membership.UserActivation != Status.Active, true);
+
 	        string password = null;
 	        var sourceProvider = this.GetSourceProvider(model);
 	        if (sourceProvider == KnownProviders.ErtisAuth)
@@ -669,6 +699,9 @@ namespace ErtisAuth.Infrastructure.Services
             if (created != null)
             {
                 await this.FireOnCreatedEvent(membershipId, utilizer, created);
+                
+                // SendActivationMail
+                await this.TrySendActivationMailAsync(created, activationMailHook, membership, host);
             }
             
             return created;
@@ -677,6 +710,91 @@ namespace ErtisAuth.Infrastructure.Services
         #endregion
 
         #region User Activation Methods
+        
+        public async Task<string> SendActivationMailAsync(string membershipId, string userId, string host = null, CancellationToken cancellationToken = default)
+        {
+	        var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+	        var dynamicObject = await this.GetAsync(userId, cancellationToken);
+	        if (dynamicObject == null)
+	        {
+		        throw ErtisAuthException.UserNotFound(userId, "_id");
+	        }
+	        
+	        var userDto = dynamicObject.Deserialize<UserDto>();
+	        if (userDto.IsActive)
+	        {
+		        throw ErtisAuthException.UserAlreadyActive();
+	        }
+	        
+	        var activationMailHook = await this.EnsureUserActivationAsync(membership, cancellationToken: cancellationToken);
+	        if (activationMailHook == null)
+	        {
+		        throw ErtisAuthException.ActivationMailHookWasNotDefined();
+	        }
+	        
+	        return await this.TrySendActivationMailAsync(dynamicObject, activationMailHook, membership, host);
+        }
+
+        private async Task<string> TrySendActivationMailAsync(DynamicObject user, MailHook activationMailHook, Membership membership, string host)
+        {
+	        try
+	        {
+		        if (membership.UserActivation == Status.Active)
+		        {
+			        if (activationMailHook != null && !string.IsNullOrEmpty(host))
+			        {
+				        var userDto = user.Deserialize<UserDto>();
+				        await this.SendActivationMailAsync(userDto.ToModel(), activationMailHook, membership, host);
+
+				        return userDto.EmailAddress;
+			        }
+			        else
+			        {
+				        this._logger.LogError("Activation mail could not be sent (ActivationMailHook: {Id}, Host: {Host})", activationMailHook?.Id, host);
+			        }
+		        }
+	        }
+	        catch (Exception ex)
+	        {
+		        this._logger.LogError(ex, "Activation mail could not be sent");
+	        }
+
+	        return null;
+        }
+
+        private async Task SendActivationMailAsync(User user, MailHook activationMailHook, Membership membership, string host)
+        {
+	        var activationToken = await this.GenerateActivationTokenAsync(user);
+	        var activationLink = this.GenerateActivationLink(activationToken, membership, host);
+	        this._mailHookService.SendHookMailAsync(activationMailHook, user.Id, membership.Id, new
+	        {
+		        user,
+		        activationLink
+	        });
+        }
+        
+        private async Task<MailHook> EnsureUserActivationAsync(Membership membership, CancellationToken cancellationToken = default)
+        {
+	        if (membership.UserActivation == Status.Active)
+	        {
+		        if (membership.MailProviders == null || !membership.MailProviders.Any())
+		        {
+			        throw ErtisAuthException.NotDefinedAnyMailProvider();
+		        }
+		        else
+		        {
+			        var activationMailHook = await this._mailHookService.GetUserActivationMailHookAsync(membership.Id, cancellationToken: cancellationToken);
+			        if (activationMailHook == null)
+			        {
+				        throw ErtisAuthException.ActivationMailHookWasNotDefined();
+			        }
+
+			        return activationMailHook;
+		        }
+	        }
+
+	        return null;
+        }
 
         private async Task<ActivationToken> GenerateActivationTokenAsync(User user, CancellationToken cancellationToken = default)
         {
@@ -695,7 +813,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        return activationToken;
         }
         
-        private static string GenerateActivationLink(ActivationToken activationToken, Membership membership, string host)
+        private string GenerateActivationLink(ActivationToken activationToken, Membership membership, string host)
         {
 	        var encryptedActivationToken = Identity.Cryptography.StringCipher.Encrypt(activationToken.Token, membership.Id);
 	        var encryptedSecretKey = Identity.Cryptography.StringCipher.Encrypt(membership.SecretKey, membership.Id);

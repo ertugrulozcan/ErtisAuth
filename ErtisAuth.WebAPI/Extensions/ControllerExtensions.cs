@@ -117,6 +117,11 @@ namespace ErtisAuth.WebAPI.Extensions
 			return controller.NotFound(ErtisAuthException.UserTypeNotFound(userTypeId, "_id").Error);
 		}
 		
+		public static BadRequestObjectResult HostRequired(this ControllerBase controller)
+		{
+			return controller.BadRequest(ErtisAuthException.HostRequired().Error);
+		}
+		
 		public static NotFoundObjectResult ApplicationNotFound(this ControllerBase controller, string applicationId)
 		{
 			return controller.NotFound(ErtisAuthException.ApplicationNotFound(applicationId));

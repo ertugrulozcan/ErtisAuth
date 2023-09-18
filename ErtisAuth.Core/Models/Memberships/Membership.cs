@@ -1,6 +1,7 @@
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Extensions.Mailkit.Providers;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace ErtisAuth.Core.Models.Memberships
 {
@@ -31,6 +32,10 @@ namespace ErtisAuth.Core.Models.Memberships
 
 		[JsonProperty("mail_providers")]
 		public IMailProvider[] MailProviders { get; set; }
+		
+		[JsonProperty("user_activation")]
+		[JsonConverter(typeof(StringEnumConverter))]
+		public Status UserActivation { get; set; }
 
 		[JsonProperty("sys")]
 		public SysModel Sys { get; set; }

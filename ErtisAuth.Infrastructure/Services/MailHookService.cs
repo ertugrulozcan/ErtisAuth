@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
@@ -22,11 +23,17 @@ namespace ErtisAuth.Infrastructure.Services
 {
     public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDto>, IMailHookService
     {
-	    #region Services
+	    #region Constants
 
-	    private readonly IUserService userService;
-	    private readonly IMailService mailService;
-	    private readonly IEventService eventService;
+	    private const string USER_ACTIVATION_MAIL_HOOK_NAME = "User Activation";
+
+	    #endregion
+	    
+	    #region Services
+	    
+	    private readonly IMailService _mailService;
+	    private readonly IEventService _eventService;
+	    private readonly IUserRepository _userRepository;
 
 	    #endregion
 	    
@@ -37,21 +44,21 @@ namespace ErtisAuth.Infrastructure.Services
 		/// </summary>
 		/// <param name="membershipService"></param>
 		/// <param name="eventService"></param>
-		/// <param name="userService"></param>
 		/// <param name="mailService"></param>
+		/// <param name="userRepository"></param>
 		/// <param name="mailHookRepository"></param>
 		public MailHookService(
 			IMembershipService membershipService, 
 			IEventService eventService,
-			IUserService userService,
 			IMailService mailService,
+			IUserRepository userRepository,
 			IMailHookRepository mailHookRepository) : base(membershipService, mailHookRepository)
 		{
-			this.userService = userService;
-			this.mailService = mailService;
-			this.eventService = eventService;
+			this._userRepository = userRepository;
+			this._mailService = mailService;
+			this._eventService = eventService;
 			
-			this.eventService.EventFired += EventServiceOnEventFired;
+			this._eventService.EventFired += EventServiceOnEventFired;
 			
 			this.OnCreated += this.MailhookCreatedEventHandler;
 			this.OnUpdated += this.MailhookUpdatedEventHandler;
@@ -80,7 +87,7 @@ namespace ErtisAuth.Infrastructure.Services
 				{
 					foreach (var mailHook in mailHooks.Items)
 					{
-						this.SendHookMailAsync(mailHook, ertisAuthEvent);
+						this.SendHookMail(mailHook, ertisAuthEvent);
 					}	
 				}
 			}
@@ -92,7 +99,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private async void MailhookCreatedEventHandler(object sender, CreateResourceEventArgs<MailHook> eventArgs)
 		{
-			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.MailhookCreated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -103,7 +110,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private async void MailhookUpdatedEventHandler(object sender, UpdateResourceEventArgs<MailHook> eventArgs)
 		{
-			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.MailhookUpdated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -115,7 +122,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private async void MailhookDeletedEventHandler(object sender, DeleteResourceEventArgs<MailHook> eventArgs)
 		{
-			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.MailhookDeleted,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -127,8 +134,18 @@ namespace ErtisAuth.Infrastructure.Services
 		#endregion
 		
 		#region Methods
+
+		private void SendHookMail(MailHook mailHook, IErtisAuthEvent ertisAuthEvent, CancellationToken cancellationToken = default)
+		{
+			this.SendHookMailAsync(
+				mailHook, 
+				ertisAuthEvent.UtilizerId, 
+				ertisAuthEvent.MembershipId, 
+				ertisAuthEvent,
+				cancellationToken: cancellationToken);
+		}
 		
-		private async void SendHookMailAsync(MailHook mailHook, IErtisAuthEvent ertisAuthEvent, CancellationToken cancellationToken = default)
+		public async void SendHookMailAsync(MailHook mailHook, string userId, string membershipId, object payload, CancellationToken cancellationToken = default)
 		{
 			if (mailHook.IsActive)
 			{
@@ -139,7 +156,8 @@ namespace ErtisAuth.Infrastructure.Services
 					var recipients = new List<Recipient>();
 					if (mailHook.SendToUtilizer)
 					{
-						var dynamicObject = await this.userService.GetAsync(membership.Id, ertisAuthEvent.UtilizerId, cancellationToken: cancellationToken);
+						var dto = await this._userRepository.FindOneAsync(userId, cancellationToken: cancellationToken);
+						var dynamicObject = dto == null ? null : new DynamicObject(dto);
 						var user = dynamicObject?.Deserialize<User>();
 						if (user != null)
 						{
@@ -164,9 +182,9 @@ namespace ErtisAuth.Infrastructure.Services
 							try
 							{
 								var formatter = new Ertis.TemplateEngine.Formatter();
-								var mailBody = formatter.Format(mailHook.MailTemplate, ertisAuthEvent);
-								var mailSubject = formatter.Format(mailHook.MailSubject, ertisAuthEvent);
-								await this.mailService.SendMailAsync(
+								var mailBody = formatter.Format(mailHook.MailTemplate, payload);
+								var mailSubject = formatter.Format(mailHook.MailSubject, payload);
+								await this._mailService.SendMailAsync(
 									mailProvider,
 									mailHook.FromName,
 									mailHook.FromAddress,
@@ -176,10 +194,10 @@ namespace ErtisAuth.Infrastructure.Services
 									cancellationToken: cancellationToken
 								);
 								
-								await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
+								await this._eventService.FireEventAsync(this, new ErtisAuthEvent(
 									ErtisAuthEventType.MailhookMailSent,
-									ertisAuthEvent.UtilizerId,
-									ertisAuthEvent.MembershipId,
+									userId,
+									membershipId,
 									new
 									{
 										recipients
@@ -191,10 +209,10 @@ namespace ErtisAuth.Infrastructure.Services
 								Console.WriteLine("The hook mail could not be sent!");
 								Console.WriteLine(ex);
 								
-								await this.eventService.FireEventAsync(this, new ErtisAuthEvent(
+								await this._eventService.FireEventAsync(this, new ErtisAuthEvent(
 									ErtisAuthEventType.MailhookMailFailed,
-									ertisAuthEvent.UtilizerId,
-									ertisAuthEvent.MembershipId,
+									userId,
+									membershipId,
 									new
 									{
 										recipients,
@@ -206,6 +224,17 @@ namespace ErtisAuth.Infrastructure.Services
 					}
 				}
 			}
+		}
+		
+		public async Task<MailHook> GetUserActivationMailHookAsync(string membershipId, CancellationToken cancellationToken = default)
+		{
+			return await this.GetAsync(membershipId, x =>
+					x.Name == USER_ACTIVATION_MAIL_HOOK_NAME &&
+					x.MembershipId == membershipId &&
+					x.Event == ErtisAuthEventType.UserCreated.ToString() &&
+					x.Status == "active" &&
+					x.SendToUtilizer == true,
+				cancellationToken: cancellationToken);
 		}
 
 		protected override bool ValidateModel(MailHook model, out IEnumerable<string> errors)

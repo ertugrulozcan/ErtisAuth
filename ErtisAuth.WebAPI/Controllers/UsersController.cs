@@ -138,7 +138,8 @@ namespace ErtisAuth.WebAPI.Controllers
 		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] DynamicObject model, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			var user = await this.userService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+			var host = this.Request.Headers.TryGetValue("Host", out var hostStringValue) ? hostStringValue.ToString() : null;
+			var user = await this.userService.CreateAsync(utilizer, membershipId, model, host, cancellationToken: cancellationToken);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user["_id"]}", user);
 		}
 		
@@ -194,6 +195,45 @@ namespace ErtisAuth.WebAPI.Controllers
 		public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids, CancellationToken cancellationToken = default)
 		{
 			return await this.BulkDeleteAsync(this.userService, membershipId, ids, cancellationToken: cancellationToken);
+		}
+
+		#endregion
+
+		#region Activation Mail Methods
+
+		[HttpPost("resend-activation-mail")]
+		[RbacAction(Rbac.CrudActions.Create)]
+		[ProducesResponseType(StatusCodes.Status201Created)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> ResendActivationMail([FromRoute] string membershipId, [FromBody] ResendActivationMailFormModel model, CancellationToken cancellationToken = default)
+		{
+			var host = this.Request.Headers.TryGetValue("Host", out var hostStringValue) ? hostStringValue.ToString() : null;
+			if (string.IsNullOrEmpty(host))
+			{
+				return this.HostRequired();
+			}
+
+			var user = await this.userService.GetByUsernameOrEmailAddressAsync(membershipId, model.EmailAddress);
+			if (user == null)
+			{
+				return this.UserNotFound(model.EmailAddress);
+			}
+			
+			var emailAddress = await this.userService.SendActivationMailAsync(membershipId, user.Id, host, cancellationToken: cancellationToken);
+			if (string.IsNullOrEmpty(emailAddress))
+			{
+				return this.Ok(new
+				{
+					emailAddress
+				});
+			}
+			else
+			{
+				return this.Unauthorized("Activation mail could not be sent");
+			}
 		}
 
 		#endregion

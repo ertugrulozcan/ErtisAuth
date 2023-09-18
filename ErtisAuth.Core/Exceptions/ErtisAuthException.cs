@@ -127,6 +127,21 @@ namespace ErtisAuth.Core.Exceptions
 		{
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"This membership is already using by some membership related resources, it's could not be deleted ({membershipId})", "MembershipCouldNotDeleted");
 		}
+		
+		public static ErtisAuthException NotDefinedAnyMailProvider()
+		{
+			return new ErtisAuthException(HttpStatusCode.NotImplemented, "No mail provider has been defined yet", "NotDefinedAnyMailProvider");
+		}
+		
+		public static ErtisAuthException ActivationMailHookWasNotDefined()
+		{
+			return new ErtisAuthException(HttpStatusCode.NotImplemented, "The activation mail hook was not defined or not configured correctly or passive", "ActivationMailHookWasNotDefined");
+		}
+		
+		public static ErtisAuthException UserAlreadyActive()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User already active", "UserAlreadyActive");
+		}
 
 		#endregion
 		
@@ -234,6 +249,11 @@ namespace ErtisAuth.Core.Exceptions
 		public static ErtisAuthException UserTypeCanNotBeDelete()
 		{
 			return new ErtisAuthException(HttpStatusCode.BadRequest, "This user type currently using by another users, it's cannot be deleted.", "UserTypeCanNotBeDelete");
+		}
+		
+		public static ErtisAuthException HostRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "The host header required for this action", "HostRequired");
 		}
 
 		#endregion
