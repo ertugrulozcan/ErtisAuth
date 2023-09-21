@@ -169,9 +169,14 @@ namespace ErtisAuth.Infrastructure.Services
 						}
 					}
 
+					var formatter = new Ertis.TemplateEngine.Formatter();
 					if (mailHook.Recipients != null)
 					{
-						recipients.AddRange(mailHook.Recipients);
+						recipients.AddRange(mailHook.Recipients.Select(x => new Recipient
+						{
+							DisplayName = formatter.Format(x.DisplayName, payload),
+							EmailAddress = formatter.Format(x.EmailAddress, payload)
+						}));
 					}
 
 					recipients = recipients.DistinctBy(x => x.EmailAddress).ToList();
@@ -181,7 +186,6 @@ namespace ErtisAuth.Infrastructure.Services
 						{
 							try
 							{
-								var formatter = new Ertis.TemplateEngine.Formatter();
 								var mailBody = formatter.Format(mailHook.MailTemplate, payload);
 								var mailSubject = formatter.Format(mailHook.MailSubject, payload);
 								await this._mailService.SendMailAsync(

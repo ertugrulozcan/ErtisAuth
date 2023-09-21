@@ -63,7 +63,7 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
         
         Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default);
         
-        Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host, CancellationToken cancellationToken = default);
+        Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default);
         
         Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default);
 
@@ -72,6 +72,8 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
         dynamic Aggregate(string membershipId, string aggregationStagesJson);
 
         Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default);
+        
+        Task<User> ActivateUserAsync(Utilizer utilizer, string membershipId, string activationCode, CancellationToken cancellationToken = default);
         
         #endregion
     }

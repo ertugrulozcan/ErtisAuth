@@ -138,7 +138,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] DynamicObject model, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			var host = this.Request.Headers.TryGetValue("Host", out var hostStringValue) ? hostStringValue.ToString() : null;
+			var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
 			var user = await this.userService.CreateAsync(utilizer, membershipId, model, host, cancellationToken: cancellationToken);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user["_id"]}", user);
 		}
@@ -199,8 +199,16 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		#endregion
 
-		#region Activation Mail Methods
-
+		#region User Activation Methods
+		
+		[HttpGet("activation/{activationCode}")]
+		[RbacAction(Rbac.CrudActions.Read)]
+		public async Task<IActionResult> ActivateUser([FromRoute] string membershipId, [FromRoute] string activationCode, CancellationToken cancellationToken = default)
+		{
+			var utilizer = this.GetUtilizer();
+			return this.Ok(await this.userService.ActivateUserAsync(utilizer, membershipId, activationCode, cancellationToken: cancellationToken));
+		}
+		
 		[HttpPost("resend-activation-mail")]
 		[RbacAction(Rbac.CrudActions.Create)]
 		[ProducesResponseType(StatusCodes.Status201Created)]
@@ -210,7 +218,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		public async Task<IActionResult> ResendActivationMail([FromRoute] string membershipId, [FromBody] ResendActivationMailFormModel model, CancellationToken cancellationToken = default)
 		{
-			var host = this.Request.Headers.TryGetValue("Host", out var hostStringValue) ? hostStringValue.ToString() : null;
+			var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
 			if (string.IsNullOrEmpty(host))
 			{
 				return this.HostRequired();
@@ -266,10 +274,16 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> ResetPassword([FromRoute] string membershipId, [FromBody] ResetPasswordFormModel model, CancellationToken cancellationToken = default)
+		public async Task<IActionResult> ResetPassword([FromRoute] string membershipId, [FromBody] string email_address, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			var resetPasswordToken = await this.userService.ResetPasswordAsync(utilizer, membershipId, model.EmailAddress, model.Server, model.Host, cancellationToken: cancellationToken);
+			var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
+			if (string.IsNullOrEmpty(host))
+			{
+				return this.HostRequired();
+			}
+			
+			var resetPasswordToken = await this.userService.ResetPasswordAsync(utilizer, membershipId, email_address, host, cancellationToken: cancellationToken);
 			return this.Ok(resetPasswordToken);
 		}
 		

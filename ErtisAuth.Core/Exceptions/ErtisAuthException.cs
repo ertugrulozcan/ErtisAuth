@@ -29,6 +29,11 @@ namespace ErtisAuth.Core.Exceptions
 		{
 			return new ValidationException(HttpStatusCode.Conflict, "There is no any difference between provided and existing document.", "IdenticalDocumentError");
 		}
+		
+		public static ErtisAuthException Synthetic(HttpStatusCode httpStatusCode, string errorMessage, string errorCode)
+		{
+			return new ErtisAuthException(httpStatusCode, errorMessage, errorCode);
+		}
 
 		#endregion
 		
@@ -253,7 +258,7 @@ namespace ErtisAuth.Core.Exceptions
 		
 		public static ErtisAuthException HostRequired()
 		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, "The host header required for this action", "HostRequired");
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "The X-Host header required for this action", "HostRequired");
 		}
 
 		#endregion

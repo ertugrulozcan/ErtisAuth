@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +28,7 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Events.EventArgs;
+using ErtisAuth.Identity.Cryptography;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Extensions;
 using ErtisAuth.Integrations.OAuth.Core;
@@ -39,6 +42,15 @@ namespace ErtisAuth.Infrastructure.Services
 	    #region Constants
 
 	    private const string CACHE_KEY = "users";
+	    private static readonly TimeSpan ACTIVATION_TOKEN_TTL = TimeSpan.FromHours(72);
+	    private static readonly TimeSpan RESET_PASSWORD_TOKEN_TTL = TimeSpan.FromHours(2);
+	    private static readonly CipherOptions CIPHER_OPTIONS = new()
+	    {
+		    BlockSize = 128,
+		    IterationCount = 100,
+		    Encoding = Encoding.ASCII,
+		    HashAlgorithm = HashAlgorithmName.SHA256
+	    };
 
 	    #endregion
 	    
@@ -642,7 +654,7 @@ namespace ErtisAuth.Infrastructure.Services
 		        )
 	        );
 	        
-	        return dynamicObject?.Deserialize<UserDto>()?.ToModel();
+	        return dynamicObject?.Deserialize<User>();
         }
         
         #endregion
@@ -691,7 +703,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        
 	        if (sourceProvider == KnownProviders.ErtisAuth)
 	        {
-		        this.SetPasswordHash(model, membership, password);    
+		        this.SetPasswordHash(model, membership, password);
 	        }
 	        
 	        var created = await base.CreateAsync(model, cancellationToken: cancellationToken);
@@ -744,7 +756,7 @@ namespace ErtisAuth.Infrastructure.Services
 			        if (activationMailHook != null && !string.IsNullOrEmpty(host))
 			        {
 				        var userDto = user.Deserialize<UserDto>();
-				        await this.SendActivationMailAsync(userDto.ToModel(), activationMailHook, membership, host);
+				        await this.SendActivationMailAsync(userDto.ToModel(), activationMailHook, membership.Id, host);
 
 				        return userDto.EmailAddress;
 			        }
@@ -762,11 +774,11 @@ namespace ErtisAuth.Infrastructure.Services
 	        return null;
         }
 
-        private async Task SendActivationMailAsync(User user, MailHook activationMailHook, Membership membership, string host)
+        private async Task SendActivationMailAsync(User user, MailHook activationMailHook, string membershipId, string host)
         {
 	        var activationToken = await this.GenerateActivationTokenAsync(user);
-	        var activationLink = this.GenerateActivationLink(activationToken, membership, host);
-	        this._mailHookService.SendHookMailAsync(activationMailHook, user.Id, membership.Id, new
+	        var activationLink = this.GenerateActivationLink(activationToken, membershipId, host);
+	        this._mailHookService.SendHookMailAsync(activationMailHook, user.Id, membershipId, new
 	        {
 		        user,
 		        activationLink
@@ -804,30 +816,71 @@ namespace ErtisAuth.Infrastructure.Services
 		        throw ErtisAuthException.MembershipNotFound(user.MembershipId);
 	        }
 	        
-	        var expiresIn = TimeSpan.FromHours(72);
-	        var tokenClaims = new TokenClaims(user.Id, user, membership, expiresIn);
+	        var tokenClaims = new TokenClaims(user.Id, user, membership, ACTIVATION_TOKEN_TTL);
 	        tokenClaims.AddClaim("token_type", "activation_token");
 	        var token = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
-	        var activationToken = new ActivationToken(token, expiresIn);
+	        var activationToken = new ActivationToken(token, ACTIVATION_TOKEN_TTL);
 
 	        return activationToken;
         }
         
-        private string GenerateActivationLink(ActivationToken activationToken, Membership membership, string host)
+        private string GenerateActivationLink(ActivationToken activationToken, string membershipId, string host)
         {
-	        var encryptedActivationToken = Identity.Cryptography.StringCipher.Encrypt(activationToken.Token, membership.Id);
-	        var encryptedSecretKey = Identity.Cryptography.StringCipher.Encrypt(membership.SecretKey, membership.Id);
 	        var payloadDictionary = new Dictionary<string, string>
 	        {
-		        { "encryptedResetPasswordToken", encryptedActivationToken },
-		        { "encryptedSecretKey", encryptedSecretKey },
-		        { "membershipId", membership.Id },
+		        { "activationToken", activationToken.Token }
 	        };
 
-	        var encodedPayload = Identity.Cryptography.StringCipher.Encrypt(string.Join('&', payloadDictionary.Select(x => $"{x.Key}={x.Value}")), membership.Id);
-	        var activationTokenPayload = $"{membership.Id}:{encodedPayload}";
-	        var urlEncodedPayload = System.Web.HttpUtility.UrlEncode(activationTokenPayload, Encoding.ASCII);
-	        return $"https://{host}/activation/{urlEncodedPayload}";
+	        var encodedPayload = StringCipher.Encrypt(string.Join('&', payloadDictionary.Select(x => $"{x.Key}={x.Value}")), membershipId, CIPHER_OPTIONS);
+	        var urlEncodedPayload = System.Web.HttpUtility.UrlEncode(encodedPayload, CIPHER_OPTIONS.Encoding);
+	        return $"{host}/activation/{urlEncodedPayload}";
+        }
+        
+        public async Task<User> ActivateUserAsync(Utilizer utilizer, string membershipId, string activationCode, CancellationToken cancellationToken = default)
+        {
+	        try
+	        {
+		        var urlDecodedPayload = System.Web.HttpUtility.UrlDecode(activationCode, CIPHER_OPTIONS.Encoding);
+		        var decodedPayload = StringCipher.Decrypt(urlDecodedPayload, membershipId, CIPHER_OPTIONS);
+		        var claimsDictionary = decodedPayload.Split('&').Select(x => x.Split('=')).ToDictionary(x => x[0], y => y[1]);
+		        if (claimsDictionary.TryGetValue("activationToken", out var activationToken))
+		        {
+			        if (this._jwtService.TryDecodeToken(activationToken, out var securityToken))
+			        {
+				        var expireTime = securityToken.ValidTo.ToLocalTime();
+				        if (DateTime.Now > expireTime)
+				        {
+					        // Token was expired!
+					        throw ErtisAuthException.TokenWasExpired();	
+				        }
+
+				        var userId = securityToken.Subject;
+				        var user = await this.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
+				        if (user != null)
+				        {
+					        user.SetValue("isActive", true, true);
+					        var updated = await this.UpdateAsync(utilizer, membershipId, userId, user, false, cancellationToken: cancellationToken);
+					        return updated?.Deserialize<User>();
+				        }
+				        else
+				        {
+					        throw ErtisAuthException.UserNotFound(userId, "_id");
+				        }
+			        }
+			        else
+			        {
+				        throw ErtisAuthException.InvalidToken();
+			        }
+		        }
+		        else
+		        {
+			        throw ErtisAuthException.InvalidToken();
+		        }
+	        }
+	        catch
+	        {
+		        throw ErtisAuthException.InvalidToken();
+	        }
         }
 
         #endregion
@@ -983,86 +1036,59 @@ namespace ErtisAuth.Infrastructure.Services
 
 		#region Forgot Password
 
-		public async Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host, CancellationToken cancellationToken = default)
+		public async Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrEmpty(emailAddress))
 			{
-				throw ErtisAuthException.ValidationError(new []
-				{
-					"Username or email required!"
-				});
-			}
-			
-			var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-			if (membership == null)
-			{
-				throw ErtisAuthException.MembershipNotFound(membershipId);
+				throw ErtisAuthException.Synthetic(HttpStatusCode.BadRequest, "Username or email address required", "UsernameOrEmailAddressRequired");
 			}
 
-			var user = await this.GetUserWithPasswordAsync(membershipId, emailAddress, emailAddress, cancellationToken: cancellationToken);
+			var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+			var user = await this.GetByUsernameOrEmailAddressAsync(membershipId, emailAddress);
 			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(emailAddress, "email_address");
 			}
+			
+			var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, RESET_PASSWORD_TOKEN_TTL);
+			tokenClaims.AddClaim("token_type", "reset_token");
+			
+			var resetToken = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
+			var resetPasswordToken = new ResetPasswordToken(resetToken, RESET_PASSWORD_TOKEN_TTL);
+			var resetPasswordLink = GenerateResetPasswordLink(
+				resetPasswordToken.Token, 
+				membershipId,
+				host);
 
-			if (utilizer.Role is ReservedRoles.Administrator or ReservedRoles.Server || utilizer.Id == user.Id)
+			var eventPayload = new
 			{
-				var expiresIn = TimeSpan.FromHours(1);
-				var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, expiresIn);
-				tokenClaims.AddClaim("token_type", "reset_token");
-				var resetToken = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
-				var resetPasswordToken = new ResetPasswordToken(resetToken, expiresIn);
-
-				var resetPasswordLink = GenerateResetPasswordTokenMailLink(
-					emailAddress, 
-					resetPasswordToken.Token, 
-					membershipId,
-					membership.SecretKey, 
-					server, 
-					host);
-
-				var eventPayload = new
-				{
-					resetPasswordToken,
-					resetPasswordLink,
-					user,
-					membership
-				};
+				resetPasswordToken,
+				resetPasswordLink,
+				user,
+				membership
+			};
 				
-				await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-				{
-					EventType = ErtisAuthEventType.UserPasswordReset,
-					UtilizerId = user.Id,
-					Document = eventPayload,
-					MembershipId = membershipId
-				}, cancellationToken: cancellationToken);
-
-				return resetPasswordToken;
-			}
-			else
+			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
-				throw ErtisAuthException.AccessDenied("Unauthorized access");
-			}
+				EventType = ErtisAuthEventType.UserPasswordReset,
+				UtilizerId = user.Id,
+				Document = eventPayload,
+				MembershipId = membershipId
+			}, cancellationToken: cancellationToken);
+
+			return resetPasswordToken;
 		}
 
-		private static string GenerateResetPasswordTokenMailLink(string emailAddress, string resetPasswordToken, string membershipId, string secretKey, string serverUrl, string host)
+		private static string GenerateResetPasswordLink(string resetPasswordToken, string membershipId, string host)
 		{
-			var encryptedResetPasswordToken = Identity.Cryptography.StringCipher.Encrypt(resetPasswordToken, membershipId);
-			var encryptedSecretKey = Identity.Cryptography.StringCipher.Encrypt(secretKey, membershipId);
 			var payloadDictionary = new Dictionary<string, string>
 			{
-				{ "emailAddress", emailAddress },
-				{ "encryptedSecretKey", encryptedSecretKey },
-				{ "serverUrl", serverUrl },
-				{ "membershipId", membershipId },
-				{ "encryptedResetPasswordToken", encryptedResetPasswordToken },
+				{ "resetPasswordToken", resetPasswordToken },
 			};
 
-			var encodedPayload = Identity.Cryptography.StringCipher.Encrypt(string.Join('&', payloadDictionary.Select(x => $"{x.Key}={x.Value}")), membershipId);
-			var resetPasswordPayload = $"{membershipId}:{encodedPayload}";
-			var urlEncodedPayload = System.Web.HttpUtility.UrlEncode(resetPasswordPayload, Encoding.ASCII);
-			var resetPasswordLink = $"https://{host}/set-password?token={urlEncodedPayload}";
-			return resetPasswordLink;
+			var encodedPayload = StringCipher.Encrypt(string.Join('&', payloadDictionary.Select(x => $"{x.Key}={x.Value}")), membershipId, CIPHER_OPTIONS);
+			var urlEncodedPayload = System.Web.HttpUtility.UrlEncode(encodedPayload, CIPHER_OPTIONS.Encoding);
+			return $"{host}/reset-password/{urlEncodedPayload}";
 		}
 
 		public async Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default)

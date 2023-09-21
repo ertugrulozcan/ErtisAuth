@@ -10,11 +10,9 @@ namespace ErtisAuth.Identity.Cryptography
     {
         #region Constants
         
-        // ReSharper disable once IdentifierTypo
-        private const int BLOCKSIZE = 128;
+        private const int BLOCK_SIZE = 128;
         
-        // ReSharper disable once IdentifierTypo
-        private const int CHUNKSIZE = BLOCKSIZE / 8;
+        private const int CHUNK_SIZE = BLOCK_SIZE / 8;
 
         private const int ITERATION_COUNT = 1000;
         
@@ -26,22 +24,40 @@ namespace ErtisAuth.Identity.Cryptography
         
         #region Methods
 
-        public static string Encrypt(string plainText, string passPhrase)
+        public static string Encrypt(string plainText, string passPhrase, CipherOptions options = null)
+        {
+            return Encrypt(
+                plainText,
+                passPhrase,
+                options?.BlockSize,
+                options?.IterationCount,
+                options?.Encoding,
+                options?.HashAlgorithm);
+        }
+
+        private static string Encrypt(
+            string plainText, 
+            string passPhrase, 
+            int? blockSize = null, 
+            int? iterationCount = null, 
+            Encoding encoding = null, 
+            HashAlgorithmName? hashAlgorithm = null)
         {
             if (string.IsNullOrEmpty(plainText))
             {
                 return plainText;
             }
             
-            var saltStringBytes = GenerateRandomEntropy();
-            var ivStringBytes = GenerateRandomEntropy();
-            var plainTextBytes = ENCODING.GetBytes(plainText);
-            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, ITERATION_COUNT, HASH_ALGORITHM))
+            var chunkSize = blockSize != null ? blockSize.Value / 8 : CHUNK_SIZE;
+            var saltStringBytes = GenerateRandomEntropy(chunkSize);
+            var ivStringBytes = GenerateRandomEntropy(chunkSize);
+            var plainTextBytes = (encoding ?? ENCODING).GetBytes(plainText);
+            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, iterationCount ?? ITERATION_COUNT, hashAlgorithm ?? HASH_ALGORITHM))
             {
-                var keyBytes = password.GetBytes(CHUNKSIZE);
+                var keyBytes = password.GetBytes(chunkSize);
                 using (var symmetricKey = Aes.Create())
                 {
-                    symmetricKey.BlockSize = BLOCKSIZE;
+                    symmetricKey.BlockSize = blockSize ?? BLOCK_SIZE;
                     symmetricKey.Mode = CipherMode.CBC;
                     symmetricKey.Padding = PaddingMode.PKCS7;
                     using (var encryptor = symmetricKey.CreateEncryptor(keyBytes, ivStringBytes))
@@ -68,8 +84,25 @@ namespace ErtisAuth.Identity.Cryptography
                 }
             }
         }
+        
+        public static string Decrypt(string cipherText, string passPhrase, CipherOptions options = null)
+        {
+            return Decrypt(
+                cipherText,
+                passPhrase,
+                options?.BlockSize,
+                options?.IterationCount,
+                options?.Encoding,
+                options?.HashAlgorithm);
+        }
 
-        public static string Decrypt(string cipherText, string passPhrase)
+        private static string Decrypt(
+            string cipherText, 
+            string passPhrase, 
+            int? blockSize = null, 
+            int? iterationCount = null, 
+            Encoding encoding = null, 
+            HashAlgorithmName? hashAlgorithm = null)
         {
             if (string.IsNullOrEmpty(cipherText))
             {
@@ -78,17 +111,18 @@ namespace ErtisAuth.Identity.Cryptography
             
             cipherText = Decode(cipherText);
             
+            var chunkSize = blockSize != null ? blockSize.Value / 8 : CHUNK_SIZE;
             var cipherTextBytesWithSaltAndIv = Convert.FromBase64String(cipherText);
-            var saltStringBytes = cipherTextBytesWithSaltAndIv.Take(CHUNKSIZE).ToArray();
-            var ivStringBytes = cipherTextBytesWithSaltAndIv.Skip(CHUNKSIZE).Take(CHUNKSIZE).ToArray();
-            var cipherTextBytes = cipherTextBytesWithSaltAndIv.Skip(CHUNKSIZE * 2).Take(cipherTextBytesWithSaltAndIv.Length - CHUNKSIZE * 2).ToArray();
+            var saltStringBytes = cipherTextBytesWithSaltAndIv.Take(chunkSize).ToArray();
+            var ivStringBytes = cipherTextBytesWithSaltAndIv.Skip(chunkSize).Take(chunkSize).ToArray();
+            var cipherTextBytes = cipherTextBytesWithSaltAndIv.Skip(chunkSize * 2).Take(cipherTextBytesWithSaltAndIv.Length - chunkSize * 2).ToArray();
 
-            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, ITERATION_COUNT, HASH_ALGORITHM))
+            using (var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, iterationCount ?? ITERATION_COUNT, hashAlgorithm ?? HASH_ALGORITHM))
             {
-                var keyBytes = password.GetBytes(CHUNKSIZE);
+                var keyBytes = password.GetBytes(chunkSize);
                 using (var symmetricKey = Aes.Create())
                 {
-                    symmetricKey.BlockSize = BLOCKSIZE;
+                    symmetricKey.BlockSize = blockSize ?? BLOCK_SIZE;
                     symmetricKey.Mode = CipherMode.CBC;
                     symmetricKey.Padding = PaddingMode.PKCS7;
                     using (var decryptTransform = symmetricKey.CreateDecryptor(keyBytes, ivStringBytes))
@@ -102,7 +136,7 @@ namespace ErtisAuth.Identity.Cryptography
                                 memoryStream.Close();
                                 cryptoStream.Close();
                                 
-                                var decrypted = ENCODING.GetString(plainTextBytes, 0, decryptedByteCount);
+                                var decrypted = (encoding ?? ENCODING).GetString(plainTextBytes, 0, decryptedByteCount);
                                 return decrypted;
                             }
                         }
@@ -111,9 +145,9 @@ namespace ErtisAuth.Identity.Cryptography
             }
         }
 
-        private static byte[] GenerateRandomEntropy()
+        private static byte[] GenerateRandomEntropy(int chunkSize)
         {
-            var randomBytes = new byte[CHUNKSIZE];
+            var randomBytes = new byte[chunkSize];
             using (var rngCsp = RandomNumberGenerator.Create())
             {
                 rngCsp.GetBytes(randomBytes);
@@ -180,6 +214,21 @@ namespace ErtisAuth.Identity.Cryptography
 
             return stringBuilder.ToString();
         }
+
+        #endregion
+    }
+
+    public class CipherOptions
+    {
+        #region Properties
+
+        public int BlockSize { get; init; } 
+        
+        public int IterationCount { get; init; } 
+        
+        public Encoding Encoding { get; init; } 
+        
+        public HashAlgorithmName HashAlgorithm { get; init; }
 
         #endregion
     }

@@ -119,7 +119,7 @@ namespace ErtisAuth.Tests.Mocks.Services
             throw new NotImplementedException();
         }
 
-        public Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string server, string host, CancellationToken cancellationToken = default)
+        public Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -141,6 +141,11 @@ namespace ErtisAuth.Tests.Mocks.Services
         }
 
         public Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public Task<User> ActivateUserAsync(Utilizer utilizer, string membershipId, string activationCode, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
