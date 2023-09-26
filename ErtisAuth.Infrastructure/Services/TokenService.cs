@@ -167,7 +167,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var user = await this.userService.GetUserWithPasswordAsync(membership.Id, username, username, cancellationToken: cancellationToken);
 			if (user == null)
 			{
-				throw ErtisAuthException.UserNotFound(username, "username or email");
+				throw ErtisAuthException.InvalidCredentials();
 			}
 			
 			if (!user.IsActive)
@@ -179,7 +179,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var passwordHash = this.cryptographyService.CalculatePasswordHash(membership, password);
 			if (passwordHash != user.PasswordHash)
 			{
-				throw ErtisAuthException.UsernameOrPasswordIsWrong();
+				throw ErtisAuthException.InvalidCredentials();
 			}
 			else
 			{
@@ -538,6 +538,12 @@ namespace ErtisAuth.Infrastructure.Services
 			var filteredActiveTokens = (logoutFromAllDevices ? activeTokens : new[] { activeTokens.FirstOrDefault(x => x.AccessToken == token) }).Where(x => x != null).ToArray();
 			if (filteredActiveTokens.Any())
 			{
+				var membership = await this.membershipService.GetAsync(user.MembershipId, cancellationToken: cancellationToken);
+				if (membership == null)
+				{
+					throw ErtisAuthException.MembershipNotFound(user.MembershipId);
+				}
+				
 				foreach (var activeToken in filteredActiveTokens)
 				{
 					var isRefreshToken = false;
@@ -548,12 +554,6 @@ namespace ErtisAuth.Infrastructure.Services
 					
 					await this.revokedTokenService.RevokeAsync(activeToken, user, isRefreshToken, cancellationToken: cancellationToken);
 					
-					var membership = await this.membershipService.GetAsync(user.MembershipId, cancellationToken: cancellationToken);
-					if (membership == null)
-					{
-						throw ErtisAuthException.MembershipNotFound(user.MembershipId);
-					}
-
 					if (!isRefreshToken)
 					{
 						var refreshToken = this.StimulateRefreshToken(activeToken.AccessToken, user, membership);
@@ -595,6 +595,49 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 
 			return null;
+		}
+
+		public async ValueTask RevokeAllAsync(string membershipId, string userId, bool fireEvent = true, CancellationToken cancellationToken = default)
+		{
+			var activeTokens = (await this.activeTokenService.GetActiveTokensByUser(userId, membershipId, cancellationToken: cancellationToken)).ToArray();
+			if (activeTokens.Any())
+			{
+				var user = (await this.userService.GetAsync(membershipId, userId, cancellationToken: cancellationToken))?.Deserialize<User>();
+				if (user == null)
+				{
+					throw ErtisAuthException.UserNotFound(userId, "_id");
+				}
+				
+				var membership = await this.membershipService.GetAsync(user.MembershipId, cancellationToken: cancellationToken);
+				if (membership == null)
+				{
+					throw ErtisAuthException.MembershipNotFound(user.MembershipId);
+				}
+				
+				foreach (var activeToken in activeTokens)
+				{
+					var isRefreshToken = false;
+					if (this.jwtService.TryDecodeToken(activeToken.AccessToken, out var securityToken))
+					{
+						isRefreshToken = this.IsRefreshToken(securityToken);
+					}
+					
+					await this.revokedTokenService.RevokeAsync(activeToken, user, isRefreshToken, cancellationToken: cancellationToken);
+
+					if (!isRefreshToken)
+					{
+						var refreshToken = this.StimulateRefreshToken(activeToken.AccessToken, user, membership);
+						if (!string.IsNullOrEmpty(refreshToken))
+						{
+							await this.RevokeRefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);	
+						}				
+					}
+
+					await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenRevoked, user, new { activeToken.AccessToken }) { MembershipId = membership.Id }, cancellationToken: cancellationToken);
+				}
+
+				await this.activeTokenService.BulkDeleteAsync(activeTokens, cancellationToken: cancellationToken);
+			}
 		}
 
 		#endregion

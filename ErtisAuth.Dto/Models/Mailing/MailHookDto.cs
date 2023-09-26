@@ -9,6 +9,9 @@ namespace ErtisAuth.Dto.Models.Mailing
 
         [BsonElement("name")]
         public string Name { get; set; }
+        
+        [BsonElement("slug")]
+        public string Slug { get; set; }
 		
         [BsonElement("description")]
         public string Description { get; set; }

@@ -124,6 +124,11 @@ namespace ErtisAuth.Tests.Mocks.Services
             throw new NotImplementedException();
         }
 
+        public Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress,
             string password, CancellationToken cancellationToken = default)
         {
@@ -146,6 +151,16 @@ namespace ErtisAuth.Tests.Mocks.Services
         }
         
         public Task<User> ActivateUserAsync(Utilizer utilizer, string membershipId, string activationCode, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public Task<User> ActivateUserByIdAsync(Utilizer utilizer, string membershipId, string userId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public Task<User> FreezeUserByIdAsync(Utilizer utilizer, string membershipId, string userId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

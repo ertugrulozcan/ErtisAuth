@@ -157,9 +157,9 @@ namespace ErtisAuth.WebAPI.Extensions
 			return controller.NotFound(ErtisAuthException.EventNotFound(eventId));
 		}
 
-		public static UnauthorizedObjectResult UsernameOrPasswordIsWrong(this ControllerBase controller)
+		public static UnauthorizedObjectResult InvalidCredentials(this ControllerBase controller)
 		{
-			return controller.Unauthorized(ErtisAuthException.UsernameOrPasswordIsWrong().Error);
+			return controller.Unauthorized(ErtisAuthException.InvalidCredentials().Error);
 		}
 		
 		public static UnauthorizedObjectResult InvalidToken(this ControllerBase controller)

@@ -150,7 +150,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			}
 			else
 			{
-				return this.UsernameOrPasswordIsWrong();
+				return this.InvalidCredentials();
 			}
 		}
 		

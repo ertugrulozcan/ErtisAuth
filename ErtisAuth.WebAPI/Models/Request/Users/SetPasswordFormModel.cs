@@ -8,9 +8,6 @@ namespace ErtisAuth.WebAPI.Models.Request.Users
 
 		[JsonProperty("email_address")]
 		public string EmailAddress { get; set; }
-		
-		[JsonProperty("email")]
-		public string Email { get; set; }
 
 		[JsonProperty("username")]
 		public string Username { get; set; }
@@ -29,10 +26,6 @@ namespace ErtisAuth.WebAPI.Models.Request.Users
 				if (!string.IsNullOrEmpty(this.EmailAddress))
 				{
 					return this.EmailAddress;
-				}
-				else if (!string.IsNullOrEmpty(this.Email))
-				{
-					return this.Email;
 				}
 				else if (!string.IsNullOrEmpty(this.Username))
 				{

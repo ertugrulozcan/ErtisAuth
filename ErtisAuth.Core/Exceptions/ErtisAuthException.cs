@@ -138,14 +138,14 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.NotImplemented, "No mail provider has been defined yet", "NotDefinedAnyMailProvider");
 		}
 		
-		public static ErtisAuthException ActivationMailHookWasNotDefined()
-		{
-			return new ErtisAuthException(HttpStatusCode.NotImplemented, "The activation mail hook was not defined or not configured correctly or passive", "ActivationMailHookWasNotDefined");
-		}
-		
 		public static ErtisAuthException UserAlreadyActive()
 		{
 			return new ErtisAuthException(HttpStatusCode.BadRequest, "User already active", "UserAlreadyActive");
+		}
+		
+		public static ErtisAuthException UserAlreadyInactive()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User already inactive", "UserAlreadyInactive");
 		}
 
 		#endregion
@@ -162,9 +162,9 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Unauthorized, $"User is inactive ({id})", "UserInactive");
 		}
 		
-		public static ErtisAuthException UsernameOrPasswordIsWrong()
+		public static ErtisAuthException InvalidCredentials()
 		{
-			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Username or password is wrong", "UsernameOrPasswordIsWrong");
+			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Username or password is invalid", "InvalidCredentials");
 		}
 		
 		public static ErtisAuthException UserWithSameUsernameAlreadyExists(string usernameOrEmail)
@@ -179,7 +179,7 @@ namespace ErtisAuth.Core.Exceptions
 		
 		public static ErtisAuthException PasswordMinLengthRuleError(int minLength)
 		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, $"The user password length must be a minimum of {minLength} characters.", "UsernameOrPasswordIsWrong");
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"The user password length must be a minimum of {minLength} characters.", "PasswordMinLengthRuleError");
 		}
 		
 		#endregion
@@ -396,6 +396,16 @@ namespace ErtisAuth.Core.Exceptions
 		public static ErtisAuthException MailHookWithSameNameAlreadyExists(string name)
 		{
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The mail hook with same name is already exists ({name})", "MailHookWithSameNameAlreadyExists");
+		}
+		
+		public static ErtisAuthException ActivationMailHookWasNotDefined()
+		{
+			return new ErtisAuthException(HttpStatusCode.NotImplemented, "The activation mail hook was not defined or not configured correctly or passive", "ActivationMailHookWasNotDefined");
+		}
+		
+		public static ErtisAuthException ResetPasswordMailHookWasNotDefined()
+		{
+			return new ErtisAuthException(HttpStatusCode.NotImplemented, "The reset password mail hook was not defined or not configured correctly or passive", "ResetPasswordMailHookWasNotDefined");
 		}
 
 		#endregion

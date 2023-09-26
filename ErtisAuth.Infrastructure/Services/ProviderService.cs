@@ -18,16 +18,24 @@ using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
 using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Integrations.OAuth.Extensions;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services
 {
 	public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDto>, IProviderService
 	{
+		#region Constants
+
+		private const string CACHE_KEY = "providers";
+
+		#endregion
+		
 		#region Services
 		
 		private readonly IUserService userService;
 		private readonly ITokenService tokenService;
 		private readonly IEventService eventService;
+		private readonly IMemoryCache _memoryCache;
 
 		#endregion
 		
@@ -41,16 +49,19 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="tokenService"></param>
 		/// <param name="eventService"></param>
 		/// <param name="providerRepository"></param>
+		/// <param name="memoryCache"></param>
 		public ProviderService(
 			IMembershipService membershipService,
 			IUserService userService,
 			ITokenService tokenService,
 			IEventService eventService, 
-			IProviderRepository providerRepository) : base(membershipService, providerRepository)
+			IProviderRepository providerRepository, 
+			IMemoryCache memoryCache) : base(membershipService, providerRepository)
 		{
 			this.userService = userService;
 			this.tokenService = tokenService;
 			this.eventService = eventService;
+			this._memoryCache = memoryCache;
 
 			this.OnCreated += this.ProviderCreatedEventHandler;
 			this.OnUpdated += this.ProviderUpdatedEventHandler;
@@ -226,11 +237,36 @@ namespace ErtisAuth.Infrastructure.Services
 		}
 
 		#endregion
+		
+		#region Cache Methods
+
+		private static string GetCacheKey(string membershipId)
+		{
+			return $"{CACHE_KEY}.{membershipId}";
+		}
+		
+		private static MemoryCacheEntryOptions GetCacheTTL()
+		{
+			return new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(24));
+		}
+
+		private void PurgeAllCache(string membershipId)
+		{
+			this._memoryCache.Remove(GetCacheKey(membershipId));
+		}
+
+		#endregion
 
 		#region Read Methods
 
 		public async Task<IEnumerable<Provider>> GetProvidersAsync(string membershipId, CancellationToken cancellationToken = default)
 		{
+			var cacheKey = GetCacheKey(membershipId);
+			if (this._memoryCache.TryGetValue<IEnumerable<Provider>>(cacheKey, out var cacheResults))
+			{
+				return cacheResults;
+			}
+			
 			var providerList = new List<Provider>();
 			var providers = await this.GetAsync(membershipId, null, null, false, null, null, cancellationToken: cancellationToken);
 			
@@ -275,9 +311,72 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			providerList.AddRange(providers.Items.Where(x => x.Name != KnownProviders.ErtisAuth.ToString()));
 
+			this._memoryCache.Set(cacheKey, providerList, GetCacheTTL());
 			return providerList;
 		}
 
+		#endregion
+		
+		#region Create Methods
+
+		public override Provider Create(Utilizer utilizer, string membershipId, Provider model)
+		{
+			var created = base.Create(utilizer, membershipId, model);
+			this.PurgeAllCache(membershipId);
+			return created;
+		}
+
+		public override async ValueTask<Provider> CreateAsync(Utilizer utilizer, string membershipId, Provider model, CancellationToken cancellationToken = default)
+		{
+			var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
+			this.PurgeAllCache(membershipId);
+			return created;
+		}
+
+		#endregion
+
+		#region Update Methods
+
+		public override Provider Update(Utilizer utilizer, string membershipId, Provider model)
+		{
+			var updated = base.Update(utilizer, membershipId, model);
+			this.PurgeAllCache(membershipId);
+			return updated;
+		}
+
+		public override async ValueTask<Provider> UpdateAsync(Utilizer utilizer, string membershipId, Provider model, CancellationToken cancellationToken = default)
+		{
+			var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
+			this.PurgeAllCache(membershipId);
+			return updated;
+		}
+
+		#endregion
+		
+		#region Delete Methods
+
+		public override bool Delete(Utilizer utilizer, string membershipId, string id)
+		{
+			var isDeleted = base.Delete(utilizer, membershipId, id);
+			if (isDeleted)
+			{
+				this.PurgeAllCache(membershipId);	
+			}
+			
+			return isDeleted;
+		}
+
+		public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+		{
+			var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+			if (isDeleted)
+			{
+				this.PurgeAllCache(membershipId);	
+			}
+			
+			return isDeleted;
+		}
+		
 		#endregion
 
 		#region Authentication Methods

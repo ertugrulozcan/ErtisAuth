@@ -19,7 +19,6 @@ using Ertis.Security.Cryptography;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Exceptions;
-using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Models.Events;
@@ -732,8 +731,8 @@ namespace ErtisAuth.Infrastructure.Services
 		        throw ErtisAuthException.UserNotFound(userId, "_id");
 	        }
 	        
-	        var userDto = dynamicObject.Deserialize<UserDto>();
-	        if (userDto.IsActive)
+	        var user = dynamicObject.Deserialize<UserDto>().ToModel();
+	        if (user.IsActive)
 	        {
 		        throw ErtisAuthException.UserAlreadyActive();
 	        }
@@ -744,10 +743,15 @@ namespace ErtisAuth.Infrastructure.Services
 		        throw ErtisAuthException.ActivationMailHookWasNotDefined();
 	        }
 	        
-	        return await this.TrySendActivationMailAsync(dynamicObject, activationMailHook, membership, host);
+	        return await this.TrySendActivationMailAsync(user, activationMailHook, membership, host);
         }
 
-        private async Task<string> TrySendActivationMailAsync(DynamicObject user, MailHook activationMailHook, Membership membership, string host)
+        private async Task TrySendActivationMailAsync(DynamicObject userDynamicObject, MailHook activationMailHook, Membership membership, string host)
+        {
+	        await this.TrySendActivationMailAsync(userDynamicObject.Deserialize<UserDto>().ToModel(), activationMailHook, membership, host);
+        }
+        
+        private async Task<string> TrySendActivationMailAsync(User user, MailHook activationMailHook, Membership membership, string host)
         {
 	        try
 	        {
@@ -755,10 +759,8 @@ namespace ErtisAuth.Infrastructure.Services
 		        {
 			        if (activationMailHook != null && !string.IsNullOrEmpty(host))
 			        {
-				        var userDto = user.Deserialize<UserDto>();
-				        await this.SendActivationMailAsync(userDto.ToModel(), activationMailHook, membership.Id, host);
-
-				        return userDto.EmailAddress;
+				        await this.SendActivationMailAsync(user, activationMailHook, membership.Id, host);
+				        return user.EmailAddress;
 			        }
 			        else
 			        {
@@ -880,6 +882,48 @@ namespace ErtisAuth.Infrastructure.Services
 	        catch
 	        {
 		        throw ErtisAuthException.InvalidToken();
+	        }
+        }
+        
+        public async Task<User> ActivateUserByIdAsync(Utilizer utilizer, string membershipId, string userId, CancellationToken cancellationToken = default)
+        {
+	        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+	        var user = await this.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
+	        if (user != null)
+	        {
+		        if (user.TryGetValue<bool>("isActive", out var isActive, out _) && isActive)
+		        {
+			        throw ErtisAuthException.UserAlreadyActive();
+		        }
+		        
+		        user.SetValue("isActive", true, true);
+		        var updated = await this.UpdateAsync(utilizer, membershipId, userId, user, cancellationToken: cancellationToken);
+		        return updated?.Deserialize<User>();
+	        }
+	        else
+	        {
+		        throw ErtisAuthException.UserNotFound(userId, "_id");
+	        }
+        }
+        
+        public async Task<User> FreezeUserByIdAsync(Utilizer utilizer, string membershipId, string userId, CancellationToken cancellationToken = default)
+        {
+	        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+	        var user = await this.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
+	        if (user != null)
+	        {
+		        if (user.TryGetValue<bool>("isActive", out var isActive, out _) && !isActive)
+		        {
+			        throw ErtisAuthException.UserAlreadyInactive();
+		        }
+		        
+		        user.SetValue("isActive", false, true);
+		        var updated = await this.UpdateAsync(utilizer, membershipId, userId, user, cancellationToken: cancellationToken);
+		        return updated?.Deserialize<User>();
+	        }
+	        else
+	        {
+		        throw ErtisAuthException.UserNotFound(userId, "_id");
 	        }
         }
 
@@ -1049,20 +1093,16 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				throw ErtisAuthException.UserNotFound(emailAddress, "email_address");
 			}
-			
-			var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, RESET_PASSWORD_TOKEN_TTL);
-			tokenClaims.AddClaim("token_type", "reset_token");
-			
-			var resetToken = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
-			var resetPasswordToken = new ResetPasswordToken(resetToken, RESET_PASSWORD_TOKEN_TTL);
+
+			var resetPasswordToken = this.GenerateResetPasswordToken(user, membership);
 			var resetPasswordLink = GenerateResetPasswordLink(
-				resetPasswordToken.Token, 
+				resetPasswordToken, 
 				membershipId,
 				host);
 
 			var eventPayload = new
 			{
-				resetPasswordToken,
+				resetPasswordToken.Token,
 				resetPasswordLink,
 				user,
 				membership
@@ -1075,20 +1115,93 @@ namespace ErtisAuth.Infrastructure.Services
 				Document = eventPayload,
 				MembershipId = membershipId
 			}, cancellationToken: cancellationToken);
+			
+			await this.SendResetPasswordMailAsync(resetPasswordToken, membership, user, host, cancellationToken: cancellationToken);
 
 			return resetPasswordToken;
 		}
+		
+		private async Task SendResetPasswordMailAsync(ResetPasswordToken resetPasswordToken, Membership membership, User user, string host = null, CancellationToken cancellationToken = default)
+		{
+			if (string.IsNullOrEmpty(host))
+			{
+				throw ErtisAuthException.HostRequired();
+			}
+	        
+			if (membership.MailProviders == null || !membership.MailProviders.Any())
+			{
+				throw ErtisAuthException.NotDefinedAnyMailProvider();
+			}
+	        
+			var resetPasswordMailHook = await this._mailHookService.GetResetPasswordMailHookAsync(membership.Id, cancellationToken: cancellationToken);
+			if (resetPasswordMailHook == null)
+			{
+				throw ErtisAuthException.ResetPasswordMailHookWasNotDefined();
+			}
+			
+			var resetPasswordLink = this.GenerateResetPasswordLink(resetPasswordToken, membership.Id, host);
+			this._mailHookService.SendHookMailAsync(resetPasswordMailHook, user.Id, membership.Id, new
+			{
+				user,
+				resetPasswordLink
+			}, cancellationToken: cancellationToken);
+		}
+		
+		private ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership)
+		{
+			var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, RESET_PASSWORD_TOKEN_TTL);
+			tokenClaims.AddClaim("token_type", "reset_token");
+			
+			var resetToken = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
+			return new ResetPasswordToken(resetToken, RESET_PASSWORD_TOKEN_TTL);
+		}
 
-		private static string GenerateResetPasswordLink(string resetPasswordToken, string membershipId, string host)
+		private string GenerateResetPasswordLink(ResetPasswordToken resetPasswordToken, string membershipId, string host)
 		{
 			var payloadDictionary = new Dictionary<string, string>
 			{
-				{ "resetPasswordToken", resetPasswordToken },
+				{ "resetPasswordToken", resetPasswordToken.Token },
 			};
 
 			var encodedPayload = StringCipher.Encrypt(string.Join('&', payloadDictionary.Select(x => $"{x.Key}={x.Value}")), membershipId, CIPHER_OPTIONS);
 			var urlEncodedPayload = System.Web.HttpUtility.UrlEncode(encodedPayload, CIPHER_OPTIONS.Encoding);
-			return $"{host}/reset-password/{urlEncodedPayload}";
+			return $"{host.TrimEnd('/')}?rpt={urlEncodedPayload}";
+		}
+
+		public async Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default)
+		{
+			var urlDecodedPayload = System.Web.HttpUtility.UrlDecode(resetToken, CIPHER_OPTIONS.Encoding);
+			var decodedPayload = StringCipher.Decrypt(urlDecodedPayload, membershipId, CIPHER_OPTIONS);
+			var claimsDictionary = decodedPayload.Split('&').Select(x => x.Split('=')).ToDictionary(x => x[0], y => y[1]);
+			if (claimsDictionary.TryGetValue("resetPasswordToken", out var resetPasswordToken))
+			{
+				if (this._jwtService.TryDecodeToken(resetPasswordToken, out var securityToken))
+				{
+					var expireTime = securityToken.ValidTo.ToLocalTime();
+					if (DateTime.Now > expireTime)
+					{
+						// Token was expired!
+						throw ErtisAuthException.TokenWasExpired();	
+					}
+				
+					var dynamicObject = await this.GetAsync(membershipId, securityToken.Subject, cancellationToken: cancellationToken);
+					if (dynamicObject == null)
+					{
+						throw ErtisAuthException.UserNotFound(securityToken.Subject, "_id");
+					}
+				
+					return dynamicObject.Deserialize<User>();
+				}
+				else
+				{
+					// Reset token could not decoded!
+					throw ErtisAuthException.InvalidToken();
+				}
+			}
+			else
+			{
+				throw ErtisAuthException.InvalidToken();
+			}
 		}
 
 		public async Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default)
@@ -1113,31 +1226,10 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.UserNotFound(usernameOrEmailAddress, "username or email_address");
 			}
 
-			if (utilizer.Role is ReservedRoles.Administrator or ReservedRoles.Server || utilizer.Id == user.Id)
-			{
-				if (this._jwtService.TryDecodeToken(resetToken, out var securityToken))
-				{
-					var expireTime = securityToken.ValidTo.ToLocalTime();
-					if (DateTime.Now > expireTime)
-					{
-						// Token was expired!
-						throw ErtisAuthException.TokenWasExpired();	
-					}
-
-					await this.ChangePasswordAsync(utilizer, membershipId, user.Id, password, cancellationToken: cancellationToken);
-				}
-				else
-				{
-					// Reset token could not decoded!
-					throw ErtisAuthException.InvalidToken();
-				}
-			}
-			else
-			{
-				throw ErtisAuthException.AccessDenied("Unauthorized access");
-			}
+			await this.VerifyResetTokenAsync(membershipId, resetToken, cancellationToken: cancellationToken);
+			await this.ChangePasswordAsync(utilizer, membershipId, user.Id, password, cancellationToken: cancellationToken);
 		}
-
+		
 		#endregion
 
 		#region Check Password

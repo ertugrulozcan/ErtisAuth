@@ -13,7 +13,8 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
             object payload,
             CancellationToken cancellationToken = default);
 
-        Task<MailHook> GetUserActivationMailHookAsync(string membershipId,
-            CancellationToken cancellationToken = default);
+        Task<MailHook> GetUserActivationMailHookAsync(string membershipId, CancellationToken cancellationToken = default);
+        
+        Task<MailHook> GetResetPasswordMailHookAsync(string membershipId, CancellationToken cancellationToken = default);
     }
 }

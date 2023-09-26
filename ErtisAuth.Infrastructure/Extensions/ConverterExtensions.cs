@@ -334,6 +334,7 @@ namespace ErtisAuth.Infrastructure.Extensions
             {
                 Id = dto.Id,
                 Name = dto.Name,
+                Slug = dto.Slug,
                 Description = dto.Description,
                 Event = dto.Event,
                 Status = dto.Status,
@@ -355,6 +356,7 @@ namespace ErtisAuth.Infrastructure.Extensions
             {
                 Id = model.Id,
                 Name = model.Name,
+                Slug = model.Slug,
                 Description = model.Description,
                 Event = model.Event,
                 Status = model.Status,

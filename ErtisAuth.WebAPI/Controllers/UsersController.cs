@@ -25,7 +25,8 @@ namespace ErtisAuth.WebAPI.Controllers
 	{
 		#region Services
 
-		private readonly IUserService userService;
+		private readonly IUserService _userService;
+		private readonly ITokenService _tokenService;
 		
 		#endregion
 
@@ -35,9 +36,11 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// Constructor
 		/// </summary>
 		/// <param name="userService"></param>
-		public UsersController(IUserService userService)
+		/// <param name="tokenService"></param>
+		public UsersController(IUserService userService, ITokenService tokenService)
 		{
-			this.userService = userService;
+			this._userService = userService;
+			this._tokenService = tokenService;
 		}
 
 		#endregion
@@ -53,7 +56,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		public async Task<ActionResult<User>> Get([FromRoute] string membershipId, [FromRoute] string id)
 		{
-			var user = await this.userService.GetAsync(membershipId, id);
+			var user = await this._userService.GetAsync(membershipId, id);
 			if (user != null)
 			{
 				return this.Ok(user);
@@ -75,7 +78,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
 			this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
 				
-			var users = await this.userService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+			var users = await this._userService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 			return this.Ok(users);
 		}
 		
@@ -96,7 +99,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdSegment))
 			{
 				var membershipId = membershipIdSegment?.ToString();
-				return await this.userService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
+				return await this._userService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 			}
 			else
 			{
@@ -121,7 +124,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 			this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 			
-			return this.Ok(await this.userService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+			return this.Ok(await this._userService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
 		}
 		
 		#endregion
@@ -139,7 +142,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		{
 			var utilizer = this.GetUtilizer();
 			var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
-			var user = await this.userService.CreateAsync(utilizer, membershipId, model, host, cancellationToken: cancellationToken);
+			var user = await this._userService.CreateAsync(utilizer, membershipId, model, host, cancellationToken: cancellationToken);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user["_id"]}", user);
 		}
 		
@@ -158,7 +161,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] DynamicObject model, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			var user = await this.userService.UpdateAsync(utilizer, membershipId, id, model, cancellationToken: cancellationToken);
+			var user = await this._userService.UpdateAsync(utilizer, membershipId, id, model, cancellationToken: cancellationToken);
 			return this.Ok(user);
 		}
 		
@@ -176,7 +179,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			if (await this.userService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+			if (await this._userService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
 			{
 				return this.NoContent();
 			}
@@ -194,19 +197,48 @@ namespace ErtisAuth.WebAPI.Controllers
 		[RbacAction(Rbac.CrudActions.Delete)]
 		public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids, CancellationToken cancellationToken = default)
 		{
-			return await this.BulkDeleteAsync(this.userService, membershipId, ids, cancellationToken: cancellationToken);
+			return await this.BulkDeleteAsync(this._userService, membershipId, ids, cancellationToken: cancellationToken);
 		}
 
 		#endregion
 
 		#region User Activation Methods
 		
+		[HttpGet("{id}/activate")]
+		[RbacObject("{id}")]
+		[RbacAction(Rbac.CrudActions.Update)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> ManualActivateUser([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+		{
+			var utilizer = this.GetUtilizer();
+			return this.Ok(await this._userService.ActivateUserByIdAsync(utilizer, membershipId, id, cancellationToken: cancellationToken));
+		}
+		
+		[HttpGet("{id}/freeze")]
+		[RbacObject("{id}")]
+		[RbacAction(Rbac.CrudActions.Update)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> ManualFreezeUser([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+		{
+			var utilizer = this.GetUtilizer();
+			await this._tokenService.RevokeAllAsync(membershipId, id, cancellationToken: cancellationToken);
+			return this.Ok(await this._userService.FreezeUserByIdAsync(utilizer, membershipId, id, cancellationToken: cancellationToken));
+		}
+		
 		[HttpGet("activation/{activationCode}")]
-		[RbacAction(Rbac.CrudActions.Read)]
+		[RbacAction(Rbac.CrudActions.Update)]
 		public async Task<IActionResult> ActivateUser([FromRoute] string membershipId, [FromRoute] string activationCode, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			return this.Ok(await this.userService.ActivateUserAsync(utilizer, membershipId, activationCode, cancellationToken: cancellationToken));
+			return this.Ok(await this._userService.ActivateUserAsync(utilizer, membershipId, activationCode, cancellationToken: cancellationToken));
 		}
 		
 		[HttpPost("resend-activation-mail")]
@@ -224,13 +256,13 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.HostRequired();
 			}
 
-			var user = await this.userService.GetByUsernameOrEmailAddressAsync(membershipId, model.EmailAddress);
+			var user = await this._userService.GetByUsernameOrEmailAddressAsync(membershipId, model.EmailAddress);
 			if (user == null)
 			{
 				return this.UserNotFound(model.EmailAddress);
 			}
 			
-			var emailAddress = await this.userService.SendActivationMailAsync(membershipId, user.Id, host, cancellationToken: cancellationToken);
+			var emailAddress = await this._userService.SendActivationMailAsync(membershipId, user.Id, host, cancellationToken: cancellationToken);
 			if (string.IsNullOrEmpty(emailAddress))
 			{
 				return this.Ok(new
@@ -259,7 +291,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		public async Task<IActionResult> ChangePassword([FromRoute] string membershipId, [FromRoute] string id, [FromBody] ChangePasswordFormModel model, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			await this.userService.ChangePasswordAsync(utilizer, membershipId, id, model.Password, cancellationToken: cancellationToken);
+			await this._userService.ChangePasswordAsync(utilizer, membershipId, id, model.Password, cancellationToken: cancellationToken);
 			return this.Ok();
 		}
 
@@ -274,7 +306,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> ResetPassword([FromRoute] string membershipId, [FromBody] string email_address, CancellationToken cancellationToken = default)
+		public async Task<IActionResult> ResetPassword([FromRoute] string membershipId, [FromBody] ResetPasswordFormModel model, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
 			var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
@@ -283,11 +315,31 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.HostRequired();
 			}
 			
-			var resetPasswordToken = await this.userService.ResetPasswordAsync(utilizer, membershipId, email_address, host, cancellationToken: cancellationToken);
-			return this.Ok(resetPasswordToken);
+			var resetPasswordToken = await this._userService.ResetPasswordAsync(utilizer, membershipId, model.EmailAddress, host, cancellationToken: cancellationToken);
+			return this.Ok(new
+			{
+				message = "Reset token generated",
+				expiresIn = resetPasswordToken.ExpiresIn
+			});
 		}
 		
-		[HttpPost("set-password", Order = 2)]
+		[HttpGet("verify-reset-token")]
+		[RbacAction("reset-password")]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> VerifyResetToken([FromRoute] string membershipId, [FromQuery] string token, CancellationToken cancellationToken = default)
+		{
+			var user = await this._userService.VerifyResetTokenAsync(membershipId, token, cancellationToken: cancellationToken);
+			return this.Ok(new
+			{
+				email_address = user.EmailAddress
+			});
+		}
+		
+		[HttpPost("set-password", Order = 3)]
 		[RbacAction("set-password")]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -297,7 +349,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		public async Task<IActionResult> SetPassword([FromRoute] string membershipId, [FromBody] SetPasswordFormModel model, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			await this.userService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password, cancellationToken: cancellationToken);
+			await this._userService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password, cancellationToken: cancellationToken);
 			return this.Ok();
 		}
 
@@ -320,7 +372,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.Unauthorized();
 			}
 			
-			if (await this.userService.CheckPasswordAsync(utilizer, password, cancellationToken: cancellationToken))
+			if (await this._userService.CheckPasswordAsync(utilizer, password, cancellationToken: cancellationToken))
 			{
 				return this.Ok();
 			}

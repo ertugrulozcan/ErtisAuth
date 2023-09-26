@@ -26,6 +26,8 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 
 		ValueTask<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true, CancellationToken cancellationToken = default);
 		
+		ValueTask RevokeAllAsync(string membershipId, string userId, bool fireEvent = true, CancellationToken cancellationToken = default);
+		
 		ValueTask ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default);
 		
 		ValueTask ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default);

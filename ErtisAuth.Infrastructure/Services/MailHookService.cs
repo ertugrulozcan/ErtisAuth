@@ -26,6 +26,15 @@ namespace ErtisAuth.Infrastructure.Services
 	    #region Constants
 
 	    private const string USER_ACTIVATION_MAIL_HOOK_NAME = "User Activation";
+	    private const string USER_ACTIVATION_MAIL_HOOK_SLUG = "user-activation";
+	    private const string RESET_PASSWORD_MAIL_HOOK_NAME = "Reset Password";
+	    private const string RESET_PASSWORD_MAIL_HOOK_SLUG = "reset-password";
+
+	    private static readonly string[] PredefinedAutonomouslyMailHooks =
+	    {
+		    USER_ACTIVATION_MAIL_HOOK_SLUG,
+		    RESET_PASSWORD_MAIL_HOOK_SLUG
+	    };
 
 	    #endregion
 	    
@@ -87,7 +96,10 @@ namespace ErtisAuth.Infrastructure.Services
 				{
 					foreach (var mailHook in mailHooks.Items)
 					{
-						this.SendHookMail(mailHook, ertisAuthEvent);
+						if (PredefinedAutonomouslyMailHooks.All(x => x != mailHook.Slug))
+						{
+							this.SendHookMail(mailHook, ertisAuthEvent);	
+						}
 					}	
 				}
 			}
@@ -236,8 +248,17 @@ namespace ErtisAuth.Infrastructure.Services
 					x.Name == USER_ACTIVATION_MAIL_HOOK_NAME &&
 					x.MembershipId == membershipId &&
 					x.Event == ErtisAuthEventType.UserCreated.ToString() &&
-					x.Status == "active" &&
-					x.SendToUtilizer == true,
+					x.Status == "active",
+				cancellationToken: cancellationToken);
+		}
+		
+		public async Task<MailHook> GetResetPasswordMailHookAsync(string membershipId, CancellationToken cancellationToken = default)
+		{
+			return await this.GetAsync(membershipId, x =>
+					x.Name == RESET_PASSWORD_MAIL_HOOK_NAME &&
+					x.MembershipId == membershipId &&
+					x.Event == ErtisAuthEventType.UserPasswordReset.ToString() &&
+					x.Status == "active",
 				cancellationToken: cancellationToken);
 		}
 
@@ -247,6 +268,11 @@ namespace ErtisAuth.Infrastructure.Services
 			if (string.IsNullOrEmpty(model.Name))
 			{
 				errorList.Add("name is a required field");
+			}
+			
+			if (string.IsNullOrEmpty(model.Slug))
+			{
+				errorList.Add("slug is a required field");
 			}
 
 			if (string.IsNullOrEmpty(model.MembershipId))
@@ -318,6 +344,11 @@ namespace ErtisAuth.Infrastructure.Services
 			if (string.IsNullOrEmpty(destination.Name))
 			{
 				destination.Name = source.Name;
+			}
+			
+			if (string.IsNullOrEmpty(destination.Slug))
+			{
+				destination.Slug = source.Slug;
 			}
 			
 			if (string.IsNullOrEmpty(destination.Description))
