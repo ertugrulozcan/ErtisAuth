@@ -59,6 +59,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			var user = await this._userService.GetAsync(membershipId, id);
 			if (user != null)
 			{
+				user.RemoveProperty("password_hash");
 				return this.Ok(user);
 			}
 			else
@@ -79,6 +80,11 @@ namespace ErtisAuth.WebAPI.Controllers
 			this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
 				
 			var users = await this._userService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+			foreach (var user in users.Items)
+			{
+				user.RemoveProperty("password_hash");
+			}
+			
 			return this.Ok(users);
 		}
 		
