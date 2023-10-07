@@ -9,6 +9,6 @@
 
     <ItemGroup>
         <PackageReference Include="Ertis.Net" Version="7.0.6" />
-        <PackageReference Include="Google.Apis.Auth" Version="1.62.0" />
+        <PackageReference Include="Google.Apis.Auth" Version="1.62.1" />
     </ItemGroup>
 </Project>
