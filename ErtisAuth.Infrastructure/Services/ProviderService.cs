@@ -407,6 +407,10 @@ namespace ErtisAuth.Infrastructure.Services
 							{
 								user = request.ToUser(membershipId, provider.DefaultRole, provider.DefaultUserType) as User;
 							}
+							else if (!user.IsActive)
+							{
+								throw ErtisAuthException.UserInactive(user.Id);
+							}
 						
 							this.EnsureConnectedAccounts(user, request, provider);
 							var dynamicUser = new DynamicObject(user);
