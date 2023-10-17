@@ -383,64 +383,56 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public async ValueTask<BearerToken> LoginAsync(IProviderLoginRequest request, string membershipId, string ipAddress = null, string userAgent = null, CancellationToken cancellationToken = default)
 		{
-			try
+			var provider = await this.GetAsync(membershipId, (x) => x.MembershipId == membershipId && x.Name == request.Provider.ToString(), cancellationToken: cancellationToken);
+			if (provider != null)
 			{
-				var provider = await this.GetAsync(membershipId, (x) => x.MembershipId == membershipId && x.Name == request.Provider.ToString(), cancellationToken: cancellationToken);
-				if (provider != null)
+				if (provider.IsActive != null && provider.IsActive.Value)
 				{
-					if (provider.IsActive != null && provider.IsActive.Value)
+					var providerAuthenticator = provider.GetAuthenticator();
+					var isVerified = await providerAuthenticator.VerifyTokenAsync(request, provider, cancellationToken: cancellationToken);
+					if (isVerified)
 					{
-						var providerAuthenticator = provider.GetAuthenticator();
-						var isVerified = await providerAuthenticator.VerifyTokenAsync(request, provider, cancellationToken: cancellationToken);
-						if (isVerified)
+						var utilizer = new Utilizer
 						{
-							var utilizer = new Utilizer
-							{
-								Role = ReservedRoles.Administrator,
-								Type = Utilizer.UtilizerType.System,
-								MembershipId = membershipId
-							};
+							Role = ReservedRoles.Administrator,
+							Type = Utilizer.UtilizerType.System,
+							MembershipId = membershipId
+						};
 						
-							var user = await this.FindUserAsync(request, provider, membershipId, cancellationToken: cancellationToken);
-							var isNewUser = user == null;
-							if (isNewUser)
-							{
-								user = request.ToUser(membershipId, provider.DefaultRole, provider.DefaultUserType) as User;
-							}
-							else if (!user.IsActive)
-							{
-								throw ErtisAuthException.UserInactive(user.Id);
-							}
-						
-							this.EnsureConnectedAccounts(user, request, provider);
-							var dynamicUser = new DynamicObject(user);
-							this.SetAvatar(dynamicUser, request);
-						
-							var upsertedUser = isNewUser ?
-								await this.userService.CreateAsync(utilizer, membershipId, dynamicUser, cancellationToken: cancellationToken) :
-								await this.userService.UpdateAsync(utilizer, membershipId, user.Id, dynamicUser, false, cancellationToken: cancellationToken);
-						
-							return await this.tokenService.GenerateTokenAsync(upsertedUser.Deserialize<User>(), membershipId, ipAddress, userAgent, cancellationToken: cancellationToken);
-						}
-						else
+						var user = await this.FindUserAsync(request, provider, membershipId, cancellationToken: cancellationToken);
+						var isNewUser = user == null;
+						if (isNewUser)
 						{
-							throw ErtisAuthException.Unauthorized("Token was not verified by provider");
+							user = request.ToUser(membershipId, provider.DefaultRole, provider.DefaultUserType) as User;
 						}
+						else if (!user.IsActive)
+						{
+							throw ErtisAuthException.UserInactive(user.Id);
+						}
+						
+						this.EnsureConnectedAccounts(user, request, provider);
+						var dynamicUser = new DynamicObject(user);
+						this.SetAvatar(dynamicUser, request);
+						
+						var upsertedUser = isNewUser ?
+							await this.userService.CreateAsync(utilizer, membershipId, dynamicUser, cancellationToken: cancellationToken) :
+							await this.userService.UpdateAsync(utilizer, membershipId, user.Id, dynamicUser, false, cancellationToken: cancellationToken);
+						
+						return await this.tokenService.GenerateTokenAsync(upsertedUser.Deserialize<User>(), membershipId, ipAddress, userAgent, cancellationToken: cancellationToken);
 					}
 					else
 					{
-						throw ErtisAuthException.ProviderIsDisable();
+						throw ErtisAuthException.Unauthorized("Token was not verified by provider");
 					}
 				}
 				else
 				{
-					throw ErtisAuthException.ProviderNotConfigured();
+					throw ErtisAuthException.ProviderIsDisable();
 				}
 			}
-			catch (Exception ex)
+			else
 			{
-				Console.WriteLine(ex);
-				throw ErtisAuthException.ProviderNotConfiguredCorrectly(ex.Message);
+				throw ErtisAuthException.ProviderNotConfigured();
 			}
 		}
 
