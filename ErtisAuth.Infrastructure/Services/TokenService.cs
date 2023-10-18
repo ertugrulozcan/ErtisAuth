@@ -177,7 +177,7 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			// Check password
 			var passwordHash = this.cryptographyService.CalculatePasswordHash(membership, password);
-			if (passwordHash != user.PasswordHash)
+			if (string.IsNullOrEmpty(passwordHash?.Trim()) || string.IsNullOrEmpty(user.PasswordHash?.Trim()) || passwordHash != user.PasswordHash)
 			{
 				throw ErtisAuthException.InvalidCredentials();
 			}

@@ -121,8 +121,8 @@ namespace ErtisAuth.Infrastructure.Services
 						    Name = "password_hash",
 						    DisplayName = "Password",
 						    Description = "Password Hash",
-						    DefaultValue = "",
-						    IsRequired = true,
+						    DefaultValue = null,
+						    IsRequired = false,
 						    IsHidden = true,
 						    IsReadonly = true
 					    },

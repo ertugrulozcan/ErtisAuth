@@ -1254,7 +1254,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 
 			var passwordHash = this._cryptographyService.CalculatePasswordHash(membership, password);
-			return user.PasswordHash == passwordHash;
+			return !string.IsNullOrEmpty(passwordHash?.Trim()) && !string.IsNullOrEmpty(user.PasswordHash?.Trim()) && user.PasswordHash == passwordHash;
 		}
 		
 		#endregion
