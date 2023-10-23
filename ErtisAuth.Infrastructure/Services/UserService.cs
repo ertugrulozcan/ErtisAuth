@@ -510,6 +510,15 @@ namespace ErtisAuth.Infrastructure.Services
 	        }
         }
         
+        [SuppressMessage("Performance", "CA1822:Mark members as static")]
+        private void EnsurePasswordHash(DynamicObject model, DynamicObject current)
+        {
+	        if (!model.ContainsProperty("password_hash") && current.TryGetValue<string>("password_hash", out var passwordHash, out _))
+	        {
+		        model.SetValue("password_hash", passwordHash, true);
+	        }
+        }
+        
         // ReSharper disable once MemberCanBeMadeStatic.Local
         private void SetPasswordHash(DynamicObject model, Membership membership, string password)
         {
@@ -938,6 +947,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        this.EnsureManagedProperties(model, membershipId);
 	        model = this.SyncModel(membershipId, userId, model, out var current);
 	        await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current, cancellationToken: cancellationToken);
+	        this.EnsurePasswordHash(model, current);
 	        var updated = await base.UpdateAsync(userId, model, cancellationToken: cancellationToken);
 	        this.HidePasswordHash(current);
 	        this.HidePasswordHash(updated);
