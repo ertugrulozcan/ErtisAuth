@@ -140,6 +140,29 @@ namespace ErtisAuth.Infrastructure.Services
 					errorList.Add("DefaultUserType is a required field");
 				}
 			}
+
+			if (model.Name == KnownProviders.Apple.ToString())
+			{
+				if (string.IsNullOrEmpty(model.TeamId))
+				{
+					errorList.Add("TeamId is a required field");
+				}
+				
+				if (string.IsNullOrEmpty(model.PrivateKey))
+				{
+					errorList.Add("PrivateKey is a required field");
+				}
+				
+				if (string.IsNullOrEmpty(model.PrivateKeyId))
+				{
+					errorList.Add("PrivateKeyId is a required field");
+				}
+				
+				if (string.IsNullOrEmpty(model.RedirectUri))
+				{
+					errorList.Add("RedirectUri is a required field");
+				}
+			}
 			
 			errors = errorList;
 			return !errors.Any();

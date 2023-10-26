@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services.Interfaces;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Integrations.OAuth.Apple;
 using ErtisAuth.Integrations.OAuth.Facebook;
 using ErtisAuth.Integrations.OAuth.Google;
 using ErtisAuth.Integrations.OAuth.Microsoft;
@@ -370,6 +371,27 @@ namespace ErtisAuth.WebAPI.Controllers
 			}
 			
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
+		}
+		
+		[HttpPost]
+		[Route("oauth/apple/login")]
+		public async Task<IActionResult> AppleLogin([FromBody] AppleLoginModel request)
+		{
+			var membershipId = this.GetXErtisAlias();
+			
+			string ipAddress = null;
+			if (this.Request.Headers.TryGetValue("X-IpAddress", out var ipAddressHeader))
+			{
+				ipAddress = ipAddressHeader.ToString();
+			}
+			
+			string userAgent = null;
+			if (this.Request.Headers.TryGetValue("X-UserAgent", out var userAgentHeader))
+			{
+				userAgent = userAgentHeader.ToString();
+			}
+			
+			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request.ToLoginRequest(), membershipId, ipAddress: ipAddress, userAgent: userAgent));
 		}
 
 		#endregion

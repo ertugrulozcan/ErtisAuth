@@ -18,5 +18,6 @@
         <ProjectReference Include="..\ErtisAuth.Extensions.Database\ErtisAuth.Extensions.Database.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Http\ErtisAuth.Extensions.Http.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Quartz\ErtisAuth.Extensions.Quartz.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Apple\ErtisAuth.Integrations.OAuth.Apple.csproj" />
     </ItemGroup>
 </Project>

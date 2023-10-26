@@ -1,3 +1,4 @@
+using ErtisAuth.Integrations.OAuth.Apple;
 using ErtisAuth.Integrations.OAuth.Facebook;
 using ErtisAuth.Integrations.OAuth.Google;
 using ErtisAuth.Integrations.OAuth.Microsoft;
@@ -15,6 +16,7 @@ namespace ErtisAuth.Integrations.OAuth.Extensions
 			services.AddSingleton<IFacebookAuthenticator, FacebookAuthenticator>();
 			services.AddSingleton<IGoogleAuthenticator, GoogleAuthenticator>();
 			services.AddSingleton<IMicrosoftAuthenticator, MicrosoftAuthenticator>();
+			services.AddSingleton<IAppleAuthenticator, AppleAuthenticator>();
 		}
 		
 		public static void UseProviders(this IApplicationBuilder applicationBuilder)

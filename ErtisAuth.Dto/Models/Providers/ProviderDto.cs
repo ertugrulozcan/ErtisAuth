@@ -22,8 +22,20 @@ namespace ErtisAuth.Dto.Models.Providers
 		[BsonElement("appClientId")]
 		public string AppClientId { get; set; }
 		
+		[BsonElement("teamId")]
+		public string TeamId { get; set; }
+		
 		[BsonElement("tenantId")]
 		public string TenantId { get; set; }
+		
+		[BsonElement("privateKey")]
+		public string PrivateKey { get; set; }
+		
+		[BsonElement("privateKeyId")]
+		public string PrivateKeyId { get; set; }
+		
+		[BsonElement("redirectUri")]
+		public string RedirectUri { get; set; }
 		
 		[BsonElement("isActive")]
 		public bool? IsActive { get; set; }

@@ -5,6 +5,7 @@ namespace ErtisAuth.Integrations.OAuth.Core
 		ErtisAuth,
 		Facebook,
 		Google,
-		Microsoft
+		Microsoft,
+		Apple
 	}
 }

@@ -300,7 +300,11 @@ namespace ErtisAuth.Infrastructure.Extensions
                 DefaultRole = dto.DefaultRole,
                 DefaultUserType = dto.DefaultUserType,
                 AppClientId = dto.AppClientId,
+                TeamId = dto.TeamId,
                 TenantId = dto.TenantId,
+                PrivateKey = dto.PrivateKey,
+                PrivateKeyId = dto.PrivateKeyId,
+                RedirectUri = dto.RedirectUri,
                 IsActive = dto.IsActive,
                 MembershipId = dto.MembershipId,
                 Sys = dto.Sys?.ToModel()
@@ -317,7 +321,11 @@ namespace ErtisAuth.Infrastructure.Extensions
                 DefaultRole = model.DefaultRole,
                 DefaultUserType = model.DefaultUserType,
                 AppClientId = model.AppClientId,
+                TeamId = model.TeamId,
                 TenantId = model.TenantId,
+                PrivateKey = model.PrivateKey,
+                PrivateKeyId = model.PrivateKeyId,
+                RedirectUri = model.RedirectUri,
                 IsActive = model.IsActive,
                 MembershipId = model.MembershipId,
                 Sys = model.Sys?.ToDto()
