@@ -27,6 +27,18 @@ namespace ErtisAuth.WebAPI.Models.Request.Providers
 		[JsonProperty("tenantId")]
 		public string TenantId { get; set; }
 		
+		[JsonProperty("teamId")]
+		public string TeamId { get; set; }
+		
+		[JsonProperty("privateKey")]
+		public string PrivateKey { get; set; }
+		
+		[JsonProperty("privateKeyId")]
+		public string PrivateKeyId { get; set; }
+		
+		[JsonProperty("redirectUri")]
+		public string RedirectUri { get; set; }
+		
 		[JsonProperty("isActive")]
 		public bool? IsActive { get; set; }
 		

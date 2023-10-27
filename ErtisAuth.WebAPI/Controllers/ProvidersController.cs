@@ -77,6 +77,10 @@ namespace ErtisAuth.WebAPI.Controllers
 					DefaultUserType = model.DefaultUserType,
 					AppClientId = model.AppClientId,
 					TenantId = model.TenantId,
+					TeamId = model.TeamId,
+					PrivateKey = model.PrivateKey,
+					PrivateKeyId = model.PrivateKeyId,
+					RedirectUri = model.RedirectUri,
 					IsActive = model.IsActive,
 					MembershipId = membershipId
 				};
