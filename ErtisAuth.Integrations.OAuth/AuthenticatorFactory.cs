@@ -2,6 +2,7 @@ using System;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Abstractions;
+using ErtisAuth.Integrations.OAuth.Apple;
 using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Integrations.OAuth.Facebook;
 using ErtisAuth.Integrations.OAuth.Google;
@@ -28,15 +29,7 @@ namespace ErtisAuth.Integrations.OAuth
 
 		public static AuthenticatorFactory Current
 		{
-			get
-			{
-				if (self == null)
-				{
-					self = new AuthenticatorFactory();
-				}
-
-				return self;
-			}
+			get { return self ??= new AuthenticatorFactory(); }
 		}
 
 		#endregion
@@ -66,6 +59,10 @@ namespace ErtisAuth.Integrations.OAuth
 			else if (provider.Name == KnownProviders.Microsoft.ToString())
 			{
 				return this._serviceProvider.GetRequiredService<IMicrosoftAuthenticator>();
+			}
+			else if (provider.Name == KnownProviders.Apple.ToString())
+			{
+				return this._serviceProvider.GetRequiredService<IAppleAuthenticator>();
 			}
 			else
 			{
