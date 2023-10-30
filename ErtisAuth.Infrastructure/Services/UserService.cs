@@ -946,8 +946,8 @@ namespace ErtisAuth.Infrastructure.Services
 	        var userType = await this.GetUserTypeAsync(model, membershipId, true, cancellationToken: cancellationToken);
 	        this.EnsureManagedProperties(model, membershipId);
 	        model = this.SyncModel(membershipId, userId, model, out var current);
-	        await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current, cancellationToken: cancellationToken);
 	        this.EnsurePasswordHash(model, current);
+	        await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current, cancellationToken: cancellationToken);
 	        var updated = await base.UpdateAsync(userId, model, cancellationToken: cancellationToken);
 	        this.HidePasswordHash(current);
 	        this.HidePasswordHash(updated);
@@ -964,7 +964,11 @@ namespace ErtisAuth.Infrastructure.Services
         // ReSharper disable once MemberCanBeMadeStatic.Local
         private DynamicObject SyncModel(string membershipId, string userId, DynamicObject model, out DynamicObject current)
         {
-	        current = this.GetAsync(membershipId, userId).ConfigureAwait(false).GetAwaiter().GetResult();
+	        current = base.FindOneAsync(
+		        QueryBuilder.Equals("membership_id", membershipId), 
+		        QueryBuilder.Equals("_id", QueryBuilder.ObjectId(userId))
+		    ).ConfigureAwait(false).GetAwaiter().GetResult();
+	        
 	        if (current == null)
 	        {
 		        throw ErtisAuthException.UserNotFound(userId, "_id");

@@ -464,39 +464,53 @@ namespace ErtisAuth.Infrastructure.Services
 			try
 			{
 				var user = await this.tokenService.GetTokenOwnerUserAsync(token, cancellationToken: cancellationToken);
-				if (user is { ConnectedAccounts: { } })
+				if (user is { ConnectedAccounts: not null })
 				{
-					var clearedConnectedAccounts = new List<ProviderAccountInfo>();
+					var needUserUpdate = false;
+					var connectedAccounts = new List<ProviderAccountInfo>();
 					foreach (var accountInfo in user.ConnectedAccounts)
 					{
 						if (!string.IsNullOrEmpty(accountInfo.Token))
 						{
 							var provider = await this.GetAsync(user.MembershipId, (x) => x.MembershipId == user.MembershipId && x.Name == accountInfo.Provider, cancellationToken: cancellationToken);
-							if (provider is { IsActive: { } } && provider.IsActive.Value)
+							if (provider is { IsActive: not null } && provider.IsActive.Value)
 							{
 								var providerAuthenticator = provider.GetAuthenticator();
 								await providerAuthenticator.RevokeTokenAsync(accountInfo.Token, provider, cancellationToken: cancellationToken);
+								
+								connectedAccounts.Add(new ProviderAccountInfo
+								{
+									Provider = accountInfo.Provider,
+									UserId = accountInfo.UserId,
+									Token = null
+								});
+								
+								needUserUpdate = true;
+							}
+							else
+							{
+								connectedAccounts.Add(accountInfo);
 							}
 						}
-					
-						clearedConnectedAccounts.Add(new ProviderAccountInfo
+						else
 						{
-							Provider = accountInfo.Provider,
-							UserId = accountInfo.UserId,
-							Token = null
-						});
+							connectedAccounts.Add(accountInfo);
+						}
 					}
-				
-					var utilizer = new Utilizer
-					{
-						Role = ReservedRoles.Administrator,
-						Type = Utilizer.UtilizerType.System,
-						MembershipId = user.MembershipId
-					};
 
-					user.ConnectedAccounts = clearedConnectedAccounts.ToArray();
-					var dynamicUser = new DynamicObject(user);
-					await this.userService.UpdateAsync(utilizer, user.MembershipId, user.Id, dynamicUser, false, cancellationToken: cancellationToken);
+					if (needUserUpdate)
+					{
+						var utilizer = new Utilizer
+						{
+							Role = ReservedRoles.Administrator,
+							Type = Utilizer.UtilizerType.System,
+							MembershipId = user.MembershipId
+						};
+
+						user.ConnectedAccounts = connectedAccounts.ToArray();
+						var dynamicUser = new DynamicObject(user);
+						await this.userService.UpdateAsync(utilizer, user.MembershipId, user.Id, dynamicUser, false, cancellationToken: cancellationToken);	
+					}
 				}
 			}
 			catch (Exception ex)
