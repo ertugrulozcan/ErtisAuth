@@ -16,8 +16,6 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
 {
 	#region Properties
 
-	private string CollectionName { get; }
-    
 	// ReSharper disable once ReturnTypeCanBeEnumerable.Global
 	protected virtual IIndexDefinition[] Indexes => Array.Empty<IIndexDefinition>();
 
@@ -32,10 +30,14 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
 	/// <param name="settings"></param>
 	/// <param name="collectionName"></param>
 	/// <param name="actionBinder"></param>
-	protected DynamicRepositoryBase(IMongoClientProvider clientProvider, IDatabaseSettings settings, string collectionName, IRepositoryActionBinder actionBinder = null) : 
+	protected DynamicRepositoryBase(
+		IMongoClientProvider clientProvider, 
+		IDatabaseSettings settings, 
+		string collectionName, 
+		IRepositoryActionBinder actionBinder = null) : 
 		base(clientProvider, settings, collectionName, actionBinder)
 	{
-		this.CollectionName = collectionName;
+		
 	}
 
 	#endregion

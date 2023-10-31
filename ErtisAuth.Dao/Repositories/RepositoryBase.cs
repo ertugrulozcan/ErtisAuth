@@ -16,9 +16,7 @@ namespace ErtisAuth.Dao.Repositories;
 public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IRepositoryBase where TDto : IEntity<string>
 {
 	#region Properties
-
-	private string CollectionName { get; }
-    
+	
 	// ReSharper disable once ReturnTypeCanBeEnumerable.Global
 	protected virtual IIndexDefinition[] Indexes => Array.Empty<IIndexDefinition>();
 
@@ -33,10 +31,14 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 	/// <param name="settings"></param>
 	/// <param name="collectionName"></param>
 	/// <param name="actionBinder"></param>
-	protected RepositoryBase(IMongoClientProvider clientProvider, IDatabaseSettings settings, string collectionName, IRepositoryActionBinder actionBinder = null) : 
+	protected RepositoryBase(
+		IMongoClientProvider clientProvider, 
+		IDatabaseSettings settings, 
+		string collectionName, 
+		IRepositoryActionBinder actionBinder = null) : 
 		base(clientProvider, settings, collectionName, actionBinder)
 	{
-		this.CollectionName = collectionName;
+		
 	}
 
 	#endregion
