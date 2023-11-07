@@ -4,7 +4,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ertis.MongoDB" Version="7.2.7" />
+        <PackageReference Include="Ertis.MongoDB" Version="7.2.9" />
         <PackageReference Include="MongoDB.Driver" Version="2.22.0" />
     </ItemGroup>
 
