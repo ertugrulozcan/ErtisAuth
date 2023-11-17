@@ -24,6 +24,7 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
+using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Events.EventArgs;
@@ -58,6 +59,7 @@ namespace ErtisAuth.Infrastructure.Services
         private readonly IUserTypeService _userTypeService;
         private readonly IMembershipService _membershipService;
         private readonly IRoleService _roleService;
+        private readonly IAccessControlService _accessControlService;
         private readonly IEventService _eventService;
         private readonly IJwtService _jwtService;
         private readonly ICryptographyService _cryptographyService;
@@ -75,6 +77,7 @@ namespace ErtisAuth.Infrastructure.Services
         /// <param name="userTypeService"></param>
         /// <param name="membershipService"></param>
         /// <param name="roleService"></param>
+        /// <param name="accessControlService"></param>
         /// <param name="eventService"></param>
         /// <param name="jwtService"></param>
         /// <param name="cryptographyService"></param>
@@ -87,6 +90,7 @@ namespace ErtisAuth.Infrastructure.Services
             IUserTypeService userTypeService, 
             IMembershipService membershipService, 
             IRoleService roleService,
+            IAccessControlService accessControlService,
             IEventService eventService,
             IJwtService jwtService,
             ICryptographyService cryptographyService,
@@ -98,6 +102,7 @@ namespace ErtisAuth.Infrastructure.Services
             this._userTypeService = userTypeService;
             this._membershipService = membershipService;
             this._roleService = roleService;
+            this._accessControlService = accessControlService;
             this._eventService = eventService;
             this._jwtService = jwtService;
             this._cryptographyService = cryptographyService;
@@ -294,7 +299,7 @@ namespace ErtisAuth.Infrastructure.Services
 
         #region Role Methods
 
-        private async Task EnsureRoleAsync(DynamicObject model, string membershipId, CancellationToken cancellationToken = default)
+        private async Task<Role> EnsureRoleAsync(DynamicObject model, string membershipId, CancellationToken cancellationToken = default)
         {
 	        var roleName = model.GetValue<string>("role");
 	        if (string.IsNullOrEmpty(roleName))
@@ -307,6 +312,8 @@ namespace ErtisAuth.Infrastructure.Services
 	        {
 		        throw ErtisAuthException.RoleNotFound(roleName, true);
 	        }
+
+	        return role;
         }
 
         #endregion
@@ -951,6 +958,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        var userType = await this.GetUserTypeAsync(model, membershipId, true, cancellationToken: cancellationToken);
 	        this.EnsureManagedProperties(model, membershipId);
 	        model = this.SyncModel(membershipId, userId, model, out var current);
+	        await this.CheckRoleUpdatePermissionAsync(utilizer, membershipId, model, current, cancellationToken: cancellationToken);
 	        this.EnsurePasswordHash(model, current);
 	        await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current, cancellationToken: cancellationToken);
 	        var updated = await base.UpdateAsync(userId, model, cancellationToken: cancellationToken);
@@ -983,6 +991,21 @@ namespace ErtisAuth.Infrastructure.Services
 	        model.RemoveProperty("_id");
 
 	        return model;
+        }
+
+        private async Task CheckRoleUpdatePermissionAsync(Utilizer utilizer, string membershipId, DynamicObject model, DynamicObject current, CancellationToken cancellationToken = default)
+        {
+	        // Is role changed?
+	        var role = await this.EnsureRoleAsync(current, membershipId, cancellationToken: cancellationToken);
+	        model.TryGetValue<string>("role", out var roleName);
+	        if (!string.IsNullOrEmpty(roleName) && roleName != role.Name)
+	        {
+		        // Is authorized for user update
+		        if (!this._accessControlService.HasPermission(role, new Rbac(new RbacSegment(utilizer.Id), new RbacSegment("users"), Rbac.CrudActionSegments.Update, new RbacSegment(utilizer.Id))))
+		        {
+			        throw ErtisAuthException.Unauthorized("You are not authorized for this action");
+		        }
+	        }
         }
 
         #endregion
