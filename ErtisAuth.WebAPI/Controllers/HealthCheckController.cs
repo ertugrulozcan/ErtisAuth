@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Ertis.MongoDB.Database;
 using ErtisAuth.Abstractions.Services.Interfaces;
-using ErtisAuth.WebAPI.Adapters;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers
@@ -93,13 +92,6 @@ namespace ErtisAuth.WebAPI.Controllers
 		public IActionResult Ping()
 		{
 			return this.Ok("Pong");
-		}
-		
-		// ReSharper disable once StringLiteralTypo
-		[HttpGet("dblogs")]
-		public IActionResult DbLogs()
-		{
-			return this.Ok(MongoLogger.Current.Logs.OrderByDescending(x => x.LogTime));
 		}
 
 		#endregion

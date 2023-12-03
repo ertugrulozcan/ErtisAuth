@@ -59,9 +59,9 @@ namespace ErtisAuth.WebAPI.Adapters
 				}
 			}
 
-			if (this.httpContextAccessor.HttpContext != null && this.httpContextAccessor.HttpContext.Items.ContainsKey("SysUtilizer"))
+			if (this.httpContextAccessor.HttpContext != null && this.httpContextAccessor.HttpContext.Items.TryGetValue("SysUtilizer", out var utilizer))
 			{
-				return this.httpContextAccessor.HttpContext.Items["SysUtilizer"].ToString();
+				return utilizer?.ToString();
 			}
 			
 			return null;
