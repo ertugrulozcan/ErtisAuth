@@ -24,9 +24,9 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 		{
 			this.roleService = new MockRoleService();
 			this.userService = new MockUserService();
-			this.userService.OnCreated += (sender, args) => { };
-			this.userService.OnUpdated += (sender, args) => { };
-			this.userService.OnDeleted += (sender, args) => { };
+			this.userService.OnCreated += (_, _) => { };
+			this.userService.OnUpdated += (_, _) => { };
+			this.userService.OnDeleted += (_, _) => { };
 			
 			this.accessControlService = new AccessControlService(this.roleService);
 		}
@@ -41,7 +41,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("admin", "test_membership");
 			const string rbac = "*.users.read.*";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 		
 		[Test]
@@ -50,7 +50,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("admin", "test_membership");
 			const string rbac = "*.users.create.*";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 		
 		[Test]
@@ -59,7 +59,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("admin", "test_membership");
 			const string rbac = "*.users.update.*";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 		
 		[Test]
@@ -68,7 +68,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("admin", "test_membership");
 			const string rbac = "*.users.delete.*";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 		
 		[Test]
@@ -77,7 +77,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("admin", "test_membership");
 			const string rbac = "*.users.read.test_utilizer";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 		
 		[Test]
@@ -86,7 +86,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("admin", "test_membership");
 			const string rbac = "*.users.create.test_utilizer";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 		
 		[Test]
@@ -95,7 +95,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("admin", "test_membership");
 			const string rbac = "*.users.update.test_utilizer";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 		
 		[Test]
@@ -104,7 +104,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("admin", "test_membership");
 			const string rbac = "*.users.delete.test_utilizer";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 		
 		[Test]
@@ -113,7 +113,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("readonly", "test_membership");
 			const string rbac = "*.users.read.forbid_user_id";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 		
 		[Test]
@@ -122,7 +122,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("readonly", "test_membership");
 			const string rbac = "*.users.create.forbid_user_id";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsFalse(hasPermission);
+			Assert.That(!hasPermission);
 		}
 		
 		[Test]
@@ -131,7 +131,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("readonly", "test_membership");
 			const string rbac = "*.users.update.forbid_user_id";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsFalse(hasPermission);
+			Assert.That(!hasPermission);
 		}
 		
 		[Test]
@@ -140,7 +140,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var role = this.roleService.GetByName("readonly", "test_membership");
 			const string rbac = "*.users.delete.forbid_user_id";
 			var hasPermission = this.accessControlService.HasPermission(role, rbac);
-			Assert.IsFalse(hasPermission);
+			Assert.That(!hasPermission);
 		}
 		
 		[Test]
@@ -150,7 +150,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var user = dynamicObject.Deserialize<User>();
 			const string rbac = "*.users.read.*";
 			var hasPermission = this.accessControlService.HasPermission(user, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 		
 		[Test]
@@ -160,7 +160,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var user = dynamicObject.Deserialize<User>();
 			const string rbac = "*.users.create.*";
 			var hasPermission = this.accessControlService.HasPermission(user, rbac);
-			Assert.IsFalse(hasPermission);
+			Assert.That(!hasPermission);
 		}
 
 		[Test]
@@ -170,7 +170,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var user = dynamicObject.Deserialize<User>();
 			const string rbac = "*.users.update.*";
 			var hasPermission = this.accessControlService.HasPermission(user, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 		
 		[Test]
@@ -180,7 +180,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var user = dynamicObject.Deserialize<User>();
 			const string rbac = "*.users.delete.*";
 			var hasPermission = this.accessControlService.HasPermission(user, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 
 		[Test]
@@ -190,7 +190,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var user = dynamicObject.Deserialize<User>();
 			const string rbac = "*.users.create.*";
 			var hasPermission = this.accessControlService.HasPermission(user, rbac);
-			Assert.IsTrue(hasPermission);
+			Assert.That(hasPermission);
 		}
 
 		[Test]
@@ -200,7 +200,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var user = dynamicObject.Deserialize<User>();
 			const string rbac = "*.users.update.*";
 			var hasPermission = this.accessControlService.HasPermission(user, rbac);
-			Assert.IsFalse(hasPermission);
+			Assert.That(!hasPermission);
 		}
 		
 		[Test]
@@ -210,7 +210,7 @@ namespace ErtisAuth.Tests.Infrastructure.Services
 			var user = dynamicObject.Deserialize<User>();
 			const string rbac = "*.users.delete.*";
 			var hasPermission = this.accessControlService.HasPermission(user, rbac);
-			Assert.IsFalse(hasPermission);
+			Assert.That(!hasPermission);
 		}
 		
 		#endregion
