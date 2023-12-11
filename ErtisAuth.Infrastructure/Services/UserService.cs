@@ -1000,10 +1000,18 @@ namespace ErtisAuth.Infrastructure.Services
 	        model.TryGetValue<string>("role", out var roleName);
 	        if (!string.IsNullOrEmpty(roleName) && roleName != role.Name)
 	        {
-		        // Is authorized for user update
-		        if (!this._accessControlService.HasPermission(role, new Rbac(new RbacSegment(utilizer.Id), new RbacSegment("users"), Rbac.CrudActionSegments.Update, new RbacSegment(utilizer.Id))))
+		        var utilizerRole = await this._roleService.GetByNameAsync(utilizer.Role, utilizer.MembershipId, cancellationToken: cancellationToken);
+		        if (utilizerRole != null)
 		        {
-			        throw ErtisAuthException.Unauthorized("You are not authorized for this action");
+			        // Is authorized for user update
+			        if (!this._accessControlService.HasPermission(utilizerRole, new Rbac(new RbacSegment(utilizer.Id), new RbacSegment("users"), Rbac.CrudActionSegments.Update, new RbacSegment(utilizer.Id))))
+			        {
+				        throw ErtisAuthException.Unauthorized("You are not authorized for this action");
+			        }   
+		        }
+		        else
+		        {
+			        throw ErtisAuthException.Unauthorized("Utilizer role not found");
 		        }
 	        }
         }
