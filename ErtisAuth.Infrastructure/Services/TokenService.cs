@@ -227,7 +227,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 			if (fireEvent)
 			{
-				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenGenerated, user, bearerToken) { MembershipId = membership.Id }, cancellationToken: cancellationToken);	
+				await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenGenerated, user, new { user, token = bearerToken }) { MembershipId = membership.Id }, cancellationToken: cancellationToken);	
 			}
 			
 			return bearerToken;
