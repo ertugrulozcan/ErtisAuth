@@ -111,7 +111,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public async Task<IEnumerable<ActiveToken>> GetActiveTokensByUser(string userId, string membershipId, CancellationToken cancellationToken = default)
 		{
-			var expiredActiveTokensResult = await this.repository.FindAsync(x => x.UserId == userId && x.MembershipId == membershipId, cancellationToken: cancellationToken);
+			var expiredActiveTokensResult = await this.repository.FindAsync(x => x.UserId == userId && x.MembershipId == membershipId, sorting: null, cancellationToken: cancellationToken);
 			return expiredActiveTokensResult.Items.Select(x => x.ToModel());
 		}
 
@@ -124,7 +124,7 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			try
 			{
-				var expiredActiveTokensResult = await this.repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.Now, cancellationToken: cancellationToken);
+				var expiredActiveTokensResult = await this.repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.Now, sorting: null, cancellationToken: cancellationToken);
 				var expiredActiveTokens = expiredActiveTokensResult.Items.ToArray();
 				if (expiredActiveTokens.Any())
 				{

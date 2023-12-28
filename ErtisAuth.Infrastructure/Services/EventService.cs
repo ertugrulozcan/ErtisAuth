@@ -273,7 +273,7 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 			
-			var result = this.repository.Query(x => x.Id == id && x.MembershipId == membershipId, 0, 1);
+			var result = this.repository.Query(x => x.Id == id && x.MembershipId == membershipId, 0, 1, sorting: null);
 			if (result?.Items != null && result.Items.Any())
 			{
 				return result.Items.FirstOrDefault();
@@ -290,7 +290,7 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 			
-			var result = await this.repository.QueryAsync(x => x.Id == id && x.MembershipId == membershipId, 0, 1, cancellationToken: cancellationToken);
+			var result = await this.repository.QueryAsync(x => x.Id == id && x.MembershipId == membershipId, 0, 1, sorting: null, cancellationToken: cancellationToken);
 			if (result?.Items != null && result.Items.Any())
 			{
 				return result.Items.FirstOrDefault();

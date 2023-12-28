@@ -44,7 +44,7 @@ namespace ErtisAuth.Infrastructure.Services
         public virtual async Task<DynamicObject> FindOneAsync(params IQuery[] queries)
         {
             var query = QueryBuilder.Where(queries);
-            var matches = await this._repository.FindAsync(query.ToString());
+            var matches = await this._repository.FindAsync(query.ToString(), sorting: null);
             var item = matches.Items.FirstOrDefault();
             return item == null ? null : new DynamicObject(item);
         }

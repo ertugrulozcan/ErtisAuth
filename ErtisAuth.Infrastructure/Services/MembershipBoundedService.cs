@@ -107,7 +107,7 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 			
-			var entities = await this.repository.FindAsync(expression, cancellationToken: cancellationToken);
+			var entities = await this.repository.FindAsync(expression, sorting: null, cancellationToken: cancellationToken);
 			var entity = entities.Items.FirstOrDefault(x => x.MembershipId == membershipId);
 			return Mapper.Current.Map<TDto, TModel>(entity);
 		}

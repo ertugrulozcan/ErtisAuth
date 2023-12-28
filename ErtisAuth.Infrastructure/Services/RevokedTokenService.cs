@@ -94,7 +94,7 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			try
 			{
-				var revokedTokensResult = await this.repository.FindAsync(x => x.MembershipId == membershipId && x.RevokedAt < DateTime.Now.AddHours(24), cancellationToken: cancellationToken);
+				var revokedTokensResult = await this.repository.FindAsync(x => x.MembershipId == membershipId && x.RevokedAt < DateTime.Now.AddHours(24), sorting: null, cancellationToken: cancellationToken);
 				var revokedTokens = revokedTokensResult.Items.ToArray();
 				if (revokedTokens.Any())
 				{

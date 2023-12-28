@@ -18,7 +18,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Core" Version="7.0.4" />
+      <PackageReference Include="Ertis.Core" Version="7.0.5" />
       <PackageReference Include="MailKit" Version="4.3.0" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
