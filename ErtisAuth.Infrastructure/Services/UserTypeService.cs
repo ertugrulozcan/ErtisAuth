@@ -72,7 +72,7 @@ namespace ErtisAuth.Infrastructure.Services
 						    Name = "lastname",
 						    DisplayName = "Last Name",
 						    Description = "Last Name",
-						    IsRequired = true,
+						    IsRequired = false,
 					    },
 					    new StringFieldInfo
 					    {
@@ -136,7 +136,7 @@ namespace ErtisAuth.Infrastructure.Services
 					    },
 					    new StringFieldInfo
 					    {
-						    Name = "sourceProvider",
+						    Name = "source_provider",
 						    DisplayName = "Source Provider",
 						    Description = "Initial User Provider",
 						    DefaultValue = "ErtisAuth",
@@ -145,7 +145,7 @@ namespace ErtisAuth.Infrastructure.Services
 					    },
 					    new ArrayFieldInfo
 					    {
-						    Name = "connectedAccounts",
+						    Name = "connected_accounts",
 						    DisplayName = "Connected Accounts",
 						    Description = "Connected Provider Accounts",
 						    IsRequired = false,
@@ -176,7 +176,7 @@ namespace ErtisAuth.Infrastructure.Services
 					    },
 					    new BooleanFieldInfo
 					    {
-						    Name = "isActive",
+						    Name = "is_active",
 						    DisplayName = "Is Active",
 						    DefaultValue = false,
 						    IsRequired = true,

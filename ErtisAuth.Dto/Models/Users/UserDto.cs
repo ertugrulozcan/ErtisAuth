@@ -41,13 +41,13 @@ namespace ErtisAuth.Dto.Models.Users
 		[BsonElement("user_type")]
 		public string UserType { get; set; }
 		
-		[BsonElement("sourceProvider")]
+		[BsonElement("source_provider")]
 		public string SourceProvider { get; set; }
 		
-		[BsonElement("connectedAccounts")]
+		[BsonElement("connected_accounts")]
 		public ProviderAccountInfo[] ConnectedAccounts { get; set; }
 		
-		[BsonElement("isActive")]
+		[BsonElement("is_active")]
 		public bool IsActive { get; set; }
 		
 		[BsonElement("password_hash")]

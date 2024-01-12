@@ -523,8 +523,8 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			var query = QueryBuilder.Where(
 				QueryBuilder.Equals("membership_id", membershipId), 
-				QueryBuilder.Equals("connectedAccounts.Provider", provider.Name), 
-				QueryBuilder.Equals("connectedAccounts.UserId", request.UserId)).ToString();
+				QueryBuilder.Equals("connected_accounts.Provider", provider.Name), 
+				QueryBuilder.Equals("connected_accounts.UserId", request.UserId)).ToString();
 			var queryUsersResult = await this.userService.QueryAsync(membershipId, query, 0, 1, cancellationToken: cancellationToken);
 			if (queryUsersResult.Items.Any())
 			{

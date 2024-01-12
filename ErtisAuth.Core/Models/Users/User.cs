@@ -35,13 +35,13 @@ namespace ErtisAuth.Core.Models.Users
 		[JsonProperty("user_type")]
 		public string UserType { get; set; }
 		
-		[JsonProperty("sourceProvider")]
+		[JsonProperty("source_provider")]
 		public string SourceProvider { get; set; }
 		
-		[JsonProperty("connectedAccounts")]
+		[JsonProperty("connected_accounts")]
 		public ProviderAccountInfo[] ConnectedAccounts { get; set; }
 		
-		[JsonProperty("isActive")]
+		[JsonProperty("is_active")]
 		public bool IsActive { get; set; }
 		
 		[JsonProperty("sys")]

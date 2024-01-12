@@ -549,12 +549,12 @@ namespace ErtisAuth.Infrastructure.Services
         {
 	        try
 	        {
-		        if (!model.ContainsProperty("sourceProvider"))
+		        if (!model.ContainsProperty("source_provider"))
 		        {
 			        return KnownProviders.ErtisAuth;
 		        }
 		        
-		        var sourceProviderName = model.GetValue<string>("sourceProvider");
+		        var sourceProviderName = model.GetValue<string>("source_provider");
 		        return Enum.Parse<KnownProviders>(sourceProviderName);
 	        }
 	        catch
@@ -708,7 +708,7 @@ namespace ErtisAuth.Infrastructure.Services
         {
 	        var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
 	        var activationMailHook = await this.EnsureUserActivationAsync(membership, cancellationToken: cancellationToken);
-	        model.SetValue("isActive", membership.UserActivation != Status.Active, true);
+	        model.SetValue("is_active", membership.UserActivation != Status.Active, true);
 
 	        string password = null;
 	        var sourceProvider = this.GetSourceProvider(model);
@@ -881,7 +881,7 @@ namespace ErtisAuth.Infrastructure.Services
 				        var user = await this.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
 				        if (user != null)
 				        {
-					        user.SetValue("isActive", true, true);
+					        user.SetValue("is_active", true, true);
 					        var updated = await this.UpdateAsync(utilizer, membershipId, userId, user, false, cancellationToken: cancellationToken);
 					        return updated?.Deserialize<User>();
 				        }
@@ -912,12 +912,12 @@ namespace ErtisAuth.Infrastructure.Services
 	        var user = await this.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
 	        if (user != null)
 	        {
-		        if (user.TryGetValue<bool>("isActive", out var isActive, out _) && isActive)
+		        if (user.TryGetValue<bool>("is_active", out var isActive, out _) && isActive)
 		        {
 			        throw ErtisAuthException.UserAlreadyActive();
 		        }
 		        
-		        user.SetValue("isActive", true, true);
+		        user.SetValue("is_active", true, true);
 		        var updated = await this.UpdateAsync(utilizer, membershipId, userId, user, cancellationToken: cancellationToken);
 		        return updated?.Deserialize<User>();
 	        }
@@ -933,12 +933,12 @@ namespace ErtisAuth.Infrastructure.Services
 	        var user = await this.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
 	        if (user != null)
 	        {
-		        if (user.TryGetValue<bool>("isActive", out var isActive, out _) && !isActive)
+		        if (user.TryGetValue<bool>("is_active", out var isActive, out _) && !isActive)
 		        {
 			        throw ErtisAuthException.UserAlreadyInactive();
 		        }
 		        
-		        user.SetValue("isActive", false, true);
+		        user.SetValue("is_active", false, true);
 		        var updated = await this.UpdateAsync(utilizer, membershipId, userId, user, cancellationToken: cancellationToken);
 		        return updated?.Deserialize<User>();
 	        }
