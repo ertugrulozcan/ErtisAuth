@@ -45,7 +45,7 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 			var isPermittedForAction = await this._roleService.CheckPermissionAsync(rbac, token);
 			if (!isPermittedForAction)
 			{
-				throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({rbac})");
+				throw ErtisAuthException.AccessDenied($"You don't have permission to perform this action. Rbac: {rbac} (Error Code: 4033)");
 			}
 				
 			Utilizer utilizer = meResponse.Data;

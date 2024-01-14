@@ -159,7 +159,7 @@ namespace ErtisAuth.Extensions.AspNetCore
 					}
 					else
 					{
-						throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({authorizationResult.Rbac})");	
+						throw ErtisAuthException.AccessDenied($"You don't have permission to perform this action. Rbac: {authorizationResult.Rbac} (Error Code: 4031)");	
 					}
 				}
 				case SupportedTokenTypes.Bearer:
@@ -172,7 +172,7 @@ namespace ErtisAuth.Extensions.AspNetCore
 					}
 					else
 					{
-						throw ErtisAuthException.AccessDenied($"Token owner role is not permitted for this resource/action ({authorizationResult.Rbac})");	
+						throw ErtisAuthException.AccessDenied($"You don't have permission to perform this action. Rbac: {authorizationResult.Rbac} (Error Code: 4032)");	
 					}
 				}
 				default:
