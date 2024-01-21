@@ -213,7 +213,7 @@ namespace ErtisAuth.Infrastructure.Services
 
         #region UserType Methods
 
-        private async Task<UserType> GetUserTypeAsync(DynamicObject model, string membershipId, bool fallbackWithOriginUserType = false, CancellationToken cancellationToken = default)
+        private async Task<UserType> GetUserTypeAsync(DynamicObject model, DynamicObject current, string membershipId, bool fallbackWithOriginUserType = false, CancellationToken cancellationToken = default)
         {
 	        if (model.TryGetValue("user_type", out string userTypeName, out _) && !string.IsNullOrEmpty(userTypeName))
             {
@@ -223,8 +223,18 @@ namespace ErtisAuth.Infrastructure.Services
 		            throw ErtisAuthException.UserTypeNotFound(userTypeName, "name");
 	            }
 
-	            return userType;   
+	            return userType;
             }
+	        else if (current != null && current.TryGetValue("user_type", out string currentUserTypeName, out _) && !string.IsNullOrEmpty(currentUserTypeName))
+	        {
+		        var userType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, currentUserTypeName, cancellationToken: cancellationToken);
+		        if (userType == null)
+		        {
+			        throw ErtisAuthException.UserTypeNotFound(userTypeName, "name");
+		        }
+
+		        return userType;
+	        }
             else if (fallbackWithOriginUserType)
             {
 	            return await this._userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG, cancellationToken: cancellationToken);
@@ -235,6 +245,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        }
         }
         
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         private async Task EnsureUserTypeAsync(string membershipId, UserType userType, DynamicObject model, string userId, string currentUserTypeSlug)
         {
             // Check IsAbstract
@@ -662,6 +673,20 @@ namespace ErtisAuth.Infrastructure.Services
 	        return dynamicObject?.Deserialize<UserWithPasswordHash>();
         }
         
+        private async Task<DynamicObject> GetByIdAsync(string membershipId, string userId)
+        {
+	        return await base.FindOneAsync(
+		        QueryBuilder.Equals("membership_id", membershipId),
+		        QueryBuilder.Equals("_id", QueryBuilder.ObjectId(userId))
+	        );
+        }
+        
+        private void EnsureUser(string membershipId, string userId, out DynamicObject currentUser)
+        {
+	        var current = this.GetByIdAsync(membershipId, userId).ConfigureAwait(false).GetAwaiter().GetResult();
+	        currentUser = current ?? throw ErtisAuthException.UserNotFound(userId, "_id");
+        }
+        
         public async Task<User> GetByUsernameOrEmailAddressAsync(string membershipId, string usernameOrEmailAddress)
         {
 	        var dynamicObject = await this.FindOneAsync(
@@ -717,7 +742,7 @@ namespace ErtisAuth.Infrastructure.Services
 		        this.EnsurePassword(model, out password);    
 	        }
 	        
-	        var userType = await this.GetUserTypeAsync(model, membershipId, sourceProvider == KnownProviders.ErtisAuth, cancellationToken: cancellationToken);
+	        var userType = await this.GetUserTypeAsync(model, null, membershipId, sourceProvider == KnownProviders.ErtisAuth, cancellationToken: cancellationToken);
 	        this.EnsureManagedProperties(model, membershipId);
 	        await this.EnsureAndValidateAsync(utilizer, membershipId, null, userType, model, null, cancellationToken: cancellationToken);
 	        
@@ -955,9 +980,10 @@ namespace ErtisAuth.Infrastructure.Services
         public async Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true, CancellationToken cancellationToken = default)
         {
 	        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-	        var userType = await this.GetUserTypeAsync(model, membershipId, true, cancellationToken: cancellationToken);
+	        this.EnsureUser(membershipId, userId, out var current);
+	        var userType = await this.GetUserTypeAsync(model, current, membershipId, true, cancellationToken: cancellationToken);
 	        this.EnsureManagedProperties(model, membershipId);
-	        model = this.SyncModel(membershipId, userId, model, out var current);
+	        model = this.SyncModel(current, model);
 	        await this.CheckRoleUpdatePermissionAsync(utilizer, membershipId, model, current, cancellationToken: cancellationToken);
 	        this.EnsurePasswordHash(model, current);
 	        await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current, cancellationToken: cancellationToken);
@@ -975,18 +1001,8 @@ namespace ErtisAuth.Infrastructure.Services
         }
         
         // ReSharper disable once MemberCanBeMadeStatic.Local
-        private DynamicObject SyncModel(string membershipId, string userId, DynamicObject model, out DynamicObject current)
+        private DynamicObject SyncModel(DynamicObject current, DynamicObject model)
         {
-	        current = base.FindOneAsync(
-		        QueryBuilder.Equals("membership_id", membershipId), 
-		        QueryBuilder.Equals("_id", QueryBuilder.ObjectId(userId))
-		    ).ConfigureAwait(false).GetAwaiter().GetResult();
-	        
-	        if (current == null)
-	        {
-		        throw ErtisAuthException.UserNotFound(userId, "_id");
-	        }
-	        
 	        model = current.Merge(model);
 	        model.RemoveProperty("_id");
 
@@ -1106,7 +1122,7 @@ namespace ErtisAuth.Infrastructure.Services
 
 			var dynamicObject = new DynamicObject(user);
 			this.EnsureManagedProperties(dynamicObject, membershipId);
-			dynamicObject = this.SyncModel(membershipId, userId, dynamicObject, out _);
+			dynamicObject = this.SyncModel(user, dynamicObject);
 			
 			var passwordHash = this._cryptographyService.CalculatePasswordHash(membership, newPassword);
 			dynamicObject.SetValue("password_hash", passwordHash, true);
