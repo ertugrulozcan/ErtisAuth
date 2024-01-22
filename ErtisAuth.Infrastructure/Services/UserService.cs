@@ -30,6 +30,7 @@ using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Identity.Cryptography;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
+using ErtisAuth.Infrastructure.Constants;
 using ErtisAuth.Infrastructure.Extensions;
 using ErtisAuth.Integrations.OAuth.Core;
 using Microsoft.Extensions.Caching.Memory;
@@ -1334,7 +1335,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private static MemoryCacheEntryOptions GetCacheTTL()
 		{
-			return new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(12));
+			return new MemoryCacheEntryOptions().SetSlidingExpiration(CacheDefaults.UsersCacheTTL);
 		}
 		
 		private void PurgeUserCache(string membershipId, string userId)

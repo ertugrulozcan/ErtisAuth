@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,6 +8,7 @@ using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Memberships;
+using ErtisAuth.Infrastructure.Constants;
 using ErtisAuth.Infrastructure.Mapping;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -211,7 +211,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private static MemoryCacheEntryOptions GetCacheTTL()
 		{
-			return new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(24));
+			return new MemoryCacheEntryOptions().SetSlidingExpiration(CacheDefaults.MembershipsCacheTTL);
 		}
 
 		private void PurgeAllCache() => this.PurgeAllCacheAsync().ConfigureAwait(false).GetAwaiter().GetResult();

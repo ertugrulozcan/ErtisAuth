@@ -7,6 +7,7 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Identity;
+using ErtisAuth.Infrastructure.Constants;
 using ErtisAuth.Infrastructure.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -50,7 +51,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private static MemoryCacheEntryOptions GetCacheTTL()
 		{
-			return new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(3));
+			return new MemoryCacheEntryOptions().SetSlidingExpiration(CacheDefaults.RevokedTokensCacheTTL);
 		}
 
 		#endregion
