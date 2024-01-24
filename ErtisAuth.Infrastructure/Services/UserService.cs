@@ -1151,7 +1151,7 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			if (string.IsNullOrEmpty(emailAddress))
 			{
-				throw ErtisAuthException.Synthetic(HttpStatusCode.BadRequest, "Username or email address required", "UsernameOrEmailAddressRequired");
+				throw ErtisAuthException.Synthetic(HttpStatusCode.BadRequest, "Email address required (email_address)", "UsernameOrEmailAddressRequired");
 			}
 
 			var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
