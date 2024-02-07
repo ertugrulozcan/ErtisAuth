@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
         <PackageId>ErtisAuth.Identity</PackageId>
-        <PackageVersion>7.5.9</PackageVersion>
+        <PackageVersion>7.6.0</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Identity</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -12,8 +12,8 @@
         <Title>ErtisAuth.Identity</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>7.5.9</AssemblyVersion>
-        <FileVersion>7.5.9</FileVersion>
+        <AssemblyVersion>7.6.0</AssemblyVersion>
+        <FileVersion>7.6.0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,7 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.3.0" />
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.3.0" />
+        <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.3.1" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.3.1" />
     </ItemGroup>
 </Project>
