@@ -48,13 +48,13 @@ namespace ErtisAuth.Infrastructure.Services
 		public async Task<ActiveToken> GetByAccessTokenAsync(string accessToken, CancellationToken cancellationToken = default)
 		{
 			var dto = await this.repository.FindOneAsync(x => x.AccessToken == accessToken, cancellationToken: cancellationToken);
-			return dto.ToModel();
+			return dto?.ToModel();
 		}
 		
 		public async Task<ActiveToken> GetByRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
 		{
 			var dto = await this.repository.FindOneAsync(x => x.RefreshToken == refreshToken, cancellationToken: cancellationToken);
-			return dto.ToModel();
+			return dto?.ToModel();
 		}
 		
 		public async Task<ActiveToken> CreateAsync(
