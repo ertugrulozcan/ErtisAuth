@@ -51,7 +51,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private static MemoryCacheEntryOptions GetCacheTTL()
 		{
-			return new MemoryCacheEntryOptions().SetSlidingExpiration(CacheDefaults.RevokedTokensCacheTTL);
+			return new MemoryCacheEntryOptions().SetAbsoluteExpiration(CacheDefaults.RevokedTokensCacheTTL);
 		}
 
 		#endregion

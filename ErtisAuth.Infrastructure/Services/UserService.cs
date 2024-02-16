@@ -1335,7 +1335,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private static MemoryCacheEntryOptions GetCacheTTL()
 		{
-			return new MemoryCacheEntryOptions().SetSlidingExpiration(CacheDefaults.UsersCacheTTL);
+			return new MemoryCacheEntryOptions().SetAbsoluteExpiration(CacheDefaults.UsersCacheTTL);
 		}
 		
 		private void PurgeUserCache(string membershipId, string userId)

@@ -211,7 +211,7 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private static MemoryCacheEntryOptions GetCacheTTL()
 		{
-			return new MemoryCacheEntryOptions().SetSlidingExpiration(CacheDefaults.MembershipsCacheTTL);
+			return new MemoryCacheEntryOptions().SetAbsoluteExpiration(CacheDefaults.MembershipsCacheTTL);
 		}
 
 		private void PurgeAllCache() => this.PurgeAllCacheAsync().ConfigureAwait(false).GetAwaiter().GetResult();
