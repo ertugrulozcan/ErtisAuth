@@ -255,7 +255,7 @@ namespace ErtisAuth.Infrastructure.Extensions
             };
         }
         
-        public static WebhookRequest ToModel(this WebhookRequestDto dto)
+        private static WebhookRequest ToModel(this WebhookRequestDto dto)
         {
             return new WebhookRequest
             {
@@ -266,7 +266,7 @@ namespace ErtisAuth.Infrastructure.Extensions
             };
         }
         
-        public static WebhookRequestDto ToDto(this WebhookRequest model)
+        private static WebhookRequestDto ToDto(this WebhookRequest model)
         {
             BsonDocument body = null;
             if (model.Body != null)

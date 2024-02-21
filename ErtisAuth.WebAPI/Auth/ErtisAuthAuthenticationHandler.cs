@@ -87,6 +87,7 @@ namespace ErtisAuth.WebAPI.Auth
 						new Claim(Utilizer.UtilizerIdClaimName, utilizer.Id),
 						new Claim(Utilizer.UtilizerTypeClaimName, utilizer.Type.ToString()),
 						new Claim(Utilizer.UtilizerUsernameClaimName, utilizer.Username),
+						new Claim(Utilizer.UtilizerEmailAddressClaimName, utilizer.EmailAddress),
 						new Claim(Utilizer.UtilizerRoleClaimName, utilizer.Role),
 						new Claim(Utilizer.MembershipIdClaimName, utilizer.MembershipId),
 						new Claim(Utilizer.UtilizerTokenClaimName, utilizer.Token),

@@ -15,6 +15,7 @@ namespace ErtisAuth.Core.Models.Identity
 		public const string UtilizerIdClaimName = "utilizer_id";
 		public const string UtilizerTypeClaimName = "utilizer_type";
 		public const string UtilizerUsernameClaimName = "utilizer_username";
+		public const string UtilizerEmailAddressClaimName = "utilizer_email";
 		public const string UtilizerRoleClaimName = "role";
 		public const string MembershipIdClaimName = "membership_id";
 		public const string UtilizerTokenClaimName = "access_token";
@@ -33,6 +34,9 @@ namespace ErtisAuth.Core.Models.Identity
 		
 		[JsonProperty("username")]
 		public string Username { get; set; }
+		
+		[JsonProperty("email_address")]
+		public string EmailAddress { get; set; }
 		
 		[JsonProperty("membership_id")]
 		public string MembershipId { get; set; }
@@ -62,6 +66,7 @@ namespace ErtisAuth.Core.Models.Identity
 			Id = user.Id,
 			Type = UtilizerType.User,
 			Username = user.Username,
+			EmailAddress = user.EmailAddress,
 			MembershipId = user.MembershipId,
 			Role = user.Role,
 			Permissions = user.Permissions,
