@@ -62,7 +62,7 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 			IRequestBody body = null,
 			CancellationToken cancellationToken = default)
 		{
-			return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, cancellationToken);
+			return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken);
 		}
 		
 		public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider, CancellationToken cancellationToken = default)

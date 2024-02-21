@@ -7,9 +7,11 @@ using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
+using ErtisAuth.Extensions.Mailkit.Serialization;
 using ErtisAuth.Sdk.Configuration;
 using ErtisAuth.Sdk.Helpers;
 using ErtisAuth.Sdk.Services.Interfaces;
+using Newtonsoft.Json;
 
 namespace ErtisAuth.Sdk.Services
 {
@@ -66,6 +68,7 @@ namespace ErtisAuth.Sdk.Services
 				$"{this.AuthApiBaseUrl}/memberships/{membershipId}", 
 				null, 
 				HeaderCollection.Add("Authorization", token.ToString()),
+				converters: new JsonConverter[] { new MailProviderJsonConverter() }, 
 				cancellationToken: cancellationToken);
 		}
 		
@@ -154,7 +157,7 @@ namespace ErtisAuth.Sdk.Services
 				$"{this.AuthApiBaseUrl}/memberships/_query", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)),
+				new JsonRequestBody(JsonConvert.DeserializeObject(query) ?? "{}"),
 				cancellationToken: cancellationToken);
 		}
 		

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
+using Newtonsoft.Json;
 
 namespace ErtisAuth.Sdk.Services
 {
@@ -34,9 +35,10 @@ namespace ErtisAuth.Sdk.Services
 			HttpMethod method,
 			string url,
 			IHeaderCollection headers = null,
-			IRequestBody body = null)
+			IRequestBody body = null, 
+			JsonConverter[] converters = null)
 		{
-			return this.restHandler.ExecuteRequest<TResult>(method, url, headers, body);
+			return this.restHandler.ExecuteRequest<TResult>(method, url, headers, body, converters: converters);
 		}
         
 		public async Task<IResponseResult<TResult>> ExecuteRequestAsync<TResult>(
@@ -44,9 +46,10 @@ namespace ErtisAuth.Sdk.Services
 			string url,
 			IHeaderCollection headers = null,
 			IRequestBody body = null, 
+			JsonConverter[] converters = null, 
 			CancellationToken cancellationToken = default)
 		{
-			return await this.restHandler.ExecuteRequestAsync<TResult>(method, url, headers, body, cancellationToken: cancellationToken);
+			return await this.restHandler.ExecuteRequestAsync<TResult>(method, url, headers, body, converters: converters, cancellationToken: cancellationToken);
 		}
 
 		protected IResponseResult<TResult> ExecuteRequest<TResult>(
@@ -54,9 +57,10 @@ namespace ErtisAuth.Sdk.Services
 			string baseUrl,
 			IQueryString queryString = null,
 			IHeaderCollection headers = null,
-			IRequestBody body = null)
+			IRequestBody body = null, 
+			JsonConverter[] converters = null)
 		{
-			return this.restHandler.ExecuteRequest<TResult>(method, baseUrl, queryString, headers, body);
+			return this.restHandler.ExecuteRequest<TResult>(method, baseUrl, queryString, headers, body, converters: converters);
 		}
 
 		protected async Task<IResponseResult<TResult>> ExecuteRequestAsync<TResult>(
@@ -65,9 +69,10 @@ namespace ErtisAuth.Sdk.Services
 			IQueryString queryString = null,
 			IHeaderCollection headers = null,
 			IRequestBody body = null, 
+			JsonConverter[] converters = null, 
 			CancellationToken cancellationToken = default)
 		{
-			return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken);
+			return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, converters: converters, cancellationToken: cancellationToken);
 		}
         
 		public IResponseResult ExecuteRequest(
