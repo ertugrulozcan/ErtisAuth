@@ -8,7 +8,7 @@ public static class CacheDefaults
 
     public static readonly TimeSpan MembershipsCacheTTL = TimeSpan.FromHours(24);
     
-    public static readonly TimeSpan UsersCacheTTL = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan UsersCacheTTL = TimeSpan.FromHours(1);
     
     public static readonly TimeSpan UserTypesCacheTTL = TimeSpan.FromHours(1);
     
@@ -18,7 +18,7 @@ public static class CacheDefaults
     
     public static readonly TimeSpan ProvidersCacheTTL = TimeSpan.FromHours(24);
     
-    public static readonly TimeSpan RevokedTokensCacheTTL = TimeSpan.FromHours(1);
+    public static readonly TimeSpan RevokedTokensCacheTTL = TimeSpan.FromHours(24);
 
     #endregion
 }

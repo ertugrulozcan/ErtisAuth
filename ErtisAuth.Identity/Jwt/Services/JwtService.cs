@@ -163,7 +163,6 @@ namespace ErtisAuth.Identity.Jwt.Services
                     IssuerSigningKey = secretKey,
                     RequireExpirationTime = true,
                     RequireSignedTokens = true,
-                    
                 }, out validatedToken);
                 
                 return result != null;

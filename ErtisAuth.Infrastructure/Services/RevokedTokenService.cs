@@ -57,7 +57,7 @@ namespace ErtisAuth.Infrastructure.Services
 		#endregion
 
 		#region Methods
-
+		
 		public async Task<RevokedToken> GetByAccessTokenAsync(string accessToken, CancellationToken cancellationToken = default)
 		{
 			var cacheKey = GetCacheKey(accessToken);
@@ -65,7 +65,10 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				var dto = await this.repository.FindOneAsync(x => x.Token.AccessToken == accessToken, cancellationToken: cancellationToken);
 				revokedToken = dto?.ToModel();
-				this._memoryCache.Set(cacheKey, revokedToken, GetCacheTTL());
+				if (revokedToken != null)
+				{
+					this._memoryCache.Set(cacheKey, revokedToken, GetCacheTTL());	
+				}
 			}
 
 			return revokedToken;
