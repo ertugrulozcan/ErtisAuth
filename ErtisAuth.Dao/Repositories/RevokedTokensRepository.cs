@@ -12,7 +12,7 @@ namespace ErtisAuth.Dao.Repositories
         
 		protected override IIndexDefinition[] Indexes => new IIndexDefinition[]
 		{
-			new SingleIndexDefinition("access_token")
+			new SingleIndexDefinition("token.access_token")
 		};
 
 		#endregion

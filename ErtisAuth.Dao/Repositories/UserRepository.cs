@@ -12,8 +12,12 @@ namespace ErtisAuth.Dao.Repositories
         
         protected override IIndexDefinition[] Indexes => new IIndexDefinition[]
         {
-            new CompoundIndexDefinition("membership_id", "username"),
-            new CompoundIndexDefinition("membership_id", "email_address")
+            new SingleIndexDefinition("username"),
+            new SingleIndexDefinition("email_address"),
+            new SingleIndexDefinition("membership_id"),
+            new CompoundIndexDefinition("_id", "membership_id"),
+            new CompoundIndexDefinition("username", "membership_id"),
+            new CompoundIndexDefinition("email_address", "membership_id")
         };
 
         #endregion

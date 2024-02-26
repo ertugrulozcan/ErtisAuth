@@ -15,7 +15,7 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 	
 	private readonly IApplicationService _applicationService;
 	private readonly IRoleService _roleService;
-		
+	
 	#endregion
 	
 	#region Constructors
