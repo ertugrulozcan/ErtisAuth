@@ -91,6 +91,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 		}
 
+		// ReSharper disable once UnusedParameter.Local
 		private async Task<EventDto> SaveEventAsync(ErtisAuthEventBase ertisAuthEvent, CancellationToken cancellationToken = default)
 		{
 			BsonDocument documentBson = null;
@@ -140,7 +141,8 @@ namespace ErtisAuth.Infrastructure.Services
 				EventTime = ertisAuthEvent.EventTime
 			};
 			
-			return await this.repository.InsertAsync(eventDto, cancellationToken: cancellationToken);
+			// ReSharper disable once MethodSupportsCancellation
+			return await this.repository.InsertAsync(eventDto);
 		}
 
 		#endregion
