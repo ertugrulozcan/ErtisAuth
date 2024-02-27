@@ -383,7 +383,7 @@ namespace ErtisAuth.Infrastructure.Services
 						Permissions = application.Permissions,
 						Forbidden = application.Forbidden,
 						Sys = application.Sys,
-						MembershipId = membership.Id
+						MembershipId = application.MembershipId
 					};
 
 					application = onTheFlyApplication;

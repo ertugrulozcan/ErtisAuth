@@ -239,12 +239,12 @@ namespace ErtisAuth.WebAPI.Controllers
 			return this.Ok(await this._userService.FreezeUserByIdAsync(utilizer, membershipId, id, cancellationToken: cancellationToken));
 		}
 		
-		[HttpGet("activation/{activationCode}")]
+		[HttpGet("activation")]
 		[RbacAction(Rbac.CrudActions.Update)]
-		public async Task<IActionResult> ActivateUser([FromRoute] string membershipId, [FromRoute] string activationCode, CancellationToken cancellationToken = default)
+		public async Task<IActionResult> ActivateUser([FromRoute] string membershipId, [FromQuery] string uat, CancellationToken cancellationToken = default)
 		{
 			var utilizer = this.GetUtilizer();
-			return this.Ok(await this._userService.ActivateUserAsync(utilizer, membershipId, activationCode, cancellationToken: cancellationToken));
+			return this.Ok(await this._userService.ActivateUserAsync(utilizer, membershipId, uat, cancellationToken: cancellationToken));
 		}
 		
 		[HttpPost("resend-activation-mail")]
