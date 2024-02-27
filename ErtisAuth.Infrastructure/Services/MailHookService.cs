@@ -194,6 +194,48 @@ namespace ErtisAuth.Infrastructure.Services
 					recipients = recipients.DistinctBy(x => x.EmailAddress).ToList();
 					if (recipients.Any())
 					{
+						try
+						{
+							var mailBody = formatter.Format(mailHook.MailTemplate, payload);
+							var mailSubject = formatter.Format(mailHook.MailSubject, payload);
+							await this._mailService.SendMailAsync(
+								mailProvider,
+								mailHook.FromName,
+								mailHook.FromAddress,
+								recipients,
+								mailSubject,
+								mailBody, 
+								cancellationToken: cancellationToken
+							);
+								
+							await this._eventService.FireEventAsync(this, new ErtisAuthEvent(
+								ErtisAuthEventType.MailhookMailSent,
+								userId,
+								membershipId,
+								new
+								{
+									recipients
+								}
+							), cancellationToken: cancellationToken);
+						}
+						catch (Exception ex)
+						{
+							Console.WriteLine("The hook mail could not be sent!");
+							Console.WriteLine(ex);
+								
+							await this._eventService.FireEventAsync(this, new ErtisAuthEvent(
+								ErtisAuthEventType.MailhookMailFailed,
+								userId,
+								membershipId,
+								new
+								{
+									recipients,
+									error = ex.Message 
+								}
+							), cancellationToken: cancellationToken);
+						}
+						
+						/*
 						await Task.Run(async () =>
 						{
 							try
@@ -237,6 +279,7 @@ namespace ErtisAuth.Infrastructure.Services
 								), cancellationToken: cancellationToken);
 							}
 						}, cancellationToken);
+						*/
 					}
 				}
 			}
