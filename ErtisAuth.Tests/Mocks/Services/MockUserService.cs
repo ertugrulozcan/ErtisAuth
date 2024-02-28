@@ -41,8 +41,14 @@ namespace ErtisAuth.Tests.Mocks.Services
             throw new NotImplementedException();
         }
 
-        public Task<IPaginationCollection<DynamicObject>> GetAsync(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string orderBy = null,
-            SortDirection? sortDirection = null, CancellationToken cancellationToken = default)
+        public Task<IPaginationCollection<DynamicObject>> GetAsync(
+            string membershipId, 
+            int? skip = null, 
+            int? limit = null, 
+            bool withCount = false, 
+            string orderBy = null,
+            SortDirection? sortDirection = null, 
+            CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
