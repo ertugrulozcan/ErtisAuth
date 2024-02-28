@@ -173,7 +173,7 @@ namespace ErtisAuth.WebAPI.Auth
 							var rbac = this.Context.GetRbacDefinition(application.Id);
 							if (!this.accessControlService.HasPermission(role, rbac, applicationUtilizer))
 							{
-								throw ErtisAuthException.AccessDenied("Your authorization role is unauthorized for this action");	
+								throw ErtisAuthException.AccessDenied($"Your authorization role ({role.Slug}) is unauthorized for this action ({rbac})");	
 							}
 						}
 					}
@@ -198,7 +198,7 @@ namespace ErtisAuth.WebAPI.Auth
 							var rbac = this.Context.GetRbacDefinition(user.Id);
 							if (!this.accessControlService.HasPermission(role, rbac, userUtilizer))
 							{
-								throw ErtisAuthException.AccessDenied("Your authorization role is unauthorized for this action");		
+								throw ErtisAuthException.AccessDenied($"Your authorization role ({role.Slug}) is unauthorized for this action ({rbac})");		
 							}
 						}
 					}
