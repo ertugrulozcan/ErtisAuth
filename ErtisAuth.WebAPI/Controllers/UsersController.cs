@@ -306,7 +306,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		#region Forgot Password
 		
 		[HttpPost("reset-password", Order = 1)]
-		[RbacAction("reset-password")]
+		[RbacAction(Rbac.CrudActions.Update)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -330,7 +330,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		}
 		
 		[HttpGet("verify-reset-token")]
-		[RbacAction("reset-password")]
+		[RbacAction(Rbac.CrudActions.Read)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -346,7 +346,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		}
 		
 		[HttpPost("set-password", Order = 3)]
-		[RbacAction("set-password")]
+		[RbacAction(Rbac.CrudActions.Update)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
