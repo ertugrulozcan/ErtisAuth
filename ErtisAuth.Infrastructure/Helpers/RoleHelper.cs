@@ -15,10 +15,12 @@ namespace ErtisAuth.Infrastructure.Helpers
 				"user-types",
 				"applications",
 				"roles",
+				"sessions",
 				"events",
 				"providers",
 				"tokens",
 				"webhooks",
+				"mailhooks",
 			};
 			
 			RbacSegment[] adminPrivileges =

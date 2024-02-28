@@ -90,8 +90,8 @@ namespace ErtisAuth.Infrastructure.Services
 						MembershipId = membership.Id
 					};
 					
-					var role = await this.GetBySlugAsync(ReservedRoles.Administrator, membership.Id);
-					if (role == null)
+					var adminRole = await this.GetBySlugAsync(ReservedRoles.Administrator, membership.Id);
+					if (adminRole == null)
 					{
 						await this.CreateAsync(utilizer, membership.Id, new Role
 						{
