@@ -20,6 +20,7 @@ using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Extensions.Authorization.Constants;
 using ErtisAuth.Extensions.Database;
+using ErtisAuth.Extensions.Hosting;
 using ErtisAuth.Extensions.Mailkit.Extensions;
 using ErtisAuth.Extensions.Mailkit.Serialization;
 using ErtisAuth.Extensions.Quartz.Extensions;
@@ -106,6 +107,11 @@ builder.Services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandl
 builder.Services.AddProviders();
 
 builder.Services.AddMemoryCache();
+
+// Background Workers
+builder.Services.AddHostedService<Worker>();
+builder.Services.AddSingleton<IBackgroundTaskQueue>(_ => new BackgroundTaskQueue(100));
+builder.Services.AddSingleton<IMailServiceBackgroundWorker, MailServiceBackgroundWorker>();
 
 // Mailkit
 builder.Services.AddMailkit();

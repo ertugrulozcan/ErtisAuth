@@ -64,6 +64,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Databa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Apple", "ErtisAuth.Integrations.OAuth.Apple\ErtisAuth.Integrations.OAuth.Apple.csproj", "{E960023C-9A83-405F-B53D-3C837E88DFF3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Hosting", "ErtisAuth.Extensions.Hosting\ErtisAuth.Extensions.Hosting.csproj", "{05CA255C-9068-4BAE-9152-6649803A7D72}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -162,6 +164,10 @@ Global
 		{E960023C-9A83-405F-B53D-3C837E88DFF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E960023C-9A83-405F-B53D-3C837E88DFF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E960023C-9A83-405F-B53D-3C837E88DFF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05CA255C-9068-4BAE-9152-6649803A7D72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05CA255C-9068-4BAE-9152-6649803A7D72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05CA255C-9068-4BAE-9152-6649803A7D72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05CA255C-9068-4BAE-9152-6649803A7D72}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{3DBF8D8C-08F0-46F5-ACE8-E5E303649F8E} = {39676EB6-FDB2-481D-BA89-A3B08B87950D}
@@ -187,5 +193,6 @@ Global
 		{756624BC-F11F-4058-AD4C-8E56BC277102} = {EAFD8CFE-317A-4BC4-8321-3F2935750D06}
 		{8910B631-672E-42BC-9207-611DB861CA31} = {7A1F28C8-4EEC-4876-B761-F0A7C7BFF02E}
 		{E960023C-9A83-405F-B53D-3C837E88DFF3} = {EAFD8CFE-317A-4BC4-8321-3F2935750D06}
+		{05CA255C-9068-4BAE-9152-6649803A7D72} = {7A1F28C8-4EEC-4876-B761-F0A7C7BFF02E}
 	EndGlobalSection
 EndGlobal
