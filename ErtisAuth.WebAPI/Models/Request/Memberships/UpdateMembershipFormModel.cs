@@ -11,6 +11,9 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		[JsonProperty("name")]
 		public string Name { get; set; }
 		
+		[JsonProperty("slug")]
+		public string Slug { get; set; }
+		
 		[JsonProperty("expires_in")]
 		public int ExpiresIn { get; set; }
 		
@@ -42,6 +45,7 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 			{
 				Id = id,
 				Name = this.Name,
+				Slug = this.Slug,
 				ExpiresIn = this.ExpiresIn,
 				RefreshTokenExpiresIn = this.RefreshTokenExpiresIn,
 				SecretKey = this.SecretKey,

@@ -25,9 +25,9 @@ namespace ErtisAuth.Core.Models.Users
 
         private string name;
         private string slug;
-        private IReadOnlyCollection<IFieldInfo> properties;
         private bool isAbstract;
         private bool isSealed;
+        private IReadOnlyCollection<IFieldInfo> properties;
 
         #endregion
         
@@ -60,6 +60,7 @@ namespace ErtisAuth.Core.Models.Users
 
                 return this.slug;
             }
+            set => this.slug = Slugifier.Slugify(value, Slugifier.Options.Ignore('_'));
         }
         
         [JsonProperty("description")]

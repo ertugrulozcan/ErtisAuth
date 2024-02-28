@@ -8,7 +8,7 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Infrastructure.Constants;
-using ErtisAuth.Infrastructure.Extensions;
+using ErtisAuth.Infrastructure.Mapping.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services

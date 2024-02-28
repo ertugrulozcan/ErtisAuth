@@ -72,7 +72,7 @@ namespace ErtisAuth.Core.Models.Identity
 		{
 			Id = application.Id,
 			Type = UtilizerType.Application,
-			Username = application.Name,
+			Username = application.Slug,
 			MembershipId = application.MembershipId,
 			Role = application.Role,
 			Permissions = application.Permissions,

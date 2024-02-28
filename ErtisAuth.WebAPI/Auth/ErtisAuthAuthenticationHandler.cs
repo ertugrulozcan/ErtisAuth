@@ -167,7 +167,7 @@ namespace ErtisAuth.WebAPI.Auth
 					Utilizer applicationUtilizer= application;
 					if (!string.IsNullOrEmpty(application.Role))
 					{
-						var role = await this.roleService.GetByNameAsync(application.Role, application.MembershipId);
+						var role = await this.roleService.GetBySlugAsync(application.Role, application.MembershipId);
 						if (role != null)
 						{
 							var rbac = this.Context.GetRbacDefinition(application.Id);
@@ -192,7 +192,7 @@ namespace ErtisAuth.WebAPI.Auth
 					Utilizer userUtilizer= user;
 					if (!string.IsNullOrEmpty(user.Role))
 					{
-						var role = await this.roleService.GetByNameAsync(user.Role, user.MembershipId);
+						var role = await this.roleService.GetBySlugAsync(user.Role, user.MembershipId);
 						if (role != null)
 						{
 							var rbac = this.Context.GetRbacDefinition(user.Id);

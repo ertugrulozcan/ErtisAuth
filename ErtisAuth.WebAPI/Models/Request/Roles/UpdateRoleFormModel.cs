@@ -10,6 +10,9 @@ namespace ErtisAuth.WebAPI.Models.Request.Roles
 		[JsonProperty("name")]
 		public string Name { get; set; }
 		
+		[JsonProperty("slug")]
+		public string Slug { get; set; }
+		
 		[JsonProperty("description")]
 		public string Description { get; set; }
 		

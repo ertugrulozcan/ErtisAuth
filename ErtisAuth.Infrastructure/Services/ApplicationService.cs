@@ -52,6 +52,7 @@ namespace ErtisAuth.Infrastructure.Services
 				{
 					Id = "ertisauth_server",
 					Name = "ertisauth_server",
+					Slug = "ertisauth_server",
 					Role = ReservedRoles.Server
 				};
 			}
@@ -146,7 +147,7 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			else
 			{
-				var role = this.roleService.GetByName(model.Role, model.MembershipId);
+				var role = this.roleService.GetBySlug(model.Role, model.MembershipId);
 				if (role == null)
 				{
 					errorList.Add($"Role is invalid. There is no role named '{model.Role}'");
@@ -231,21 +232,21 @@ namespace ErtisAuth.Infrastructure.Services
 
 		protected override bool IsAlreadyExist(Application model, string membershipId, Application exclude = default)
 		{
-			if (model.Name == this.ServerApplication.Name)
+			if (model.Slug == this.ServerApplication.Slug)
 			{
 				return true;
 			}
 			
 			if (exclude == null)
 			{
-				return this.GetApplicationByName(model.Name, membershipId) != null;	
+				return this.GetApplicationBySlug(model.Slug, membershipId) != null;	
 			}
 			else
 			{
-				var current = this.GetApplicationByName(model.Name, membershipId);
+				var current = this.GetApplicationBySlug(model.Slug, membershipId);
 				if (current != null)
 				{
-					return current.Name != exclude.Name;	
+					return current.Id != exclude.Id;	
 				}
 				else
 				{
@@ -256,21 +257,21 @@ namespace ErtisAuth.Infrastructure.Services
 
 		protected override async Task<bool> IsAlreadyExistAsync(Application model, string membershipId, Application exclude = default)
 		{
-			if (model.Name == this.ServerApplication.Name)
+			if (model.Slug == this.ServerApplication.Slug)
 			{
 				return true;
 			}
 			
 			if (exclude == null)
 			{
-				return await this.GetApplicationByNameAsync(model.Name, membershipId) != null;	
+				return await this.GetApplicationBySlugAsync(model.Slug, membershipId) != null;	
 			}
 			else
 			{
-				var current = await this.GetApplicationByNameAsync(model.Name, membershipId);
+				var current = await this.GetApplicationBySlugAsync(model.Slug, membershipId);
 				if (current != null)
 				{
-					return current.Name != exclude.Name;	
+					return current.Id != exclude.Id;	
 				}
 				else
 				{
@@ -293,7 +294,7 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			if (application != null)
 			{
-				return this.ServerApplication.Id == application.Id && this.ServerApplication.Name == application.Name;
+				return this.ServerApplication.Id == application.Id && this.ServerApplication.Slug == application.Slug;
 			}
 
 			return false;
@@ -412,30 +413,25 @@ namespace ErtisAuth.Infrastructure.Services
 			return application;
 		}
 		
-		private Application GetApplicationByName(string name, string membershipId)
+		private Application GetApplicationBySlug(string slug, string membershipId)
 		{
-			if (name == this.ServerApplication.Name)
+			if (slug == this.ServerApplication.Slug)
 			{
 				return this.ServerApplication;
 			}
 			
-			var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
-			if (dto == null)
-			{
-				return null;
-			}
-			
-			return Mapper.Current.Map<ApplicationDto, Application>(dto);
+			var dto = this.repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
+			return dto == null ? null : Mapper.Current.Map<ApplicationDto, Application>(dto);
 		}
 		
-		private async Task<Application> GetApplicationByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
+		private async Task<Application> GetApplicationBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
 		{
-			if (name == this.ServerApplication.Name)
+			if (slug == this.ServerApplication.Slug)
 			{
 				return this.ServerApplication;
 			}
 			
-			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
+			var dto = await this.repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 			return dto == null ? null : Mapper.Current.Map<ApplicationDto, Application>(dto);
 		}
 

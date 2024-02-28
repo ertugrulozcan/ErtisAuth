@@ -52,6 +52,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 			{
 				Id = "admin_role",
 				Name = "admin",
+				Slug = "admin",
 				Description = "System Administrator",
 				MembershipId = membershipId,
 				Permissions = new []
@@ -95,6 +96,7 @@ namespace ErtisAuth.Tests.Mocks.Services
 			{
 				Id = "readonly_role",
 				Name = "readonly",
+				Slug = "readonly",
 				Description = "Readonly",
 				MembershipId = membershipId,
 				Permissions = new []
@@ -182,12 +184,12 @@ namespace ErtisAuth.Tests.Mocks.Services
 			throw new NotImplementedException();
 		}
 
-		public Role GetByName(string name, string membershipId) => this.GetByNameAsync(name, membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
+		public Role GetBySlug(string slug, string membershipId) => this.GetBySlugAsync(slug, membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
 
-		public async ValueTask<Role> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
+		public async ValueTask<Role> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
 		{
 			await Task.CompletedTask;
-			return this.MockRepository.FirstOrDefault(x => x.MembershipId == membershipId && x.Name == name);
+			return this.MockRepository.FirstOrDefault(x => x.MembershipId == membershipId && x.Slug == slug);
 		}
 
 		#endregion

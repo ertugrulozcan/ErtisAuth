@@ -1,3 +1,4 @@
+using Ertis.Core.Helpers;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Extensions.Mailkit.Providers;
 using Newtonsoft.Json;
@@ -7,10 +8,31 @@ namespace ErtisAuth.Core.Models.Memberships
 {
 	public class Membership : ResourceBase, IHasSysInfo
 	{
+		#region Fields
+
+		private string slug;
+
+		#endregion
+		
 		#region Properties
 
 		[JsonProperty("name")]
 		public string Name { get; set; }
+		
+		[JsonProperty("slug")]
+		public string Slug
+		{
+			get
+			{
+				if (string.IsNullOrEmpty(this.slug))
+				{
+					this.slug = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
+				}
+
+				return this.slug;
+			}
+			set => this.slug = Slugifier.Slugify(value, Slugifier.Options.Ignore('_'));
+		}
 		
 		[JsonProperty("expires_in")]
 		public int ExpiresIn { get; set; }

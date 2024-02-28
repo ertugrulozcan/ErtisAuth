@@ -199,7 +199,7 @@ namespace ErtisAuth.Infrastructure.Services
 				var current = this.GetByName(model.Name, membershipId);
 				if (current != null)
 				{
-					return current.Name != exclude.Name;	
+					return current.Id != exclude.Id;
 				}
 				else
 				{
@@ -219,7 +219,7 @@ namespace ErtisAuth.Infrastructure.Services
 				var current = await this.GetByNameAsync(model.Name, membershipId);
 				if (current != null)
 				{
-					return current.Name != exclude.Name;	
+					return current.Id != exclude.Id;	
 				}
 				else
 				{
@@ -241,23 +241,13 @@ namespace ErtisAuth.Infrastructure.Services
 		private Provider GetByName(string name, string membershipId)
 		{
 			var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
-			if (dto == null)
-			{
-				return null;
-			}
-			
-			return Mapper.Current.Map<ProviderDto, Provider>(dto);
+			return dto == null ? null : Mapper.Current.Map<ProviderDto, Provider>(dto);
 		}
 		
 		private async Task<Provider> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
 		{
 			var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-			if (dto == null)
-			{
-				return null;
-			}
-			
-			return Mapper.Current.Map<ProviderDto, Provider>(dto);
+			return dto == null ? null : Mapper.Current.Map<ProviderDto, Provider>(dto);
 		}
 
 		#endregion

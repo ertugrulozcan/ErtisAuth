@@ -2,6 +2,8 @@ using System;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Dto.Models.Events
 {
 	public class EventDto : EntityBase, IHasMembership

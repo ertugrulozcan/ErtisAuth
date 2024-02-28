@@ -9,7 +9,7 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Infrastructure.Configuration;
-using ErtisAuth.Infrastructure.Extensions;
+using ErtisAuth.Infrastructure.Mapping.Extensions;
 
 namespace ErtisAuth.Infrastructure.Services
 {

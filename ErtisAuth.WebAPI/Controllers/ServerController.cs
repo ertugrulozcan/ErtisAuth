@@ -52,6 +52,7 @@ namespace ErtisAuth.WebAPI.Controllers
 					{
 						_id = x.Id,
 						name = x.Name,
+						slug = x.Slug,
 						secret_key = Identity.Cryptography.StringCipher.Encrypt(x.SecretKey, x.Id)
 					})
 				});

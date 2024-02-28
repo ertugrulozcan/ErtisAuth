@@ -379,6 +379,7 @@ namespace ErtisAuth.Infrastructure.Services
 					{
 						Id = application.Id,
 						Name = application.Name,
+						Slug = application.Slug,
 						Role = application.Role,
 						Permissions = application.Permissions,
 						Forbidden = application.Forbidden,

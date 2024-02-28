@@ -6,8 +6,8 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
 {
 	public interface IRoleService : IMembershipBoundedCrudService<Role>
 	{
-		Role GetByName(string name, string membershipId);
+		Role GetBySlug(string slug, string membershipId);
 		
-		ValueTask<Role> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default);
+		ValueTask<Role> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default);
 	}
 }

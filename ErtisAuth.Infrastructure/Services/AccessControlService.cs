@@ -116,7 +116,7 @@ namespace ErtisAuth.Infrastructure.Services
 			return this.CheckPermission(utilizer.Role, utilizer.MembershipId, Rbac.Parse(rbac), owner);
 		}
 
-		private bool CheckPermission(string roleName, string membershipId, Rbac rbac, IUtilizer utilizer = null)
+		private bool CheckPermission(string roleSlug, string membershipId, Rbac rbac, IUtilizer utilizer = null)
 		{
 			var hasUbacPermission = utilizer?.HasPermission(rbac);
 			if (hasUbacPermission != null)
@@ -124,18 +124,18 @@ namespace ErtisAuth.Infrastructure.Services
 				return hasUbacPermission.Value;
 			}
 			
-			var role = this.roleService.GetByName(roleName, membershipId);
+			var role = this.roleService.GetBySlug(roleSlug, membershipId);
 			if (role != null)
 			{
 				return CheckPermission(role, rbac, utilizer);
 			}
 			else
 			{
-				throw Core.Exceptions.ErtisAuthException.RoleNotFound(roleName, true);
+				throw Core.Exceptions.ErtisAuthException.RoleNotFound(roleSlug, true);
 			}
 		}
 		
-		private bool CheckPermission(string roleName, string membershipId, Rbac rbac, Utilizer utilizer)
+		private bool CheckPermission(string roleSlug, string membershipId, Rbac rbac, Utilizer utilizer)
 		{
 			var hasUbacPermission = utilizer.HasPermission(rbac);
 			if (hasUbacPermission != null)
@@ -143,14 +143,14 @@ namespace ErtisAuth.Infrastructure.Services
 				return hasUbacPermission.Value;
 			}
 			
-			var role = this.roleService.GetByName(roleName, membershipId);
+			var role = this.roleService.GetBySlug(roleSlug, membershipId);
 			if (role != null)
 			{
 				return CheckPermission(role, rbac, utilizer);
 			}
 			else
 			{
-				throw Core.Exceptions.ErtisAuthException.RoleNotFound(roleName, true);
+				throw Core.Exceptions.ErtisAuthException.RoleNotFound(roleSlug, true);
 			}
 		}
 		

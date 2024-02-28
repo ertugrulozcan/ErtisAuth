@@ -21,7 +21,7 @@ using ErtisAuth.Dto.Models.Resources;
 using ErtisAuth.Dto.Models.Roles;
 using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Dto.Models.Webhooks;
-using ErtisAuth.Infrastructure.Extensions;
+using ErtisAuth.Infrastructure.Mapping.Extensions;
 using ErtisAuth.Infrastructure.Mapping.Impls;
 
 namespace ErtisAuth.Infrastructure.Mapping

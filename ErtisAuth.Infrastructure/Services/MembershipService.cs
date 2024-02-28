@@ -83,7 +83,7 @@ namespace ErtisAuth.Infrastructure.Services
 				errorList.Add("secret_key is a required field");
 			}
 
-			var current = this.GetByName(model.Name);
+			var current = this.GetBySlug(model.Slug);
 			if (current != null && current.Id != model.Id)
 			{
 				errorList.Add(ErtisAuthException.MembershipAlreadyExists(model.Name).Message);
@@ -267,15 +267,10 @@ namespace ErtisAuth.Infrastructure.Services
 			return membership;
 		}
 
-		private Membership GetByName(string name)
+		private Membership GetBySlug(string slug)
 		{
-			var dto = this.repository.FindOne(x => x.Name == name.Trim());
-			if (dto == null)
-			{
-				return null;
-			}
-
-			return Mapper.Current.Map<MembershipDto, Membership>(dto);
+			var dto = this.repository.FindOne(x => x.Slug == slug.Trim());
+			return dto == null ? null : Mapper.Current.Map<MembershipDto, Membership>(dto);
 		}
 		
 		public Membership GetBySecretKey(string secretKey)

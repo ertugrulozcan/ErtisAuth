@@ -90,12 +90,13 @@ namespace ErtisAuth.Infrastructure.Services
 						MembershipId = membership.Id
 					};
 					
-					var role = await this.GetByNameAsync(ReservedRoles.Administrator, membership.Id);
+					var role = await this.GetBySlugAsync(ReservedRoles.Administrator, membership.Id);
 					if (role == null)
 					{
 						await this.CreateAsync(utilizer, membership.Id, new Role
 						{
-							Name = ReservedRoles.Administrator,
+							Name = "Administrator",
+							Slug = ReservedRoles.Administrator,
 							Description = "Administrator",
 							MembershipId = membership.Id,
 							Permissions = RoleHelper.AssertAdminPermissionsForReservedResources()
@@ -171,7 +172,7 @@ namespace ErtisAuth.Infrastructure.Services
 				var cacheKey1 = GetCacheKey(membershipId, role.Id);
 				this._memoryCache.Remove(cacheKey1);
 				
-				var cacheKey2 = GetCacheKey(membershipId, role.Name);
+				var cacheKey2 = GetCacheKey(membershipId, role.Slug);
 				this._memoryCache.Remove(cacheKey2);
 			}
 		}
@@ -276,14 +277,14 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			if (exclude == null)
 			{
-				return await this.GetByNameAsync(model.Name, membershipId) != null;	
+				return await this.GetBySlugAsync(model.Slug, membershipId) != null;	
 			}
 			else
 			{
-				var current = await this.GetByNameAsync(model.Name, membershipId);
+				var current = await this.GetBySlugAsync(model.Slug, membershipId);
 				if (current != null)
 				{
-					return current.Name != exclude.Name;	
+					return current.Id != exclude.Id;	
 				}
 				else
 				{
@@ -350,17 +351,17 @@ namespace ErtisAuth.Infrastructure.Services
 			return role;
 		}
 
-		public Role GetByName(string name, string membershipId)
+		public Role GetBySlug(string slug, string membershipId)
 		{
-			if (name == ReservedRoles.Server)
+			if (slug == ReservedRoles.Server)
 			{
 				return this.GetServerRole(membershipId);
 			}
 			
-			var cacheKey = GetCacheKey(membershipId, name);
+			var cacheKey = GetCacheKey(membershipId, slug);
 			if (!this._memoryCache.TryGetValue<Role>(cacheKey, out var role))
 			{
-				var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
+				var dto = this.repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
 				if (dto == null)
 				{
 					return null;
@@ -373,17 +374,17 @@ namespace ErtisAuth.Infrastructure.Services
 			return role;
 		}
 		
-		public async ValueTask<Role> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
+		public async ValueTask<Role> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
 		{
-			if (name == ReservedRoles.Server)
+			if (slug == ReservedRoles.Server)
 			{
 				return await this.GetServerRoleAsync(membershipId, cancellationToken: cancellationToken);
 			}
 			
-			var cacheKey = GetCacheKey(membershipId, name);
+			var cacheKey = GetCacheKey(membershipId, slug);
 			if (!this._memoryCache.TryGetValue<Role>(cacheKey, out var role))
 			{
-				var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
+				var dto = await this.repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 				if (dto == null)
 				{
 					return null;
@@ -417,6 +418,7 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				Id = "server",
 				Name = "server",
+				Slug = "server",
 				Description = "An on the fly role instance required for password set/reset etc operations",
 				Permissions = new[]
 				{
@@ -442,9 +444,9 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public override Role Create(Utilizer utilizer, string membershipId, Role model)
 		{
-			if (model.Name is ReservedRoles.Administrator or ReservedRoles.Server && utilizer.Type != Utilizer.UtilizerType.System)
+			if (model.Slug is ReservedRoles.Administrator or ReservedRoles.Server && utilizer.Type != Utilizer.UtilizerType.System)
 			{
-				throw ErtisAuthException.ReservedRoleName(model.Name);
+				throw ErtisAuthException.ReservedRoleName(model.Slug);
 			}
 			
 			var created = base.Create(utilizer, membershipId, model);
@@ -454,9 +456,9 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public override async ValueTask<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
 		{
-			if (model.Name is ReservedRoles.Administrator or ReservedRoles.Server && utilizer.Type != Utilizer.UtilizerType.System)
+			if (model.Slug is ReservedRoles.Administrator or ReservedRoles.Server && utilizer.Type != Utilizer.UtilizerType.System)
 			{
-				throw ErtisAuthException.ReservedRoleName(model.Name);
+				throw ErtisAuthException.ReservedRoleName(model.Slug);
 			}
 			
 			var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);

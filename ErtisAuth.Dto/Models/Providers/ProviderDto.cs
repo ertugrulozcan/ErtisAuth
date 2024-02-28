@@ -1,8 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using ErtisAuth.Dto.Models.Resources;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Providers
 {
+	// ReSharper disable once ClassNeverInstantiated.Global
+	// ReSharper disable PropertyCanBeMadeInitOnly.Global
+	[SuppressMessage("ReSharper", "UnusedMember.Global")]
+	[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 	public class ProviderDto : EntityBase, IHasMembership, IHasSysDto
 	{
 		#region Properties

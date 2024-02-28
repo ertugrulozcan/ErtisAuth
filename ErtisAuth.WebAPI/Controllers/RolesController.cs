@@ -63,6 +63,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			var roleModel = new Role
 			{
 				Name = model.Name,
+				Slug = model.Slug,
 				Description = model.Description,
 				Permissions = model.Permissions,
 				Forbidden = model.Forbidden,
@@ -157,6 +158,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				Id = id,
 				Name = model.Name,
+				Slug = model.Slug,
 				Description = model.Description,
 				Permissions = model.Permissions,
 				Forbidden = model.Forbidden,
@@ -238,7 +240,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		public async Task<IActionResult> CheckPermissionByToken([FromRoute] string membershipId)
 		{
 			var utilizer = this.GetUtilizer();
-			var role = await this.roleService.GetByNameAsync(utilizer.Role, membershipId);
+			var role = await this.roleService.GetBySlugAsync(utilizer.Role, membershipId);
 			if (role != null)
 			{
 				if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))

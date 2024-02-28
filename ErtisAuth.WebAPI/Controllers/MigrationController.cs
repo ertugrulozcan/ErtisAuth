@@ -57,6 +57,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			var membership = new Membership
 			{
 				Name = model.Membership.Name,
+				Slug = model.Membership.Slug,
 				ExpiresIn = model.Membership.ExpiresIn,
 				RefreshTokenExpiresIn = model.Membership.RefreshTokenExpiresIn,
 				HashAlgorithm = model.Membership.HashAlgorithm,
@@ -83,6 +84,7 @@ namespace ErtisAuth.WebAPI.Controllers
 				application = new Application
 				{
 					Name = model.Application.Name,
+					Slug = model.Application.Slug,
 					Role = model.Application.Role
 				};	
 			}

@@ -72,6 +72,7 @@ namespace ErtisAuth.Infrastructure.Services
 			var membership = await this.membershipService.CreateAsync(new Membership
 			{
 				Name = _membership.Name,
+				Slug = _membership.Slug,
 				DefaultEncoding = _membership.DefaultEncoding,
 				HashAlgorithm = _membership.HashAlgorithm,
 				ExpiresIn = _membership.ExpiresIn,
@@ -90,12 +91,13 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			// 2. Role
 			Role adminRole;
-			var currentAdminRole = await this.roleService.GetByNameAsync(ReservedRoles.Administrator, membership.Id);
+			var currentAdminRole = await this.roleService.GetBySlugAsync(ReservedRoles.Administrator, membership.Id);
 			if (currentAdminRole == null)
 			{
 				adminRole = await this.roleService.CreateAsync(utilizer, membership.Id, new Role
 				{
-					Name = ReservedRoles.Administrator,
+					Name = "Administrator",
+					Slug = ReservedRoles.Administrator,
 					Description = "Administrator",
 					MembershipId = membership.Id,
 					Permissions = RoleHelper.AssertAdminPermissionsForReservedResources()
@@ -124,7 +126,7 @@ namespace ErtisAuth.Infrastructure.Services
 				FirstName = _user.FirstName,
 				LastName = _user.LastName,
 				EmailAddress = _user.EmailAddress,
-				Role = adminRole.Name,
+				Role = adminRole.Slug,
 				UserType = userType.Slug,
 				MembershipId = membership.Id,
 				Password = _user.Password,
@@ -137,6 +139,7 @@ namespace ErtisAuth.Infrastructure.Services
 				var application = await this.applicationService.CreateAsync(utilizer, membership.Id, new Application
 				{
 					Name = _application.Name,
+					Slug = _application.Slug,
 					Role = _application.Role,
 					MembershipId = membership.Id
 				});
@@ -161,7 +164,7 @@ namespace ErtisAuth.Infrastructure.Services
 		private static string GenerateRandomSecretKey(int outputSize)
 		{
 			var randomNumberGenerator = RandomNumberGenerator.Create();
-			byte[] bytes = new byte[outputSize];
+			var bytes = new byte[outputSize];
 			randomNumberGenerator.GetBytes(bytes);
 			return new string(bytes.Select(x => (char) (x % 26 + 65)).ToArray());
 		}

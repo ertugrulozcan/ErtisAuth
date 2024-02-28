@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Ertis.MongoDB.Attributes;
 using ErtisAuth.Dto.Models.Resources;
 using MongoDB.Bson;
@@ -5,6 +6,10 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Dto.Models.Memberships
 {
+	// ReSharper disable once ClassNeverInstantiated.Global
+	// ReSharper disable PropertyCanBeMadeInitOnly.Global
+	[SuppressMessage("ReSharper", "UnusedMember.Global")]
+	[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 	public class MembershipDto : EntityBase, IHasSysDto
 	{
 		#region Properties
@@ -12,6 +17,9 @@ namespace ErtisAuth.Dto.Models.Memberships
 		[Searchable]
 		[BsonElement("name")]
 		public string Name { get; set; }
+		
+		[BsonElement("slug")]
+		public string Slug { get; set; }
 		
 		[BsonElement("expires_in")]
 		public int ExpiresIn { get; set; }

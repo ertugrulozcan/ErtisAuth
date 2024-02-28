@@ -29,7 +29,7 @@ using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
-using ErtisAuth.Infrastructure.Extensions;
+using ErtisAuth.Infrastructure.Mapping.Extensions;
 using ErtisAuth.Integrations.OAuth.Core;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -304,16 +304,16 @@ namespace ErtisAuth.Infrastructure.Services
 
         private async Task<Role> EnsureRoleAsync(DynamicObject model, string membershipId, CancellationToken cancellationToken = default)
         {
-	        var roleName = model.GetValue<string>("role");
-	        if (string.IsNullOrEmpty(roleName))
+	        var roleSlug = model.GetValue<string>("role");
+	        if (string.IsNullOrEmpty(roleSlug))
 	        {
 		        throw ErtisAuthException.RoleRequired();
 	        }
 	        
-	        var role = await this._roleService.GetByNameAsync(roleName, membershipId, cancellationToken: cancellationToken);
+	        var role = await this._roleService.GetBySlugAsync(roleSlug, membershipId, cancellationToken: cancellationToken);
 	        if (role == null)
 	        {
-		        throw ErtisAuthException.RoleNotFound(roleName, true);
+		        throw ErtisAuthException.RoleNotFound(roleSlug, true);
 	        }
 
 	        return role;
@@ -997,9 +997,9 @@ namespace ErtisAuth.Infrastructure.Services
 	        // Is role changed?
 	        var role = await this.EnsureRoleAsync(current, membershipId, cancellationToken: cancellationToken);
 	        model.TryGetValue<string>("role", out var roleName);
-	        if (!string.IsNullOrEmpty(roleName) && roleName != role.Name)
+	        if (!string.IsNullOrEmpty(roleName) && roleName != role.Slug)
 	        {
-		        var utilizerRole = await this._roleService.GetByNameAsync(utilizer.Role, utilizer.MembershipId, cancellationToken: cancellationToken);
+		        var utilizerRole = await this._roleService.GetBySlugAsync(utilizer.Role, utilizer.MembershipId, cancellationToken: cancellationToken);
 		        if (utilizerRole != null)
 		        {
 			        // Is authorized for user update
