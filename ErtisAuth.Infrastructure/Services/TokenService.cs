@@ -128,9 +128,7 @@ namespace ErtisAuth.Infrastructure.Services
 				var userId = securityToken.Subject;
 				if (!string.IsNullOrEmpty(userId))
 				{
-					var dynamicObject = await this.userService.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
-					var user = dynamicObject?.Deserialize<User>();
-					return user;
+					return await this.userService.GetFromCacheAsync(membershipId, userId, cancellationToken: cancellationToken);
 				}
 				else
 				{

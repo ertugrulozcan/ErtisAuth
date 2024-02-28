@@ -572,16 +572,22 @@ namespace ErtisAuth.Infrastructure.Services
         
         public async Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
         {
+	        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+	        return await this.GetByIdAsync(membershipId, id);
+        }
+        
+        public async Task<User> GetFromCacheAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+        {
 	        var cacheKey = GetCacheKey(membershipId, id);
-	        if (!this._memoryCache.TryGetValue<DynamicObject>(cacheKey, out var user))
+	        if (!this._memoryCache.TryGetValue<User>(cacheKey, out var user))
 	        {
-		        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-		        user = await base.FindOneAsync(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("_id", QueryBuilder.ObjectId(id)));
-		        if (user == null)
+		        var dynamicObject = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+		        if (dynamicObject == null)
 		        {
 			        return null;
 		        }
-
+		        
+		        user = dynamicObject.Deserialize<User>();
 		        this._memoryCache.Set(cacheKey, user, GetCacheTTL());
 	        }
 			

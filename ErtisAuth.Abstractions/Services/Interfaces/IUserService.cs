@@ -25,6 +25,8 @@ namespace ErtisAuth.Abstractions.Services.Interfaces
         #region Methods
         
         Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default);
+        
+        Task<User> GetFromCacheAsync(string membershipId, string id, CancellationToken cancellationToken = default);
 
         Task<IPaginationCollection<DynamicObject>> GetAsync(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default);
 
