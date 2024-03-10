@@ -211,13 +211,13 @@ namespace ErtisAuth.Infrastructure.Services
 		
 		private async Task<BearerToken> GenerateBearerTokenAsync(User user, Membership membership, string ipAddress = null, string userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default)
 		{
-			string tokenId = Guid.NewGuid().ToString();
+			var tokenId = Guid.NewGuid().ToString();
 			var tokenClaims = new TokenClaims(tokenId, user, membership);
 			var hashAlgorithm = membership.GetHashAlgorithm();
 			var encoding = membership.GetEncoding();
 			var accessToken = this.jwtService.GenerateToken(tokenClaims, hashAlgorithm, encoding);
 			var refreshExpiresIn = TimeSpan.FromSeconds(membership.RefreshTokenExpiresIn);
-			var refreshToken = this.jwtService.GenerateToken(tokenClaims.AddClaim(REFRESH_TOKEN_CLAIM, true), hashAlgorithm, encoding);
+			var refreshToken = this.jwtService.GenerateToken(tokenClaims.AddClaim(REFRESH_TOKEN_CLAIM, true), hashAlgorithm, encoding, refreshExpiresIn);
 			var bearerToken = new BearerToken(accessToken, tokenClaims.ExpiresIn, refreshToken, refreshExpiresIn);
 			
 			// Save to active tokens collection

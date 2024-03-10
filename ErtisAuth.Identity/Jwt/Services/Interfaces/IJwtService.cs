@@ -9,7 +9,7 @@ namespace ErtisAuth.Identity.Jwt.Services.Interfaces
 {
 	public interface IJwtService
 	{
-		string GenerateToken(TokenClaims tokenClaims, HashAlgorithms hashAlgorithm, Encoding encoding);
+		string GenerateToken(TokenClaims tokenClaims, HashAlgorithms hashAlgorithm, Encoding encoding, TimeSpan? expiresIn = null);
 
 		string GenerateToken(TokenClaims tokenClaims, DateTime tokenGenerationTime, HashAlgorithms hashAlgorithm, Encoding encoding);
 

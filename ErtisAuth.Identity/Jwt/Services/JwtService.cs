@@ -14,7 +14,7 @@ namespace ErtisAuth.Identity.Jwt.Services
     {
         #region Methods
 
-        public string GenerateToken(TokenClaims tokenClaims, HashAlgorithms hashAlgorithm, Encoding encoding)
+        public string GenerateToken(TokenClaims tokenClaims, HashAlgorithms hashAlgorithm, Encoding encoding, TimeSpan? expiresIn = null)
         {
             return this.GenerateToken(
                 hashAlgorithm,
@@ -23,7 +23,7 @@ namespace ErtisAuth.Identity.Jwt.Services
                 tokenClaims.SecretKey,
                 tokenClaims.Issuer,
                 tokenClaims.Audience,
-                tokenClaims.ExpiresIn,
+                expiresIn ?? tokenClaims.ExpiresIn,
                 tokenClaims.Subject,
                 tokenClaims.TokenId,
                 tokenClaims.Principal,
