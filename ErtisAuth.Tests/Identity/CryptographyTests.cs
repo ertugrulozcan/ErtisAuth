@@ -15,7 +15,7 @@ namespace ErtisAuth.Tests.Identity
 			const string key = "61e2ce5f936b5b4d6166e268";
 			
 			var crypto = ErtisAuth.Identity.Cryptography.StringCipher.Encrypt(message, key);
-			Assert.That(string.IsNullOrEmpty(crypto));
+			Assert.That(!string.IsNullOrEmpty(crypto));
 			
 			Console.WriteLine(crypto);
 			
