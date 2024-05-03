@@ -1110,9 +1110,6 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 
 			var prior = dynamicObject.Clone();
-			this.EnsureManagedProperties(dynamicObject, membershipId);
-			dynamicObject = this.SyncModel(dynamicObject, dynamicObject);
-			
 			var passwordHash = this._cryptographyService.CalculatePasswordHash(membership, newPassword);
 			dynamicObject.SetValue("password_hash", passwordHash, true);
 
