@@ -1103,15 +1103,15 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 			
-			var user = await this.GetUserWithPasswordAsync(membership, userId);
-			if (user == null)
+			var dynamicObject = await this.GetByIdAsync(membership.Id, userId);
+			if (dynamicObject == null)
 			{
 				throw ErtisAuthException.UserNotFound(userId, "_id");
 			}
 
-			var dynamicObject = new DynamicObject(user);
+			var prior = dynamicObject.Clone();
 			this.EnsureManagedProperties(dynamicObject, membershipId);
-			dynamicObject = this.SyncModel(user, dynamicObject);
+			dynamicObject = this.SyncModel(dynamicObject, dynamicObject);
 			
 			var passwordHash = this._cryptographyService.CalculatePasswordHash(membership, newPassword);
 			dynamicObject.SetValue("password_hash", passwordHash, true);
@@ -1120,9 +1120,9 @@ namespace ErtisAuth.Infrastructure.Services
 			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.UserPasswordChanged,
-				UtilizerId = user.Id,
+				UtilizerId = userId,
 				Document = updatedUser,
-				Prior = user,
+				Prior = prior,
 				MembershipId = membershipId
 			}, cancellationToken: cancellationToken);
 
