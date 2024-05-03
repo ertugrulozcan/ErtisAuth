@@ -1103,17 +1103,23 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.MembershipNotFound(membershipId);
 			}
 			
-			var dynamicObject = await this.GetByIdAsync(membership.Id, userId);
-			if (dynamicObject == null)
+			var user = await this.GetByIdAsync(membership.Id, userId);
+			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(userId, "_id");
 			}
 
-			var prior = dynamicObject.Clone();
+			var prior = user.Clone();
+			user.RemoveProperty("_id");
+			user.RemoveProperty("password");
+			user.RemoveProperty("password_hash");
+			user.RemoveProperty("membership_id");
+			user.SetValue("membership_id", membershipId, true);
+			
 			var passwordHash = this._cryptographyService.CalculatePasswordHash(membership, newPassword);
-			dynamicObject.SetValue("password_hash", passwordHash, true);
+			user.SetValue("password_hash", passwordHash, true);
 
-			var updatedUser = await base.UpdateAsync(userId, dynamicObject, cancellationToken: cancellationToken);
+			var updatedUser = await base.UpdateAsync(userId, user, cancellationToken: cancellationToken);
 			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.UserPasswordChanged,
