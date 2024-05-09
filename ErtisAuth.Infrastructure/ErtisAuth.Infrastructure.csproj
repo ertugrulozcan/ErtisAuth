@@ -4,7 +4,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ertis.TemplateEngine" Version="7.0.4" />
+        <PackageReference Include="Ertis.TemplateEngine" Version="7.0.5" />
         <PackageReference Include="AutoMapper" Version="13.0.1" />
         <PackageReference Include="TinyMapper" Version="3.0.3" />
         <PackageReference Include="Mapster" Version="7.4.0" />

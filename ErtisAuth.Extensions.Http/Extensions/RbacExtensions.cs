@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using Ertis.TemplateEngine;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Identity.Attributes;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +15,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 		public static Rbac GetRbacDefinition(this HttpContext httpContext, string utilizerId)
 		{
 			var endpoint = httpContext.GetEndpoint();
-			var formatter = new Ertis.TemplateEngine.Formatter(new Ertis.TemplateEngine.ParserOptions { OpenBrackets = "{", CloseBrackets = "}" });
+			var formatter = new Formatter(new ParserOptions { OpenBrackets = "{", CloseBrackets = "}" });
 			
 			if (endpoint is RouteEndpoint routeEndpoint)
 			{
@@ -26,6 +28,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 					if (!string.IsNullOrEmpty(rbacSubjectSegment.Value?.Trim()))
 					{
 						var rbacSubjectSegmentValue = rbacSubjectSegment.Value.Trim();
+						rbacSubjectSegmentValue = SetEnvironmentVariablesToSegment(rbacSubjectSegmentValue, formatter);
 						rbacSubjectSegmentValue = formatter.Format(rbacSubjectSegmentValue, httpContext.Request.RouteValues);
 						rbacSubjectSegment = new RbacSegment(rbacSubjectSegmentValue);
 					}
@@ -40,6 +43,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 					if (!string.IsNullOrEmpty(rbacResourceSegment.Value?.Trim()))
 					{
 						var rbacResourceSegmentValue = rbacResourceSegment.Value.Trim();
+						rbacResourceSegmentValue = SetEnvironmentVariablesToSegment(rbacResourceSegmentValue, formatter);
 						rbacResourceSegmentValue = formatter.Format(rbacResourceSegmentValue, httpContext.Request.RouteValues);
 						rbacResourceSegment = new RbacSegment(rbacResourceSegmentValue);
 					}
@@ -62,6 +66,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 					if (!string.IsNullOrEmpty(rbacActionSegment.Value?.Trim()))
 					{
 						var rbacActionSegmentValue = rbacActionSegment.Value.Trim();
+						rbacActionSegmentValue = SetEnvironmentVariablesToSegment(rbacActionSegmentValue, formatter);
 						rbacActionSegmentValue = formatter.Format(rbacActionSegmentValue, httpContext.Request.RouteValues);
 						rbacActionSegment = new RbacSegment(rbacActionSegmentValue);
 					}
@@ -76,6 +81,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 					if (!string.IsNullOrEmpty(rbacObjectSegment.Value?.Trim()))
 					{
 						var rbacObjectSegmentValue = rbacObjectSegment.Value.Trim();
+						rbacObjectSegmentValue = SetEnvironmentVariablesToSegment(rbacObjectSegmentValue, formatter);
 						rbacObjectSegmentValue = formatter.Format(rbacObjectSegmentValue, httpContext.Request.RouteValues);
 						rbacObjectSegment = new RbacSegment(rbacObjectSegmentValue);
 					}
@@ -87,7 +93,31 @@ namespace ErtisAuth.Extensions.Http.Extensions
 
 			return default;
 		}
+		
+		private static string SetEnvironmentVariablesToSegment(string segmentValue, Formatter formatter)
+		{
+			// ReSharper disable once InconsistentNaming
+			const string PREFIX = "env::";
+			
+			if (string.IsNullOrEmpty(segmentValue) || !segmentValue.Contains(PREFIX))
+			{
+				return segmentValue;
+			}
+			
+			var segments = formatter.LookUp(segmentValue);
+			foreach (var segment in segments)
+			{
+				if (segment.Type == SegmentType.PlaceHolder && segment is PlaceHolder placeHolder && placeHolder.Inner.StartsWith(PREFIX))
+				{
+					var environmentVariable = placeHolder.Inner[PREFIX.Length..];
+					var value = Environment.GetEnvironmentVariable(environmentVariable);
+					segmentValue = segmentValue.Replace(placeHolder.Outer, value);
+				}
+			}
 
+			return segmentValue;
+		}
+		
 		#endregion
 	}
 }
