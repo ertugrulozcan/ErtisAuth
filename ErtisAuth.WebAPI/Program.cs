@@ -81,6 +81,8 @@ builder.Services.AddSingleton<IMailHookRepository, MailHookRepository>();
 builder.Services.AddSingleton<IProviderRepository, ProviderRepository>();
 builder.Services.AddSingleton<IActiveTokensRepository, ActiveTokensRepository>();
 builder.Services.AddSingleton<IRevokedTokensRepository, RevokedTokensRepository>();
+builder.Services.AddSingleton<ITokenCodeRepository, TokenCodeRepository>();
+builder.Services.AddSingleton<ICodePolicyRepository, CodePolicyRepository>();
 builder.Services.AddSingleton<IEventRepository, EventRepository>();
 builder.Services.AddSingleton<IRepositoryActionBinder, SysUpserter>();
 
@@ -95,6 +97,8 @@ builder.Services.AddSingleton<IUserTypeService, UserTypeService>();
 builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddSingleton<IApplicationService, ApplicationService>();
 builder.Services.AddSingleton<IRoleService, RoleService>();
+builder.Services.AddSingleton<ITokenCodeService, TokenCodeService>();
+builder.Services.AddSingleton<ITokenCodePolicyService, TokenCodePolicyService>();
 builder.Services.AddSingleton<IProviderService, ProviderService>();
 builder.Services.AddSingleton<IWebhookService, WebhookService>();
 builder.Services.AddSingleton<IMailHookService, MailHookService>();

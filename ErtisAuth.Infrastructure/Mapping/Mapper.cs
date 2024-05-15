@@ -94,7 +94,9 @@ namespace ErtisAuth.Infrastructure.Mapping
 				.Add(new CustomMapper<MailHook, MailHookDto>((model) => model.ToDto()))
 				.Add(new CustomMapper<MailHookDto, MailHook>((dto) => dto.ToModel()))
 				.Add(new CustomMapper<Provider, ProviderDto>((model) => model.ToDto()))
-				.Add(new CustomMapper<ProviderDto, Provider>((dto) => dto.ToModel()));
+				.Add(new CustomMapper<ProviderDto, Provider>((dto) => dto.ToModel()))
+				.Add(new CustomMapper<TokenCodePolicy, TokenCodePolicyDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<TokenCodePolicyDto, TokenCodePolicy>((dto) => dto.ToModel()));
 		}
 
 		#endregion

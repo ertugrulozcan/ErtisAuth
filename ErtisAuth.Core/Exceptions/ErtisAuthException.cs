@@ -100,6 +100,18 @@ namespace ErtisAuth.Core.Exceptions
 		{
 			return new ErtisAuthException(HttpStatusCode.Forbidden, message, "AccessDenied");
 		}
+		
+		public static ErtisAuthException TokenCodePolicyNotFound(string slug = null)
+		{
+			return string.IsNullOrEmpty(slug) 
+				? new ErtisAuthException(HttpStatusCode.NotFound, $"Any code policy not found for this membership", "TokenCodePolicyNotFound") 
+				: new ErtisAuthException(HttpStatusCode.NotFound, $"Code policy not found in db by given slug: <{slug}>", "TokenCodePolicyNotFound");
+		}
+		
+		public static ErtisAuthException TokenCodePolicyWithSameNameAlreadyExists(string name)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"The token code policy with same name is already exists ({name})", "TokenCodePolicyWithSameNameAlreadyExists");
+		}
 
 		#endregion
 		

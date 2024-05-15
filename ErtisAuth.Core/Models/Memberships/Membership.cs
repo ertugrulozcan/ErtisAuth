@@ -58,6 +58,9 @@ namespace ErtisAuth.Core.Models.Memberships
 		[JsonProperty("user_activation")]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Status UserActivation { get; set; }
+		
+		[JsonProperty("code_policy")]
+		public string CodePolicy { get; set; }
 
 		[JsonProperty("sys")]
 		public SysModel Sys { get; set; }

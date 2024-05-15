@@ -44,6 +44,9 @@ namespace ErtisAuth.Dto.Models.Memberships
 		
 		[BsonElement("user_activation")]
 		public string UserActivation { get; set; }
+		
+		[BsonElement("code_policy")]
+		public string CodePolicy { get; set; }
 
 		[BsonElement("sys")]
 		public SysModelDto Sys { get; set; }

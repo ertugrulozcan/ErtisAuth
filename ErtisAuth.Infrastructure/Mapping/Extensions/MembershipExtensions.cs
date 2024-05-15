@@ -27,6 +27,7 @@ public static class MembershipExtensions
             RefreshTokenExpiresIn = dto.RefreshTokenExpiresIn,
             MailProviders = dto.MailProviders?.Select(ToMailProvider).ToArray(),
             UserActivation = dto.UserActivation is "active" or "Active" ? Status.Active : Status.Passive,
+            CodePolicy = dto.CodePolicy,
             Sys = dto.Sys?.ToModel()
         };
     }
@@ -46,6 +47,7 @@ public static class MembershipExtensions
             RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
             MailProviders = model.MailProviders?.Select(x => MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(Newtonsoft.Json.JsonConvert.SerializeObject(x))).ToArray(),
             UserActivation = model.UserActivation.ToString().ToLower(),
+            CodePolicy = model.CodePolicy,
             Sys = model.Sys?.ToDto()
         };
     }

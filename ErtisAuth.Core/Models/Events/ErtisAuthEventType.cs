@@ -40,5 +40,9 @@ namespace ErtisAuth.Core.Models.Events
 		MailhookDeleted = 702,
 		MailhookMailSent = 710,
 		MailhookMailFailed = 711,
+		
+		TokenCodePolicyCreated = 800,
+		TokenCodePolicyUpdated = 801,
+		TokenCodePolicyDeleted = 802,
 	}
 }

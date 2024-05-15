@@ -1,12 +1,36 @@
+using System;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dto.Models.Identity;
-using ErtisAuth.Infrastructure.Extensions;
 
 namespace ErtisAuth.Infrastructure.Mapping.Extensions;
 
 public static class TokenExtensions
 {
-    #region Methods
+    #region BearerToken Methods
+
+    private static BearerToken ToModel(this BearerTokenDto dto)
+    {
+        return new BearerToken(
+            dto.AccessToken, 
+            TimeSpan.FromSeconds(dto.ExpiresIn), 
+            dto.RefreshToken, 
+            TimeSpan.FromSeconds(dto.RefreshTokenExpiresIn));
+    }
+
+    private static BearerTokenDto ToDto(this BearerToken model)
+    {
+        return new BearerTokenDto
+        {
+            AccessToken = model.AccessToken,
+            RefreshToken = model.RefreshToken,
+            ExpiresIn = model.ExpiresInTimeStamp,
+            RefreshTokenExpiresIn = model.RefreshTokenExpiresInTimeStamp 
+        };
+    }
+
+    #endregion
+    
+    #region ActiveToken Methods
 
     public static ActiveToken ToModel(this ActiveTokenDto dto)
     {
@@ -67,5 +91,71 @@ public static class TokenExtensions
         };
     }
 
+    #endregion
+    
+    #region TokenCode Methods
+
+    public static TokenCode ToModel(this TokenCodeDto dto)
+    {
+        return new TokenCode
+        {
+            Id = dto.Id,
+            MembershipId = dto.MembershipId,
+            Code = dto.Code,
+            ExpiresIn = dto.ExpiresIn,
+            CreatedAt = dto.CreatedAt,
+            UserId = dto.UserId,
+            Token = dto.Token?.ToModel()
+        };
+    }
+		
+    public static TokenCodeDto ToDto(this TokenCode model)
+    {
+        return new TokenCodeDto
+        {
+            Id = model.Id,
+            Code = model.Code,
+            ExpiresIn = model.ExpiresIn,
+            CreatedAt = model.CreatedAt,
+            UserId = model.UserId,
+            Token = model.Token?.ToDto(),
+            MembershipId = model.MembershipId
+        };
+    }
+    
+    public static TokenCodePolicy ToModel(this TokenCodePolicyDto dto)
+    {
+        return new TokenCodePolicy
+        {
+            Id = dto.Id,
+            Name = dto.Name,
+            Slug = dto.Slug,
+            Description = dto.Description,
+            Length = dto.Length,
+            ContainsLetters = dto.ContainsLetters,
+            ContainsDigits = dto.ContainsDigits,
+            ExpiresIn = dto.ExpiresIn,
+            MembershipId = dto.MembershipId,
+            Sys = dto.Sys?.ToModel()
+        };
+    }
+		
+    public static TokenCodePolicyDto ToDto(this TokenCodePolicy model)
+    {
+        return new TokenCodePolicyDto
+        {
+            Id = model.Id,
+            Name = model.Name,
+            Slug = model.Slug,
+            Description = model.Description,
+            Length = model.Length,
+            ContainsLetters = model.ContainsLetters,
+            ContainsDigits = model.ContainsDigits,
+            ExpiresIn = model.ExpiresIn,
+            MembershipId = model.MembershipId,
+            Sys = model.Sys?.ToDto()
+        };
+    }
+    
     #endregion
 }
