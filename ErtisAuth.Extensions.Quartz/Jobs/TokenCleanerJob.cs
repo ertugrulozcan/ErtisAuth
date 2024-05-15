@@ -12,6 +12,7 @@ namespace ErtisAuth.Extensions.Quartz.Jobs
 		
 		private readonly IMembershipService membershipService;
 		private readonly ITokenService tokenService;
+		private readonly ITokenCodeService tokenCodeService;
 		private readonly ILogger<TokenCleanerJob> logger;
 
 		#endregion
@@ -23,14 +24,17 @@ namespace ErtisAuth.Extensions.Quartz.Jobs
 		/// </summary>
 		/// <param name="membershipService"></param>
 		/// <param name="tokenService"></param>
+		/// <param name="tokenCodeService"></param>
 		/// <param name="logger"></param>
 		public TokenCleanerJob(
 			IMembershipService membershipService, 
 			ITokenService tokenService,
+			ITokenCodeService tokenCodeService,
 			ILogger<TokenCleanerJob> logger)
 		{
 			this.membershipService = membershipService;
 			this.tokenService = tokenService;
+			this.tokenCodeService = tokenCodeService;
 			this.logger = logger;
 		}
 		
@@ -49,6 +53,7 @@ namespace ErtisAuth.Extensions.Quartz.Jobs
 				{
 					await this.tokenService.ClearExpiredActiveTokens(membershipId);
 					await this.tokenService.ClearRevokedTokens(membershipId);
+					await this.tokenCodeService.ClearExpiredTokenCodes(membershipId);
 				}
 				else
 				{

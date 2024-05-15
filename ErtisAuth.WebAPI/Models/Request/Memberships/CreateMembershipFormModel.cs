@@ -1,5 +1,4 @@
 using ErtisAuth.Core.Models.Memberships;
-using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.WebAPI.Models.Request.Memberships
@@ -31,6 +30,9 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		
 		[JsonProperty("default_language")]
 		public string DefaultLanguage { get; set; }
+		
+		[JsonProperty("code_policy")]
+		public string CodePolicy { get; set; }
 
 		#endregion
 
@@ -48,6 +50,7 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 				HashAlgorithm = this.HashAlgorithm,
 				DefaultEncoding = this.DefaultEncoding,
 				DefaultLanguage = this.DefaultLanguage,
+				CodePolicy = this.CodePolicy
 			};
 		}
 

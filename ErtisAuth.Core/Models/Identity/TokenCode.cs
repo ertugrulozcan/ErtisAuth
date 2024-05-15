@@ -26,4 +26,14 @@ public class TokenCode : MembershipBoundedResource
     public BearerToken Token { get; set; }
     
     #endregion
+
+    #region Methods
+
+    public void AssignToken(BearerToken bearerToken, string userId)
+    {
+        this.Token = bearerToken;
+        this.UserId = userId;
+    }
+
+    #endregion
 }

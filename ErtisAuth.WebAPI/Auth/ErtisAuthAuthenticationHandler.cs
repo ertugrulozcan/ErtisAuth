@@ -68,9 +68,10 @@ namespace ErtisAuth.WebAPI.Auth
 				if (endpoint is RouteEndpoint routeEndpoint)
 				{
 					var authorizedAttribute = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(AuthorizedAttribute));
+					var unauthorizedAttribute = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(UnauthorizedAttribute));
 					if (authorizedAttribute is AuthorizedAttribute)
 					{
-						isAuthorizedEndpoint = true;
+						isAuthorizedEndpoint = unauthorizedAttribute == null;
 					}
 				}
 

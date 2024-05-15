@@ -112,7 +112,22 @@ namespace ErtisAuth.Core.Exceptions
 		{
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The token code policy with same name is already exists ({name})", "TokenCodePolicyWithSameNameAlreadyExists");
 		}
-
+		
+		public static ErtisAuthException InvalidTokenCode()
+		{
+			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Token code is invalid", "InvalidTokenCode");
+		}
+		
+		public static ErtisAuthException TokenCodeExpired()
+		{
+			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Token code was expired", "TokenCodeExpired");
+		}
+		
+		public static ErtisAuthException UnauthorizedTokenCode()
+		{
+			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Token code unauthorized yet", "UnauthorizedTokenCode");
+		}
+		
 		#endregion
 		
 		#region Membership Exceptions

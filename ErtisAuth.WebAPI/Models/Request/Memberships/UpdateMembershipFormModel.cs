@@ -35,6 +35,9 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		[JsonProperty("mail_providers")]
 		public IMailProvider[] MailProviders { get; set; }
 		
+		[JsonProperty("code_policy")]
+		public string CodePolicy { get; set; }
+		
 		#endregion
 		
 		#region Methods
@@ -53,6 +56,7 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 				DefaultEncoding = this.DefaultEncoding,
 				DefaultLanguage = this.DefaultLanguage,
 				MailProviders = this.MailProviders,
+				CodePolicy = this.CodePolicy
 			};
 		}
 
