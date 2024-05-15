@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
         <PackageId>ErtisAuth.Integrations.OAuth.Core</PackageId>
-        <PackageVersion>7.6.5</PackageVersion>
+        <PackageVersion>7.6.6</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Integrations.OAuth.Core</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -12,8 +12,8 @@
         <Title>ErtisAuth.Integrations.OAuth.Core</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>7.6.5</AssemblyVersion>
-        <FileVersion>7.6.5</FileVersion>
+        <AssemblyVersion>7.6.6</AssemblyVersion>
+        <FileVersion>7.6.6</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
