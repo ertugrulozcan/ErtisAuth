@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Extensions;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Identity.Attributes;
 using Microsoft.AspNetCore.Mvc;

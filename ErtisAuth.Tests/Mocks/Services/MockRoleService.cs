@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Resources;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;

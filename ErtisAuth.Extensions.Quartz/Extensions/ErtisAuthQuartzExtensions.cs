@@ -1,4 +1,4 @@
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Extensions.Quartz.Jobs;
 using ErtisAuth.Extensions.Quartz.Services;
 using Microsoft.Extensions.DependencyInjection;

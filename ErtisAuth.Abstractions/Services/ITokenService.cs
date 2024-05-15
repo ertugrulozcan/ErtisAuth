@@ -4,7 +4,7 @@ using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 
-namespace ErtisAuth.Abstractions.Services.Interfaces
+namespace ErtisAuth.Abstractions.Services
 {
 	public interface ITokenService
 	{

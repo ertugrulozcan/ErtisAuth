@@ -2,7 +2,7 @@ using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Extensions.Hosting;
 using ErtisAuth.Extensions.Mailkit.Providers;
 
-namespace ErtisAuth.Abstractions.Services.Interfaces;
+namespace ErtisAuth.Abstractions.Services;
 
 public interface IMailServiceBackgroundWorker : IBackgroundWorker<MailServiceBackgroundWorkerArgs>
 {

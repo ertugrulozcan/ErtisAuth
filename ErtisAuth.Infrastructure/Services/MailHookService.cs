@@ -8,7 +8,7 @@ using Ertis.MongoDB.Queries;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Infrastructure.Mapping;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Mailing;

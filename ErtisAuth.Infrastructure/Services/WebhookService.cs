@@ -7,7 +7,7 @@ using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Core.Exceptions;

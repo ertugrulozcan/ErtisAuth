@@ -15,7 +15,7 @@ using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Database;
 using Ertis.Net.Rest;
 using Ertis.Schema.Serialization;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Extensions.Authorization.Constants;

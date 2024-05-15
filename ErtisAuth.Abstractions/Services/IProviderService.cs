@@ -5,7 +5,7 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Core;
 
-namespace ErtisAuth.Abstractions.Services.Interfaces
+namespace ErtisAuth.Abstractions.Services
 {
 	public interface IProviderService : IMembershipBoundedCrudService<Provider>
 	{

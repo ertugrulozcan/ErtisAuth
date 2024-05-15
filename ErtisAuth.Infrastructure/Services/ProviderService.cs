@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ertis.MongoDB.Queries;
 using Ertis.Schema.Dynamics;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Exceptions;

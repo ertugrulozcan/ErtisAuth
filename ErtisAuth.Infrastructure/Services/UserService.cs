@@ -16,7 +16,7 @@ using Ertis.Schema.Types.CustomTypes;
 using Ertis.Schema.Validation;
 using Ertis.Security.Cryptography;
 using ErtisAuth.Core.Models.Identity;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Users;

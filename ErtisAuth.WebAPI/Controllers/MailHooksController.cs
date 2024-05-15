@@ -6,7 +6,7 @@ using Ertis.Core.Collections;
 using Ertis.Core.Models.Response;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Mailing;

@@ -5,7 +5,7 @@ using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
 using Ertis.Schema.Dynamics;
 
-namespace ErtisAuth.Abstractions.Services.Interfaces
+namespace ErtisAuth.Abstractions.Services
 {
     public interface IDynamicObjectCrudService
     {

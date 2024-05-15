@@ -1,6 +1,6 @@
 using System;
 using Ertis.Data.Repository;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Dto.Models;
 using ErtisAuth.Dto.Models.Resources;
 

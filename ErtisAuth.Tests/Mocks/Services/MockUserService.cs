@@ -7,7 +7,7 @@ using Ertis.Core.Collections;
 using Ertis.Core.Models.Resources;
 using Ertis.Schema.Dynamics;
 using Ertis.Schema.Extensions;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Events.EventArgs;

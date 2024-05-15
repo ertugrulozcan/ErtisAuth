@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using Microsoft.Extensions.Logging;
 using Quartz;
 

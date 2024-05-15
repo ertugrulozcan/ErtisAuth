@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Core.Models.Applications;
 
-namespace ErtisAuth.Abstractions.Services.Interfaces
+namespace ErtisAuth.Abstractions.Services
 {
 	public interface IApplicationService : IMembershipBoundedCrudService<Application>
 	{

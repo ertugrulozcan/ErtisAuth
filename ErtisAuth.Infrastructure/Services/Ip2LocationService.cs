@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Net.Rest;
 using Ertis.Net.Services;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.GeoLocation;
 using ErtisAuth.Infrastructure.Configuration;
 using ErtisAuth.Infrastructure.Models.GeoLocation;

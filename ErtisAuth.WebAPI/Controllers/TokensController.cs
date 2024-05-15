@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Integrations.OAuth.Apple;

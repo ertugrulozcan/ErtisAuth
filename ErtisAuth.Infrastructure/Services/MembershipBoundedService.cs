@@ -9,7 +9,7 @@ using Ertis.Data.Models;
 using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Core.Exceptions;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.Infrastructure.Mapping;
 

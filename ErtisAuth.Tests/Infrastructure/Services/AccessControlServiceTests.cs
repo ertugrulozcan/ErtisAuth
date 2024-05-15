@@ -1,4 +1,4 @@
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.Tests.Mocks.Services;

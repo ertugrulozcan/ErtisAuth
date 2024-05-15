@@ -9,7 +9,7 @@ using Ertis.Schema.Extensions;
 using Ertis.Schema.Types;
 using Ertis.Schema.Types.CustomTypes;
 using Ertis.Schema.Types.Primitives;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Events;

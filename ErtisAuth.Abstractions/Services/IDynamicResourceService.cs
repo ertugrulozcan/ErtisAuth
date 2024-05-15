@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 
-namespace ErtisAuth.Abstractions.Services.Interfaces
+namespace ErtisAuth.Abstractions.Services
 {
 	public interface IDynamicResourceService
 	{

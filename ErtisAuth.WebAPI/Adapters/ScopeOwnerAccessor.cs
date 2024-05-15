@@ -1,6 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
-using ErtisAuth.Abstractions.Services.Interfaces;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.Http;

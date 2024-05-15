@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using ErtisAuth.Core.Models;
 
-namespace ErtisAuth.Abstractions.Services.Interfaces
+namespace ErtisAuth.Abstractions.Services
 {
 	public interface IMembershipBoundedService
 	{

@@ -5,7 +5,7 @@ using Ertis.Core.Collections;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
 
-namespace ErtisAuth.Abstractions.Services.Interfaces
+namespace ErtisAuth.Abstractions.Services
 {
 	public interface IMembershipService : IGenericCrudService<Membership>
 	{
