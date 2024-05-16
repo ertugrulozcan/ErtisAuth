@@ -8,13 +8,13 @@ namespace ErtisAuth.WebAPI.Auth
 	{
 		protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ErtisAuthAuthorizationRequirement requirement)
 		{
-			if (context.User.Identities.Any(x => x.NameClaimType == "Utilizer"))
+			if (context.User.Identities.Any(x => x.NameClaimType == "Utilizer") || context.User.Identities.Any(x => x.NameClaimType == "Public"))
 			{
-				context.Succeed(requirement);	
+				context.Succeed(requirement);
 			}
 			else
 			{
-				context.Fail();	
+				context.Fail();
 			}
 			
 			return Task.CompletedTask;

@@ -58,6 +58,7 @@ namespace ErtisAuth.Extensions.AspNetCore
 			try
 			{
 				var isAuthorizedEndpoint = false;
+				var isUnauthorizedEndpoint = false;
 				var endpoint = this.Context.GetEndpoint();
 				if (endpoint is RouteEndpoint routeEndpoint)
 				{
@@ -67,15 +68,29 @@ namespace ErtisAuth.Extensions.AspNetCore
 					{
 						isAuthorizedEndpoint = unauthorizedAttribute == null;
 					}
+					
+					if (unauthorizedAttribute is UnauthorizedAttribute)
+					{
+						isUnauthorizedEndpoint = true;
+					}
 				}
 
 				if (!isAuthorizedEndpoint)
 				{
-					return AuthenticateResult.NoResult();
+					if (isUnauthorizedEndpoint)
+					{
+						var publicIdentity = new ClaimsIdentity(Array.Empty<Claim>(), null, "Public", null);
+						this.Context.User.AddIdentity(publicIdentity);
+						var publicPrincipal = new ClaimsPrincipal(publicIdentity);
+						return AuthenticateResult.Success(new AuthenticationTicket(publicPrincipal, this.Scheme.Name));
+					}
+					else
+					{
+						return AuthenticateResult.NoResult();	
+					}
 				}
 				
 				var utilizer = await this.CheckAuthorizationAsync();
-				
 				var identity = new ClaimsIdentity(
 					new []
 					{

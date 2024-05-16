@@ -8,7 +8,7 @@ namespace ErtisAuth.Extensions.AspNetCore
 	{
 		protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ErtisAuthAuthorizationRequirement requirement)
 		{
-			if (context.User.Identities.Any(x => x.NameClaimType == "Utilizer"))
+			if (context.User.Identities.Any(x => x.NameClaimType == "Utilizer") || context.User.Identities.Any(x => x.NameClaimType == "Public"))
 			{
 				context.Succeed(requirement);	
 			}

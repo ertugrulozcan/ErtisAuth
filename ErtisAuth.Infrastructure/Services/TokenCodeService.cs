@@ -186,7 +186,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 		var tokenCode = await this.GetTokenCode(code, membershipId, cancellationToken: cancellationToken);
 		if (tokenCode == null)
 		{
-			throw ErtisAuthException.TokenCodeNotFound();
+			throw ErtisAuthException.InvalidToken();
 		}
 
 		if (tokenCode.Token == null)
