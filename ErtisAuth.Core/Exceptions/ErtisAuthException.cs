@@ -113,6 +113,11 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The token code policy with same name is already exists ({name})", "TokenCodePolicyWithSameNameAlreadyExists");
 		}
 		
+		public static ErtisAuthException TokenCodeNotFound()
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, "Token code not found", "TokenCodeNotFound");
+		}
+		
 		public static ErtisAuthException InvalidTokenCode()
 		{
 			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Token code is invalid", "InvalidTokenCode");
