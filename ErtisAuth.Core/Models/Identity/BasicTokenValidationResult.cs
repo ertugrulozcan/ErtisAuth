@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Applications;
 using Newtonsoft.Json;
 
@@ -8,12 +9,15 @@ namespace ErtisAuth.Core.Models.Identity
 		#region Properties
 
 		[JsonProperty("verified")]
+		[JsonPropertyName("verified")]
 		public bool IsValidated { get; }
 
 		[JsonProperty("token")]
+		[JsonPropertyName("token")]
 		public string Token { get; }
 		
-		[JsonIgnore]
+		[Newtonsoft.Json.JsonIgnore]
+		[System.Text.Json.Serialization.JsonIgnore]
 		public Application Application { get; }
 
 		#endregion

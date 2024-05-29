@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Events;
@@ -19,9 +20,11 @@ namespace ErtisAuth.Core.Models.Mailing
         #region Properties
 
         [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
         
         [JsonProperty("slug")]
+        [JsonPropertyName("slug")]
         public string Slug
         {
             get
@@ -37,12 +40,15 @@ namespace ErtisAuth.Core.Models.Mailing
         }
 		
         [JsonProperty("description")]
+        [JsonPropertyName("description")]
         public string Description { get; set; }
 		
         [JsonProperty("event")]
+        [JsonPropertyName("event")]
         public string Event { get; set; }
 
-        [JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
         public ErtisAuthEventType? EventType
         {
             get
@@ -59,33 +65,43 @@ namespace ErtisAuth.Core.Models.Mailing
         }
 
         [JsonProperty("status")]
+        [JsonPropertyName("status")]
         public string Status { get; set; }
 
-        [JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
         public bool IsActive => this.Status == "active";
 
         [JsonProperty("mailSubject")]
+        [JsonPropertyName("mailSubject")]
         public string MailSubject { get; set; }
         
         [JsonProperty("mailTemplate")]
+        [JsonPropertyName("mailTemplate")]
         public string MailTemplate { get; set; }
         
         [JsonProperty("fromName")]
+        [JsonPropertyName("fromName")]
         public string FromName { get; set; }
         
         [JsonProperty("fromAddress")]
+        [JsonPropertyName("fromAddress")]
         public string FromAddress { get; set; }
         
         [JsonProperty("sendToUtilizer")]
+        [JsonPropertyName("sendToUtilizer")]
         public bool SendToUtilizer { get; set; }
         
         [JsonProperty("recipients")]
+        [JsonPropertyName("recipients")]
         public Recipient[] Recipients { get; set; }
         
         [JsonProperty("mailProvider")]
+        [JsonPropertyName("mailProvider")]
         public string MailProvider { get; set; }
         
         [JsonProperty("sys")]
+        [JsonPropertyName("sys")]
         public SysModel Sys { get; set; }
         
         #endregion

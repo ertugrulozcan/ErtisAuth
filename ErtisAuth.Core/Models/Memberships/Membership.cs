@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Extensions.Mailkit.Providers;
@@ -17,9 +18,11 @@ namespace ErtisAuth.Core.Models.Memberships
 		#region Properties
 
 		[JsonProperty("name")]
+		[JsonPropertyName("name")]
 		public string Name { get; set; }
 		
 		[JsonProperty("slug")]
+		[JsonPropertyName("slug")]
 		public string Slug
 		{
 			get
@@ -35,34 +38,45 @@ namespace ErtisAuth.Core.Models.Memberships
 		}
 		
 		[JsonProperty("expires_in")]
+		[JsonPropertyName("expires_in")]
 		public int ExpiresIn { get; set; }
 		
 		[JsonProperty("refresh_token_expires_in")]
+		[JsonPropertyName("refresh_token_expires_in")]
 		public int RefreshTokenExpiresIn { get; set; }
 		
 		[JsonProperty("secret_key")]
+		[JsonPropertyName("secret_key")]
 		public string SecretKey { get; set; }
 		
 		[JsonProperty("hash_algorithm")]
+		[JsonPropertyName("hash_algorithm")]
 		public string HashAlgorithm { get; set; }
 
 		[JsonProperty("encoding")]
+		[JsonPropertyName("encoding")]
 		public string DefaultEncoding { get; set; }
 		
 		[JsonProperty("default_language")]
+		[JsonPropertyName("default_language")]
 		public string DefaultLanguage { get; set; }
 
 		[JsonProperty("mail_providers")]
+		[JsonPropertyName("mail_providers")]
 		public IMailProvider[] MailProviders { get; set; }
 		
 		[JsonProperty("user_activation")]
-		[JsonConverter(typeof(StringEnumConverter))]
+		[JsonPropertyName("user_activation")]
+		[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+		[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 		public Status UserActivation { get; set; }
 		
 		[JsonProperty("code_policy")]
+		[JsonPropertyName("code_policy")]
 		public string CodePolicy { get; set; }
 
 		[JsonProperty("sys")]
+		[JsonPropertyName("sys")]
 		public SysModel Sys { get; set; }
 		
 		#endregion

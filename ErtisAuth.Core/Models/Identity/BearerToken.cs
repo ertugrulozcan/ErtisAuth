@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -8,18 +9,23 @@ namespace ErtisAuth.Core.Models.Identity
 	public class BearerToken : TokenBase, IRefreshableToken
 	{
 		#region Properties
-
-		[JsonConverter(typeof(StringEnumConverter))]
+		
 		[JsonProperty("token_type")]
+		[JsonPropertyName("token_type")]
+		[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+		[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 		public override SupportedTokenTypes TokenType => SupportedTokenTypes.Bearer;
 
 		[JsonProperty("refresh_token")]
+		[JsonPropertyName("refresh_token")]
 		public string RefreshToken { get; private set; }
 
-		[JsonIgnore]
+		[Newtonsoft.Json.JsonIgnore]
+		[System.Text.Json.Serialization.JsonIgnore]
 		public TimeSpan RefreshExpiresIn { get; private set; }
 		
 		[JsonProperty("refresh_token_expires_in")]
+		[JsonPropertyName("refresh_token_expires_in")]
 		public int RefreshTokenExpiresInTimeStamp => (int) this.RefreshExpiresIn.TotalSeconds;
 		
 		#endregion

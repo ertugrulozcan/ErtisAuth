@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
@@ -10,10 +11,13 @@ namespace ErtisAuth.Core.Models.Events
 		#region Properties
 
 		[JsonProperty("event_type")]
-		[JsonConverter(typeof(StringEnumConverter))]
+		[JsonPropertyName("event_type")]
+		[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+		[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 		public ErtisAuthEventType EventType { get; set; }
 
 		[JsonProperty("is_custom_event")] 
+		[JsonPropertyName("is_custom_event")] 
 		public override bool IsCustomEvent => false;
 		
 		#endregion

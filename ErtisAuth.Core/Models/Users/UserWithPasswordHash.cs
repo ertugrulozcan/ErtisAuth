@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Users
@@ -7,6 +8,7 @@ namespace ErtisAuth.Core.Models.Users
 		#region Properties
 
 		[JsonProperty("password_hash")]
+		[JsonPropertyName("password_hash")]
 		public string PasswordHash { get; set; }
 
 		#endregion

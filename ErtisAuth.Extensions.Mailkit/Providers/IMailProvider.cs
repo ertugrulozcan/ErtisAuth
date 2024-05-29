@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Extensions.Mailkit.Models;
@@ -12,16 +13,21 @@ public interface IMailProvider
 	#region Properties
 	
 	[JsonProperty("guid")]
+	[JsonPropertyName("guid")]
 	string Guid { get; }
 
 	[JsonProperty("type")]
-	[JsonConverter(typeof(StringEnumConverter))]
+	[JsonPropertyName("type")]
+	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	MailProviderType Type { get; }
 	
 	[JsonProperty("name")]
+	[JsonPropertyName("name")]
 	string Name { get; }
 	
 	[JsonProperty("slug")]
+	[JsonPropertyName("slug")]
 	string Slug { get; }
 
 	#endregion

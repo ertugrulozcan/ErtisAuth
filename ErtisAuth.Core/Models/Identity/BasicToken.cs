@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -8,8 +9,10 @@ namespace ErtisAuth.Core.Models.Identity
 	{
 		#region Properties
 
-		[JsonConverter(typeof(StringEnumConverter))]
 		[JsonProperty("token_type")]
+		[JsonPropertyName("token_type")]
+		[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+		[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 		public override SupportedTokenTypes TokenType => SupportedTokenTypes.Basic;
 
 		#endregion

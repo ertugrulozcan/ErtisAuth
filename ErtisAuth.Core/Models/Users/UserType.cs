@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
 using Ertis.Core.Models.Resources;
 using Ertis.Schema.Dynamics;
@@ -34,6 +35,7 @@ namespace ErtisAuth.Core.Models.Users
         #region Properties
 
         [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name
         {
             get => this.name;
@@ -49,6 +51,7 @@ namespace ErtisAuth.Core.Models.Users
         }
 
         [JsonProperty("slug")]
+        [JsonPropertyName("slug")]
         public string Slug
         {
             get
@@ -64,10 +67,12 @@ namespace ErtisAuth.Core.Models.Users
         }
         
         [JsonProperty("description")]
+        [JsonPropertyName("description")]
         public string Description { get; set; }
 
         [JsonProperty("properties")]
-        [JsonConverter(typeof(FieldInfoCollectionJsonConverter))]
+        [JsonPropertyName("properties")]
+        [Newtonsoft.Json.JsonConverter(typeof(FieldInfoCollectionJsonConverter))]
         public IReadOnlyCollection<IFieldInfo> Properties
         {
             get => this.properties;
@@ -75,9 +80,11 @@ namespace ErtisAuth.Core.Models.Users
         }
 
         [JsonProperty("allowAdditionalProperties")]
+        [JsonPropertyName("allowAdditionalProperties")]
         public bool AllowAdditionalProperties { get; init; }
         
         [JsonProperty("isAbstract")]
+        [JsonPropertyName("isAbstract")]
         public bool IsAbstract
         {
             get => this.isAbstract;
@@ -93,6 +100,7 @@ namespace ErtisAuth.Core.Models.Users
         }
 
         [JsonProperty("isSealed")]
+        [JsonPropertyName("isSealed")]
         public bool IsSealed
         {
             get => this.isSealed;
@@ -108,9 +116,11 @@ namespace ErtisAuth.Core.Models.Users
         }
 		
         [JsonProperty("baseType")]
+        [JsonPropertyName("baseType")]
         public string BaseUserType { get; set; }
 		
         [JsonProperty("sys")]
+        [JsonPropertyName("sys")]
         public SysModel Sys { get; set; }
 
         #endregion

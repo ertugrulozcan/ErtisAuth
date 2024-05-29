@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Identity
@@ -8,18 +9,23 @@ namespace ErtisAuth.Core.Models.Identity
 		#region Properties
 
 		[JsonProperty("reset_token")]
+		[JsonPropertyName("reset_token")]
 		public string Token { get; protected set; }
 		
-		[JsonIgnore]
+		[Newtonsoft.Json.JsonIgnore]
+		[System.Text.Json.Serialization.JsonIgnore]
 		public TimeSpan ExpiresIn { get; protected set; }
 
 		[JsonProperty("expires_in")]
+		[JsonPropertyName("expires_in")]
 		public int ExpiresInTimeStamp => (int) this.ExpiresIn.TotalSeconds;
 
 		[JsonProperty("created_at")]
+		[JsonPropertyName("created_at")]
 		public DateTime CreatedAt { get; protected set; }
 
-		[JsonIgnore]
+		[Newtonsoft.Json.JsonIgnore]
+		[System.Text.Json.Serialization.JsonIgnore]
 		public bool IsExpired => DateTime.Now > this.CreatedAt.Add(this.ExpiresIn);
 
 		#endregion

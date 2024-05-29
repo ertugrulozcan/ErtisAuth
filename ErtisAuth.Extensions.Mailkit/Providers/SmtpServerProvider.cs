@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Helpers;
@@ -23,16 +24,21 @@ public class SmtpServerProvider : IMailProvider
 	#region Properties
 	
 	[JsonProperty("guid")]
+	[JsonPropertyName("guid")]
 	public string Guid { get; set; }
 
 	[JsonProperty("type")]
-	[JsonConverter(typeof(StringEnumConverter))]
+	[JsonPropertyName("type")]
+	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public MailProviderType Type => MailProviderType.SmtpServer;
 	
 	[JsonProperty("name")]
+	[JsonPropertyName("name")]
 	public string Name { get; set; }
 	
 	[JsonProperty("slug")]
+	[JsonPropertyName("slug")]
 	public string Slug
 	{
 		get
@@ -47,18 +53,23 @@ public class SmtpServerProvider : IMailProvider
 	}
 	
 	[JsonProperty("host")]
+	[JsonPropertyName("host")]
 	public string Host { get; set; }
         
 	[JsonProperty("port")]
+	[JsonPropertyName("port")]
 	public int Port { get; set; }
         
 	[JsonProperty("tls_enabled")]
+	[JsonPropertyName("tls_enabled")]
 	public bool TlsEnabled { get; set; }
         
 	[JsonProperty("username")]
+	[JsonPropertyName("username")]
 	public string Username { get; set; }
         
 	[JsonProperty("password")]
+	[JsonPropertyName("password")]
 	public string Password { get; set; }
 
 	#endregion

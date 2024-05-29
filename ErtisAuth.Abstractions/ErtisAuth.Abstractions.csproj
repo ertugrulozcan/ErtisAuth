@@ -9,6 +9,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ertis.MongoDB.Queries" Version="7.0.6" />
+        <PackageReference Include="Ertis.MongoDB.Queries" Version="7.0.7" />
     </ItemGroup>
 </Project>

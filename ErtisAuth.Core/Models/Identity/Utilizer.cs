@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
@@ -25,32 +26,42 @@ namespace ErtisAuth.Core.Models.Identity
 		#region Properties
 
 		[JsonProperty("id")]
+		[JsonPropertyName("id")]
 		public string Id { get; set; }
 		
 		[JsonProperty("type")]
-		[JsonConverter(typeof(StringEnumConverter))]
+		[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+		[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 		public UtilizerType Type { get; set; }
 		
 		[JsonProperty("username")]
+		[JsonPropertyName("username")]
 		public string Username { get; set; }
 		
 		[JsonProperty("membership_id")]
+		[JsonPropertyName("membership_id")]
 		public string MembershipId { get; set; }
 		
 		[JsonProperty("role")]
+		[JsonPropertyName("role")]
 		public string Role { get; set; }
 		
 		[JsonProperty("permissions")]
+		[JsonPropertyName("permissions")]
 		public IEnumerable<string> Permissions { get; set; }
 		
 		[JsonProperty("forbidden")]
+		[JsonPropertyName("forbidden")]
 		public IEnumerable<string> Forbidden { get; set; }
 		
 		[JsonProperty("token")]
+		[JsonPropertyName("token")]
 		public string Token { get; set; }
 		
 		[JsonProperty("tokenType")]
-		[JsonConverter(typeof(StringEnumConverter))]
+		[JsonPropertyName("tokenType")]
+		[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+		[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 		public SupportedTokenTypes TokenType { get; set; }
 
 		#endregion

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Helpers;
@@ -23,16 +24,21 @@ public class SendGridProvider : IMailProvider
 	#region Properties
 
 	[JsonProperty("guid")]
+	[JsonPropertyName("guid")]
 	public string Guid { get; set; }
 	
 	[JsonProperty("type")]
-	[JsonConverter(typeof(StringEnumConverter))]
+	[JsonPropertyName("type")]
+	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public MailProviderType Type => MailProviderType.SendGrid;
 	
 	[JsonProperty("name")]
+	[JsonPropertyName("name")]
 	public string Name { get; set; }
 	
 	[JsonProperty("slug")]
+	[JsonPropertyName("slug")]
 	public string Slug
 	{
 		get
@@ -47,6 +53,7 @@ public class SendGridProvider : IMailProvider
 	}
 	
 	[JsonProperty("apiKey")]
+	[JsonPropertyName("apiKey")]
 	public string ApiKey { get; set; }
 	
 	#endregion
