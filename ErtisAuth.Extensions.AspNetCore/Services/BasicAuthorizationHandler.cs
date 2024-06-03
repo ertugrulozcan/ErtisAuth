@@ -1,11 +1,14 @@
+using System;
 using System.Threading.Tasks;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.AspNetCore.Helpers;
 using ErtisAuth.Extensions.AspNetCore.Models;
 using ErtisAuth.Extensions.Http.Extensions;
+using ErtisAuth.Sdk.Configuration;
 using ErtisAuth.Sdk.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Extensions.AspNetCore.Services;
 
@@ -15,6 +18,8 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 	
 	private readonly IApplicationService _applicationService;
 	private readonly IRoleService _roleService;
+	private readonly IMemoryCache _memoryCache;
+	private readonly IErtisAuthOptions _configuration;
 	
 	#endregion
 	
@@ -25,10 +30,18 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 	/// </summary>
 	/// <param name="applicationService"></param>
 	/// <param name="roleService"></param>
-	public BasicAuthorizationHandler(IApplicationService applicationService, IRoleService roleService)
+	/// <param name="memoryCache"></param>
+	/// <param name="configuration"></param>
+	public BasicAuthorizationHandler(
+		IApplicationService applicationService, 
+		IRoleService roleService, 
+		IMemoryCache memoryCache,
+		IErtisAuthOptions configuration)
 	{
 		this._applicationService = applicationService;
 		this._roleService = roleService;
+		this._memoryCache = memoryCache;
+		this._configuration = configuration;
 	}
 		
 	#endregion
@@ -40,27 +53,82 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 		var applicationId = token.AccessToken.Split(':')[0];
 		var rbacDefinition = context.GetRbacDefinition(applicationId);
 		var rbac = rbacDefinition.ToString();
-		var getApplicationResponse = await this._applicationService.GetAsync(applicationId, token);
-		if (getApplicationResponse.IsSuccess)
+		if (this._configuration.BasicTokenCacheTTL is > 0 && this._memoryCache.TryGetValue<CacheEntry>(rbac, out var entry) && entry is  { Utilizer: not null })
 		{
-			var isPermittedForAction = await this._roleService.CheckPermissionAsync(rbac, token);
-			Utilizer utilizer = getApplicationResponse.Data;
-			utilizer.Token = token.AccessToken;
-			utilizer.TokenType = SupportedTokenTypes.Basic;
-						
-			return new AuthorizationResult(utilizer, rbacDefinition, isPermittedForAction);
+			return new AuthorizationResult(entry.Utilizer.Value, rbacDefinition, entry.IsAuthorized);
 		}
 		else
 		{
-			var errorMessage = getApplicationResponse.Message;
-			if (ResponseHelper.TryParseError(getApplicationResponse.Message, out var error))
+			var getApplicationResponse = await this._applicationService.GetAsync(applicationId, token);
+			if (getApplicationResponse.IsSuccess)
 			{
-				errorMessage = error.Message;
+				var isPermittedForAction = await this._roleService.CheckPermissionAsync(rbac, token);
+				Utilizer utilizer = getApplicationResponse.Data;
+				utilizer.Token = token.AccessToken;
+				utilizer.TokenType = SupportedTokenTypes.Basic;
+
+				if (this._configuration.BasicTokenCacheTTL is > 0)
+				{
+					var cacheOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(this._configuration.BasicTokenCacheTTL.Value));
+					this._memoryCache.Set(rbac, new CacheEntry
+					{
+						Utilizer = utilizer,
+						IsAuthorized = isPermittedForAction
+					}, cacheOptions);
+				}
+				
+				return new AuthorizationResult(utilizer, rbacDefinition, isPermittedForAction);
 			}
-						
-			throw ErtisAuthException.Unauthorized(errorMessage);
+			else
+			{
+				var errorMessage = getApplicationResponse.Message;
+				if (ResponseHelper.TryParseError(getApplicationResponse.Message, out var error))
+				{
+					errorMessage = error.Message;
+				}
+
+				if (this._configuration.BasicTokenCacheTTL is > 0)
+				{
+					var cacheOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(this._configuration.BasicTokenCacheTTL.Value));
+					this._memoryCache.Set(rbac, new CacheEntry
+					{
+						Utilizer = default,
+						IsAuthorized = false
+					}, cacheOptions);
+				}
+				
+				throw ErtisAuthException.Unauthorized(errorMessage);
+			}
 		}
 	}
 
+	#endregion
+
+	#region Cache Methods
+
+	// ReSharper disable once UnusedMember.Local
+	private void PurgeAllCache()
+	{
+		if (this._memoryCache is MemoryCache concreteMemoryCache)
+		{
+			concreteMemoryCache.Clear();
+		}
+	}
+
+	#endregion
+	
+	#region Helper Classes
+
+	private class CacheEntry
+	{
+		#region Properties
+
+		public Utilizer? Utilizer { get; init; }
+		
+		public bool IsAuthorized { get; init; }
+
+		#endregion
+	}
+	
 	#endregion
 }

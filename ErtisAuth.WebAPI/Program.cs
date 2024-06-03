@@ -157,6 +157,7 @@ else
 	builder.Services.AddSingleton<IGeoLocationService, GeoLocationDisabledService>();
 }
 
+builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddCors(options =>
