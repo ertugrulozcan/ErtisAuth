@@ -57,6 +57,9 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 				}));
 			
 			services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
+			
+			// Memory Cache
+			services.AddMemoryCache();
 		}
 		
 		private static IConfigurationRoot BuildConfiguration(string environment = null)
