@@ -22,6 +22,8 @@ public class MailServiceBackgroundWorkerArgs
     public string MembershipId { get; init; }
     
     public object Payload { get; init; }
+    
+    public MailHookVariable[] Variables { get; set; }
 
     #endregion
 }

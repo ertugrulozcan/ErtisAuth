@@ -100,10 +100,29 @@ namespace ErtisAuth.Core.Models.Mailing
         [JsonPropertyName("mailProvider")]
         public string MailProvider { get; set; }
         
+        [JsonProperty("variables")]
+        [JsonPropertyName("variables")]
+        public MailHookVariable[] Variables { get; set; }
+        
         [JsonProperty("sys")]
         [JsonPropertyName("sys")]
         public SysModel Sys { get; set; }
         
         #endregion
     }
+}
+
+public class MailHookVariable
+{
+    #region Properties
+
+    [JsonProperty("key")]
+    [JsonPropertyName("key")]
+    public string Key { get; set; }
+    
+    [JsonProperty("value")]
+    [JsonPropertyName("value")]
+    public string Value { get; set; }
+
+    #endregion
 }

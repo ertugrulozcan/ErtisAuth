@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -32,6 +33,12 @@ public class SmtpServerProvider : IMailProvider
 	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public MailProviderType Type => MailProviderType.SmtpServer;
+	
+	[JsonProperty("deliveryMode")]
+	[JsonPropertyName("deliveryMode")]
+	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+	public MailDeliveryMode DeliveryMode => MailDeliveryMode.Default;
 	
 	[JsonProperty("name")]
 	[JsonPropertyName("name")]
@@ -107,6 +114,18 @@ public class SmtpServerProvider : IMailProvider
 			await client.SendAsync(message, cancellationToken: cancellationToken);
 			await client.DisconnectAsync(true, cancellationToken: cancellationToken);
 		}
+	}
+	
+	public Task SendMailWithTemplateAsync(
+		string fromName, 
+		string fromAddress, 
+		IEnumerable<Recipient> recipients, 
+		string subject, 
+		string templateId, 
+		IDictionary<string, string> arguments, 
+		CancellationToken cancellationToken = default)
+	{
+		throw new NotImplementedException("This provider is not supported with template mailing");
 	}
 
 	#endregion

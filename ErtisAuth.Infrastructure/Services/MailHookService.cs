@@ -163,7 +163,8 @@ namespace ErtisAuth.Infrastructure.Services
 						MailProvider = mailProvider,
 						UserId = userId,
 						MembershipId = membershipId,
-						Payload = payload
+						Payload = payload,
+						Variables = mailHook.Variables
 					});
 				}
 			}

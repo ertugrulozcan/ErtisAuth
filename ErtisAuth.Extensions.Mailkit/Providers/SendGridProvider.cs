@@ -32,6 +32,12 @@ public class SendGridProvider : IMailProvider
 	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public MailProviderType Type => MailProviderType.SendGrid;
+
+	[JsonProperty("deliveryMode")]
+	[JsonPropertyName("deliveryMode")]
+	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+	public MailDeliveryMode DeliveryMode => MailDeliveryMode.Default; 
 	
 	[JsonProperty("name")]
 	[JsonPropertyName("name")]
@@ -83,6 +89,18 @@ public class SendGridProvider : IMailProvider
 		
 		email.AddTos(recipients.Select(x => new EmailAddress(x.EmailAddress, x.DisplayName)).ToList());
 		await client.SendEmailAsync(email, cancellationToken: cancellationToken);
+	}
+	
+	public Task SendMailWithTemplateAsync(
+		string fromName, 
+		string fromAddress, 
+		IEnumerable<Recipient> recipients, 
+		string subject, 
+		string templateId, 
+		IDictionary<string, string> arguments, 
+		CancellationToken cancellationToken = default)
+	{
+		throw new NotImplementedException("This provider is not supported with template mailing");
 	}
 
 	#endregion

@@ -4,7 +4,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ertis.Net" Version="7.1.0" />
+        <PackageReference Include="Ertis.Net" Version="7.1.3" />
     </ItemGroup>
 
     <ItemGroup>

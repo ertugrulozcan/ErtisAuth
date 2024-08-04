@@ -36,6 +36,7 @@ public class MailProviderJsonConverter : JsonConverter<IMailProvider>
 				{
 					MailProviderType.SmtpServer => JsonConvert.DeserializeObject<SmtpServerProvider>(json),
 					MailProviderType.SendGrid => JsonConvert.DeserializeObject<SendGridProvider>(json),
+					MailProviderType.MailChimp => JsonConvert.DeserializeObject<MailChimpProvider>(json),
 					_ => throw new Exception($"Unknown mail provider type : '{providerTypeName}'")
 				};
                 

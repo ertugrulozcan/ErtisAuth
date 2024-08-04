@@ -22,6 +22,12 @@ public interface IMailProvider
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	MailProviderType Type { get; }
 	
+	[JsonProperty("deliveryMode")]
+	[JsonPropertyName("deliveryMode")]
+	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+	MailDeliveryMode DeliveryMode { get; }
+	
 	[JsonProperty("name")]
 	[JsonPropertyName("name")]
 	string Name { get; }
@@ -42,5 +48,14 @@ public interface IMailProvider
 		string htmlBody,
 		CancellationToken cancellationToken = default);
 
+	Task SendMailWithTemplateAsync(
+		string fromName,
+		string fromAddress,
+		IEnumerable<Recipient> recipients,
+		string subject,
+		string templateId,
+		IDictionary<string, string> arguments,
+		CancellationToken cancellationToken = default);
+	
 	#endregion
 }

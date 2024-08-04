@@ -2,9 +2,6 @@ using System.Linq;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Dto.Models.Mailing;
 using ErtisAuth.Extensions.Mailkit.Models;
-using ErtisAuth.Extensions.Mailkit.Providers;
-using ErtisAuth.Extensions.Mailkit.Serialization;
-using MongoDB.Bson;
 
 namespace ErtisAuth.Infrastructure.Mapping.Extensions;
 
@@ -29,6 +26,7 @@ public static class MailhookExtensions
             FromName = dto.FromName,
             FromAddress = dto.FromAddress,
             MailProvider = dto.MailProvider,
+            Variables = dto.Variables,
             MembershipId = dto.MembershipId,
             Sys = dto.Sys?.ToModel()
         };
@@ -51,6 +49,7 @@ public static class MailhookExtensions
             FromName = model.FromName,
             FromAddress = model.FromAddress,
             MailProvider = model.MailProvider,
+            Variables = model.Variables, 
             MembershipId = model.MembershipId,
             Sys = model.Sys?.ToDto()
         };

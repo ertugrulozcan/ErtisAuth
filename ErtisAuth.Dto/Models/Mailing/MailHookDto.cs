@@ -46,6 +46,9 @@ namespace ErtisAuth.Dto.Models.Mailing
         [BsonElement("mailProvider")]
         public string MailProvider { get; set; }
 		
+        [BsonElement("variables")]
+        public MailHookVariable[] Variables { get; set; }
+        
         [BsonElement("sys")]
         public SysModelDto Sys { get; set; }
 		

@@ -106,6 +106,7 @@ builder.Services.AddSingleton<IEventService, EventService>();
 builder.Services.AddSingleton<IMigrationService, MigrationService>();
 
 builder.Services.AddSingleton<IRestHandler, RestHandler>();
+builder.Services.AddSingleton<ISystemRestHandler, SystemRestHandler>();
 builder.Services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
 builder.Services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
 builder.Services.AddProviders();
@@ -230,6 +231,7 @@ if (app.Environment.IsDevelopment() && builder.Configuration.GetSection("Documen
 // Database
 app.CheckDatabaseIndexes();
 
+app.UseMailkit();
 app.UseProviders();
 app.UseCors(CORS_POLICY_KEY);
 app.UseHttpsRedirection();
