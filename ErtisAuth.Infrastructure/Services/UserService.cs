@@ -970,7 +970,7 @@ namespace ErtisAuth.Infrastructure.Services
         {
 	        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
 	        this.EnsureUser(membershipId, userId, out var current);
-	        var userType = await this.GetUserTypeAsync(model, current, membershipId, true, cancellationToken: cancellationToken);
+	        var userType = await this.GetUserTypeAsync(model, current, membershipId, cancellationToken: cancellationToken);
 	        this.EnsureManagedProperties(model, membershipId);
 	        model = this.SyncModel(current, model);
 	        await this.CheckRoleUpdatePermissionAsync(utilizer, membershipId, model, current, cancellationToken: cancellationToken);
