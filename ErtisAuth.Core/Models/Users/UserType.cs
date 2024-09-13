@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
 using Ertis.Core.Models.Resources;
-using Ertis.Schema.Dynamics;
+using Ertis.Schema.Dynamics.Legacy;
 using Ertis.Schema.Extensions;
 using Ertis.Schema.Serialization;
 using Ertis.Schema.Types;

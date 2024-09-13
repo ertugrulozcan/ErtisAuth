@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Resources;
 using Ertis.MongoDB.Queries;
-using Ertis.Schema.Dynamics;
+using Ertis.Schema.Dynamics.Legacy;
 using Ertis.Schema.Exceptions;
 using Ertis.Schema.Extensions;
 using Ertis.Schema.Types.CustomTypes;

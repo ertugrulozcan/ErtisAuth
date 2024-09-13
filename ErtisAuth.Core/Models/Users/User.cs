@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Ertis.Core.Models.Resources;
-using Ertis.Schema.Dynamics;
+using Ertis.Schema.Dynamics.Legacy;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Integrations.OAuth.Core;
 using Newtonsoft.Json;

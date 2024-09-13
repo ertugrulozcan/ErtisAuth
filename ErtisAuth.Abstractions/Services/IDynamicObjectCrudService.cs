@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
-using Ertis.Schema.Dynamics;
+using Ertis.Schema.Dynamics.Legacy;
 
 namespace ErtisAuth.Abstractions.Services
 {

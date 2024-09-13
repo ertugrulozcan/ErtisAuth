@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
-using Ertis.Schema.Dynamics;
+using Ertis.Schema.Dynamics.Legacy;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Events.EventArgs;

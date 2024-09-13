@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Repository;
-using Ertis.Schema.Dynamics;
+using Ertis.Schema.Dynamics.Legacy;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Infrastructure.Helpers;
 using MongoDB.Bson;

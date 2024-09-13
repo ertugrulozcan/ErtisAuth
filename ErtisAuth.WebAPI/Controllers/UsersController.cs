@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
-using Ertis.Schema.Dynamics;
+using Ertis.Schema.Dynamics.Legacy;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
