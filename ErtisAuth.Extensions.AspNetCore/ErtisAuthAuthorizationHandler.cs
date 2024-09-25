@@ -10,11 +10,11 @@ namespace ErtisAuth.Extensions.AspNetCore
 		{
 			if (context.User.Identities.Any(x => x.NameClaimType == "Utilizer") || context.User.Identities.Any(x => x.NameClaimType == "Public"))
 			{
-				context.Succeed(requirement);	
+				context.Succeed(requirement);
 			}
 			else
 			{
-				context.Fail();	
+				context.Fail();
 			}
 			
 			return Task.CompletedTask;

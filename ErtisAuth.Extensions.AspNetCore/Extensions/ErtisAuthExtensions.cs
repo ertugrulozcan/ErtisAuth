@@ -34,9 +34,26 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			services.Configure<ErtisAuthOptions>(configuration.GetSection(options.ConfigurationSectionName));
 			services.AddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);
 			
-			services.AddSingleton<IAuthorizationHandler<BasicToken>, BasicAuthorizationHandler>();
-			services.AddSingleton<IAuthorizationHandler<BearerToken>, BearerAuthorizationHandler>();
-
+			// BasicAuthorizationHandler
+			if (options.BasicAuthorizationHandlerType != null)
+			{
+				services.AddSingleton(typeof(IAuthorizationHandler<BasicToken>), options.BasicAuthorizationHandlerType);
+			}
+			else
+			{
+				services.AddSingleton<IAuthorizationHandler<BasicToken>, BasicAuthorizationHandler>();
+			}
+			
+			// BearerAuthorizationHandler
+			if (options.BearerAuthorizationHandlerType != null)
+			{
+				services.AddSingleton(typeof(IAuthorizationHandler<BearerToken>), options.BearerAuthorizationHandlerType);
+			}
+			else
+			{
+				services.AddSingleton<IAuthorizationHandler<BearerToken>, BearerAuthorizationHandler>();
+			}
+			
 			// RestHandler registration
 			services.AddSingleton(typeof(IRestHandler), options.RestHandlerType);
 

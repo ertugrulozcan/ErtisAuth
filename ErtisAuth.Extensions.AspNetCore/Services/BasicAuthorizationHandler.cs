@@ -9,6 +9,7 @@ using ErtisAuth.Sdk.Configuration;
 using ErtisAuth.Sdk.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Extensions.AspNetCore.Services;
 
@@ -20,6 +21,7 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 	private readonly IRoleService _roleService;
 	private readonly IMemoryCache _memoryCache;
 	private readonly IErtisAuthOptions _configuration;
+	private readonly ILogger<BasicAuthorizationHandler> _logger;
 	
 	#endregion
 	
@@ -32,16 +34,19 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 	/// <param name="roleService"></param>
 	/// <param name="memoryCache"></param>
 	/// <param name="configuration"></param>
+	/// <param name="logger"></param>
 	public BasicAuthorizationHandler(
 		IApplicationService applicationService, 
 		IRoleService roleService, 
 		IMemoryCache memoryCache,
-		IErtisAuthOptions configuration)
+		IErtisAuthOptions configuration,
+		ILogger<BasicAuthorizationHandler> logger)
 	{
 		this._applicationService = applicationService;
 		this._roleService = roleService;
 		this._memoryCache = memoryCache;
 		this._configuration = configuration;
+		this._logger = logger;
 	}
 		
 	#endregion
@@ -55,10 +60,13 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 		var rbac = rbacDefinition.ToString();
 		if (this._configuration.BasicTokenCacheTTL is > 0 && this._memoryCache.TryGetValue<CacheEntry>(rbac, out var entry) && entry is  { Utilizer: not null })
 		{
+			this._logger.LogInformation("Basic token found on the cache ({Rbac})", rbac);
 			return new AuthorizationResult(entry.Utilizer.Value, rbacDefinition, entry.IsAuthorized);
 		}
 		else
 		{
+			this._logger.LogInformation("Basic token not found on the cache ({Rbac}) Requesting from auth API", rbac);
+			
 			var getApplicationResponse = await this._applicationService.GetAsync(applicationId, token);
 			if (getApplicationResponse.IsSuccess)
 			{
