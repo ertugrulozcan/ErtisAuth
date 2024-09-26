@@ -249,16 +249,16 @@ namespace ErtisAuth.Infrastructure.Services
             // User type can not changed
             if (!string.IsNullOrEmpty(currentUserTypeSlug) && currentUserTypeSlug != userType.Slug)
             {
-	            this._logger.LogError("User type is an immutable field. It's cannot be updated");
-	            this._logger.LogError("membershipId: {MembershipId}", membershipId);
-	            this._logger.LogError("userId: {UserId}", userId);
-	            this._logger.LogError("currentUserTypeSlug: {CurrentUserTypeSlug}", currentUserTypeSlug);
-	            this._logger.LogError("userType: ");
-	            this._logger.LogError(Newtonsoft.Json.JsonConvert.SerializeObject(userType));
-	            this._logger.LogError("model: ");
-	            this._logger.LogError(Newtonsoft.Json.JsonConvert.SerializeObject(model));
+	            var details = new Dictionary<string, object>
+	            {
+		            { "membershipId", membershipId },
+		            { "userId", userId },
+		            { "currentUserTypeSlug", currentUserTypeSlug },
+		            { "userType", userType },
+		            { "model", model.ToDictionary() }
+	            };
 	            
-                throw ErtisAuthException.UserTypeImmutable();
+	            throw ErtisAuthException.UserTypeImmutable(details);
             }
 
             // User model validation
