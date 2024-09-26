@@ -203,6 +203,20 @@ if (builder.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEna
 	builder.Services.AddSwaggerGen(c => { c.SwaggerDoc(swaggerVersion, new OpenApiInfo { Title = "ErtisAuth.WebAPI", Version = swaggerVersion }); });	
 }
 
+// Sentry
+var sentryDsn = builder.Configuration.GetSection("Sentry").GetValue<string>("Dsn");
+if (!string.IsNullOrEmpty(sentryDsn))
+{
+	Sentry.SentrySdk.Init(options =>
+	{
+		options.Dsn = sentryDsn;
+		options.Debug = false;
+		options.AutoSessionTracking = true;
+		options.IsGlobalModeEnabled = false;
+		options.TracesSampleRate = 0.1;
+	});
+}
+
 builder.Services
 	.AddControllers()
 	.AddNewtonsoftJson(options =>
