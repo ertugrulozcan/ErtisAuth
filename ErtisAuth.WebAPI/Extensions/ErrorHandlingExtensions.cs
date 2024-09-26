@@ -108,14 +108,13 @@ namespace ErtisAuth.WebAPI.Extensions
 								
 								break;
 						}
-
-
+						
 						var sentryEvent = new SentryEvent(contextFeature.Error)
 						{
 							Message = contextFeature.Error.Message
 						};
 
-						if (contextFeature.Error is ErtisAuthException ertisAuthException)
+						if (contextFeature.Error is ErtisAuthException { Extra: not null } ertisAuthException)
 						{
 							sentryEvent.SetExtras(ertisAuthException.Extra);
 						}
