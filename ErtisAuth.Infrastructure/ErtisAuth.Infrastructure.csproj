@@ -6,6 +6,7 @@
     <ItemGroup>
         <PackageReference Include="Ertis.TemplateEngine" Version="7.0.8" />
         <PackageReference Include="AutoMapper" Version="13.0.1" />
+        <PackageReference Include="Sentry" Version="4.11.0" />
         <PackageReference Include="TinyMapper" Version="3.0.3" />
         <PackageReference Include="Mapster" Version="7.4.0" />
         <PackageReference Include="MaxMind.GeoIP2" Version="5.2.0" />

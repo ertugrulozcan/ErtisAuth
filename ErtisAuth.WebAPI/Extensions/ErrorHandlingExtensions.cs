@@ -108,18 +108,21 @@ namespace ErtisAuth.WebAPI.Extensions
 								
 								break;
 						}
+
+						if (SentrySdk.IsEnabled && contextFeature.Error is ErtisAuthException { Capture: true } ertisAuthException)
+						{
+							var sentryEvent = new SentryEvent(ertisAuthException)
+							{
+								Message = ertisAuthException.Message
+							};
+
+							if (ertisAuthException.Extra != null)
+							{
+								sentryEvent.SetExtras(ertisAuthException.Extra);
+							}
 						
-						var sentryEvent = new SentryEvent(contextFeature.Error)
-						{
-							Message = contextFeature.Error.Message
-						};
-
-						if (contextFeature.Error is ErtisAuthException { Extra: not null } ertisAuthException)
-						{
-							sentryEvent.SetExtras(ertisAuthException.Extra);
+							SentrySdk.CaptureEvent(sentryEvent);
 						}
-
-						SentrySdk.CaptureEvent(sentryEvent);
 
 						var json = Newtonsoft.Json.JsonConvert.SerializeObject(errorModel);
 						await context.Response.WriteAsync(json);

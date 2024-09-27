@@ -7,6 +7,8 @@ namespace ErtisAuth.Core.Exceptions
 	public class ErtisAuthException : ErtisException
 	{
 		#region Properties
+		
+		public bool Capture { get; set; }
 
 		// ReSharper disable once UnusedAutoPropertyAccessor.Global
 		public IReadOnlyDictionary<string, object> Extra { get; set; }
@@ -289,6 +291,7 @@ namespace ErtisAuth.Core.Exceptions
 		{
 			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is an immutable field. It's cannot be updated.", "UserTypeImmutable")
 			{
+				Capture = true, 
 				Extra = extras
 			};
 		}
