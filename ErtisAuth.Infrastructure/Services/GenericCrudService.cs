@@ -194,50 +194,86 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public virtual TModel Create(TModel model)
 		{
-			// Model validation
-			if (!this.ValidateModel(model, out var errors))
+			try
 			{
-				throw ErtisAuthException.ValidationError(errors);
-			}
+				// Model validation
+				if (!this.ValidateModel(model, out var errors))
+				{
+					throw ErtisAuthException.ValidationError(errors);
+				}
 			
-			// Check existing
-			if (this.IsAlreadyExist(model))
-			{
-				throw this.GetAlreadyExistError(model);
-			}
+				// Check existing
+				if (this.IsAlreadyExist(model))
+				{
+					throw this.GetAlreadyExistError(model);
+				}
 			
-			// Insert to database
-			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var insertedDto = this.repository.Insert(dto);
-			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
+				// Insert to database
+				var dto = Mapper.Current.Map<TModel, TDto>(model);
+				var insertedDto = this.repository.Insert(dto);
+				var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
 			
-			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(inserted));
+				this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(inserted));
 
-			return inserted;
+				return inserted;
+			}
+			catch (MongoDB.Driver.MongoWriteException ex)
+			{
+				if (ex.WriteError.Category == MongoDB.Driver.ServerErrorCategory.DuplicateKey)
+				{
+					throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
+				}
+                
+				Console.WriteLine(ex);
+				throw;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex);
+				throw;
+			}
 		}
 		
 		public virtual async ValueTask<TModel> CreateAsync(TModel model, CancellationToken cancellationToken = default)
 		{
-			// Model validation
-			if (!this.ValidateModel(model, out var errors))
+			try
 			{
-				throw ErtisAuthException.ValidationError(errors);
-			}
+				// Model validation
+				if (!this.ValidateModel(model, out var errors))
+				{
+					throw ErtisAuthException.ValidationError(errors);
+				}
 			
-			// Check existing
-			if (await this.IsAlreadyExistAsync(model))
-			{
-				throw this.GetAlreadyExistError(model);
-			}
+				// Check existing
+				if (await this.IsAlreadyExistAsync(model))
+				{
+					throw this.GetAlreadyExistError(model);
+				}
 			
-			// Insert to database
-			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var insertedDto = await this.repository.InsertAsync(dto, cancellationToken: cancellationToken);
-			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
+				// Insert to database
+				var dto = Mapper.Current.Map<TModel, TDto>(model);
+				var insertedDto = await this.repository.InsertAsync(dto, cancellationToken: cancellationToken);
+				var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
 			
-			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(inserted));
+				this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(inserted));
 
-			return inserted;
+				return inserted;
+			}
+			catch (MongoDB.Driver.MongoWriteException ex)
+			{
+				if (ex.WriteError.Category == MongoDB.Driver.ServerErrorCategory.DuplicateKey)
+				{
+					throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
+				}
+                
+				Console.WriteLine(ex);
+				throw;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex);
+				throw;
+			}
 		}
 		
 		#endregion
@@ -246,66 +282,102 @@ namespace ErtisAuth.Infrastructure.Services
 
 		public virtual TModel Update(TModel model)
 		{
-			// Overwrite
-			var current = this.Get(model.Id);
-			if (current == null)
+			try
 			{
-				throw this.GetNotFoundError(model.Id);
-			}
+				// Overwrite
+				var current = this.Get(model.Id);
+				if (current == null)
+				{
+					throw this.GetNotFoundError(model.Id);
+				}
 			
-			this.Overwrite(model, current);
+				this.Overwrite(model, current);
 
-			// Model validation
-			if (!this.ValidateModel(model, out var errors))
+				// Model validation
+				if (!this.ValidateModel(model, out var errors))
+				{
+					throw ErtisAuthException.ValidationError(errors);
+				}
+			
+				// Check existing
+				if (this.IsAlreadyExist(model, current))
+				{
+					throw this.GetAlreadyExistError(model);
+				}
+			
+				var dto = Mapper.Current.Map<TModel, TDto>(model);
+				var updatedDto = this.repository.Update(dto);
+				var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
+				
+				this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(current, updated));
+
+				return updated;
+			}
+			catch (MongoDB.Driver.MongoWriteException ex)
 			{
-				throw ErtisAuthException.ValidationError(errors);
+				if (ex.WriteError.Category == MongoDB.Driver.ServerErrorCategory.DuplicateKey)
+				{
+					throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
+				}
+                
+				Console.WriteLine(ex);
+				throw;
 			}
-			
-			// Check existing
-			if (this.IsAlreadyExist(model, current))
+			catch (Exception ex)
 			{
-				throw this.GetAlreadyExistError(model);
+				Console.WriteLine(ex);
+				throw;
 			}
-			
-			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var updatedDto = this.repository.Update(dto);
-			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
-
-			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(current, updated));
-
-			return updated;
 		}
 		
 		public virtual async ValueTask<TModel> UpdateAsync(TModel model, CancellationToken cancellationToken = default)
 		{
-			// Overwrite
-			var current = await this.GetAsync(model.Id, cancellationToken: cancellationToken);
-			if (current == null)
+			try
 			{
-				throw this.GetNotFoundError(model.Id);
-			}
+				// Overwrite
+				var current = await this.GetAsync(model.Id, cancellationToken: cancellationToken);
+				if (current == null)
+				{
+					throw this.GetNotFoundError(model.Id);
+				}
 			
-			this.Overwrite(model, current);
+				this.Overwrite(model, current);
 			
-			// Model validation
-			if (!this.ValidateModel(model, out var errors))
-			{
-				throw ErtisAuthException.ValidationError(errors);
-			}
+				// Model validation
+				if (!this.ValidateModel(model, out var errors))
+				{
+					throw ErtisAuthException.ValidationError(errors);
+				}
 			
-			// Check existing
-			if (await this.IsAlreadyExistAsync(model, current))
-			{
-				throw this.GetAlreadyExistError(model);
-			}
+				// Check existing
+				if (await this.IsAlreadyExistAsync(model, current))
+				{
+					throw this.GetAlreadyExistError(model);
+				}
 			
-			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var updatedDto = await this.repository.UpdateAsync(dto, cancellationToken: cancellationToken);
-			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
+				var dto = Mapper.Current.Map<TModel, TDto>(model);
+				var updatedDto = await this.repository.UpdateAsync(dto, cancellationToken: cancellationToken);
+				var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
 
-			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(current, updated));
+				this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(current, updated));
 
-			return updated;
+				return updated;
+			}
+			catch (MongoDB.Driver.MongoWriteException ex)
+			{
+				if (ex.WriteError.Category == MongoDB.Driver.ServerErrorCategory.DuplicateKey)
+				{
+					throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
+				}
+                
+				Console.WriteLine(ex);
+				throw;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex);
+				throw;
+			}
 		}
 		
 		#endregion

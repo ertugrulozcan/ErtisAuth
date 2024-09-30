@@ -204,22 +204,22 @@ namespace ErtisAuth.Infrastructure.Services
         #endregion
 
         #region UserType Methods
-
+        
         private async Task<UserType> GetUserTypeAsync(DynamicObject model, DynamicObject current, string membershipId, bool fallbackWithOriginUserType = false, CancellationToken cancellationToken = default)
         {
 	        if (model.TryGetValue("user_type", out string userTypeName, out _) && !string.IsNullOrEmpty(userTypeName))
             {
-	            var userType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, userTypeName, cancellationToken: cancellationToken);
+	            var userType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, userTypeName, true, cancellationToken: cancellationToken);
 	            if (userType == null)
 	            {
 		            throw ErtisAuthException.UserTypeNotFound(userTypeName, "name");
 	            }
-
+	            
 	            return userType;
             }
 	        else if (current != null && current.TryGetValue("user_type", out string currentUserTypeName, out _) && !string.IsNullOrEmpty(currentUserTypeName))
 	        {
-		        var userType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, currentUserTypeName, cancellationToken: cancellationToken);
+		        var userType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, currentUserTypeName, true, cancellationToken: cancellationToken);
 		        if (userType == null)
 		        {
 			        throw ErtisAuthException.UserTypeNotFound(userTypeName, "name");
@@ -242,7 +242,7 @@ namespace ErtisAuth.Infrastructure.Services
 		            Sentry.SentrySdk.CaptureEvent(sentryEvent);
 	            }
 	            
-	            return await this._userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG, cancellationToken: cancellationToken);
+	            return await this._userTypeService.GetByNameOrSlugAsync(membershipId, "user", true, cancellationToken: cancellationToken);
             }
 	        else
 	        {

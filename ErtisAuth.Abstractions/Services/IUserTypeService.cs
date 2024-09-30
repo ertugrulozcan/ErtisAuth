@@ -7,7 +7,7 @@ namespace ErtisAuth.Abstractions.Services
 {
     public interface IUserTypeService : IMembershipBoundedCrudService<UserType>
     {
-        Task<UserType> GetByNameOrSlugAsync(string membershipId, string nameOrSlug, CancellationToken cancellationToken = default);
+        Task<UserType> GetByNameOrSlugAsync(string membershipId, string nameOrSlug, bool forceGetFreshData = false, CancellationToken cancellationToken = default);
         
         Task<bool> IsInheritFromAsync(string membershipId, string childUserTypeName, string parentUserTypeName, CancellationToken cancellationToken = default);
 

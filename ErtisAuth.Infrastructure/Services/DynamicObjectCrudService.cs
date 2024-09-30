@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,6 +8,7 @@ using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Repository;
 using Ertis.Schema.Dynamics.Legacy;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Infrastructure.Helpers;
 using MongoDB.Bson;
 
@@ -91,9 +93,27 @@ namespace ErtisAuth.Infrastructure.Services
         
         public virtual async Task<DynamicObject> CreateAsync(DynamicObject model, CancellationToken cancellationToken = default)
         {
-            var bsonDocument = BsonDocument.Create(model.ToDynamic());
-            var insertedDocument = await this._repository.InsertAsync(bsonDocument, cancellationToken: cancellationToken) as BsonDocument;
-            return DynamicObject.Create(BsonTypeMapper.MapToDotNetValue(insertedDocument) as Dictionary<string, object>);
+            try
+            {
+                var bsonDocument = BsonDocument.Create(model.ToDynamic());
+                var insertedDocument = await this._repository.InsertAsync(bsonDocument, cancellationToken: cancellationToken) as BsonDocument;
+                return DynamicObject.Create(BsonTypeMapper.MapToDotNetValue(insertedDocument) as Dictionary<string, object>);
+            }
+            catch (MongoDB.Driver.MongoWriteException ex)
+            {
+                if (ex.WriteError.Category == MongoDB.Driver.ServerErrorCategory.DuplicateKey)
+                {
+                    throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
+                }
+                
+                Console.WriteLine(ex);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
+            }
         }
 
         #endregion
@@ -102,9 +122,27 @@ namespace ErtisAuth.Infrastructure.Services
 
         public virtual async Task<DynamicObject> UpdateAsync(string id, DynamicObject model, CancellationToken cancellationToken = default)
         {
-            var bsonDocument = BsonDocument.Create(model.ToDynamic());
-            var updatedDocument = await this._repository.UpdateAsync(bsonDocument, id, cancellationToken: cancellationToken);
-            return updatedDocument != null ? await this.GetAsync(id, cancellationToken: cancellationToken) : null;
+            try
+            {
+                var bsonDocument = BsonDocument.Create(model.ToDynamic());
+                var updatedDocument = await this._repository.UpdateAsync(bsonDocument, id, cancellationToken: cancellationToken);
+                return updatedDocument != null ? await this.GetAsync(id, cancellationToken: cancellationToken) : null;
+            }
+            catch (MongoDB.Driver.MongoWriteException ex)
+            {
+                if (ex.WriteError.Category == MongoDB.Driver.ServerErrorCategory.DuplicateKey)
+                {
+                    throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
+                }
+                
+                Console.WriteLine(ex);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
+            }
         }
 
         #endregion

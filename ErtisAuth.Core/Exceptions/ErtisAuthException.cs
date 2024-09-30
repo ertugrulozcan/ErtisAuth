@@ -43,6 +43,11 @@ namespace ErtisAuth.Core.Exceptions
 		{
 			return new ErtisAuthException(httpStatusCode, errorMessage, errorCode);
 		}
+		
+		public static ErtisAuthException DuplicateKeyError(string message)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, $"Some fields has unique index. ({message})", "DuplicateKeyError");
+		}
 
 		#endregion
 		
