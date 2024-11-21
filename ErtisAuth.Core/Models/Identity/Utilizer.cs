@@ -30,6 +30,7 @@ namespace ErtisAuth.Core.Models.Identity
 		public string Id { get; set; }
 		
 		[JsonProperty("type")]
+		[JsonPropertyName("type")]
 		[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
 		[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 		public UtilizerType Type { get; set; }
