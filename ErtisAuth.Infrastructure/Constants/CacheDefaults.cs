@@ -16,7 +16,7 @@ public static class CacheDefaults
     
     public static readonly TimeSpan ApplicationsCacheTTL = TimeSpan.FromHours(12);
     
-    public static readonly TimeSpan ProvidersCacheTTL = TimeSpan.FromHours(24);
+    public static readonly TimeSpan ProvidersCacheTTL = TimeSpan.FromHours(12);
     
     public static readonly TimeSpan RevokedTokensCacheTTL = TimeSpan.FromHours(24);
 
