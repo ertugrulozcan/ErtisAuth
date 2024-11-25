@@ -1,3 +1,4 @@
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Extensions.Mailkit.Providers;
 using Newtonsoft.Json;
@@ -38,6 +39,9 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		[JsonProperty("code_policy")]
 		public string CodePolicy { get; set; }
 		
+		[JsonProperty("otp_settings")]
+		public OtpSettings OtpSettings { get; set; }
+		
 		#endregion
 		
 		#region Methods
@@ -56,7 +60,8 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 				DefaultEncoding = this.DefaultEncoding,
 				DefaultLanguage = this.DefaultLanguage,
 				MailProviders = this.MailProviders,
-				CodePolicy = this.CodePolicy
+				CodePolicy = this.CodePolicy,
+				OtpSettings = this.OtpSettings
 			};
 		}
 

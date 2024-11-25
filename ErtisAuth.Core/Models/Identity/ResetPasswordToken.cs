@@ -6,19 +6,42 @@ namespace ErtisAuth.Core.Models.Identity
 {
 	public class ResetPasswordToken
 	{
+		#region Fields
+
+		private TimeSpan expiresIn;
+		private int expiresInTimeStamp;
+
+		#endregion
+		
 		#region Properties
 
 		[JsonProperty("reset_token")]
 		[JsonPropertyName("reset_token")]
 		public string Token { get; protected set; }
-		
+
 		[Newtonsoft.Json.JsonIgnore]
 		[System.Text.Json.Serialization.JsonIgnore]
-		public TimeSpan ExpiresIn { get; protected set; }
+		public TimeSpan ExpiresIn
+		{
+			get => this.expiresIn;
+			private init
+			{
+				this.expiresIn = value;
+				this.expiresInTimeStamp = (int) value.TotalSeconds;
+			}
+		}
 
 		[JsonProperty("expires_in")]
 		[JsonPropertyName("expires_in")]
-		public int ExpiresInTimeStamp => (int) this.ExpiresIn.TotalSeconds;
+		public int ExpiresInTimeStamp
+		{
+			get => this.expiresInTimeStamp;
+			set
+			{
+				this.expiresInTimeStamp = value;
+				this.expiresIn = TimeSpan.FromSeconds(value);
+			}
+		}
 
 		[JsonProperty("created_at")]
 		[JsonPropertyName("created_at")]
@@ -26,7 +49,7 @@ namespace ErtisAuth.Core.Models.Identity
 
 		[Newtonsoft.Json.JsonIgnore]
 		[System.Text.Json.Serialization.JsonIgnore]
-		public bool IsExpired => DateTime.Now > this.CreatedAt.Add(this.ExpiresIn);
+		public bool IsExpired => DateTime.UtcNow > this.CreatedAt.Add(this.ExpiresIn);
 
 		#endregion
 
@@ -37,11 +60,12 @@ namespace ErtisAuth.Core.Models.Identity
 		/// </summary>
 		/// <param name="token"></param>
 		/// <param name="expiresIn"></param>
-		public ResetPasswordToken(string token, TimeSpan expiresIn)
+		/// <param name="createdAt"></param>
+		public ResetPasswordToken(string token, TimeSpan expiresIn, DateTime? createdAt = null)
 		{
 			this.Token = token;
 			this.ExpiresIn = expiresIn;
-			this.CreatedAt = DateTime.Now;
+			this.CreatedAt = createdAt ?? DateTime.Now;
 		}
 
 		#endregion

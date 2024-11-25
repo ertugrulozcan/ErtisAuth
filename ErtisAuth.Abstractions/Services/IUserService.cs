@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Schema.Dynamics.Legacy;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Events.EventArgs;
 
@@ -66,6 +67,8 @@ namespace ErtisAuth.Abstractions.Services
         Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default);
         
         Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default);
+
+        ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership);
         
         Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default);
         

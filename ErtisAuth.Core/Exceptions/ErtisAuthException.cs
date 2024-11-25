@@ -65,7 +65,7 @@ namespace ErtisAuth.Core.Exceptions
 		
 		public static ErtisAuthException XErtisAliasMissing(string aliasName)
 		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, $"Membership id should be added in headers with '{aliasName}' key.", "XErtisAliasMissing");
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"Membership id should be added in headers with '{aliasName}' key", "XErtisAliasMissing");
 		}
 		
 		public static ErtisAuthException InvalidToken(string message = null)
@@ -515,6 +515,40 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Unauthorized, message, "MigrationRejected");
 		}
 
+		#endregion
+
+		#region OTP Exceptions
+		
+		public static ErtisAuthException OneTimePasswordNotFound(string id)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"OTP not found in db by given _id: <{id}>", "OneTimePasswordNotFound");
+		}
+		
+		public static ErtisAuthException OtpHostRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "The host is required in one time password configuration", "OtpHostRequired");
+		}
+		
+		public static ErtisAuthException OtpHostMismatch()
+		{
+			return new ErtisAuthException(HttpStatusCode.Unauthorized, "The provided host info and the host info in the membership configuration do not match", "OtpHostMismatch");
+		}
+		
+		public static ErtisAuthException OtpNotConfiguredYet()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "The one time password has not configured yet", "OtpNotConfiguredYet");
+		}
+		
+		public static ErtisAuthException OtpHostNotConfiguredYet()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "The one time password host info has not configured yet", "OtpHostNotConfiguredYet");
+		}
+		
+		public static ErtisAuthException OtpExpired()
+		{
+			return new ErtisAuthException(HttpStatusCode.Unauthorized, "One time password was expired", "OtpExpired");
+		}
+		
 		#endregion
 	}
 }

@@ -96,7 +96,9 @@ namespace ErtisAuth.Infrastructure.Mapping
 				.Add(new CustomMapper<Provider, ProviderDto>((model) => model.ToDto()))
 				.Add(new CustomMapper<ProviderDto, Provider>((dto) => dto.ToModel()))
 				.Add(new CustomMapper<TokenCodePolicy, TokenCodePolicyDto>((model) => model.ToDto()))
-				.Add(new CustomMapper<TokenCodePolicyDto, TokenCodePolicy>((dto) => dto.ToModel()));
+				.Add(new CustomMapper<TokenCodePolicyDto, TokenCodePolicy>((dto) => dto.ToModel()))
+				.Add(new CustomMapper<OneTimePassword, OneTimePasswordDto>((model) => model.ToDto()))
+				.Add(new CustomMapper<OneTimePasswordDto, OneTimePassword>((dto) => dto.ToModel()));
 		}
 
 		#endregion

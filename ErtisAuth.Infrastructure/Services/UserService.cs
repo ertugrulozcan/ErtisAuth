@@ -17,6 +17,7 @@ using Ertis.Schema.Validation;
 using Ertis.Security.Cryptography;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Constants;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Users;
@@ -41,8 +42,6 @@ namespace ErtisAuth.Infrastructure.Services
 	    #region Constants
 
 	    private const string CACHE_KEY = "users";
-	    private static readonly TimeSpan ACTIVATION_TOKEN_TTL = TimeSpan.FromHours(72);
-	    private static readonly TimeSpan RESET_PASSWORD_TOKEN_TTL = TimeSpan.FromHours(2);
 	    
 	    #endregion
 	    
@@ -904,10 +903,10 @@ namespace ErtisAuth.Infrastructure.Services
 		        throw ErtisAuthException.MembershipNotFound(user.MembershipId);
 	        }
 	        
-	        var tokenClaims = new TokenClaims(user.Id, user, membership, ACTIVATION_TOKEN_TTL);
+	        var tokenClaims = new TokenClaims(user.Id, user, membership, TTLs.ACTIVATION_TOKEN_TTL);
 	        tokenClaims.AddClaim("token_type", "activation_token");
 	        var token = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
-	        var activationToken = new ActivationToken(token, ACTIVATION_TOKEN_TTL);
+	        var activationToken = new ActivationToken(token, TTLs.ACTIVATION_TOKEN_TTL);
 
 	        return activationToken;
         }
@@ -1247,13 +1246,13 @@ namespace ErtisAuth.Infrastructure.Services
 			}, cancellationToken: cancellationToken);
 		}
 		
-		private ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership)
+		public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership)
 		{
-			var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, RESET_PASSWORD_TOKEN_TTL);
+			var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, TTLs.RESET_PASSWORD_TOKEN_TTL);
 			tokenClaims.AddClaim("token_type", "reset_token");
 			
 			var resetToken = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
-			return new ResetPasswordToken(resetToken, RESET_PASSWORD_TOKEN_TTL);
+			return new ResetPasswordToken(resetToken, TTLs.RESET_PASSWORD_TOKEN_TTL);
 		}
 
 		private string GenerateResetPasswordLink(ResetPasswordToken resetPasswordToken, string membershipId, string host)

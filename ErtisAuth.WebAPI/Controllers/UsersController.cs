@@ -27,6 +27,7 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		private readonly IUserService _userService;
 		private readonly ITokenService _tokenService;
+		private readonly IOneTimePasswordService _oneTimePasswordService;
 		
 		#endregion
 
@@ -37,10 +38,12 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// </summary>
 		/// <param name="userService"></param>
 		/// <param name="tokenService"></param>
-		public UsersController(IUserService userService, ITokenService tokenService)
+		/// <param name="oneTimePasswordService"></param>
+		public UsersController(IUserService userService, ITokenService tokenService, IOneTimePasswordService oneTimePasswordService)
 		{
 			this._userService = userService;
 			this._tokenService = tokenService;
+			this._oneTimePasswordService = oneTimePasswordService;
 		}
 
 		#endregion
@@ -386,6 +389,26 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				return this.Unauthorized("Invalid password");
 			}
+		}
+
+		#endregion
+		
+		#region OTP Methods
+		
+		[HttpGet("{id}/generate-otp")]
+		[RbacObject("{id}")]
+		[RbacResource("otp")]
+		[RbacAction(Rbac.CrudActions.Create)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
+		public async Task<IActionResult> GenerateOneTimePassword([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+		{
+			var utilizer = this.GetUtilizer();
+			var otp = await this._oneTimePasswordService.GenerateAsync(utilizer, membershipId, id, cancellationToken: cancellationToken);
+			return this.Ok(otp);
 		}
 
 		#endregion

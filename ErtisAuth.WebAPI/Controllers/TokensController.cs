@@ -22,6 +22,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		private readonly ITokenService tokenService;
 		private readonly IUserService userService;
 		private readonly IProviderService providerService;
+		private readonly IOneTimePasswordService oneTimePasswordService;
 
 		#endregion
 
@@ -33,11 +34,17 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// <param name="tokenService"></param>
 		/// <param name="userService"></param>
 		/// <param name="providerService"></param>
-		public TokensController(ITokenService tokenService, IUserService userService, IProviderService providerService)
+		/// <param name="oneTimePasswordService"></param>
+		public TokensController(
+			ITokenService tokenService, 
+			IUserService userService, 
+			IProviderService providerService, 
+			IOneTimePasswordService oneTimePasswordService)
 		{
 			this.tokenService = tokenService;
 			this.userService = userService;
 			this.providerService = providerService;
+			this.oneTimePasswordService = oneTimePasswordService;
 		}
 
 		#endregion
@@ -305,7 +312,32 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.Unauthorized();
 			}
 		}
+		
+		[HttpPost]
+		[Route("verify-otp")]
+		public async Task<IActionResult> VerifyOneTimePassword([FromBody] GenerateTokenFormModel model)
+		{
+			var membershipId = this.GetXErtisAlias();
+			if (string.IsNullOrEmpty(membershipId))
+			{
+				return this.XErtisAliasMissing();
+			}
 
+			var username = model.Username;
+			var password = model.Password;
+			var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
+			
+			var otp = await this.oneTimePasswordService.VerifyOtpAsync(username, password, membershipId, host);
+			if (otp != null)
+			{
+				return this.Ok(otp.Token);
+			}
+			else
+			{
+				return this.InvalidCredentials();
+			}
+		}
+		
 		#endregion
 
 		#region Provider Methods

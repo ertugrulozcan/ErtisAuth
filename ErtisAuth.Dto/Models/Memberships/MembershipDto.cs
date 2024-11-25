@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Ertis.MongoDB.Attributes;
+using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Dto.Models.Resources;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -47,6 +48,9 @@ namespace ErtisAuth.Dto.Models.Memberships
 		
 		[BsonElement("code_policy")]
 		public string CodePolicy { get; set; }
+		
+		[BsonElement("otp_settings")]
+		public OtpSettingsDto OtpSettings { get; set; }
 
 		[BsonElement("sys")]
 		public SysModelDto Sys { get; set; }

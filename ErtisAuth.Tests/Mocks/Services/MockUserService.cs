@@ -9,6 +9,7 @@ using Ertis.Schema.Dynamics.Legacy;
 using Ertis.Schema.Extensions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Events.EventArgs;
 
@@ -384,6 +385,11 @@ namespace ErtisAuth.Tests.Mocks.Services
             string userId, 
             string host = null, 
             CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership)
         {
             throw new NotImplementedException();
         }

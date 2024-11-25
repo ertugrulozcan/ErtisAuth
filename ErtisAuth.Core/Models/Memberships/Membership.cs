@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
 using Ertis.Core.Models.Resources;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.Mailkit.Providers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -74,6 +75,10 @@ namespace ErtisAuth.Core.Models.Memberships
 		[JsonProperty("code_policy")]
 		[JsonPropertyName("code_policy")]
 		public string CodePolicy { get; set; }
+		
+		[JsonProperty("otp_settings")]
+		[JsonPropertyName("otp_settings")]
+		public OtpSettings OtpSettings { get; set; }
 
 		[JsonProperty("sys")]
 		[JsonPropertyName("sys")]
