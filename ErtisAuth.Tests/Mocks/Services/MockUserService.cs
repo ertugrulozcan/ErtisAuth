@@ -389,7 +389,7 @@ namespace ErtisAuth.Tests.Mocks.Services
             throw new NotImplementedException();
         }
         
-        public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership)
+        public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false)
         {
             throw new NotImplementedException();
         }

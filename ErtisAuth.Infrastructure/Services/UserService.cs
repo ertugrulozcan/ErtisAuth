@@ -1246,58 +1246,75 @@ namespace ErtisAuth.Infrastructure.Services
 			}, cancellationToken: cancellationToken);
 		}
 		
-		public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership)
+		public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false)
 		{
 			var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, TTLs.RESET_PASSWORD_TOKEN_TTL);
 			tokenClaims.AddClaim("token_type", "reset_token");
 			
 			var resetToken = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
+			if (asBase64)
+			{
+				resetToken = ConvertToBase64ResetPasswordToken(resetToken, membership.Id);
+			}
+			
 			return new ResetPasswordToken(resetToken, TTLs.RESET_PASSWORD_TOKEN_TTL);
+		}
+
+		private static string ConvertToBase64ResetPasswordToken(string resetPasswordToken, string membershipId)
+		{
+			return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{membershipId}:{resetPasswordToken}"));
 		}
 
 		private string GenerateResetPasswordLink(ResetPasswordToken resetPasswordToken, string membershipId, string host)
 		{
-			var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{membershipId}:{resetPasswordToken.Token}"));
+			var base64 = ConvertToBase64ResetPasswordToken(resetPasswordToken.Token, membershipId);
 			return $"{host.TrimEnd('/')}?rpt={base64}";
 		}
 
 		public async Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default)
 		{
-			var payload = Encoding.UTF8.GetString(Convert.FromBase64String(resetToken));
-			var parts = payload.Split(':');
-			if (parts.Length > 1)
+			try
 			{
-				if (MongoDB.Bson.ObjectId.TryParse(parts[0], out _))
+				var payload = Encoding.UTF8.GetString(Convert.FromBase64String(resetToken));
+				var parts = payload.Split(':');
+				if (parts.Length > 1)
 				{
-					var membershipId_ = parts[0];
-					if (membershipId == membershipId_)
+					if (MongoDB.Bson.ObjectId.TryParse(parts[0], out _))
 					{
-						var resetPasswordToken = string.Join(':', parts.Skip(1));
-						if (!string.IsNullOrEmpty(resetPasswordToken))
+						var membershipId_ = parts[0];
+						if (membershipId == membershipId_)
 						{
-							if (this._jwtService.TryDecodeToken(resetPasswordToken, out var securityToken))
+							var resetPasswordToken = string.Join(':', parts.Skip(1));
+							if (!string.IsNullOrEmpty(resetPasswordToken))
 							{
-								var expireTime = securityToken.ValidTo.ToLocalTime();
-								if (DateTime.Now > expireTime)
+								if (this._jwtService.TryDecodeToken(resetPasswordToken, out var securityToken))
 								{
-									// Token was expired!
-									throw ErtisAuthException.TokenWasExpired();	
-								}
+									var expireTime = securityToken.ValidTo.ToLocalTime();
+									if (DateTime.Now > expireTime)
+									{
+										// Token was expired!
+										throw ErtisAuthException.TokenWasExpired();	
+									}
 				
-								var dynamicObject = await this.GetAsync(membershipId, securityToken.Subject, cancellationToken: cancellationToken);
-								if (dynamicObject == null)
-								{
-									throw ErtisAuthException.UserNotFound(securityToken.Subject, "_id");
-								}
+									var dynamicObject = await this.GetAsync(membershipId, securityToken.Subject, cancellationToken: cancellationToken);
+									if (dynamicObject == null)
+									{
+										throw ErtisAuthException.UserNotFound(securityToken.Subject, "_id");
+									}
 				
-								return dynamicObject.Deserialize<User>();
+									return dynamicObject.Deserialize<User>();
+								}
 							}
 						}
 					}
 				}
-			}
 			
-			throw ErtisAuthException.InvalidToken();
+				throw ErtisAuthException.InvalidToken();
+			}
+			catch (FormatException)
+			{
+				throw ErtisAuthException.InvalidToken();
+			}
 		}
 
 		public async Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default)
