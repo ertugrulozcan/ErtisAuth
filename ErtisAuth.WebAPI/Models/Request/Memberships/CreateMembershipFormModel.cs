@@ -20,7 +20,7 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		public int RefreshTokenExpiresIn { get; set; }
 		
 		[JsonProperty("reset_password_token_expires_in")]
-		public int ResetPasswordTokenExpiresIn { get; set; }
+		public int? ResetPasswordTokenExpiresIn { get; set; }
 		
 		[JsonProperty("secret_key")]
 		public string SecretKey { get; set; }
