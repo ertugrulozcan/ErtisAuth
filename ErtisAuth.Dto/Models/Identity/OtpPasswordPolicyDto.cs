@@ -14,6 +14,9 @@ public class OtpPasswordPolicyDto
     
     [BsonElement("contains_digits")]
     public bool ContainsDigits { get; set; }
+    
+    [BsonElement("expires_in")]
+    public int? ExpiresIn { get; set; }
 
     #endregion
 }

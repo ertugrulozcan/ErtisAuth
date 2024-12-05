@@ -21,6 +21,9 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		[JsonProperty("refresh_token_expires_in")]
 		public int RefreshTokenExpiresIn { get; set; }
 		
+		[JsonProperty("reset_password_token_expires_in")]
+		public int ResetPasswordTokenExpiresIn { get; set; }
+		
 		[JsonProperty("secret_key")]
 		public string SecretKey { get; set; }
 		
@@ -55,6 +58,7 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 				Slug = this.Slug,
 				ExpiresIn = this.ExpiresIn,
 				RefreshTokenExpiresIn = this.RefreshTokenExpiresIn,
+				ResetPasswordTokenExpiresIn = this.ResetPasswordTokenExpiresIn,
 				SecretKey = this.SecretKey,
 				HashAlgorithm = this.HashAlgorithm,
 				DefaultEncoding = this.DefaultEncoding,

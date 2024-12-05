@@ -27,6 +27,7 @@ public static class MembershipExtensions
             ExpiresIn = dto.ExpiresIn,
             SecretKey = dto.SecretKey,
             RefreshTokenExpiresIn = dto.RefreshTokenExpiresIn,
+            ResetPasswordTokenExpiresIn = dto.ResetPasswordTokenExpiresIn,
             MailProviders = dto.MailProviders?.Select(ToMailProvider).ToArray(),
             UserActivation = dto.UserActivation is "active" or "Active" ? Status.Active : Status.Passive,
             CodePolicy = dto.CodePolicy,
@@ -48,6 +49,7 @@ public static class MembershipExtensions
             ExpiresIn = model.ExpiresIn,
             SecretKey = model.SecretKey,
             RefreshTokenExpiresIn = model.RefreshTokenExpiresIn,
+            ResetPasswordTokenExpiresIn = model.ResetPasswordTokenExpiresIn,
             MailProviders = model.MailProviders?.Select(x => MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(Newtonsoft.Json.JsonConvert.SerializeObject(x))).ToArray(),
             UserActivation = model.UserActivation.ToString().ToLower(),
             CodePolicy = model.CodePolicy,
@@ -85,7 +87,8 @@ public static class MembershipExtensions
         {
             Length = dto.Length,
             ContainsLetters = dto.ContainsLetters,
-            ContainsDigits = dto.ContainsDigits
+            ContainsDigits = dto.ContainsDigits,
+            ExpiresIn = dto.ExpiresIn
         };
     }
 		
@@ -95,7 +98,8 @@ public static class MembershipExtensions
         {
             Length = model.Length,
             ContainsLetters = model.ContainsLetters,
-            ContainsDigits = model.ContainsDigits
+            ContainsDigits = model.ContainsDigits,
+            ExpiresIn = model.ExpiresIn
         };
     }
 

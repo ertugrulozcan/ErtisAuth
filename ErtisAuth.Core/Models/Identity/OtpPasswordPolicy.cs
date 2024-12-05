@@ -18,6 +18,10 @@ public class OtpPasswordPolicy
     [JsonProperty("contains_digits")]
     [JsonPropertyName("contains_digits")]
     public bool ContainsDigits { get; set; }
-
+    
+    [JsonProperty("expires_in")]
+    [JsonPropertyName("expires_in")]
+    public int? ExpiresIn { get; set; }
+    
     #endregion
 }

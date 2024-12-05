@@ -28,6 +28,9 @@ namespace ErtisAuth.Dto.Models.Memberships
 		[BsonElement("refresh_token_expires_in")]
 		public int RefreshTokenExpiresIn { get; set; }
 		
+		[BsonElement("reset_password_token_expires_in")]
+		public int? ResetPasswordTokenExpiresIn { get; set; }
+		
 		[BsonElement("secret_key")]
 		public string SecretKey { get; set; }
 		

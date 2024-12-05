@@ -54,7 +54,7 @@ namespace ErtisAuth.Core.Models.Identity
 		#endregion
 
 		#region Constructors
-
+		
 		/// <summary>
 		/// Constructor
 		/// </summary>
@@ -66,6 +66,16 @@ namespace ErtisAuth.Core.Models.Identity
 			this.Token = token;
 			this.ExpiresIn = expiresIn;
 			this.CreatedAt = createdAt ?? DateTime.Now;
+		}
+		
+		#endregion
+
+		#region Enums
+
+		public enum ResetPasswordTokenPurpose
+		{
+			ResetPassword, 
+			OneTimePassword
 		}
 
 		#endregion

@@ -46,6 +46,10 @@ namespace ErtisAuth.Core.Models.Memberships
 		[JsonPropertyName("refresh_token_expires_in")]
 		public int RefreshTokenExpiresIn { get; set; }
 		
+		[JsonProperty("reset_password_token_expires_in")]
+		[JsonPropertyName("reset_password_token_expires_in")]
+		public int? ResetPasswordTokenExpiresIn { get; set; }
+		
 		[JsonProperty("secret_key")]
 		[JsonPropertyName("secret_key")]
 		public string SecretKey { get; set; }

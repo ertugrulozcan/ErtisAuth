@@ -63,6 +63,11 @@ namespace ErtisAuth.Infrastructure.Extensions
 				errorList.Add("refresh_token_expires_in is not set");
 			}
 			
+			if (membership.ResetPasswordTokenExpiresIn < 0)
+			{
+				errorList.Add("reset_password_token_expires_in is not valid");
+			}
+			
 			if (string.IsNullOrEmpty(membership.SecretKey))
 			{
 				errorList.Add("secret_key is not set");

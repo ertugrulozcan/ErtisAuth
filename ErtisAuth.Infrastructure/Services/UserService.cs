@@ -1246,9 +1246,25 @@ namespace ErtisAuth.Infrastructure.Services
 			}, cancellationToken: cancellationToken);
 		}
 		
-		public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false)
+		public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false, ResetPasswordToken.ResetPasswordTokenPurpose purpose = ResetPasswordToken.ResetPasswordTokenPurpose.ResetPassword)
 		{
-			var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, TTLs.RESET_PASSWORD_TOKEN_TTL);
+			var resetPasswordTokenTTL = TTLs.RESET_PASSWORD_TOKEN_TTL;
+			if (purpose == ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword)
+			{
+				if (membership.OtpSettings?.Policy is { ExpiresIn: > 0 })
+				{
+					resetPasswordTokenTTL = TimeSpan.FromSeconds(membership.OtpSettings.Policy.ExpiresIn.Value);
+				}
+			}
+			else
+			{
+				if (membership is { ResetPasswordTokenExpiresIn: > 0 })
+				{
+					resetPasswordTokenTTL = TimeSpan.FromSeconds(membership.ResetPasswordTokenExpiresIn.Value);
+				}
+			}
+			
+			var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, resetPasswordTokenTTL);
 			tokenClaims.AddClaim("token_type", "reset_token");
 			
 			var resetToken = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
@@ -1257,7 +1273,7 @@ namespace ErtisAuth.Infrastructure.Services
 				resetToken = ConvertToBase64ResetPasswordToken(resetToken, membership.Id);
 			}
 			
-			return new ResetPasswordToken(resetToken, TTLs.RESET_PASSWORD_TOKEN_TTL);
+			return new ResetPasswordToken(resetToken, resetPasswordTokenTTL);
 		}
 
 		private static string ConvertToBase64ResetPasswordToken(string resetPasswordToken, string membershipId)

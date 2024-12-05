@@ -68,7 +68,7 @@ namespace ErtisAuth.Abstractions.Services
         
         Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default);
 
-        ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false);
+        ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false, ResetPasswordToken.ResetPasswordTokenPurpose purpose = ResetPasswordToken.ResetPasswordTokenPurpose.ResetPassword);
         
         Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default);
         
