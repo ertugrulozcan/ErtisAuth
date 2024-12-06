@@ -289,5 +289,26 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		await this.repository.BulkDeleteAsync(expiredOtps.Select(x => x.ToDto()), cancellationToken: cancellationToken);
 	}
 
+	public async Task RevokeResetPasswordTokenAsync(Utilizer utilizer, string membershipId, string resetToken, CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+			var query = QueryBuilder.Equals("token.reset_token", resetToken);
+			var result = await this.QueryAsync(membershipId, query.ToString(), 0, 1, cancellationToken: cancellationToken);
+			var currentDynamic = result.Items.FirstOrDefault();
+			if (currentDynamic != null)
+			{
+				var otpDynamicObject = new DynamicObject(currentDynamic);
+				var otp = otpDynamicObject.Deserialize<OneTimePassword>();
+				await this.DeleteAsync(utilizer, membershipId, otp.Id, cancellationToken: cancellationToken);
+			}
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine(ex);
+		}
+	}
+
 	#endregion
 }

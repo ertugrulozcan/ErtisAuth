@@ -11,4 +11,6 @@ public interface IOneTimePasswordService : IMembershipBoundedService<OneTimePass
     Task ClearExpiredPasswordsAsync(string membershipId, CancellationToken cancellationToken = default);
     
     Task<OneTimePassword> VerifyOtpAsync(string username, string password, string membershipId, string host, CancellationToken cancellationToken = default);
+    
+    Task RevokeResetPasswordTokenAsync(Utilizer utilizer, string membershipId, string resetToken, CancellationToken cancellationToken = default);
 }

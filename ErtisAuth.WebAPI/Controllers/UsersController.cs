@@ -359,6 +359,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		{
 			var utilizer = this.GetUtilizer();
 			await this._userService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password, cancellationToken: cancellationToken);
+			await this._oneTimePasswordService.RevokeResetPasswordTokenAsync(utilizer, membershipId, model.ResetToken, cancellationToken: cancellationToken);
 			return this.Ok();
 		}
 
