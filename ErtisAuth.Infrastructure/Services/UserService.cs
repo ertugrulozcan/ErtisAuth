@@ -319,6 +319,14 @@ namespace ErtisAuth.Infrastructure.Services
 	        model.SetValue("membership_id", membershipId, true);
         }
         
+        private void EnsureEmailAddress(DynamicObject model)
+        {
+	        if (model.TryGetValue<string>("email_address", out var emailAddress))
+	        {
+		        model.SetValue("email_address", emailAddress.ToLower());
+	        }
+        }
+        
         #endregion
 
         #region Role Methods
@@ -690,9 +698,9 @@ namespace ErtisAuth.Infrastructure.Services
 			        QueryBuilder.Equals("membership_id", membershipId), 
 			        QueryBuilder.Or(
 				        QueryBuilder.Equals("username", username),
-				        QueryBuilder.Equals("email_address", email),
+				        QueryBuilder.Equals("email_address", email.ToLower()),
 				        QueryBuilder.Equals("username", email),
-				        QueryBuilder.Equals("email_address", username)
+				        QueryBuilder.Equals("email_address", username.ToLower())
 				    )
 			    )
 		    );
@@ -721,7 +729,7 @@ namespace ErtisAuth.Infrastructure.Services
 			        QueryBuilder.Equals("membership_id", membershipId), 
 			        QueryBuilder.Or(
 				        QueryBuilder.Equals("username", usernameOrEmailAddress),
-				        QueryBuilder.Equals("email_address", usernameOrEmailAddress)
+				        QueryBuilder.Equals("email_address", usernameOrEmailAddress.ToLower())
 			        )
 		        )
 	        );
@@ -759,6 +767,8 @@ namespace ErtisAuth.Infrastructure.Services
         public async Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, string host = null, CancellationToken cancellationToken = default)
         {
 	        var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+	        
+	        this.EnsureEmailAddress(model);
 	        var activationMailHook = await this.EnsureUserActivationAsync(membership, cancellationToken: cancellationToken);
 	        model.SetValue("is_active", membership.UserActivation != Status.Active, true);
 
@@ -1010,6 +1020,7 @@ namespace ErtisAuth.Infrastructure.Services
         public async Task<DynamicObject> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true, CancellationToken cancellationToken = default)
         {
 	        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+	        this.EnsureEmailAddress(model);
 	        this.EnsureUser(membershipId, userId, out var current);
 	        var userType = await this.GetUserTypeAsync(model, current, membershipId, cancellationToken: cancellationToken);
 	        this.EnsureManagedProperties(model, membershipId);
