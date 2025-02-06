@@ -12,7 +12,7 @@ namespace ErtisAuth.Sdk.Helpers
 			string orderBy = null, 
 			SortDirection? sortDirection = null)
 		{
-			var queryString = QueryString.Empty;
+			var queryString = QueryString.Create();
 			if (skip != null)
 				queryString.Add("skip", skip.Value);
 			if (limit != null)

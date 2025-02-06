@@ -147,7 +147,7 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			var httpMethod = new HttpMethod(webhook.Request.Method);
 			var url = webhook.Request.Url;
-			var headers = HeaderCollection.Empty;
+			var headers = HeaderCollection.Create();
 			if (webhook.Request.Headers != null)
 			{
 				foreach (var webhookRequestHeader in webhook.Request.Headers)
