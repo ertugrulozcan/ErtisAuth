@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services;
@@ -173,6 +174,12 @@ namespace ErtisAuth.WebAPI.Controllers
 			else
 			{
 				var token = this.GetTokenFromHeader(out var tokenTypeStr);
+				var scopes = model.Scopes?.Select(x => x.Trim()).ToArray();
+				if ((scopes == null || scopes.Length == 0) && string.IsNullOrEmpty(token))
+				{
+					return this.InvalidCredentials();
+				}
+				
 				if (!TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
 				{
 					throw ErtisAuthException.UnsupportedTokenType();
@@ -182,7 +189,7 @@ namespace ErtisAuth.WebAPI.Controllers
 					throw ErtisAuthException.BearerTokenRequired();
 				}
 				
-				var generatedToken = await this.tokenService.GenerateTokenAsync(token, model.Scopes, membershipId, cancellationToken: cancellationToken);
+				var generatedToken = await this.tokenService.GenerateTokenAsync(token, scopes, membershipId, cancellationToken: cancellationToken);
 				if (generatedToken != null)
 				{
 					return this.Created($"{this.Request.Scheme}://{this.Request.Host}", generatedToken);

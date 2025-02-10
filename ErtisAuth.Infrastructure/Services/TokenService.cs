@@ -198,6 +198,11 @@ namespace ErtisAuth.Infrastructure.Services
 			string membershipId,
 			CancellationToken cancellationToken = default)
 		{
+			if (scopes == null || scopes.Length == 0)
+			{
+				throw ErtisAuthException.ScopeRequired();
+			}
+			
 			var verifyResult = await this.VerifyBearerTokenAsync(token, cancellationToken: cancellationToken);
 			if (verifyResult is { IsValidated: true, User: not null })
 			{
@@ -211,44 +216,37 @@ namespace ErtisAuth.Infrastructure.Services
 				{
 					throw ErtisAuthException.MembershipNotFound(membershipId);
 				}
-
-				if (scopes is { Length: > 0 })
+				
+				var role = await this.roleService.GetBySlugAsync(verifyResult.User.Role, membershipId, cancellationToken: cancellationToken);
+				if (role != null)
 				{
-					var role = await this.roleService.GetBySlugAsync(verifyResult.User.Role, membershipId, cancellationToken: cancellationToken);
-					if (role != null)
+					foreach (var scope in scopes)
 					{
-						foreach (var scope in scopes)
+						if (Rbac.TryParse(scope, out var rbac))
 						{
-							if (Rbac.TryParse(scope, out var rbac))
+							if (!role.HasPermission(rbac))
 							{
-								if (!role.HasPermission(rbac))
-								{
-									throw ErtisAuthException.UserHasNoPermissionForThisScope(scope);
-								}
-								
-								var verifiedForUser = verifyResult.User.HasPermission(rbac);
-								if (verifiedForUser != null && verifiedForUser.Value)
-								{
-									throw ErtisAuthException.UserHasNoPermissionForThisScope(scope);
-								}
+								throw ErtisAuthException.UserHasNoPermissionForThisScope(scope);
 							}
-							else
+							
+							var verifiedForUser = verifyResult.User.HasPermission(rbac);
+							if (verifiedForUser != null && verifiedForUser.Value)
 							{
-								throw ErtisAuthException.InvalidScope(scope);
+								throw ErtisAuthException.UserHasNoPermissionForThisScope(scope);
 							}
 						}
-						
-						var bearerToken = await this.GenerateBearerTokenAsync(verifyResult.User, membership, scopes, cancellationToken: cancellationToken);
-						return new ScopedBearerToken(bearerToken, scopes);
+						else
+						{
+							throw ErtisAuthException.InvalidScope(scope);
+						}
 					}
-					else
-					{
-						throw ErtisAuthException.RoleNotFound(verifyResult.User.Role);
-					}
+					
+					var bearerToken = await this.GenerateBearerTokenAsync(verifyResult.User, membership, scopes, cancellationToken: cancellationToken);
+					return new ScopedBearerToken(bearerToken, scopes);
 				}
 				else
 				{
-					throw ErtisAuthException.ScopeRequired();
+					throw ErtisAuthException.RoleNotFound(verifyResult.User.Role);
 				}
 			}
 			else
@@ -360,7 +358,7 @@ namespace ErtisAuth.Infrastructure.Services
 			{
 				throw ErtisAuthException.TokenWasRevoked();
 			}
-
+			
 			if (this.jwtService.TryDecodeToken(token, out var securityToken))
 			{
 				var expireTime = securityToken.ValidTo.ToLocalTime();
@@ -405,12 +403,20 @@ namespace ErtisAuth.Infrastructure.Services
 							await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }) { MembershipId = membershipId }, cancellationToken: cancellationToken);	
 						}
 
-						if (this.TryExtractClaimValue(securityToken, "scope", out var scopeClaim) && !string.IsNullOrEmpty(scopeClaim) && scopeClaim.Split(' ').Any())
+						if (this.TryExtractClaimValue(securityToken, "scope", out var scopeClaim) && !string.IsNullOrEmpty(scopeClaim))
 						{
-							return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken))
+							var scopes = scopeClaim.Split(' ').Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+							if (scopes.Length > 0)
 							{
-								Scopes = scopeClaim.Split(' ')
-							};
+								return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken))
+								{
+									Scopes = scopes
+								};
+							}
+							else
+							{
+								return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
+							}
 						}
 						else
 						{

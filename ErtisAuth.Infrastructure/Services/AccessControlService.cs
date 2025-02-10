@@ -187,7 +187,7 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			if (role.HasPermission(rbac))
 			{
-				if (utilizer.Scopes != null && utilizer.Scopes.Any())
+				if (utilizer.Scopes != null && utilizer.Scopes.Any(x => !string.IsNullOrWhiteSpace(x)))
 				{
 					return utilizer.Scopes.HasPermission(rbac);
 				}

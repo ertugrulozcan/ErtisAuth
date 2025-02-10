@@ -80,7 +80,9 @@ namespace ErtisAuth.WebAPI.Extensions
 						Utilizer utilizer = user;
 						utilizer.Token = utilizerSampling.Token;
 						utilizer.TokenType = utilizerSampling.TokenType;
-						utilizer.Scopes = utilizerSampling.Scopes;
+
+						var scopes = utilizerSampling.Scopes?.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+						utilizer.Scopes = scopes is { Length: > 0 } ? scopes : null;
 						
 						return utilizer;
 					}
