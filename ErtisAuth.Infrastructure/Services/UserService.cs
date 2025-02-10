@@ -228,19 +228,6 @@ namespace ErtisAuth.Infrastructure.Services
 	        }
             else if (fallbackWithOriginUserType)
             {
-	            // Log model to sentry
-	            if (Sentry.SentrySdk.IsEnabled)
-	            {
-		            var sentryEvent = new Sentry.SentryEvent
-		            {
-			            Message = "CreateUser.GetUserTypeAsync FallbackWithOriginUserType Debug Event"
-		            };
-		            
-		            sentryEvent.SetExtra("model", model.ToDictionary());
-						
-		            Sentry.SentrySdk.CaptureEvent(sentryEvent);
-	            }
-	            
 	            return await this._userTypeService.GetByNameOrSlugAsync(membershipId, "user", true, cancellationToken: cancellationToken);
             }
 	        else
@@ -786,18 +773,6 @@ namespace ErtisAuth.Infrastructure.Services
 	        if (sourceProvider == KnownProviders.ErtisAuth)
 	        {
 		        this.SetPasswordHash(model, membership, password);
-	        }
-
-	        if (userType.Slug == UserType.ORIGIN_USER_TYPE_SLUG && Sentry.SentrySdk.IsEnabled)
-	        {
-		        var sentryEvent = new Sentry.SentryEvent
-		        {
-			        Message = "CreateUser Before Repository Debug Event"
-		        };
-		            
-		        sentryEvent.SetExtra("model", model.ToDictionary());
-						
-		        Sentry.SentrySdk.CaptureEvent(sentryEvent);
 	        }
 	        
 	        var created = await base.CreateAsync(model, cancellationToken: cancellationToken);
