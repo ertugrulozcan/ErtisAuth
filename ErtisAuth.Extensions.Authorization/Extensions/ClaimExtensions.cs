@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Security.Claims;
 using ErtisAuth.Core.Models.Identity;
@@ -17,9 +18,10 @@ namespace ErtisAuth.Extensions.Authorization.Extensions
 			var membershipIdClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.MembershipIdClaimName);
 			var tokenClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerTokenClaimName);
 			var tokenTypeClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerTokenTypeClaimName);
+			var scopeClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.ScopeClaimName);
 
 			TokenTypeExtensions.TryParseTokenType(tokenTypeClaim?.Value, out var tokenType);
-				
+			
 			return new Utilizer
 			{
 				Id = idClaim?.Value,
@@ -28,7 +30,8 @@ namespace ErtisAuth.Extensions.Authorization.Extensions
 				Role = roleClaim?.Value,
 				MembershipId = membershipIdClaim?.Value,
 				Token = tokenClaim?.Value,
-				TokenType = tokenType
+				TokenType = tokenType,
+				Scopes = scopeClaim?.Value.Split(" ") ?? Array.Empty<string>()
 			};
 		}
 

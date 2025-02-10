@@ -20,6 +20,7 @@ namespace ErtisAuth.Core.Models.Identity
 		public const string MembershipIdClaimName = "membership_id";
 		public const string UtilizerTokenClaimName = "access_token";
 		public const string UtilizerTokenTypeClaimName = "token_type";
+		public const string ScopeClaimName = "scope";
 		
 		#endregion
 		
@@ -58,6 +59,11 @@ namespace ErtisAuth.Core.Models.Identity
 		[JsonProperty("token")]
 		[JsonPropertyName("token")]
 		public string Token { get; set; }
+		
+		[JsonProperty("scopes", NullValueHandling = NullValueHandling.Ignore)]
+		[JsonPropertyName("scopes")]
+		[System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+		public string[] Scopes { get; set; }
 		
 		[JsonProperty("tokenType")]
 		[JsonPropertyName("tokenType")]

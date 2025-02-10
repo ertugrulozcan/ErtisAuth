@@ -1,3 +1,4 @@
+using System.Linq;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
@@ -186,7 +187,14 @@ namespace ErtisAuth.Infrastructure.Services
 			
 			if (role.HasPermission(rbac))
 			{
-				return true;
+				if (utilizer.Scopes != null && utilizer.Scopes.Any())
+				{
+					return utilizer.Scopes.HasPermission(rbac);
+				}
+				else
+				{
+					return true;
+				}
 			}
 			else if (role.HasOwnUpdatePermission(rbac, utilizer))
 			{
@@ -195,7 +203,7 @@ namespace ErtisAuth.Infrastructure.Services
 			else
 			{
 				return false;
-			}	
+			}
 		}
 
 		#endregion

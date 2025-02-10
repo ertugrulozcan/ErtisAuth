@@ -8,6 +8,7 @@ public static class TTLs
 
     public static readonly TimeSpan ACTIVATION_TOKEN_TTL = TimeSpan.FromHours(72);
     public static readonly TimeSpan RESET_PASSWORD_TOKEN_TTL = TimeSpan.FromHours(2);
+    public static readonly TimeSpan SCOPED_TOKEN_TTL = TimeSpan.FromHours(12);
 
     #endregion
 }

@@ -2,15 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Constants;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Applications;
+using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Extensions;
 using Microsoft.IdentityModel.Tokens;
@@ -30,6 +33,7 @@ namespace ErtisAuth.Infrastructure.Services
 		private readonly IMembershipService membershipService;
 		private readonly IUserService userService;
 		private readonly IApplicationService applicationService;
+		private readonly IRoleService roleService;
 		private readonly IJwtService jwtService;
 		private readonly ICryptographyService cryptographyService;
 		private readonly IEventService eventService;
@@ -46,6 +50,7 @@ namespace ErtisAuth.Infrastructure.Services
 		/// <param name="membershipService"></param>
 		/// <param name="userService"></param>
 		/// <param name="applicationService"></param>
+		/// <param name="roleService"></param>
 		/// <param name="jwtService"></param>
 		/// <param name="cryptographyService"></param>
 		/// <param name="eventService"></param>
@@ -56,6 +61,7 @@ namespace ErtisAuth.Infrastructure.Services
 			IMembershipService membershipService, 
 			IUserService userService, 
 			IApplicationService applicationService,
+			IRoleService roleService,
 			IJwtService jwtService,
 			ICryptographyService cryptographyService,
 			IEventService eventService,
@@ -66,6 +72,7 @@ namespace ErtisAuth.Infrastructure.Services
 			this.membershipService = membershipService;
 			this.userService = userService;
 			this.applicationService = applicationService;
+			this.roleService = roleService;
 			this.jwtService = jwtService;
 			this.cryptographyService = cryptographyService;
 			this.eventService = eventService;
@@ -181,7 +188,72 @@ namespace ErtisAuth.Infrastructure.Services
 			}
 			else
 			{
-				return await this.GenerateBearerTokenAsync(user, membership, ipAddress, userAgent, cancellationToken: cancellationToken);
+				return await this.GenerateBearerTokenAsync(user, membership, null, ipAddress, userAgent, cancellationToken: cancellationToken);
+			}
+		}
+
+		public async ValueTask<ScopedBearerToken> GenerateTokenAsync(
+			string token, 
+			string[] scopes, 
+			string membershipId,
+			CancellationToken cancellationToken = default)
+		{
+			var verifyResult = await this.VerifyBearerTokenAsync(token, cancellationToken: cancellationToken);
+			if (verifyResult is { IsValidated: true, User: not null })
+			{
+				if (membershipId != verifyResult.User.MembershipId)
+				{
+					throw ErtisAuthException.Synthetic(HttpStatusCode.BadRequest, "Membership ids do not match", "MembershipIdsDoNotMatch");
+				}
+				
+				var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+				if (membership == null)
+				{
+					throw ErtisAuthException.MembershipNotFound(membershipId);
+				}
+
+				if (scopes is { Length: > 0 })
+				{
+					var role = await this.roleService.GetBySlugAsync(verifyResult.User.Role, membershipId, cancellationToken: cancellationToken);
+					if (role != null)
+					{
+						foreach (var scope in scopes)
+						{
+							if (Rbac.TryParse(scope, out var rbac))
+							{
+								if (!role.HasPermission(rbac))
+								{
+									throw ErtisAuthException.UserHasNoPermissionForThisScope(scope);
+								}
+								
+								var verifiedForUser = verifyResult.User.HasPermission(rbac);
+								if (verifiedForUser != null && verifiedForUser.Value)
+								{
+									throw ErtisAuthException.UserHasNoPermissionForThisScope(scope);
+								}
+							}
+							else
+							{
+								throw ErtisAuthException.InvalidScope(scope);
+							}
+						}
+						
+						var bearerToken = await this.GenerateBearerTokenAsync(verifyResult.User, membership, scopes, cancellationToken: cancellationToken);
+						return new ScopedBearerToken(bearerToken, scopes);
+					}
+					else
+					{
+						throw ErtisAuthException.RoleNotFound(verifyResult.User.Role);
+					}
+				}
+				else
+				{
+					throw ErtisAuthException.ScopeRequired();
+				}
+			}
+			else
+			{
+				throw ErtisAuthException.Unauthorized("Token was not verified");
 			}
 		}
 
@@ -206,13 +278,23 @@ namespace ErtisAuth.Infrastructure.Services
 				throw ErtisAuthException.UserNotFound(user.Id, "id");
 			}
 			
-			return await this.GenerateBearerTokenAsync(user, membership, ipAddress, userAgent, cancellationToken: cancellationToken);
+			return await this.GenerateBearerTokenAsync(user, membership, null, ipAddress, userAgent, cancellationToken: cancellationToken);
 		}
 		
-		private async Task<BearerToken> GenerateBearerTokenAsync(User user, Membership membership, string ipAddress = null, string userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default)
+		private async Task<BearerToken> GenerateBearerTokenAsync(User user, Membership membership, string[] scopes, string ipAddress = null, string userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default)
 		{
 			var tokenId = Guid.NewGuid().ToString();
-			var tokenClaims = new TokenClaims(tokenId, user, membership);
+			TimeSpan? expiresIn = scopes is { Length: > 0 }
+				? membership.ScopedTokenExpiresIn == 0
+					? TTLs.SCOPED_TOKEN_TTL
+					: TimeSpan.FromSeconds(membership.ScopedTokenExpiresIn)
+				: null;
+			
+			var tokenClaims = new TokenClaims(tokenId, user, membership, expiresIn)
+			{
+				Scope = scopes is { Length: > 0 } ? string.Join(" ", scopes) : null
+			};
+			
 			var hashAlgorithm = membership.GetHashAlgorithm();
 			var encoding = membership.GetEncoding();
 			var accessToken = this.jwtService.GenerateToken(tokenClaims, hashAlgorithm, encoding);
@@ -322,8 +404,18 @@ namespace ErtisAuth.Infrastructure.Services
 						{
 							await this.eventService.FireEventAsync(this, new ErtisAuthEvent(ErtisAuthEventType.TokenVerified, user, new { token }) { MembershipId = membershipId }, cancellationToken: cancellationToken);	
 						}
-				
-						return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
+
+						if (this.TryExtractClaimValue(securityToken, "scope", out var scopeClaim) && !string.IsNullOrEmpty(scopeClaim) && scopeClaim.Split(' ').Any())
+						{
+							return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken))
+							{
+								Scopes = scopeClaim.Split(' ')
+							};
+						}
+						else
+						{
+							return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
+						}
 					}
 					else
 					{
@@ -444,7 +536,7 @@ namespace ErtisAuth.Infrastructure.Services
 										}
 										
 										var originalActiveToken = await this.activeTokenService.GetByRefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
-										var token = await this.GenerateBearerTokenAsync(user, membership, originalActiveToken?.ClientInfo?.IPAddress, originalActiveToken?.ClientInfo?.UserAgent, cancellationToken: cancellationToken);
+										var token = await this.GenerateBearerTokenAsync(user, membership, null, originalActiveToken?.ClientInfo?.IPAddress, originalActiveToken?.ClientInfo?.UserAgent, cancellationToken: cancellationToken);
 
 										if (revokeBefore)
 										{

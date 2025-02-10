@@ -11,6 +11,9 @@ namespace ErtisAuth.WebAPI.Models.Request.Tokens
 		
 		[JsonProperty("password")]
 		public string Password { get; set; }
+		
+		[JsonProperty("scopes")]
+		public string[] Scopes { get; set; }
 
 		#endregion
 	}

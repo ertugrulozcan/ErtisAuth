@@ -85,6 +85,26 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.BadRequest, "Token type not supported. Token type must be one of Bearer or Basic", "TokenTypeNotSupported");
 		}
 		
+		public static ErtisAuthException BearerTokenRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "Token type must be Bearer for this action", "BearerTokenRequired");
+		}
+		
+		public static ErtisAuthException InvalidScope(string scope)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"Invalid scope ({scope})", "InvalidScope");
+		}
+		
+		public static ErtisAuthException ScopeRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "Scope required", "ScopeRequired");
+		}
+		
+		public static ErtisAuthException UserHasNoPermissionForThisScope(string scope)
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"User has no permission for this scope ({scope})", "UserHasNoPermissionForThisScope");
+		}
+		
 		public static ErtisAuthException TokenWasRevoked()
 		{
 			return new ErtisAuthException(HttpStatusCode.Unauthorized, "Provided token was revoked", "TokenWasRevoked");

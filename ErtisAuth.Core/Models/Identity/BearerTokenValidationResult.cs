@@ -38,6 +38,10 @@ namespace ErtisAuth.Core.Models.Identity
 		
 		[Newtonsoft.Json.JsonIgnore]
 		[System.Text.Json.Serialization.JsonIgnore]
+		public string[] Scopes { get; init; }
+		
+		[Newtonsoft.Json.JsonIgnore]
+		[System.Text.Json.Serialization.JsonIgnore]
 		public User User { get; }
 
 		[Newtonsoft.Json.JsonIgnore]

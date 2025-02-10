@@ -128,7 +128,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		
 		[HttpPost]
 		[Route("generate-token")]
-		public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenFormModel model)
+		public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenFormModel model, CancellationToken cancellationToken = default)
 		{
 			var membershipId = this.GetXErtisAlias();
 			if (string.IsNullOrEmpty(membershipId))
@@ -136,8 +136,8 @@ namespace ErtisAuth.WebAPI.Controllers
 				return this.XErtisAliasMissing();
 			}
 
-			string username = model.Username;
-			string password = model.Password;
+			var username = model.Username;
+			var password = model.Password;
 
 			string ipAddress = null;
 			if (this.Request.Headers.TryGetValue("X-IpAddress", out var ipAddressHeader))
@@ -150,15 +150,47 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				userAgent = userAgentHeader.ToString();
 			}
-			
-			var token = await this.tokenService.GenerateTokenAsync(username, password, membershipId, ipAddress: ipAddress, userAgent: userAgent);
-			if (token != null)
+
+			if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
 			{
-				return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
+				var token = await this.tokenService.GenerateTokenAsync(
+					username, 
+					password, 
+					membershipId, 
+					ipAddress: ipAddress, 
+					userAgent: userAgent, 
+					cancellationToken: cancellationToken);
+				
+				if (token != null)
+				{
+					return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
+				}
+				else
+				{
+					return this.InvalidCredentials();
+				}
 			}
 			else
 			{
-				return this.InvalidCredentials();
+				var token = this.GetTokenFromHeader(out var tokenTypeStr);
+				if (!TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
+				{
+					throw ErtisAuthException.UnsupportedTokenType();
+				}
+				else if (tokenType != SupportedTokenTypes.Bearer)
+				{
+					throw ErtisAuthException.BearerTokenRequired();
+				}
+				
+				var generatedToken = await this.tokenService.GenerateTokenAsync(token, model.Scopes, membershipId, cancellationToken: cancellationToken);
+				if (generatedToken != null)
+				{
+					return this.Created($"{this.Request.Scheme}://{this.Request.Host}", generatedToken);
+				}
+				else
+				{
+					return this.InvalidToken();
+				}
 			}
 		}
 		
@@ -166,7 +198,7 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("verify-token")]
 		public async Task<IActionResult> VerifyToken()
 		{
-			string token = this.GetTokenFromHeader(out string tokenTypeStr);
+			var token = this.GetTokenFromHeader(out var tokenTypeStr);
 			if (string.IsNullOrEmpty(token))
 			{
 				return this.AuthorizationHeaderMissing();
@@ -192,10 +224,10 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("verify-token")]
 		public async Task<IActionResult> VerifyToken([FromBody] VerifyTokenFormModel model)
 		{
-			string token = this.GetTokenFromHeader(out string tokenTypeStr);
+			var token = this.GetTokenFromHeader(out var tokenTypeStr);
 			if (string.IsNullOrEmpty(token))
 			{
-				token = model.Token;
+				token = TokenBase.ExtractToken(model.Token, out tokenTypeStr);
 			}
 			
 			if (!TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
@@ -223,18 +255,18 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("refresh-token")]
 		public async Task<IActionResult> RefreshToken()
 		{
-			string refreshToken = this.GetTokenFromHeader(out string _);
+			var refreshToken = this.GetTokenFromHeader(out _);
 			if (string.IsNullOrEmpty(refreshToken))
 			{
 				return this.AuthorizationHeaderMissing();
 			}
 
-			bool revokeBefore = true;
+			var revokeBefore = true;
 			if (this.Request.Query.ContainsKey("revoke"))
 			{
 				revokeBefore = this.Request.Query["revoke"] == "true";
 			}
-
+			
 			var token = await this.tokenService.RefreshTokenAsync(refreshToken, revokeBefore);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 		}
@@ -243,13 +275,13 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("refresh-token")]
 		public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenFormModel model)
 		{
-			string refreshToken = this.GetTokenFromHeader(out string _);
+			var refreshToken = this.GetTokenFromHeader(out _);
 			if (string.IsNullOrEmpty(refreshToken))
 			{
 				refreshToken = model.Token;
 			}
 
-			bool revokeBefore = true;
+			var revokeBefore = true;
 			if (this.Request.Query.ContainsKey("revoke"))
 			{
 				revokeBefore = this.Request.Query["revoke"] == "true";
@@ -263,13 +295,13 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("revoke-token")]
 		public async Task<IActionResult> RevokeToken(CancellationToken cancellationToken = default)
 		{
-			string token = this.GetTokenFromHeader(out string _);
+			var token = this.GetTokenFromHeader(out _);
 			if (string.IsNullOrEmpty(token))
 			{
 				return this.AuthorizationHeaderMissing();
 			}
 
-			bool logoutFromAllDevices = false;
+			var logoutFromAllDevices = false;
 			if (this.Request.Query.ContainsKey("logout-all"))
 			{
 				bool.TryParse(this.Request.Query["logout-all"], out logoutFromAllDevices);
@@ -290,13 +322,13 @@ namespace ErtisAuth.WebAPI.Controllers
 		[Route("revoke-token")]
 		public async Task<IActionResult> RevokeToken([FromBody] RevokeTokenFormModel model, CancellationToken cancellationToken = default)
 		{
-			string token = this.GetTokenFromHeader(out string _);
+			var token = this.GetTokenFromHeader(out _);
 			if (string.IsNullOrEmpty(token))
 			{
 				token = model.Token;
 			}
 
-			bool logoutFromAllDevices = false;
+			var logoutFromAllDevices = false;
 			if (this.Request.Query.ContainsKey("logout-all"))
 			{
 				bool.TryParse(this.Request.Query["logout-all"], out logoutFromAllDevices);

@@ -13,6 +13,8 @@ namespace ErtisAuth.Abstractions.Services
 		ValueTask<Application> WhoAmIAsync(BasicToken basicToken, CancellationToken cancellationToken = default);
 		
 		ValueTask<BearerToken> GenerateTokenAsync(string username, string password, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default);
+		
+		ValueTask<ScopedBearerToken> GenerateTokenAsync(string token, string[] scopes, string membershipId, CancellationToken cancellationToken = default);
 
 		ValueTask<BearerToken> GenerateTokenAsync(User user, string membershipId, string ipAddress = null, string userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default);
 

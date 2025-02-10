@@ -42,6 +42,10 @@ namespace ErtisAuth.Core.Models.Memberships
 		[JsonPropertyName("expires_in")]
 		public int ExpiresIn { get; set; }
 		
+		[JsonProperty("scoped_token_expires_in")]
+		[JsonPropertyName("scoped_token_expires_in")]
+		public int ScopedTokenExpiresIn { get; set; }
+		
 		[JsonProperty("refresh_token_expires_in")]
 		[JsonPropertyName("refresh_token_expires_in")]
 		public int RefreshTokenExpiresIn { get; set; }
