@@ -30,6 +30,7 @@ using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
+using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.Infrastructure.Mapping.Extensions;
 using ErtisAuth.Integrations.OAuth.Core;
 using Microsoft.Extensions.Caching.Memory;
@@ -1277,7 +1278,7 @@ namespace ErtisAuth.Infrastructure.Services
 		{
 			try
 			{
-				var payload = Encoding.UTF8.GetString(Convert.FromBase64String(resetToken));
+				var payload = Base64Helper.Decode(resetToken, Encoding.UTF8);
 				var parts = payload.Split(':');
 				if (parts.Length > 1)
 				{
@@ -1313,8 +1314,9 @@ namespace ErtisAuth.Infrastructure.Services
 			
 				throw ErtisAuthException.InvalidToken();
 			}
-			catch (FormatException)
+			catch (FormatException ex)
 			{
+				Console.WriteLine(ex);
 				throw ErtisAuthException.InvalidToken();
 			}
 		}
