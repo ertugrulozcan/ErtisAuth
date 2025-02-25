@@ -26,7 +26,7 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 	#endregion
 	
 	#region Constructors
-		
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -48,11 +48,11 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 		this._configuration = configuration;
 		this._logger = logger;
 	}
-		
+	
 	#endregion
 	
 	#region Methods
-
+	
 	public async Task<AuthorizationResult> CheckAuthorizationAsync(BasicToken token, HttpContext context)
 	{
 		var applicationId = token.AccessToken.Split(':')[0];
@@ -94,26 +94,39 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 				{
 					errorMessage = error.Message;
 				}
-
+				
 				if (this._configuration.BasicTokenCacheTTL is > 0)
 				{
 					var cacheOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(this._configuration.BasicTokenCacheTTL.Value));
 					this._memoryCache.Set(rbac, new CacheEntry
 					{
-						Utilizer = default,
+						Utilizer = null,
 						IsAuthorized = false
 					}, cacheOptions);
 				}
 				
-				throw ErtisAuthException.Unauthorized(errorMessage);
+				if (string.IsNullOrEmpty(errorMessage))
+				{
+					if (getApplicationResponse.Exception != null)
+					{
+						this._logger.LogError(getApplicationResponse.Exception, "An error occured on basic authorization check");
+					}
+					else
+					{
+						// ReSharper disable once TemplateIsNotCompileTimeConstantProblem
+						this._logger.LogError(getApplicationResponse.Json ?? "No rew data", "An error occured on basic authorization check");
+					}
+				}
+				
+				throw ErtisAuthException.Unauthorized(string.IsNullOrEmpty(errorMessage) ? "An error occured on basic authorization check" : errorMessage);
 			}
 		}
 	}
-
+	
 	#endregion
-
+	
 	#region Cache Methods
-
+	
 	// ReSharper disable once UnusedMember.Local
 	private void PurgeAllCache()
 	{
@@ -122,19 +135,19 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 			concreteMemoryCache.Clear();
 		}
 	}
-
+	
 	#endregion
 	
 	#region Helper Classes
-
+	
 	private class CacheEntry
 	{
 		#region Properties
-
+		
 		public Utilizer? Utilizer { get; init; }
 		
 		public bool IsAuthorized { get; init; }
-
+		
 		#endregion
 	}
 	
