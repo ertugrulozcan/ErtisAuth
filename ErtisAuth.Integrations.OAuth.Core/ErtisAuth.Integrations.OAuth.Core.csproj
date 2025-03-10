@@ -1,19 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <PackageId>ErtisAuth.Integrations.OAuth.Core</PackageId>
-        <PackageVersion>7.7.2</PackageVersion>
+        <PackageVersion>9.0.0</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Integrations.OAuth.Core</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <Copyright>Ertuğrul Özcan | Copyright 2022 (c)</Copyright>
-        <PackageReleaseNotes>.Net 7</PackageReleaseNotes>
+        <Copyright>Ertuğrul Özcan | Copyright 2025 (c)</Copyright>
+        <PackageReleaseNotes>.Net 9</PackageReleaseNotes>
         <PackageTags>ErtisAuth.Integrations.OAuth.Core</PackageTags>
         <Title>ErtisAuth.Integrations.OAuth.Core</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>7.7.2</AssemblyVersion>
-        <FileVersion>7.7.2</FileVersion>
+        <AssemblyVersion>9.0.0</AssemblyVersion>
+        <FileVersion>9.0.0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>

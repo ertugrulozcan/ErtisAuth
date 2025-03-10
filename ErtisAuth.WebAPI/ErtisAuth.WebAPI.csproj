@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ertis.Extensions.AspNetCore" Version="7.0.8" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="7.0.13" />
+        <PackageReference Include="Ertis.Extensions.AspNetCore" Version="9.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
-        <PackageReference Include="Sentry" Version="4.11.0" />
-        <PackageReference Include="Serilog" Version="4.0.1" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.0" />
+        <PackageReference Include="Sentry" Version="5.3.0" />
+        <PackageReference Include="Serilog" Version="4.2.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
         <PackageReference Include="Microsoft.NETCore.Targets" Version="5.0.0" PrivateAssets="all" />
     </ItemGroup>
 
