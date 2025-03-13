@@ -12,7 +12,9 @@ using Ertis.MongoDB.Queries;
 using Ertis.Schema.Dynamics.Legacy;
 using Ertis.Schema.Exceptions;
 using Ertis.Schema.Extensions;
+using Ertis.Schema.Types;
 using Ertis.Schema.Types.CustomTypes;
+using Ertis.Schema.Types.Primitives;
 using Ertis.Schema.Validation;
 using Ertis.Security.Cryptography;
 using ErtisAuth.Core.Models.Identity;
@@ -268,32 +270,38 @@ namespace ErtisAuth.Infrastructure.Services
                 throw new CumulativeValidationException(validationContext.Errors);
             }
         }
-
+        
         private async Task<bool> CheckUniquePropertiesAsync(string membershipId, UserType userType, DynamicObject model, string userId, IValidationContext validationContext)
         {
-            var isValid = true;
-            var uniqueProperties = userType.GetUniqueProperties();
-            foreach (var uniqueProperty in uniqueProperties)
-            {
-	            var path = uniqueProperty.GetSelfPath(userType);
-	            if (model.TryGetValue(path, out var value, out _) && value != null)
-                {
-                    var found = await this.FindOneAsync(
-                        QueryBuilder.Equals("membership_id", membershipId),
-                        QueryBuilder.Equals(path, value));
-
-                    if (found != null && found.TryGetValue(path, out var value_, out _) && value.Equals(value_))
-                    {
-                        if (string.IsNullOrEmpty(userId) || found.TryGetValue("_id", out string foundId, out _) && userId != foundId)
-                        {
-                            isValid = false;
-                            validationContext.Errors.Add(new FieldValidationException($"The '{uniqueProperty.Name}' field has unique constraint. The same value is already using in another user.", uniqueProperty));   
-                        }
-                    }
-                }
-            }
-
-            return isValid;
+	        var isValid = true;
+	        var uniqueProperties = userType.GetUniqueProperties();
+	        foreach (var uniqueProperty in uniqueProperties)
+	        {
+		        var path = uniqueProperty.GetSelfPath(userType);
+		        if (model.TryGetValue(path, out var value, out _) && value != null)
+		        {
+			        var fieldInfoType = uniqueProperty.GetType();
+			        if (value is string str && string.IsNullOrEmpty(str) && (uniqueProperty.Type == FieldType.@string || fieldInfoType.IsAssignableTo(typeof(StringFieldInfo))))
+			        {
+				        continue;
+			        }
+	                
+			        var found = await this.FindOneAsync(
+				        QueryBuilder.Equals("membership_id", membershipId),
+				        QueryBuilder.Equals(path, value));
+			        
+			        if (found != null && found.TryGetValue(path, out var value_, out _) && value.Equals(value_))
+			        {
+				        if (string.IsNullOrEmpty(userId) || found.TryGetValue("_id", out string foundId, out _) && userId != foundId)
+				        {
+					        isValid = false;
+					        validationContext.Errors.Add(new FieldValidationException($"The '{uniqueProperty.Name}' field has unique constraint. The same value is already using in another user.", uniqueProperty));   
+				        }
+			        }
+		        }
+	        }
+	        
+	        return isValid;
         }
         
         private void EnsureManagedProperties(DynamicObject model, string membershipId)
