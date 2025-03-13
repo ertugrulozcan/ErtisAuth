@@ -12,7 +12,9 @@ using Ertis.MongoDB.Queries;
 using Ertis.Schema.Dynamics.Legacy;
 using Ertis.Schema.Exceptions;
 using Ertis.Schema.Extensions;
+using Ertis.Schema.Types;
 using Ertis.Schema.Types.CustomTypes;
+using Ertis.Schema.Types.Primitives;
 using Ertis.Schema.Validation;
 using Ertis.Security.Cryptography;
 using ErtisAuth.Core.Models.Identity;
@@ -277,7 +279,13 @@ namespace ErtisAuth.Infrastructure.Services
             {
 	            var path = uniqueProperty.GetSelfPath(userType);
 	            if (model.TryGetValue(path, out var value, out _) && value != null)
-                {
+	            {
+		            var fieldInfoType = uniqueProperty.GetType();
+		            if (value is string str && string.IsNullOrEmpty(str) && (uniqueProperty.Type == FieldType.@string || fieldInfoType.IsAssignableTo(typeof(StringFieldInfo))))
+	                {
+		                continue;
+	                }
+	                
                     var found = await this.FindOneAsync(
                         QueryBuilder.Equals("membership_id", membershipId),
                         QueryBuilder.Equals(path, value));
