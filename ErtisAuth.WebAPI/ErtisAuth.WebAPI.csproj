@@ -14,6 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\ErtisAuth.Extensions.Logging.Prometheus\ErtisAuth.Extensions.Logging.Prometheus.csproj" />
         <ProjectReference Include="..\ErtisAuth.Infrastructure\ErtisAuth.Infrastructure.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Database\ErtisAuth.Extensions.Database.csproj" />

@@ -21,6 +21,7 @@ using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Extensions.Authorization.Constants;
 using ErtisAuth.Extensions.Database;
 using ErtisAuth.Extensions.Hosting;
+using ErtisAuth.Extensions.Logging.Prometheus;
 using ErtisAuth.Extensions.Mailkit.Extensions;
 using ErtisAuth.Extensions.Mailkit.Serialization;
 using ErtisAuth.Extensions.Quartz.Extensions;
@@ -163,6 +164,9 @@ else
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 
+// Prometheus
+builder.Services.AddPrometheus();
+
 builder.Services.AddCors(options =>
 {
 	options.AddPolicy(CORS_POLICY_KEY,
@@ -246,6 +250,9 @@ if (app.Environment.IsDevelopment() && builder.Configuration.GetSection("Documen
 
 // Database
 app.CheckDatabaseIndexes();
+
+// Prometheus
+app.UsePrometheus();
 
 app.UseMailkit();
 app.UseProviders();
