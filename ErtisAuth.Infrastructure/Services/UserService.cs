@@ -285,14 +285,24 @@ namespace ErtisAuth.Infrastructure.Services
 	                {
 		                continue;
 	                }
-	                
-                    var found = await this.FindOneAsync(
-                        QueryBuilder.Equals("membership_id", membershipId),
-                        QueryBuilder.Equals(path, value));
+		            
+		            DynamicObject result;
+		            if (uniqueProperty is StringFieldInfo { CaseInsensitive: true })
+		            {
+			            result = await this.FindOneAsync(
+				            QueryBuilder.Equals("membership_id", membershipId),
+				            QueryBuilder.Regex(path, $"^{value}$", RegexOptions.AllowDot | RegexOptions.CaseInsensitivity));
+		            }
+		            else
+		            {
+			            result = await this.FindOneAsync(
+				            QueryBuilder.Equals("membership_id", membershipId),
+				            QueryBuilder.Equals(path, value));
+		            }
 
-                    if (found != null && found.TryGetValue(path, out var value_, out _) && value.Equals(value_))
+                    if (result != null && result.TryGetValue(path, out var value_, out _) && value.Equals(value_))
                     {
-                        if (string.IsNullOrEmpty(userId) || found.TryGetValue("_id", out string foundId, out _) && userId != foundId)
+                        if (string.IsNullOrEmpty(userId) || result.TryGetValue("_id", out string foundId, out _) && userId != foundId)
                         {
                             isValid = false;
                             validationContext.Errors.Add(new FieldValidationException($"The '{uniqueProperty.Name}' field has unique constraint. The same value is already using in another user.", uniqueProperty));   
@@ -320,6 +330,14 @@ namespace ErtisAuth.Infrastructure.Services
 	        if (model.TryGetValue<string>("email_address", out var emailAddress))
 	        {
 		        model.SetValue("email_address", emailAddress.ToLower());
+	        }
+        }
+        
+        private void EnsureUsername(DynamicObject model)
+        {
+	        if (model.TryGetValue<string>("username", out var username))
+	        {
+		        model.SetValue("username", username.ToLower());
 	        }
         }
         
@@ -765,6 +783,8 @@ namespace ErtisAuth.Infrastructure.Services
 	        var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
 	        
 	        this.EnsureEmailAddress(model);
+	        this.EnsureUsername(model);
+	        
 	        var activationMailHook = await this.EnsureUserActivationAsync(membership, cancellationToken: cancellationToken);
 	        model.SetValue("is_active", membership.UserActivation != Status.Active, true);
 
@@ -1005,6 +1025,7 @@ namespace ErtisAuth.Infrastructure.Services
         {
 	        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
 	        this.EnsureEmailAddress(model);
+	        this.EnsureUsername(model);
 	        this.EnsureUser(membershipId, userId, out var current);
 	        var userType = await this.GetUserTypeAsync(model, current, membershipId, cancellationToken: cancellationToken);
 	        this.EnsureManagedProperties(model, membershipId);
