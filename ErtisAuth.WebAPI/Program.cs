@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,6 +19,7 @@ using Ertis.Schema.Serialization;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using ErtisAuth.Extensions.ApplicationInsights;
 using ErtisAuth.Extensions.Authorization.Constants;
 using ErtisAuth.Extensions.Database;
 using ErtisAuth.Extensions.Hosting;
@@ -34,6 +36,7 @@ using ErtisAuth.WebAPI.Adapters;
 using ErtisAuth.WebAPI.Auth;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Helpers;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Events;
 using IMongoDatabase = Ertis.MongoDB.Database.IMongoDatabase;
@@ -218,6 +221,20 @@ if (!string.IsNullOrEmpty(sentryDsn))
 		options.TracesSampleRate = 0.1;
 	});
 }
+
+// ApplicationInsights
+builder.Services.AddApplicationInsights(builder.Configuration);
+
+// Logging
+builder.Logging.AddJsonConsole(options =>
+{
+	options.IncludeScopes = false;
+	options.TimestampFormat = "HH:mm:ss";
+	options.JsonWriterOptions = new JsonWriterOptions
+	{
+		Indented = true
+	};
+});
 
 builder.Services
 	.AddControllers()
