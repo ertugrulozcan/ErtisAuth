@@ -68,6 +68,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Hostin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Logging.Prometheus", "ErtisAuth.Extensions.Logging.Prometheus\ErtisAuth.Extensions.Logging.Prometheus.csproj", "{770640B0-7D6C-4253-B751-A98A39B40E1F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.ApplicationInsights", "ErtisAuth.Extensions.ApplicationInsights\ErtisAuth.Extensions.ApplicationInsights.csproj", "{66393091-A70A-4D08-B540-D20603F037C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -174,6 +176,10 @@ Global
 		{770640B0-7D6C-4253-B751-A98A39B40E1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{770640B0-7D6C-4253-B751-A98A39B40E1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{770640B0-7D6C-4253-B751-A98A39B40E1F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66393091-A70A-4D08-B540-D20603F037C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66393091-A70A-4D08-B540-D20603F037C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66393091-A70A-4D08-B540-D20603F037C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66393091-A70A-4D08-B540-D20603F037C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{3DBF8D8C-08F0-46F5-ACE8-E5E303649F8E} = {39676EB6-FDB2-481D-BA89-A3B08B87950D}
@@ -201,5 +207,6 @@ Global
 		{E960023C-9A83-405F-B53D-3C837E88DFF3} = {EAFD8CFE-317A-4BC4-8321-3F2935750D06}
 		{05CA255C-9068-4BAE-9152-6649803A7D72} = {7A1F28C8-4EEC-4876-B761-F0A7C7BFF02E}
 		{770640B0-7D6C-4253-B751-A98A39B40E1F} = {7A1F28C8-4EEC-4876-B761-F0A7C7BFF02E}
+		{66393091-A70A-4D08-B540-D20603F037C0} = {7A1F28C8-4EEC-4876-B761-F0A7C7BFF02E}
 	EndGlobalSection
 EndGlobal
