@@ -1,5 +1,4 @@
 using System;
-using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -234,10 +233,6 @@ builder.Logging.AddJsonConsole(options =>
 {
 	options.IncludeScopes = false;
 	options.TimestampFormat = "HH:mm:ss";
-	options.JsonWriterOptions = new JsonWriterOptions
-	{
-		Indented = true
-	};
 });
 
 builder.Services
