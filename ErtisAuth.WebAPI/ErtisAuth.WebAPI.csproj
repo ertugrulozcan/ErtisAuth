@@ -15,6 +15,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\ErtisAuth.Extensions.ApplicationInsights\ErtisAuth.Extensions.ApplicationInsights.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Extensions.Prometheus\ErtisAuth.Extensions.Prometheus.csproj" />
         <ProjectReference Include="..\ErtisAuth.Infrastructure\ErtisAuth.Infrastructure.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Database\ErtisAuth.Extensions.Database.csproj" />
