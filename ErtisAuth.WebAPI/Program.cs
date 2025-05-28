@@ -22,7 +22,6 @@ using ErtisAuth.Extensions.ApplicationInsights;
 using ErtisAuth.Extensions.Authorization.Constants;
 using ErtisAuth.Extensions.Database;
 using ErtisAuth.Extensions.Hosting;
-using ErtisAuth.Extensions.Logging.Prometheus;
 using ErtisAuth.Extensions.Mailkit.Extensions;
 using ErtisAuth.Extensions.Mailkit.Serialization;
 using ErtisAuth.Extensions.Prometheus.Extensions;
