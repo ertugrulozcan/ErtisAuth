@@ -24,6 +24,7 @@ using ErtisAuth.Extensions.Database;
 using ErtisAuth.Extensions.Hosting;
 using ErtisAuth.Extensions.Mailkit.Extensions;
 using ErtisAuth.Extensions.Mailkit.Serialization;
+using ErtisAuth.Extensions.Prometheus.Extensions;
 using ErtisAuth.Extensions.Quartz.Extensions;
 using ErtisAuth.Identity.Jwt.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
@@ -162,6 +163,9 @@ else
 	builder.Services.AddSingleton<IGeoLocationService, GeoLocationDisabledService>();
 }
 
+// Prometheus
+builder.Services.AddPrometheus();
+
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 
@@ -266,8 +270,11 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.ConfigureGlobalExceptionHandler();
-app.MapControllers();
 
+// Prometheus
+app.UsePrometheus();
+
+app.MapControllers();
 ResolveRequiredServices(app.Services);
 
 app.Run();
