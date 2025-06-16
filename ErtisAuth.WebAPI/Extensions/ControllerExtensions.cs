@@ -235,7 +235,12 @@ namespace ErtisAuth.WebAPI.Extensions
 		{
 			return controller.Ok(ErtisAuthException.BulkDeletePartial().Error);
 		}
-
+		
+		public static BadRequestObjectResult CommandRequired(this ControllerBase controller)
+		{
+			return controller.BadRequest(ErtisAuthException.CommandRequired());
+		}
+		
 		#endregion
 	}
 }

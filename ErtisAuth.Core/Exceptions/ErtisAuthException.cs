@@ -570,5 +570,14 @@ namespace ErtisAuth.Core.Exceptions
 		}
 		
 		#endregion
+		
+		#region Terminal Exceptions
+		
+		public static ErtisAuthException CommandRequired()
+		{
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "Command required", "CommandRequired");
+		}
+		
+		#endregion
 	}
 }
