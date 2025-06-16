@@ -8,6 +8,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ertis.Net" Version="9.0.1" />
+        <PackageReference Include="Ertis.Net" Version="9.0.2" />
     </ItemGroup>
 </Project>
