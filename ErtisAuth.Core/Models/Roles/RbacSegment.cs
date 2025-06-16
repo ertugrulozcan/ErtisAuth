@@ -110,17 +110,20 @@ namespace ErtisAuth.Core.Models.Roles
 
 		private bool AreEqual(object obj, StringComparison? stringComparison = null)
 		{
+			var value = this.Value.Replace("%2E", ".");
+			var slug = this.Slug.Replace("%2E", ".");
+			
 			if (stringComparison == null)
 			{
 				if (obj is RbacSegment other)
 				{
-					return this.Value == other.Value && this.Slug == other.Slug;
+					return value == other.Value.Replace("%2E", ".") && slug == other.Slug.Replace("%2E", ".");
 				}
 				
 				return obj switch
 				{
 					null => false,
-					string str => this.Value == str && this.Slug == str,
+					string str => value == str.Replace("%2E", ".") && slug == str.Replace("%2E", "."),
 					_ => false
 				};
 			}
@@ -128,13 +131,13 @@ namespace ErtisAuth.Core.Models.Roles
 			{
 				if (obj is RbacSegment other)
 				{
-					return string.Compare(this.Value, other.Value, stringComparison.Value) == 0 && string.Compare(this.Slug, other.Slug, stringComparison.Value) == 0;
+					return string.Compare(value, other.Value.Replace("%2E", "."), stringComparison.Value) == 0 && string.Compare(slug, other.Slug.Replace("%2E", "."), stringComparison.Value) == 0;
 				}
 				
 				return obj switch
 				{
 					null => false,
-					string str => string.Compare(this.Value, str, stringComparison.Value) == 0 && string.Compare(this.Slug, str, stringComparison.Value) == 0,
+					string str => string.Compare(value, str.Replace("%2E", "."), stringComparison.Value) == 0 && string.Compare(slug, str.Replace("%2E", "."), stringComparison.Value) == 0,
 					_ => false
 				};
 			}
