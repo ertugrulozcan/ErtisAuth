@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <PackageId>ErtisAuth.Extensions.Authorization</PackageId>
-        <PackageVersion>9.0.2</PackageVersion>
+        <PackageVersion>9.0.3</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Extensions.Authorization</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -12,12 +12,12 @@
         <Title>ErtisAuth.Extensions.Authorization</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.0.2</AssemblyVersion>
-        <FileVersion>9.0.2</FileVersion>
+        <AssemblyVersion>9.0.3</AssemblyVersion>
+        <FileVersion>9.0.3</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.6" />
+        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.8" />
     </ItemGroup>
 
     <ItemGroup>
