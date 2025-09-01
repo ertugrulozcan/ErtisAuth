@@ -20,6 +20,6 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-ENV ASPNETCORE_URLS=http://0.0.0.0:9716
+ENV ASPNETCORE_URLS=http://0.0.0.0:80
 
 ENTRYPOINT ["dotnet", "ErtisAuth.WebAPI.dll"]
