@@ -93,6 +93,12 @@ namespace ErtisAuth.WebAPI.Controllers
 		{
 			return this.Ok("Pong");
 		}
+		
+		[HttpGet("build-id")]
+		public IActionResult BuildId()
+		{
+			return this.Ok("9.0.5.1");
+		}
 
 		#endregion
 	}

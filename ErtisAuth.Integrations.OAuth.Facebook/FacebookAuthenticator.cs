@@ -80,7 +80,8 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 			var facebookLoginRequest = request as FacebookLoginRequest;
 			if (facebookLoginRequest == null)
 			{
-				return false;
+				throw ErtisAuthException.Unauthorized($"Token was not verified by provider (FacebookLoginRequest payload is null)");
+				// return false;
 			}
 			
 			if (facebookLoginRequest.IsLimited)
@@ -170,7 +171,8 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 			}
 			else
 			{
-				return false;
+				// return false;
+				throw ErtisAuthException.Unauthorized($"Token was not verified by provider (Json web key set could not retrieved by facebook)");
 			}
 		}
 		
