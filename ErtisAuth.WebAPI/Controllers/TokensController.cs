@@ -398,6 +398,11 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				userAgent = userAgentHeader.ToString();
 			}
+
+			if (this.Request.Query.ContainsKey("limited_flow") && this.Request.Query["limited_flow"] == "true")
+			{
+				request.IsLimited = true;
+			}
 			
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
 		}

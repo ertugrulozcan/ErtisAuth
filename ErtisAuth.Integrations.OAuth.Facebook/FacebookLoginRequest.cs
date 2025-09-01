@@ -21,7 +21,7 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 		public FacebookUserToken Token { get; set; }
 		
 		[JsonIgnore]
-		public string AccessToken => this.Token?.AccessToken;
+		public string AccessToken => this.User?.AccessToken ?? this.Token?.AccessToken;
 		
 		[JsonIgnore]
 		public string UserId => this.User?.Id;
@@ -31,6 +31,9 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 		
 		[JsonIgnore]
 		public string AvatarUrl => this.User?.Picture?.Data?.Url;
+		
+		[JsonIgnore]
+		public bool IsLimited { get; set; }
 
 		#endregion
 

@@ -1,4 +1,8 @@
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Models.Response;
@@ -8,11 +12,17 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Abstractions;
 using ErtisAuth.Integrations.OAuth.Core;
+using ErtisAuth.Integrations.OAuth.Facebook.Models;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ErtisAuth.Integrations.OAuth.Facebook
 {
-	public interface IFacebookAuthenticator : IProviderAuthenticator, IProviderAuthenticator<FacebookLoginRequest, FacebookUserToken, FacebookUserToken>
-	{}
+	public interface IFacebookAuthenticator : 
+		IProviderAuthenticator,
+		IProviderAuthenticator<FacebookLoginRequest, FacebookUserToken, FacebookUserToken>
+	{
+		Task<bool> VerifyLimitedTokenAsync(FacebookLoginRequest request, CancellationToken cancellationToken = default);
+	}
 	
 	public class FacebookAuthenticator : IFacebookAuthenticator
 	{
@@ -25,7 +35,7 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 		#region Services
 
 		private readonly IRestHandler restHandler;
-
+		
 		#endregion
 		
 		#region Constructors
@@ -67,7 +77,20 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 		
 		public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
 		{
-			return await this.VerifyTokenAsync(request as FacebookLoginRequest, provider, cancellationToken);
+			var facebookLoginRequest = request as FacebookLoginRequest;
+			if (facebookLoginRequest == null)
+			{
+				return false;
+			}
+			
+			if (facebookLoginRequest.IsLimited)
+			{
+				return await this.VerifyLimitedTokenAsync(facebookLoginRequest, cancellationToken);
+			}
+			else
+			{
+				return await this.VerifyTokenAsync(facebookLoginRequest, provider, cancellationToken);
+			}
 		}
 		
 		public async Task<bool> VerifyTokenAsync(FacebookLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
@@ -99,6 +122,49 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 			}
 		}
 
+		public async Task<bool> VerifyLimitedTokenAsync(FacebookLoginRequest request, CancellationToken cancellationToken = default)
+		{
+			var response = await this.restHandler.ExecuteRequestAsync<JWKeys>(
+				HttpMethod.Get,
+				"https://www.facebook.com/.well-known/oauth/openid/jwks/",
+				QueryString.Empty,
+				HeaderCollection.Empty, 
+				cancellationToken: cancellationToken);
+			
+			if (response.IsSuccess && response.Data?.Keys != null && response.Data.Keys.Any())
+			{
+				var jwk = JsonWebKeySet.Create(response.Json);
+				
+				var tokenHandler = new JwtSecurityTokenHandler();
+				try
+				{
+					var result = tokenHandler.ValidateToken(request.AccessToken, new TokenValidationParameters
+					{
+						ValidateIssuerSigningKey = true,
+						ValidateIssuer = true,
+						ValidateAudience = true,
+						ValidIssuer = "https://www.facebook.com",
+						ValidAudience = request.AppId,
+						IssuerSigningKey = jwk.Keys.First(),
+						RequireExpirationTime = true,
+						RequireSignedTokens = true,
+					}, out var validatedToken);
+					
+					Console.WriteLine($"Validated limited token id: {validatedToken.Id}");
+					return result?.Identity is { IsAuthenticated: true };
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex);
+					return false;
+				}
+			}
+			else
+			{
+				return false;
+			}
+		}
+		
 		public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider, CancellationToken cancellationToken = default)
 		{
 			var response = await this.ExecuteRequestAsync(
