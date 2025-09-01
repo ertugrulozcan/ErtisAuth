@@ -226,7 +226,7 @@ if (!string.IsNullOrEmpty(sentryDsn))
 }
 
 // ApplicationInsights
-// builder.Services.AddApplicationInsights(builder.Configuration);
+builder.Services.AddApplicationInsights(builder.Configuration);
 
 // Logging
 builder.Logging.AddJsonConsole(options =>
@@ -266,7 +266,7 @@ app.CheckDatabaseIndexes();
 app.UseMailkit();
 app.UseProviders();
 app.UseCors(CORS_POLICY_KEY);
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
