@@ -151,12 +151,21 @@ namespace ErtisAuth.Integrations.OAuth.Facebook
 					}, out var validatedToken);
 					
 					Console.WriteLine($"Validated limited token id: {validatedToken.Id}");
-					return result?.Identity is { IsAuthenticated: true };
+					var isAuthenticated = result?.Identity is { IsAuthenticated: true };
+
+					if (!isAuthenticated)
+					{
+						throw ErtisAuthException.Unauthorized("Token was not verified by provider (Identity is not authenticated)");
+					}
+
+					return true;
 				}
 				catch (Exception ex)
 				{
 					Console.WriteLine(ex);
-					return false;
+					// return false;
+					
+					throw ErtisAuthException.Unauthorized($"Token was not verified by provider ({ex.Message})");
 				}
 			}
 			else
