@@ -169,9 +169,6 @@ builder.Services.AddPrometheus();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 
-// Prometheus
-builder.Services.AddPrometheus();
-
 builder.Services.AddCors(options =>
 {
 	options.AddPolicy(CORS_POLICY_KEY,
@@ -229,7 +226,7 @@ if (!string.IsNullOrEmpty(sentryDsn))
 }
 
 // ApplicationInsights
-builder.Services.AddApplicationInsights(builder.Configuration);
+// builder.Services.AddApplicationInsights(builder.Configuration);
 
 // Logging
 builder.Logging.AddJsonConsole(options =>
