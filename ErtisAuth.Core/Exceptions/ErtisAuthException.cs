@@ -395,6 +395,11 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.NotFound, $"Provider not found in db by given _id: <{providerId}>", "ProviderNotFound");
 		}
 		
+		public static ErtisAuthException UnknownPlatform(string platformName)
+		{
+			return new ErtisAuthException(HttpStatusCode.NotFound, $"Unknown platform ({platformName}). The platform parameter must be one of ios, android or web", "UnknownPlatform");
+		}
+		
 		public static ErtisAuthException ProviderWithSameNameAlreadyExists(string name)
 		{
 			return new ErtisAuthException(HttpStatusCode.Conflict, $"The provider with same name is already exists ({name})", "ProviderWithSameNameAlreadyExists");

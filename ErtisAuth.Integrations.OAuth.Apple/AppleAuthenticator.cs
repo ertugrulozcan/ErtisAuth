@@ -10,8 +10,8 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Integrations.OAuth.Apple;
 
-public interface IAppleAuthenticator : IProviderAuthenticator, IProviderAuthenticator<AppleLoginRequest, AppleToken?, AppleUser?>
-{}
+public interface IAppleAuthenticator : IProviderAuthenticator,
+	IProviderAuthenticator<AppleLoginRequestBase, AppleToken?, AppleUser?>;
 
 public class AppleAuthenticator : IAppleAuthenticator
 {
@@ -24,13 +24,13 @@ public class AppleAuthenticator : IAppleAuthenticator
 	#endregion
 	
 	#region Methods
-
+	
 	public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
 	{
-		return await this.VerifyTokenAsync(request as AppleLoginRequest, provider, cancellationToken: cancellationToken);
+		return await this.VerifyTokenAsync(request as AppleLoginRequestBase, provider, cancellationToken: cancellationToken);
 	}
 	
-	public async Task<bool> VerifyTokenAsync(AppleLoginRequest? request, Provider provider, CancellationToken cancellationToken = default)
+	public async Task<bool> VerifyTokenAsync(AppleLoginRequestBase? request, Provider provider, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -38,41 +38,40 @@ public class AppleAuthenticator : IAppleAuthenticator
 			{
 				return false;
 			}
-
+			
 			var secret = GenerateAppleClientSecret(provider);
 			if (string.IsNullOrEmpty(secret))
 			{
 				return false;
 			}
-
-			using (var httpClient = new HttpClient())
+			
+			using var httpClient = new HttpClient();
+			var response = await httpClient.PostAsync(VerifyTokenEndpoint, new FormUrlEncodedContent(new[]
 			{
-				var response = await httpClient.PostAsync(VerifyTokenEndpoint, new FormUrlEncodedContent(new[]
+				new KeyValuePair<string, string>("client_id", provider.AppClientId),
+				new KeyValuePair<string, string>("client_secret", secret),
+				new KeyValuePair<string, string>("code", request.Token.Code),
+				new KeyValuePair<string, string>("grant_type", "authorization_code"),
+				new KeyValuePair<string, string>("redirect_uri", provider.RedirectUri)
+			}), cancellationToken);
+			
+			if (response.StatusCode == HttpStatusCode.OK)
+			{
+				var appleBearerToken = JsonConvert.DeserializeObject<AppleBearerToken>(await response.Content.ReadAsStringAsync(cancellationToken));
+				if (appleBearerToken != null)
 				{
-					new KeyValuePair<string, string>("client_id", provider.AppClientId),
-					new KeyValuePair<string, string>("client_secret", secret),
-					new KeyValuePair<string, string>("code", request.Token.Code),
-					new KeyValuePair<string, string>("grant_type", "authorization_code"),
-					new KeyValuePair<string, string>("redirect_uri", provider.RedirectUri),
-				}), cancellationToken);
-
-				if (response.StatusCode == HttpStatusCode.OK)
-				{
-					var appleBearerToken = JsonConvert.DeserializeObject<AppleBearerToken>(await response.Content.ReadAsStringAsync(cancellationToken));
-					if (appleBearerToken != null)
-					{
-						// Set AccessToken
-						request.Token.AccessToken = appleBearerToken.AccessToken;
+					// Set AccessToken
+					request.Token.AccessToken = appleBearerToken.AccessToken;
 						
-						return !string.IsNullOrEmpty(appleBearerToken.AccessToken) && !string.IsNullOrEmpty(appleBearerToken.IdToken);
-					}
-				}
-				else
-				{
-					return false;
+					return !string.IsNullOrEmpty(appleBearerToken.AccessToken) && !string.IsNullOrEmpty(appleBearerToken.IdToken);
 				}
 			}
-
+			else
+			{
+				var message = await response.Content.ReadAsStringAsync(cancellationToken: cancellationToken);
+				Console.WriteLine(message);
+			}
+			
 			return false;
 		}
 		catch (Exception ex)
@@ -92,18 +91,16 @@ public class AppleAuthenticator : IAppleAuthenticator
 				return false;
 			}
 
-			using (var httpClient = new HttpClient())
+			using var httpClient = new HttpClient();
+			var response = await httpClient.PostAsync(RevokeTokenEndpoint, new FormUrlEncodedContent(new[]
 			{
-				var response = await httpClient.PostAsync(RevokeTokenEndpoint, new FormUrlEncodedContent(new[]
-				{
-					new KeyValuePair<string, string>("client_id", provider.AppClientId),
-					new KeyValuePair<string, string>("client_secret", secret),
-					new KeyValuePair<string, string>("token", accessToken),
-					new KeyValuePair<string, string>("token_type_hint", "access_token"),
-				}), cancellationToken);
-
-				return response.StatusCode == HttpStatusCode.OK;
-			}
+				new KeyValuePair<string, string>("client_id", provider.AppClientId),
+				new KeyValuePair<string, string>("client_secret", secret),
+				new KeyValuePair<string, string>("token", accessToken),
+				new KeyValuePair<string, string>("token_type_hint", "access_token")
+			}), cancellationToken);
+			
+			return response.StatusCode == HttpStatusCode.OK;
 		}
 		catch (Exception ex)
 		{
@@ -125,9 +122,9 @@ public class AppleAuthenticator : IAppleAuthenticator
 		var jwtPayload = new JwtPayload(
 			provider.TeamId,
 			Authority,
-			new List<Claim>()
+			new List<Claim>
 			{
-				new ("sub", provider.AppClientId),
+				new ("sub", provider.AppClientId)
 			},
 			DateTime.UtcNow,
 			DateTime.UtcNow.Add(TimeSpan.FromMinutes(5))
@@ -136,7 +133,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 		var jwt = new JwtSecurityToken(jwtHeader, jwtPayload);
 		return new JwtSecurityTokenHandler().WriteToken(jwt);
 	}
-
+	
 	private static string ClearPrivateKey(string privateKey)
 	{
 		return privateKey.Replace("-----BEGIN PRIVATE KEY-----\n", string.Empty).Replace("\n-----END PRIVATE KEY-----", string.Empty);

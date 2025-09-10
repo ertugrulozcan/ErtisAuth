@@ -158,6 +158,11 @@ namespace ErtisAuth.WebAPI.Extensions
 			return controller.NotFound(ErtisAuthException.ProviderNotFound(providerId));
 		}
 		
+		public static BadRequestObjectResult UnknownPlatform(this ControllerBase controller, string platformName)
+		{
+			return controller.BadRequest(ErtisAuthException.UnknownPlatform(platformName));
+		}
+		
 		public static NotFoundObjectResult EventNotFound(this ControllerBase controller, string eventId)
 		{
 			return controller.NotFound(ErtisAuthException.EventNotFound(eventId));

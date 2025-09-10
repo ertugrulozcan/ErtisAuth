@@ -146,7 +146,7 @@ namespace ErtisAuth.Infrastructure.Services
 					errorList.Add("DefaultUserType is a required field");
 				}
 				
-				if (model.Name == KnownProviders.Apple.ToString())
+				if (model.Name == KnownProviders.Apple.ToString() || model.Name == KnownProviders.AppleNative.ToString())
 				{
 					if (string.IsNullOrEmpty(model.TeamId))
 					{
