@@ -60,7 +60,7 @@ namespace ErtisAuth.Integrations.OAuth
 			{
 				return this._serviceProvider.GetRequiredService<IMicrosoftAuthenticator>();
 			}
-			else if (provider.Name == KnownProviders.Apple.ToString())
+			else if (provider.Name == KnownProviders.Apple.ToString() || provider.Name == KnownProviders.AppleNative.ToString())
 			{
 				return this._serviceProvider.GetRequiredService<IAppleAuthenticator>();
 			}
