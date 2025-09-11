@@ -75,6 +75,10 @@ public class AppleAuthenticator : IAppleAuthenticator
 			
 			return false;
 		}
+		catch (ErtisAuthException)
+		{
+			throw;
+		}
 		catch (Exception ex)
 		{
 			Console.WriteLine(ex);
