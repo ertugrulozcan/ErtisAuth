@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Abstractions;
 using ErtisAuth.Integrations.OAuth.Core;
@@ -69,7 +70,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 			else
 			{
 				var message = await response.Content.ReadAsStringAsync(cancellationToken: cancellationToken);
-				Console.WriteLine(message);
+				throw ErtisAuthException.Unauthorized($"Token was not verified by provider ({message})");
 			}
 			
 			return false;
