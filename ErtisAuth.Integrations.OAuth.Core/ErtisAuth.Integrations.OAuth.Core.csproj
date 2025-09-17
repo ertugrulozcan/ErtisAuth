@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <PackageId>ErtisAuth.Integrations.OAuth.Core</PackageId>
-        <PackageVersion>9.0.5</PackageVersion>
+        <PackageVersion>9.0.6</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Integrations.OAuth.Core</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -12,11 +12,11 @@
         <Title>ErtisAuth.Integrations.OAuth.Core</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.0.5</AssemblyVersion>
-        <FileVersion>9.0.5</FileVersion>
+        <AssemblyVersion>9.0.6</AssemblyVersion>
+        <FileVersion>9.0.6</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     </ItemGroup>
 </Project>
