@@ -45,8 +45,8 @@ namespace ErtisAuth.WebAPI.Controllers
 				
 				var tasks = new Task[]
 				{
-					dbStatisticsTask.AsTask(),
-					listCollectionsTask.AsTask()
+					dbStatisticsTask,
+					listCollectionsTask
 				};
 
 				Task.WaitAll(tasks);

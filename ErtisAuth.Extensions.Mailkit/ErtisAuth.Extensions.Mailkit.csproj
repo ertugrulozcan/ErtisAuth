@@ -18,8 +18,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Core" Version="9.0.2" />
-      <PackageReference Include="Ertis.Net" Version="9.0.5" />
+      <PackageReference Include="Ertis.Net" Version="9.0.6" />
       <PackageReference Include="MailKit" Version="4.13.0" />
       <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />

@@ -8,7 +8,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ertis.Net" Version="9.0.5" />
+        <PackageReference Include="Ertis.Net" Version="9.0.6" />
         <PackageReference Include="Google.Apis.Auth" Version="1.71.0" />
     </ItemGroup>
 </Project>
