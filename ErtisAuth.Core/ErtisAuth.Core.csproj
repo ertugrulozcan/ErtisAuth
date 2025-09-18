@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <PackageId>ErtisAuth.Core</PackageId>
-        <PackageVersion>9.0.7</PackageVersion>
+        <PackageVersion>9.0.8</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Core</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -12,8 +12,8 @@
         <Title>ErtisAuth.Core</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.0.7</AssemblyVersion>
-        <FileVersion>9.0.7</FileVersion>
+        <AssemblyVersion>9.0.8</AssemblyVersion>
+        <FileVersion>9.0.8</FileVersion>
     </PropertyGroup>
     
     <ItemGroup>
