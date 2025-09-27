@@ -63,7 +63,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 		string membershipId,
 		CancellationToken cancellationToken = default)
 	{
-		var results = await this.repository.FindAsync(x => x.Code == code && x.MembershipId == membershipId, 0, 1, false, null, null, cancellationToken: cancellationToken);
+		var results = await this.repository.FindAsync(x => x.Code == code && x.MembershipId == membershipId, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
 		return results.Items.FirstOrDefault()?.ToModel();
 	}
 	
@@ -87,11 +87,11 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 		}
 		
 		var code = GenerateCode(policy);
-		var current = await this.repository.FindAsync(x => x.Code == code && x.MembershipId == membershipId, 0, 1, false, null, null, cancellationToken: cancellationToken);
+		var current = await this.repository.FindAsync(x => x.Code == code && x.MembershipId == membershipId, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
 		while (current.Items.Any())
 		{
 			code = GenerateCode(policy);
-			current = await this.repository.FindAsync(x => x.Code == code, 0, 1, false, null, null, cancellationToken: cancellationToken);
+			current = await this.repository.FindAsync(x => x.Code == code, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
 		}
 		
 		var insertedDto = await this.repository.InsertAsync(new TokenCodeDto
