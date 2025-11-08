@@ -60,12 +60,12 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 		var rbac = rbacDefinition.ToString();
 		if (this._configuration.BasicTokenCacheTTL is > 0 && this._memoryCache.TryGetValue<CacheEntry>(rbac, out var entry) && entry is  { Utilizer: not null })
 		{
-			this._logger.LogInformation("Basic token found on the cache ({Rbac})", rbac);
+			Console.WriteLine($"Basic token found on the cache ({rbac})");
 			return new AuthorizationResult(entry.Utilizer.Value, rbacDefinition, entry.IsAuthorized);
 		}
 		else
 		{
-			this._logger.LogInformation("Basic token not found on the cache ({Rbac}) Requesting from auth API", rbac);
+			Console.WriteLine($"Basic token not found on the cache ({rbac}) Requesting from auth API");
 			
 			var getApplicationResponse = await this._applicationService.GetAsync(applicationId, token);
 			if (getApplicationResponse.IsSuccess)
