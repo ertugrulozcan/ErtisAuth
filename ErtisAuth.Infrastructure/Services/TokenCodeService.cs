@@ -157,7 +157,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 			throw ErtisAuthException.TokenCodeExpired();
 		}
 
-		var user = await this._userService.GetFromCacheAsync(membershipId, utilizer.Id, cancellationToken: cancellationToken);
+		var user = await this._userService.GetUserAsync(membershipId, utilizer.Id, cancellationToken: cancellationToken);
 		if (user == null)
 		{
 			throw ErtisAuthException.UserNotFound(utilizer.Id, "id");

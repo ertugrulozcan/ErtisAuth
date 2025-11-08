@@ -135,17 +135,17 @@ namespace ErtisAuth.Infrastructure.Services
 				var userId = securityToken.Subject;
 				if (!string.IsNullOrEmpty(userId))
 				{
-					return await this.userService.GetFromCacheAsync(membershipId, userId, cancellationToken: cancellationToken);
+					return await this.userService.GetUserAsync(membershipId, userId, cancellationToken: cancellationToken);
 				}
 				else
 				{
-					// UserId could not found in token claims!
+					// UserId could not find in token claims!
 					throw ErtisAuthException.InvalidToken();
 				}
 			}
 			else
 			{
-				// MembershipId could not found in token claims!
+				// MembershipId could not find in token claims!
 				throw ErtisAuthException.InvalidToken();
 			}
 		}
@@ -394,7 +394,7 @@ namespace ErtisAuth.Infrastructure.Services
 						}
 						else
 						{
-							// MembershipId could not found in token claims!
+							// MembershipId could not find in token claims!
 							throw ErtisAuthException.InvalidToken();
 						}
 						
@@ -564,7 +564,7 @@ namespace ErtisAuth.Infrastructure.Services
 								}
 								else
 								{
-									// UserId could not found in token claims!
+									// UserId could not find in token claims!
 									throw ErtisAuthException.InvalidToken();
 								}
 							}
@@ -576,7 +576,7 @@ namespace ErtisAuth.Infrastructure.Services
 						}
 						else
 						{
-							// MembershipId could not found in token claims!
+							// MembershipId could not find in token claims!
 							throw ErtisAuthException.InvalidToken();
 						}
 					}

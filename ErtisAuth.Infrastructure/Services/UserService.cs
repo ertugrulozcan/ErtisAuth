@@ -601,30 +601,10 @@ namespace ErtisAuth.Infrastructure.Services
 	        return await this.GetByIdAsync(membershipId, id);
         }
         
-        public async Task<User> GetFromCacheAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+        public async Task<User> GetUserAsync(string membershipId, string id, CancellationToken cancellationToken = default)
         {
-	        if (CacheDefaults.UsersCacheTTL > TimeSpan.Zero)
-	        {
-		        var cacheKey = GetCacheKey(membershipId, id);
-		        if (!this._memoryCache.TryGetValue<User>(cacheKey, out var user))
-		        {
-			        var dynamicObject = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
-			        if (dynamicObject == null)
-			        {
-				        return null;
-			        }
-		        
-			        user = dynamicObject.Deserialize<User>();
-			        this._memoryCache.Set(cacheKey, user, GetCacheTTL());
-		        }
-			
-		        return user;
-	        }
-	        else
-	        {
-		        var dynamicObject = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
-		        return dynamicObject?.Deserialize<User>();
-	        }
+	        var dynamicObject = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+	        return dynamicObject?.Deserialize<User>();
         }
         
         public async Task<IPaginationCollection<DynamicObject>> GetAsync(
@@ -1021,8 +1001,6 @@ namespace ErtisAuth.Infrastructure.Services
 		        await this.FireOnUpdatedEvent(membershipId, utilizer, current, updated);
 	        }
 	        
-	        this.PurgeUserCache(membershipId, userId);
-            
 	        return updated;
         }
         
@@ -1079,7 +1057,6 @@ namespace ErtisAuth.Infrastructure.Services
             if (isDeleted)
             {
                 await this.FireOnDeletedEvent(membershipId, utilizer, current);
-                this.PurgeUserCache(membershipId, id);
             }
             
             return isDeleted;
@@ -1099,11 +1076,6 @@ namespace ErtisAuth.Infrastructure.Services
 		        var isDeleted = await base.DeleteAsync(id, cancellationToken: cancellationToken);
 		        isAllDeleted &= isDeleted;
 		        isAllFailed &= !isDeleted;
-	        }
-
-	        foreach (var id in ids)
-	        {
-		        this.PurgeUserCache(membershipId, id);
 	        }
 	        
 	        if (isAllDeleted)
@@ -1165,8 +1137,6 @@ namespace ErtisAuth.Infrastructure.Services
 				Prior = prior,
 				MembershipId = membershipId
 			}, cancellationToken: cancellationToken);
-
-			this.PurgeUserCache(membershipId, userId);
 			
 			return updatedUser;
 		}
@@ -1383,26 +1353,6 @@ namespace ErtisAuth.Infrastructure.Services
 			return !string.IsNullOrEmpty(passwordHash?.Trim()) && !string.IsNullOrEmpty(user.PasswordHash?.Trim()) && user.PasswordHash == passwordHash;
 		}
 		
-		#endregion
-		
-		#region Cache Methods
-
-		private static string GetCacheKey(string membershipId, string userId)
-		{
-			return $"{CACHE_KEY}.{membershipId}.{userId}";
-		}
-		
-		private static MemoryCacheEntryOptions GetCacheTTL()
-		{
-			return new MemoryCacheEntryOptions().SetAbsoluteExpiration(CacheDefaults.UsersCacheTTL);
-		}
-		
-		private void PurgeUserCache(string membershipId, string userId)
-		{
-			var cacheKey = GetCacheKey(membershipId, userId);
-			this._memoryCache.Remove(cacheKey);
-		}
-
 		#endregion
     }
 }
