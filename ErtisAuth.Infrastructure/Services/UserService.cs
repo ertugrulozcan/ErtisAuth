@@ -644,7 +644,7 @@ namespace ErtisAuth.Infrastructure.Services
                 
             return await base.GetAsync(queries, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
         }
-
+        
         public async Task<IPaginationCollection<DynamicObject>> QueryAsync(
             string membershipId,
             string query, 
@@ -654,13 +654,14 @@ namespace ErtisAuth.Infrastructure.Services
             string orderBy = null, 
             SortDirection? sortDirection = null, 
             IDictionary<string, bool> selectFields = null, 
+            string locale = null, 
             CancellationToken cancellationToken = default)
         {
             await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-            query = Helpers.QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId);
-            return await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, cancellationToken: cancellationToken);
+            query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId);
+            return await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, language: locale, cancellationToken: cancellationToken);
         }
-
+        
         public async Task<IPaginationCollection<DynamicObject>> SearchAsync(
 	        string membershipId,
 	        string keyword,

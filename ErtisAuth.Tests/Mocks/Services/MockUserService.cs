@@ -244,6 +244,7 @@ namespace ErtisAuth.Tests.Mocks.Services
             string orderBy = null, 
             SortDirection? sortDirection = null, 
             IDictionary<string, bool> selectFields = null, 
+            string locale = null, 
             CancellationToken cancellationToken = default)
         {
             return await this.GetAsync(

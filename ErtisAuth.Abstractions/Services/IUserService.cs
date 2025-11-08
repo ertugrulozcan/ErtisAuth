@@ -48,6 +48,7 @@ namespace ErtisAuth.Abstractions.Services
             string orderBy = null,
             SortDirection? sortDirection = null,
             IDictionary<string, bool> selectFields = null, 
+            string locale = null, 
             CancellationToken cancellationToken = default);
         
         Task<IPaginationCollection<DynamicObject>> SearchAsync(

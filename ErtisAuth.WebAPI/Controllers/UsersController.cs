@@ -108,7 +108,8 @@ namespace ErtisAuth.WebAPI.Controllers
 			if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdSegment))
 			{
 				var membershipId = membershipIdSegment?.ToString();
-				return await this._userService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
+				var locale = this.Request.Query.ContainsKey("locale") ? this.Request.Query["locale"].ToString() : null;
+				return await this._userService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, locale, cancellationToken: cancellationToken);
 			}
 			else
 			{
