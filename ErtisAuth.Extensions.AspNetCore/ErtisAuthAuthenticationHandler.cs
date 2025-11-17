@@ -93,7 +93,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				}
 				else if (isSelfAuthorizedEndpoint)
 				{
-					var selfIdentity = await this.GetClaimsIdentityAsync();
+					var selfIdentity = await this.GetClaimsIdentityAsync(passAuthorization: true);
 					this.Context.User.AddIdentity(selfIdentity);
 					var selfPrincipal = new ClaimsPrincipal(selfIdentity);
 					return AuthenticateResult.Success(new AuthenticationTicket(selfPrincipal, this.Scheme.Name));
@@ -121,9 +121,9 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 		}
 	}
 	
-	private async Task<ClaimsIdentity> GetClaimsIdentityAsync()
+	private async Task<ClaimsIdentity> GetClaimsIdentityAsync(bool passAuthorization = false)
 	{
-		var utilizer = await this.CheckAuthorizationAsync();
+		var utilizer = passAuthorization ? await this.CheckAuthenticationAsync() : await this.CheckAuthorizationAsync();
 		return new ClaimsIdentity(
 			new []
 			{
@@ -207,6 +207,40 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				{
 					throw ErtisAuthException.AccessDenied($"You don't have permission to perform this action. Rbac: {authorizationResult.Rbac} (Error Code: 4032)");	
 				}
+			}
+			default:
+				throw ErtisAuthException.UnsupportedTokenType();
+		}
+	}
+	
+	private async Task<Utilizer> CheckAuthenticationAsync()
+	{
+		var token = this.Request.GetTokenFromHeader(out var tokenType);
+		if (string.IsNullOrEmpty(token))
+		{
+			throw ErtisAuthException.AuthorizationHeaderMissing();
+		}
+		
+		if (string.IsNullOrEmpty(tokenType) || !TokenTypeExtensions.TryParseTokenType(tokenType, out var _tokenType))
+		{
+			throw ErtisAuthException.UnsupportedTokenType();
+		}
+		
+		switch (_tokenType)
+		{
+			case SupportedTokenTypes.None:
+				throw ErtisAuthException.UnsupportedTokenType();
+			case SupportedTokenTypes.Basic:
+			{
+				var basicToken = new BasicToken(token);
+				var authorizationResult = await this._basicAuthorizationHandler.CheckAuthenticationAsync(basicToken, this.Context);
+				return authorizationResult.Utilizer;
+			}
+			case SupportedTokenTypes.Bearer:
+			{
+				var bearerToken = BearerToken.CreateTemp(token);
+				var authorizationResult = await this._bearerAuthorizationHandler.CheckAuthenticationAsync(bearerToken, this.Context);
+				return authorizationResult.Utilizer;
 			}
 			default:
 				throw ErtisAuthException.UnsupportedTokenType();

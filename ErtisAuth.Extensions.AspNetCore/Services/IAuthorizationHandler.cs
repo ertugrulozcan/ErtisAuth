@@ -7,5 +7,7 @@ namespace ErtisAuth.Extensions.AspNetCore.Services;
 
 public interface IAuthorizationHandler<in T> where T : TokenBase
 {
+	Task<AuthorizationResult> CheckAuthenticationAsync(T token, HttpContext context);
+	
 	Task<AuthorizationResult> CheckAuthorizationAsync(T token, HttpContext context);
 }
