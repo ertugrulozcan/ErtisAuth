@@ -57,11 +57,15 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 		{
 			var isAuthorizedEndpoint = false;
 			var isUnauthorizedEndpoint = false;
+			var isSelfAuthorizedEndpoint = false;
+			
 			var endpoint = this.Context.GetEndpoint();
 			if (endpoint is RouteEndpoint routeEndpoint)
 			{
 				var authorizedAttribute = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(AuthorizedAttribute));
 				var unauthorizedAttribute = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(UnauthorizedAttribute));
+				var selfAuthorizedAttribute = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(SelfAuthorizedAttribute));
+				
 				if (authorizedAttribute is AuthorizedAttribute)
 				{
 					isAuthorizedEndpoint = unauthorizedAttribute == null;
@@ -71,8 +75,13 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				{
 					isUnauthorizedEndpoint = true;
 				}
+				
+				if (selfAuthorizedAttribute is SelfAuthorizedAttribute)
+				{
+					isSelfAuthorizedEndpoint = true;
+				}
 			}
-
+			
 			if (!isAuthorizedEndpoint)
 			{
 				if (isUnauthorizedEndpoint)
@@ -82,30 +91,21 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 					var publicPrincipal = new ClaimsPrincipal(publicIdentity);
 					return AuthenticateResult.Success(new AuthenticationTicket(publicPrincipal, this.Scheme.Name));
 				}
+				else if (isSelfAuthorizedEndpoint)
+				{
+					var selfIdentity = await this.GetClaimsIdentityAsync();
+					this.Context.User.AddIdentity(selfIdentity);
+					var selfPrincipal = new ClaimsPrincipal(selfIdentity);
+					return AuthenticateResult.Success(new AuthenticationTicket(selfPrincipal, this.Scheme.Name));
+				}
 				else
 				{
 					return AuthenticateResult.NoResult();	
 				}
 			}
 			
-			var utilizer = await this.CheckAuthorizationAsync();
-			var identity = new ClaimsIdentity(
-				new []
-				{
-					new Claim(Utilizer.UtilizerIdClaimName, utilizer.Id),
-					new Claim(Utilizer.UtilizerTypeClaimName, utilizer.Type.ToString()),
-					new Claim(Utilizer.UtilizerUsernameClaimName, utilizer.Username),
-					new Claim(Utilizer.UtilizerRoleClaimName, utilizer.Role),
-					new Claim(Utilizer.MembershipIdClaimName, utilizer.MembershipId),
-					new Claim(Utilizer.UtilizerTokenClaimName, utilizer.Token),
-					new Claim(Utilizer.UtilizerTokenTypeClaimName, utilizer.TokenType.ToString())
-				}, 
-				null, 
-				"Utilizer", 
-				utilizer.Role);
-
+			var identity = await this.GetClaimsIdentityAsync();
 			this.Context.User.AddIdentity(identity);
-
 			var principal = new ClaimsPrincipal(identity);
 			return AuthenticateResult.Success(new AuthenticationTicket(principal, this.Scheme.Name));
 		}
@@ -120,7 +120,26 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 			return AuthenticateResult.Fail(ex.Message);
 		}
 	}
-
+	
+	private async Task<ClaimsIdentity> GetClaimsIdentityAsync()
+	{
+		var utilizer = await this.CheckAuthorizationAsync();
+		return new ClaimsIdentity(
+			new []
+			{
+				new Claim(Utilizer.UtilizerIdClaimName, utilizer.Id),
+				new Claim(Utilizer.UtilizerTypeClaimName, utilizer.Type.ToString()),
+				new Claim(Utilizer.UtilizerUsernameClaimName, utilizer.Username),
+				new Claim(Utilizer.UtilizerRoleClaimName, utilizer.Role),
+				new Claim(Utilizer.MembershipIdClaimName, utilizer.MembershipId),
+				new Claim(Utilizer.UtilizerTokenClaimName, utilizer.Token),
+				new Claim(Utilizer.UtilizerTokenTypeClaimName, utilizer.TokenType.ToString())
+			}, 
+			null, 
+			"Utilizer", 
+			utilizer.Role);
+	}
+	
 	private async Task SetErrorToResponse(ErtisException ex)
 	{
 		try
