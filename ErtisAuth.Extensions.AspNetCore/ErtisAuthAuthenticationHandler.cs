@@ -233,14 +233,12 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 			case SupportedTokenTypes.Basic:
 			{
 				var basicToken = new BasicToken(token);
-				var authorizationResult = await this._basicAuthorizationHandler.CheckAuthenticationAsync(basicToken, this.Context);
-				return authorizationResult.Utilizer;
+				return await this._basicAuthorizationHandler.CheckAuthenticationAsync(basicToken);
 			}
 			case SupportedTokenTypes.Bearer:
 			{
 				var bearerToken = BearerToken.CreateTemp(token);
-				var authorizationResult = await this._bearerAuthorizationHandler.CheckAuthenticationAsync(bearerToken, this.Context);
-				return authorizationResult.Utilizer;
+				return await this._bearerAuthorizationHandler.CheckAuthenticationAsync(bearerToken);
 			}
 			default:
 				throw ErtisAuthException.UnsupportedTokenType();

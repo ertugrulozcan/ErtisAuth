@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <PackageId>ErtisAuth.Identity</PackageId>
-        <PackageVersion>9.1.4</PackageVersion>
+        <PackageVersion>9.1.5</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Identity</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -12,8 +12,8 @@
         <Title>ErtisAuth.Identity</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.1.4</AssemblyVersion>
-        <FileVersion>9.1.4</FileVersion>
+        <AssemblyVersion>9.1.5</AssemblyVersion>
+        <FileVersion>9.1.5</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>

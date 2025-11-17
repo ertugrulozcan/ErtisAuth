@@ -39,17 +39,15 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 	
 	#region Methods
 
-	public async Task<AuthorizationResult> CheckAuthenticationAsync(BearerToken token, HttpContext context)
+	public async Task<Utilizer> CheckAuthenticationAsync(BearerToken token)
 	{
 		var meResponse = await this._authenticationService.WhoAmIAsync(token);
 		if (meResponse.IsSuccess)
 		{
-			var rbacDefinition = context.GetRbacDefinition(meResponse.Data.Id);
 			Utilizer utilizer = meResponse.Data;
 			utilizer.Token = token.AccessToken;
 			utilizer.TokenType = SupportedTokenTypes.Bearer;
-			
-			return new AuthorizationResult(utilizer, rbacDefinition, true);
+			return utilizer;
 		}
 		else
 		{
