@@ -275,8 +275,6 @@ app.ConfigureGlobalExceptionHandler();
 // Prometheus
 app.UsePrometheus();
 
-app.UseRequestLogging();
-
 app.MapControllers();
 ResolveRequiredServices(app.Services);
 
