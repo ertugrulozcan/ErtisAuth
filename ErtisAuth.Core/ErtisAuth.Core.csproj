@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <PackageId>ErtisAuth.Core</PackageId>
-        <PackageVersion>9.1.5</PackageVersion>
+        <PackageVersion>9.1.6</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Core</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -12,14 +12,14 @@
         <Title>ErtisAuth.Core</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.1.5</AssemblyVersion>
-        <FileVersion>9.1.5</FileVersion>
+        <AssemblyVersion>9.1.6</AssemblyVersion>
+        <FileVersion>9.1.6</FileVersion>
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="Ertis.Core" Version="9.0.4" />
-        <PackageReference Include="Ertis.Schema" Version="9.0.5" />
-        <PackageReference Include="Ertis.Security" Version="9.0.4" />
+        <PackageReference Include="Ertis.Core" Version="9.0.5" />
+        <PackageReference Include="Ertis.Schema" Version="9.0.8" />
+        <PackageReference Include="Ertis.Security" Version="9.0.5" />
         <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
     </ItemGroup>
     

@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <PackageId>ErtisAuth.Extensions.Mailkit</PackageId>
-        <PackageVersion>9.1.5</PackageVersion>
+        <PackageVersion>9.1.6</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Extensions.Mailkit</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -13,14 +13,14 @@
         <Title>ErtisAuth.Extensions.Mailkit</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.1.5</AssemblyVersion>
-        <FileVersion>9.1.5</FileVersion>
+        <AssemblyVersion>9.1.6</AssemblyVersion>
+        <FileVersion>9.1.6</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Ertis.Net" Version="9.0.8" />
-      <PackageReference Include="MailKit" Version="4.14.1" />
-      <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
+      <PackageReference Include="Ertis.Net" Version="9.0.9" />
+      <PackageReference Include="MailKit" Version="4.15.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.9" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
       <PackageReference Include="SendGrid" Version="9.29.3" />

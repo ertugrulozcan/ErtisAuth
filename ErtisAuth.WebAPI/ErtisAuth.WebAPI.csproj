@@ -4,11 +4,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ertis.Extensions.AspNetCore" Version="9.0.4" />
+        <PackageReference Include="Ertis.Extensions.AspNetCore" Version="9.0.5" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.10" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
-        <PackageReference Include="Sentry" Version="5.16.2" />
-        <PackageReference Include="Serilog" Version="4.3.0" />
+        <PackageReference Include="Sentry" Version="6.1.0" />
+        <PackageReference Include="Serilog" Version="4.3.1" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
         <PackageReference Include="Microsoft.NETCore.Targets" Version="5.0.0" PrivateAssets="all" />
     </ItemGroup>
