@@ -285,7 +285,14 @@ namespace ErtisAuth.Sdk.Services
 			var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
 			return await this.ExecuteRequestAsync<User>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);	
 		}
-
+		
+		public async Task<IResponseResult<T>> WhoAmIAsync<T>(BearerToken bearerToken, CancellationToken cancellationToken = default) where T : class
+		{
+			var url = $"{this.BaseUrl}/whoami";
+			var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
+			return await this.ExecuteRequestAsync<T>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);
+		}
+		
 		public IResponseResult<Application> WhoAmI(BasicToken basicToken)
 		{
 			var url = $"{this.BaseUrl}/whoami";
