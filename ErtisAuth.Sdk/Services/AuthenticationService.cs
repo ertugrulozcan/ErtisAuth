@@ -271,6 +271,34 @@ namespace ErtisAuth.Sdk.Services
 		{
 			return await this.RevokeTokenAsync(BearerToken.CreateTemp(accessToken), logoutFromAllDevices, cancellationToken: cancellationToken);
 		}
+		
+		public IResponseResult<User> Me(BearerToken bearerToken)
+		{
+			var url = $"{this.BaseUrl}/me";
+			var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
+			return this.ExecuteRequest<User>(HttpMethod.Get, url, null, headers);
+		}
+		
+		public IResponseResult<T> Me<T>(BearerToken bearerToken) where T : class
+		{
+			var url = $"{this.BaseUrl}/me";
+			var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
+			return this.ExecuteRequest<T>(HttpMethod.Get, url, null, headers);
+		}
+		
+		public async Task<IResponseResult<User>> MeAsync(BearerToken bearerToken, CancellationToken cancellationToken = default)
+		{
+			var url = $"{this.BaseUrl}/me";
+			var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
+			return await this.ExecuteRequestAsync<User>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);
+		}
+		
+		public async Task<IResponseResult<T>> MeAsync<T>(BearerToken bearerToken, CancellationToken cancellationToken = default) where T : class
+		{
+			var url = $"{this.BaseUrl}/me";
+			var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
+			return await this.ExecuteRequestAsync<T>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);
+		}
 
 		public IResponseResult<User> WhoAmI(BearerToken bearerToken)
 		{
