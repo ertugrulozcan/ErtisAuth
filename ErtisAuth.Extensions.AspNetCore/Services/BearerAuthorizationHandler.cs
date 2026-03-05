@@ -27,6 +27,7 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 	/// </summary>
 	/// <param name="authenticationService"></param>
 	/// <param name="roleService"></param>
+	/// <param name="logger"></param>
 	public BearerAuthorizationHandler(IAuthenticationService authenticationService, IRoleService roleService, ILogger<BearerAuthorizationHandler> logger)
 	{
 		this._authenticationService = authenticationService;
@@ -37,6 +38,40 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 	#endregion
 	
 	#region Methods
+
+	public async Task<Utilizer> CheckAuthenticationAsync(BearerToken token)
+	{
+		var meResponse = await this._authenticationService.WhoAmIAsync(token);
+		if (meResponse.IsSuccess)
+		{
+			Utilizer utilizer = meResponse.Data;
+			utilizer.Token = token.AccessToken;
+			utilizer.TokenType = SupportedTokenTypes.Bearer;
+			return utilizer;
+		}
+		else
+		{
+			var errorMessage = meResponse.Message;
+			if (ResponseHelper.TryParseError(meResponse.Message, out var error))
+			{
+				errorMessage = error.Message;
+			}
+			
+			if (string.IsNullOrEmpty(errorMessage))
+			{
+				if (meResponse.Exception != null)
+				{
+					this._logger.LogError(meResponse.Exception, "An error occured on bearer authorization check");
+				}
+				else
+				{
+					this._logger.LogError("An error occured on bearer authorization check: {Response}", meResponse.Json);
+				}
+			}
+			
+			throw ErtisAuthException.Unauthorized(string.IsNullOrEmpty(errorMessage) ? "An error occured on bearer authorization handler" : errorMessage);
+		}
+	}
 	
 	public async Task<AuthorizationResult> CheckAuthorizationAsync(BearerToken token, HttpContext context)
 	{
@@ -73,8 +108,7 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 				}
 				else
 				{
-					// ReSharper disable once TemplateIsNotCompileTimeConstantProblem
-					this._logger.LogError(meResponse.Json ?? "No rew data", "An error occured on bearer authorization check");
+					this._logger.LogError("An error occured on bearer authorization check: {Response}", meResponse.Json);
 				}
 			}
 			

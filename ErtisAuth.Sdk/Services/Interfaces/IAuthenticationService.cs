@@ -44,7 +44,11 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 
 		IResponseResult<User> WhoAmI(BearerToken bearerToken);
 		
+		IResponseResult<T> WhoAmI<T>(BearerToken bearerToken) where T : class;
+		
 		Task<IResponseResult<User>> WhoAmIAsync(BearerToken bearerToken, CancellationToken cancellationToken = default);
+		
+		Task<IResponseResult<T>> WhoAmIAsync<T>(BearerToken bearerToken, CancellationToken cancellationToken = default) where T : class;
 		
 		IResponseResult<Application> WhoAmI(BasicToken basicToken);
 		

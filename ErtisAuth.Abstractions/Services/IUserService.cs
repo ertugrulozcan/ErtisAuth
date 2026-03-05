@@ -24,11 +24,11 @@ namespace ErtisAuth.Abstractions.Services
         #endregion
         
         #region Methods
+
+        Task<User> GetUserAsync(string membershipId, string id, CancellationToken cancellationToken = default);
         
         Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default);
         
-        Task<User> GetFromCacheAsync(string membershipId, string id, CancellationToken cancellationToken = default);
-
         Task<IPaginationCollection<DynamicObject>> GetAsync(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default);
 
         Task<User> GetByUsernameOrEmailAddressAsync(string membershipId, string usernameOrEmailAddress);
@@ -48,6 +48,7 @@ namespace ErtisAuth.Abstractions.Services
             string orderBy = null,
             SortDirection? sortDirection = null,
             IDictionary<string, bool> selectFields = null, 
+            string locale = null, 
             CancellationToken cancellationToken = default);
         
         Task<IPaginationCollection<DynamicObject>> SearchAsync(

@@ -267,6 +267,7 @@ app.UseMailkit();
 app.UseProviders();
 app.UseCors(CORS_POLICY_KEY);
 app.UseHttpsRedirection();
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.ConfigureGlobalExceptionHandler();

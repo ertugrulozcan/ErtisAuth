@@ -29,6 +29,7 @@ namespace ErtisAuth.Abstractions.Services
             string orderBy = null,
             SortDirection? sortDirection = null,
             IDictionary<string, bool> selectFields = null, 
+            string language = null, 
             CancellationToken cancellationToken = default);
 
         dynamic Aggregate(string membershipId, string aggregationStagesJson);

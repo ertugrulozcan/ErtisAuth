@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
+using Ertis.MongoDB.Models;
 using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Repository;
 using Ertis.Schema.Dynamics.Legacy;
@@ -77,9 +78,11 @@ namespace ErtisAuth.Infrastructure.Services
             string orderBy = null,
             SortDirection? sortDirection = null, 
             IDictionary<string, bool> selectFields = null, 
+            string language = null,  
             CancellationToken cancellationToken = default)
         {
-            var paginatedCollection = await this._repository.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, cancellationToken: cancellationToken);
+            Locale? locale = Enum.TryParse<Locale>(language, out var locale_) ? locale_ : null;
+            var paginatedCollection = await this._repository.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, null, locale, cancellationToken: cancellationToken);
             return new PaginationCollection<DynamicObject>
             {
                 Count = paginatedCollection.Count,

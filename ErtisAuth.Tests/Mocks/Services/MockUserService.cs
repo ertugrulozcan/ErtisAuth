@@ -88,6 +88,13 @@ namespace ErtisAuth.Tests.Mocks.Services
             this.OnUpdated?.Invoke(this, null);
             this.OnDeleted?.Invoke(this, null);
         }
+
+        public async Task<User> GetUserAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+        {
+            await Task.CompletedTask;
+            var user = this.MockUsers.FirstOrDefault(x => x.MembershipId == membershipId && x.Id == id);
+            return user;
+        }
         
         public async Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
         {
@@ -244,6 +251,7 @@ namespace ErtisAuth.Tests.Mocks.Services
             string orderBy = null, 
             SortDirection? sortDirection = null, 
             IDictionary<string, bool> selectFields = null, 
+            string locale = null, 
             CancellationToken cancellationToken = default)
         {
             return await this.GetAsync(

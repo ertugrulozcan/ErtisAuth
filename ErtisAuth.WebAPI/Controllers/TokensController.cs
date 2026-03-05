@@ -383,7 +383,7 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		[HttpPost]
 		[Route("oauth/facebook/login")]
-		public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequest request)
+		public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequest request, CancellationToken cancellationToken = default)
 		{
 			var membershipId = this.GetXErtisAlias();
 			
@@ -398,13 +398,27 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				userAgent = userAgentHeader.ToString();
 			}
+
+			if (this.Request.Query.ContainsKey("limited_flow") && this.Request.Query["limited_flow"] == "true")
+			{
+				request.IsLimited = true;
+			}
 			
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
+			return this.Created(
+				$"{this.Request.Scheme}://{this.Request.Host}", 
+				await this.providerService.LoginAsync(
+					request, 
+					membershipId, 
+					ipAddress: ipAddress, 
+					userAgent: userAgent,
+					cancellationToken: cancellationToken
+				)
+			);
 		}
 		
 		[HttpPost]
 		[Route("oauth/google/login")]
-		public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+		public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken = default)
 		{
 			var membershipId = this.GetXErtisAlias();
 			
@@ -420,12 +434,21 @@ namespace ErtisAuth.WebAPI.Controllers
 				userAgent = userAgentHeader.ToString();
 			}
 			
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
+			return this.Created(
+				$"{this.Request.Scheme}://{this.Request.Host}", 
+				await this.providerService.LoginAsync(
+					request, 
+					membershipId, 
+					ipAddress: ipAddress, 
+					userAgent: userAgent,
+					cancellationToken: cancellationToken
+				)
+			);
 		}
 		
 		[HttpPost]
 		[Route("oauth/microsoft/login")]
-		public async Task<IActionResult> MicrosoftLogin([FromBody] MicrosoftLoginRequest request)
+		public async Task<IActionResult> MicrosoftLogin([FromBody] MicrosoftLoginRequest request, CancellationToken cancellationToken = default)
 		{
 			var membershipId = this.GetXErtisAlias();
 			
@@ -441,13 +464,32 @@ namespace ErtisAuth.WebAPI.Controllers
 				userAgent = userAgentHeader.ToString();
 			}
 			
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request, membershipId, ipAddress: ipAddress, userAgent: userAgent));
+			return this.Created(
+				$"{this.Request.Scheme}://{this.Request.Host}", 
+				await this.providerService.LoginAsync(
+					request, 
+					membershipId, 
+					ipAddress: ipAddress, 
+					userAgent: userAgent,
+					cancellationToken: cancellationToken
+				)
+			);
 		}
 		
 		[HttpPost]
 		[Route("oauth/apple/login")]
-		public async Task<IActionResult> AppleLogin([FromBody] AppleLoginModel request)
+		public async Task<IActionResult> AppleLogin([FromBody] AppleLoginModel request, [FromQuery] string platform, CancellationToken cancellationToken = default)
 		{
+			var platforms = new []
+			{
+				"ios", "android", "web"
+			};
+			
+			if (!string.IsNullOrEmpty(platform) && !platforms.Contains(platform))
+			{
+				return this.UnknownPlatform(platform);
+			}
+			
 			var membershipId = this.GetXErtisAlias();
 			
 			string ipAddress = null;
@@ -462,7 +504,16 @@ namespace ErtisAuth.WebAPI.Controllers
 				userAgent = userAgentHeader.ToString();
 			}
 			
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", await this.providerService.LoginAsync(request.ToLoginRequest(), membershipId, ipAddress: ipAddress, userAgent: userAgent));
+			return this.Created(
+				$"{this.Request.Scheme}://{this.Request.Host}", 
+				await this.providerService.LoginAsync(
+					request.ToLoginRequest(platform == "ios"), 
+					membershipId, 
+					ipAddress: ipAddress, 
+					userAgent: userAgent,
+					cancellationToken: cancellationToken
+				)
+			);
 		}
 
 		#endregion
