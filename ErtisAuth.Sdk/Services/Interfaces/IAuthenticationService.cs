@@ -41,6 +41,14 @@ namespace ErtisAuth.Sdk.Services.Interfaces
 		IResponseResult RevokeToken(string accessToken, bool logoutFromAllDevices = false);
 		
 		Task<IResponseResult> RevokeTokenAsync(string accessToken, bool logoutFromAllDevices = false, CancellationToken cancellationToken = default);
+		
+		IResponseResult<User> Me(BearerToken bearerToken);
+		
+		IResponseResult<T> Me<T>(BearerToken bearerToken) where T : class;
+		
+		Task<IResponseResult<User>> MeAsync(BearerToken bearerToken, CancellationToken cancellationToken = default);
+		
+		Task<IResponseResult<T>> MeAsync<T>(BearerToken bearerToken, CancellationToken cancellationToken = default) where T : class;
 
 		IResponseResult<User> WhoAmI(BearerToken bearerToken);
 		
