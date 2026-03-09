@@ -37,8 +37,7 @@ namespace ErtisAuth.Sdk.Services
 	    
         #region Read Methods
 
-		public IResponseResult<T> Get(string modelId, TokenBase token) =>
-			this.GetAsync(modelId, token).ConfigureAwait(false).GetAwaiter().GetResult();
+		public IResponseResult<T> Get(string modelId, TokenBase token) => this.GetAsync(modelId, token).ConfigureAwait(false).GetAwaiter().GetResult();
 
 		public async Task<IResponseResult<T>> GetAsync(string modelId, TokenBase token, CancellationToken cancellationToken = default)
 		{
@@ -50,8 +49,7 @@ namespace ErtisAuth.Sdk.Services
 				cancellationToken: cancellationToken);
 		}
 		
-		public IResponseResult<TReturn> Get<TReturn>(string modelId, TokenBase token) where TReturn : T =>
-			this.GetAsync<TReturn>(modelId, token).ConfigureAwait(false).GetAwaiter().GetResult();
+		public IResponseResult<TReturn> Get<TReturn>(string modelId, TokenBase token) where TReturn : T => this.GetAsync<TReturn>(modelId, token).ConfigureAwait(false).GetAwaiter().GetResult();
 		
 		public async Task<IResponseResult<TReturn>> GetAsync<TReturn>(string modelId, TokenBase token, CancellationToken cancellationToken = default) where TReturn : T
 		{
@@ -62,6 +60,43 @@ namespace ErtisAuth.Sdk.Services
 				HeaderCollection.Add("Authorization", token.ToString()),
 				cancellationToken: cancellationToken);
 		}
+		
+		public IResponseResult<IPaginationCollection<T>> Get(
+			TokenBase token,
+			int? skip = null,
+			int? limit = null,
+			bool? withCount = null,
+			Sorting sorting = null,
+			string searchKeyword = null) => this.GetAsync(token, skip, limit, withCount, sorting, searchKeyword).ConfigureAwait(false).GetAwaiter().GetResult();
+		
+		public async Task<IResponseResult<IPaginationCollection<T>>> GetAsync(
+			TokenBase token,
+			int? skip = null,
+			int? limit = null,
+			bool? withCount = null,
+			Sorting sorting = null,
+			string searchKeyword = null,
+			CancellationToken cancellationToken = default)
+		{
+			if (string.IsNullOrEmpty(searchKeyword) || string.IsNullOrEmpty(searchKeyword.Trim()))
+			{
+				return await this.ExecuteRequestAsync<PaginationCollection<T>>(
+					HttpMethod.Get,
+					$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}",
+					QueryStringHelper.GetQueryString(skip, limit, withCount, sorting),
+					HeaderCollection.Add("Authorization", token.ToString()),
+					cancellationToken: cancellationToken);
+			}
+			else
+			{
+				return await this.ExecuteRequestAsync<PaginationCollection<T>>(
+					HttpMethod.Get,
+					$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/search",
+					QueryStringHelper.GetQueryString(skip, limit, withCount, sorting).Add("keyword", searchKeyword),
+					HeaderCollection.Add("Authorization", token.ToString()),
+					cancellationToken: cancellationToken);
+			}
+		}
 
 		public IResponseResult<IPaginationCollection<T>> Get(
 			TokenBase token, 
@@ -70,9 +105,7 @@ namespace ErtisAuth.Sdk.Services
 			bool? withCount = null, 
 			string orderBy = null, 
 			SortDirection? sortDirection = null,
-			string searchKeyword = null) =>
-				this.GetAsync(token, skip, limit, withCount, orderBy, sortDirection, searchKeyword)
-					.ConfigureAwait(false).GetAwaiter().GetResult();
+			string searchKeyword = null) => this.GetAsync(token, skip, limit, withCount, orderBy, sortDirection, searchKeyword).ConfigureAwait(false).GetAwaiter().GetResult();
 
 		public async Task<IResponseResult<IPaginationCollection<T>>> GetAsync(
 			TokenBase token, 
@@ -114,16 +147,51 @@ namespace ErtisAuth.Sdk.Services
 			int? skip = null, 
 			int? limit = null, 
 			bool? withCount = null, 
-			string orderBy = null, 
-			SortDirection? sortDirection = null) =>
+			Sorting sorting = null) =>
 			this.QueryAsync(
 				token,
 				query,
 				skip,
 				limit,
 				withCount,
-				orderBy,
-				sortDirection)
+				sorting)
+				.ConfigureAwait(false).GetAwaiter().GetResult();
+		
+		public async Task<IResponseResult<IPaginationCollection<T>>> QueryAsync(
+			TokenBase token,
+			string query,
+			int? skip = null,
+			int? limit = null,
+			bool? withCount = null,
+			Sorting sorting = null,
+			CancellationToken cancellationToken = default)
+		{
+			var body = (string.IsNullOrEmpty(query) ? new { } : Newtonsoft.Json.JsonConvert.DeserializeObject(query)) ?? new { };
+			return await this.ExecuteRequestAsync<PaginationCollection<T>>(
+				HttpMethod.Post,
+				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/_query",
+				QueryStringHelper.GetQueryString(skip, limit, withCount, sorting),
+				HeaderCollection.Add("Authorization", token.ToString()),
+				new JsonRequestBody(body),
+				cancellationToken: cancellationToken);
+		}
+		
+		public IResponseResult<IPaginationCollection<T>> Query(
+			TokenBase token,
+			string query,
+			int? skip = null,
+			int? limit = null,
+			bool? withCount = null,
+			string orderBy = null,
+			SortDirection? sortDirection = null) =>
+			this.QueryAsync(
+					token,
+					query,
+					skip,
+					limit,
+					withCount,
+					orderBy,
+					sortDirection)
 				.ConfigureAwait(false).GetAwaiter().GetResult();
 
 		public async Task<IResponseResult<IPaginationCollection<T>>> QueryAsync(
