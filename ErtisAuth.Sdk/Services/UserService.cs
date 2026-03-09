@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,6 +34,26 @@ namespace ErtisAuth.Sdk.Services
 			
 		}
 
+		#endregion
+		
+		#region Read Methods
+		
+		public async Task<IResponseResult<IPaginationCollection<T>>> GetAsync<T>(
+			TokenBase token, 
+			int? skip = null,
+			int? limit = null, 
+			bool? withCount = null, 
+			Sorting sorting = null,
+			CancellationToken cancellationToken = default) where T : class
+		{
+			return await this.ExecuteRequestAsync<PaginationCollection<T>>(
+				HttpMethod.Get,
+				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}",
+				QueryStringHelper.GetQueryString(skip, limit, withCount, sorting),
+				HeaderCollection.Add("Authorization", token.ToString()),
+				cancellationToken: cancellationToken);
+		}
+		
 		#endregion
 		
 		#region Active Tokens

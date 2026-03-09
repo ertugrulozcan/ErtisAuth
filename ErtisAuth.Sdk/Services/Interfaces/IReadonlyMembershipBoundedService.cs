@@ -17,12 +17,20 @@ namespace ErtisAuth.Sdk.Services.Interfaces
         
         Task<IResponseResult<TReturn>> GetAsync<TReturn>(string modelId, TokenBase token, CancellationToken cancellationToken = default) where TReturn : T;
 		
-        IResponseResult<IPaginationCollection<T>> Get(TokenBase token, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null, string searchKeyword = null);
+        IResponseResult<IPaginationCollection<T>> Get(TokenBase token, int? skip = null, int? limit = null, bool? withCount = null, Sorting sorting = null, string searchKeyword = null);
 		
-        Task<IResponseResult<IPaginationCollection<T>>> GetAsync(TokenBase token, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null, string searchKeyword = null, CancellationToken cancellationToken = default);
+		IResponseResult<IPaginationCollection<T>> Get(TokenBase token, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null, string searchKeyword = null);
 		
-        IResponseResult<IPaginationCollection<T>> Query(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null);
+        Task<IResponseResult<IPaginationCollection<T>>> GetAsync(TokenBase token, int? skip = null, int? limit = null, bool? withCount = null, Sorting sorting = null, string searchKeyword = null, CancellationToken cancellationToken = default);
 		
-        Task<IResponseResult<IPaginationCollection<T>>> QueryAsync(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default);
+		Task<IResponseResult<IPaginationCollection<T>>> GetAsync(TokenBase token, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null, string searchKeyword = null, CancellationToken cancellationToken = default);
+		
+        IResponseResult<IPaginationCollection<T>> Query(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, Sorting sorting = null);
+		
+		IResponseResult<IPaginationCollection<T>> Query(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null);
+		
+        Task<IResponseResult<IPaginationCollection<T>>> QueryAsync(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, Sorting sorting = null, CancellationToken cancellationToken = default);
+		
+		Task<IResponseResult<IPaginationCollection<T>>> QueryAsync(TokenBase token, string query, int? skip = null, int? limit = null, bool? withCount = null, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default);
     }
 }
