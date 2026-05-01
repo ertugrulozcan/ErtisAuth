@@ -82,7 +82,8 @@ namespace ErtisAuth.Infrastructure.Services
             CancellationToken cancellationToken = default)
         {
             Locale? locale = Enum.TryParse<Locale>(language, out var locale_) ? locale_ : null;
-            var paginatedCollection = await this._repository.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, null, locale, cancellationToken: cancellationToken);
+            var collationOptions = locale != null ? new CollationOptions { Locale = locale } : null;
+            var paginatedCollection = await this._repository.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, null, collationOptions, cancellationToken: cancellationToken);
             return new PaginationCollection<DynamicObject>
             {
                 Count = paginatedCollection.Count,

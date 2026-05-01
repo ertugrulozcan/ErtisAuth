@@ -3,23 +3,23 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <PackageId>ErtisAuth.Extensions.Mailkit</PackageId>
-        <PackageVersion>9.1.6</PackageVersion>
+        <PackageVersion>9.1.7</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Extensions.Mailkit</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <Copyright>Ertuğrul Özcan | Copyright 2025 (c)</Copyright>
+        <Copyright>Ertuğrul Özcan | Copyright 2026 (c)</Copyright>
         <PackageReleaseNotes>.Net 9</PackageReleaseNotes>
         <PackageTags>ErtisAuth.Extensions.Mailkit</PackageTags>
         <Title>ErtisAuth.Extensions.Mailkit</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.1.6</AssemblyVersion>
-        <FileVersion>9.1.6</FileVersion>
+        <AssemblyVersion>9.1.7</AssemblyVersion>
+        <FileVersion>9.1.7</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Ertis.Net" Version="9.0.9" />
-      <PackageReference Include="MailKit" Version="4.15.0" />
+      <PackageReference Include="MailKit" Version="4.16.0" />
       <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.9" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
