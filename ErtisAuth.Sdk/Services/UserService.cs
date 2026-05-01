@@ -44,13 +44,39 @@ namespace ErtisAuth.Sdk.Services
 			int? limit = null, 
 			bool? withCount = null, 
 			Sorting sorting = null,
+			string searchKeyword = null, 
 			CancellationToken cancellationToken = default) where T : class
 		{
+			var queryString = QueryStringHelper.GetQueryString(skip, limit, withCount, sorting);
+			if (!string.IsNullOrWhiteSpace(searchKeyword))
+			{
+				queryString = queryString.Add("keyword", searchKeyword);
+			}
+			
 			return await this.ExecuteRequestAsync<PaginationCollection<T>>(
 				HttpMethod.Get,
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}",
+				queryString,
+				HeaderCollection.Add("Authorization", token.ToString()),
+				cancellationToken: cancellationToken);
+		}
+		
+		public async Task<IResponseResult<IPaginationCollection<T>>> QueryAsync<T>(
+			TokenBase token,
+			string query,
+			int? skip = null,
+			int? limit = null,
+			bool? withCount = null,
+			Sorting sorting = null,
+			CancellationToken cancellationToken = default)
+		{
+			var body = (string.IsNullOrEmpty(query) ? new { } : Newtonsoft.Json.JsonConvert.DeserializeObject(query)) ?? new { };
+			return await this.ExecuteRequestAsync<PaginationCollection<T>>(
+				HttpMethod.Post,
+				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/_query",
 				QueryStringHelper.GetQueryString(skip, limit, withCount, sorting),
 				HeaderCollection.Add("Authorization", token.ToString()),
+				new JsonRequestBody(body),
 				cancellationToken: cancellationToken);
 		}
 		
