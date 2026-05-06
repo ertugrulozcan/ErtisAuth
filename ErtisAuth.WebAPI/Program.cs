@@ -38,7 +38,6 @@ using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Helpers;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
-using MongoDB.Driver.Core.Events;
 using IMongoDatabase = Ertis.MongoDB.Database.IMongoDatabase;
 
 const string CORS_POLICY_KEY = "cors-policy";
@@ -62,12 +61,10 @@ EnvironmentParams.SetEnvironmentParameter("Environment", Environment.GetEnvironm
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("Database"));
 builder.Services.AddSingleton<IDatabaseSettings>(serviceProvider => serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value);
 
-// builder.Services.AddSingleton<IEventSubscriber, MongoEventSubscriber>();
 builder.Services.AddSingleton<IMongoClientProvider>(serviceProvider =>
 {
 	var databaseSettings = serviceProvider.GetRequiredService<IDatabaseSettings>();
-	var eventSubscriber = serviceProvider.GetService<IEventSubscriber>();
-	return new MongoClientProvider(MongoClientSettings.FromConnectionString(databaseSettings.ConnectionString), eventSubscriber);
+	return new MongoClientProvider(MongoClientSettings.FromConnectionString(databaseSettings.ConnectionString));
 });
 
 builder.Services.Configure<ApiVersionOptions>(builder.Configuration.GetSection("ApiVersion"));
