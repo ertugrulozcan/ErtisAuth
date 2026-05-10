@@ -1,3 +1,5 @@
+using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.AspNetCore.Constants;
@@ -44,13 +46,43 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			return TokenBase.ExtractToken(authorizationHeader, out tokenType);
 		}
 
-		public static Utilizer GetUtilizer(this ControllerBase controller)
+		public static Utilizer GetUtilizer(this ControllerBase controller, bool fallbackWithToken = true)
 		{
 			var claimUser = controller.User;
 			var utilizerIdentity = claimUser.Identities.FirstOrDefault(x => x.NameClaimType == "Utilizer");
 			if (utilizerIdentity != null)
 			{
 				return utilizerIdentity.ConvertToUtilizer();
+			}
+			else if (fallbackWithToken)
+			{
+				var token = controller.GetTokenFromHeader(out var tokenTypeString);
+				if (string.IsNullOrEmpty(tokenTypeString) || !TokenTypeExtensions.TryParseTokenType(tokenTypeString, out var tokenType) || tokenType == SupportedTokenTypes.None)
+				{
+					throw ErtisAuthException.UnsupportedTokenType();
+				}
+				
+				// ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
+				switch (tokenType)
+				{
+					case SupportedTokenTypes.Basic:
+					{
+						var applicationId = token.Split(':')[0];
+						return new Utilizer
+						{
+							Id = applicationId,
+							Type = Utilizer.UtilizerType.Application,
+							Token = token,
+							TokenType = SupportedTokenTypes.Basic
+						};
+					}
+					case SupportedTokenTypes.Bearer:
+					{
+						var handler = new JwtSecurityTokenHandler();
+						var jwt = handler.ReadToken(token) as JwtSecurityToken;
+						return jwt.ConvertToUtilizer();
+					}
+				}
 			}
 
 			return new Utilizer();
