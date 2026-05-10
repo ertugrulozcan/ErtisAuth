@@ -46,7 +46,7 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			return TokenBase.ExtractToken(authorizationHeader, out tokenType);
 		}
 
-		public static Utilizer GetUtilizer(this ControllerBase controller, bool fallbackWithToken = true)
+		public static Utilizer GetUtilizer(this ControllerBase controller, bool fallbackByToken = true)
 		{
 			var claimUser = controller.User;
 			var utilizerIdentity = claimUser.Identities.FirstOrDefault(x => x.NameClaimType == "Utilizer");
@@ -54,7 +54,7 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			{
 				return utilizerIdentity.ConvertToUtilizer();
 			}
-			else if (fallbackWithToken)
+			else if (fallbackByToken)
 			{
 				var token = controller.GetTokenFromHeader(out var tokenTypeString);
 				if (string.IsNullOrEmpty(tokenTypeString) || !TokenTypeExtensions.TryParseTokenType(tokenTypeString, out var tokenType) || tokenType == SupportedTokenTypes.None)
