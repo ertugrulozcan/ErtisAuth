@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using ErtisAuth.Core.Models.Identity;
@@ -34,7 +35,21 @@ namespace ErtisAuth.Extensions.Authorization.Extensions
 				Scopes = scopes is { Length: > 0 } ? scopes : null
 			};
 		}
-
+		
+		public static Utilizer ConvertToUtilizer(this JwtSecurityToken token)
+		{
+			return new Utilizer
+			{
+				Id = token.Claims.FirstOrDefault(x => x.ValueType == "sub")?.Value,
+				Type = Utilizer.UtilizerType.User,
+				Username = token.Claims.FirstOrDefault(x => x.ValueType == "unique_name")?.Value,
+				Role = null,
+				MembershipId = token.Claims.FirstOrDefault(x => x.ValueType == "prn")?.Value,
+				Token = token.RawData,
+				TokenType = SupportedTokenTypes.Bearer
+			};
+		}
+		
 		#endregion
 	}
 }
