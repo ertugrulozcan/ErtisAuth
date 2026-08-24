@@ -1,30 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <PackageId>ErtisAuth.Extensions.Http</PackageId>
-        <PackageVersion>9.2.1</PackageVersion>
-        <Authors>Ertuğrul Özcan</Authors>
-        <Description>ErtisAuth.Extensions.Http</Description>
-        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <Copyright>Ertuğrul Özcan | Copyright 2026 (c)</Copyright>
-        <PackageReleaseNotes>.Net 9</PackageReleaseNotes>
-        <PackageTags>ErtisAuth.Extensions.Http</PackageTags>
-        <Title>ErtisAuth.Extensions.Http</Title>
-        <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.2.1</AssemblyVersion>
-        <FileVersion>9.2.1</FileVersion>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
-
+    
+    <ItemGroup>
+        <PackageReference Include="Ertis.TemplateEngine" Version="10.0.0" />
+    </ItemGroup>
+    
     <ItemGroup>
         <ProjectReference Include="..\ErtisAuth.Identity\ErtisAuth.Identity.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Ertis.TemplateEngine" Version="9.0.5" />
     </ItemGroup>
 </Project>

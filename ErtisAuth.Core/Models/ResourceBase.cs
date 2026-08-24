@@ -1,16 +1,15 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-namespace ErtisAuth.Core.Models
+namespace ErtisAuth.Core.Models;
+
+public abstract class ResourceBase : IHasIdentifier
 {
-	public abstract class ResourceBase : IHasIdentifier
-	{
-		#region Properties
-
-		[JsonProperty("_id")]
-		[JsonPropertyName("_id")]
-		public string Id { get; set; }
-
-		#endregion
-	}
+	#region Properties
+	
+	[JsonProperty("_id")]
+	[JsonPropertyName("_id")]
+	public string Id { get; set; } = null!;
+	
+	#endregion
 }

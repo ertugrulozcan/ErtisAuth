@@ -1,26 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <PackageId>ErtisAuth.Extensions.AspNetCore</PackageId>
-        <PackageVersion>9.2.7</PackageVersion>
-        <Authors>Ertuğrul Özcan</Authors>
-        <Description>ErtisAuth.Extensions.AspNetCore</Description>
-        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <Copyright>Ertuğrul Özcan | Copyright 2026 (c)</Copyright>
-        <PackageReleaseNotes>.Net 9</PackageReleaseNotes>
-        <PackageTags>ErtisAuth.Extensions.AspNetCore</PackageTags>
-        <Title>ErtisAuth.Extensions.AspNetCore</Title>
-        <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.2.7</AssemblyVersion>
-        <FileVersion>9.2.7</FileVersion>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.3.9" />
-        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.10" />
-    </ItemGroup>
-
+    
     <ItemGroup>
         <ProjectReference Include="..\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Http\ErtisAuth.Extensions.Http.csproj" />

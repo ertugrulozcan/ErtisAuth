@@ -1,3 +1,4 @@
+// ReSharper disable UnusedMemberInSuper.Global
 namespace ErtisAuth.Extensions.ApplicationInsights.Configuration;
 
 public interface IApplicationInsightsOptions

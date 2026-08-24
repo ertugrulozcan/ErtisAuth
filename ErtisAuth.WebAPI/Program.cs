@@ -1,13 +1,6 @@
-using System;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
 using Ertis.Data.Repository;
 using Ertis.Extensions.AspNetCore.Versioning;
 using Ertis.MongoDB.Client;
@@ -36,7 +29,8 @@ using ErtisAuth.WebAPI.Adapters;
 using ErtisAuth.WebAPI.Auth;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Helpers;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi;
 using MongoDB.Driver;
 using IMongoDatabase = Ertis.MongoDB.Database.IMongoDatabase;
 
@@ -55,8 +49,17 @@ void ResolveRequiredServices(IServiceProvider serviceProvider)
 
 var builder = WebApplication.CreateBuilder(args);
 
-EnvironmentParams.SetEnvironmentParameter("Version", builder.Configuration.GetValue<string>("Version"));
-EnvironmentParams.SetEnvironmentParameter("Environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+var version = builder.Configuration.GetValue<string>("Version");
+if (!string.IsNullOrEmpty(version))
+{
+	EnvironmentParams.SetEnvironmentParameter("Version", version);
+}
+
+var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+if (!string.IsNullOrEmpty(environment))
+{
+	EnvironmentParams.SetEnvironmentParameter("Environment", environment);
+}
 
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("Database"));
 builder.Services.AddSingleton<IDatabaseSettings>(serviceProvider => serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value);
@@ -107,7 +110,6 @@ builder.Services.AddSingleton<IMailHookService, MailHookService>();
 builder.Services.AddSingleton<IEventService, EventService>();
 builder.Services.AddSingleton<IMigrationService, MigrationService>();
 
-builder.Services.AddSingleton<IRestHandler, RestHandler>();
 builder.Services.AddSingleton<ISystemRestHandler, SystemRestHandler>();
 builder.Services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
 builder.Services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
@@ -212,7 +214,7 @@ if (builder.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEna
 var sentryDsn = builder.Configuration.GetSection("Sentry").GetValue<string>("Dsn");
 if (!string.IsNullOrEmpty(sentryDsn))
 {
-	Sentry.SentrySdk.Init(options =>
+	SentrySdk.Init(options =>
 	{
 		options.Dsn = sentryDsn;
 		options.Debug = false;

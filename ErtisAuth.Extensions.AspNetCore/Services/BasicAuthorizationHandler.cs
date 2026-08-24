@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.AspNetCore.Helpers;
@@ -11,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
+// ReSharper disable UnusedAutoPropertyAccessor.Local
 namespace ErtisAuth.Extensions.AspNetCore.Services;
 
 internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
@@ -57,7 +56,7 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 	{
 		var applicationId = token.AccessToken.Split(':')[0];
 		var getApplicationResponse = await this._applicationService.GetAsync(applicationId, token);
-		if (getApplicationResponse.IsSuccess)
+		if (getApplicationResponse is { IsSuccess: true, Data: not null })
 		{
 			Utilizer utilizer = getApplicationResponse.Data;
 			utilizer.Token = token.AccessToken;
@@ -67,7 +66,7 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 		else
 		{
 			var errorMessage = getApplicationResponse.Message;
-			if (ResponseHelper.TryParseError(getApplicationResponse.Message, out var error))
+			if (errorMessage != null && ResponseHelper.TryParseError(errorMessage, out var error) && error != null)
 			{
 				errorMessage = error.Message;
 			}
@@ -92,53 +91,41 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 	{
 		var applicationId = token.AccessToken.Split(':')[0];
 		var rbacDefinition = context.GetRbacDefinition(applicationId);
+		if (rbacDefinition == null)
+		{
+			throw ErtisAuthException.Unauthorized("An error occured on basic authorization check (rbac definition is null)");
+		}
+		
 		var rbac = rbacDefinition.ToString();
-		if (this._configuration.BasicTokenCacheTTL is > 0 && this._memoryCache.TryGetValue<CacheEntry>(rbac, out var entry) && entry is { Utilizer: not null })
+		var cacheEntry = this.GetCacheEntry(token, rbac);
+		if (cacheEntry is { Utilizer: not null })
 		{
 			Console.WriteLine($"Basic token found on the cache ({rbac})");
-			return new AuthorizationResult(entry.Utilizer.Value, rbacDefinition, entry.IsAuthorized);
+			return new AuthorizationResult(cacheEntry.Utilizer.Value, rbacDefinition, cacheEntry.IsAuthorized);
 		}
 		else
 		{
 			Console.WriteLine($"Basic token not found on the cache ({rbac}) Requesting from auth API");
 			
 			var getApplicationResponse = await this._applicationService.GetAsync(applicationId, token);
-			if (getApplicationResponse.IsSuccess)
+			if (getApplicationResponse is { IsSuccess: true, Data: not null })
 			{
 				var isPermittedForAction = await this._roleService.CheckPermissionAsync(rbac, token);
 				Utilizer utilizer = getApplicationResponse.Data;
 				utilizer.Token = token.AccessToken;
 				utilizer.TokenType = SupportedTokenTypes.Basic;
-				
-				if (this._configuration.BasicTokenCacheTTL is > 0)
-				{
-					var cacheOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(this._configuration.BasicTokenCacheTTL.Value));
-					this._memoryCache.Set(rbac, new CacheEntry
-					{
-						Utilizer = utilizer,
-						IsAuthorized = isPermittedForAction
-					}, cacheOptions);
-				}
-				
+				this.SetCacheEntry(token, rbac, utilizer, isPermittedForAction);
 				return new AuthorizationResult(utilizer, rbacDefinition, isPermittedForAction);
 			}
 			else
 			{
 				var errorMessage = getApplicationResponse.Message;
-				if (ResponseHelper.TryParseError(getApplicationResponse.Message, out var error))
+				if (errorMessage != null && ResponseHelper.TryParseError(errorMessage, out var error) && error != null)
 				{
 					errorMessage = error.Message;
 				}
 				
-				if (this._configuration.BasicTokenCacheTTL is > 0)
-				{
-					var cacheOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(this._configuration.BasicTokenCacheTTL.Value));
-					this._memoryCache.Set(rbac, new CacheEntry
-					{
-						Utilizer = null,
-						IsAuthorized = false
-					}, cacheOptions);
-				}
+				this.SetCacheEntry(token, rbac, null, false);
 				
 				if (string.IsNullOrEmpty(errorMessage))
 				{
@@ -161,6 +148,40 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 	
 	#region Cache Methods
 	
+	private string GetCacheKey(BasicToken token, string rbac)
+	{
+		return $"{token.AccessToken}&{rbac}";
+	}
+	
+	private CacheEntry? GetCacheEntry(BasicToken token, string rbac)
+	{
+		if (this._configuration.BasicTokenCacheTTL is > 0)
+		{
+			var cacheKey = this.GetCacheKey(token, rbac);
+			if (this._memoryCache.TryGetValue<CacheEntry>(cacheKey, out var entry) && entry is { Utilizer: not null })
+			{
+				return entry;
+			}
+		}
+		
+		return null;
+	}
+	
+	private void SetCacheEntry(BasicToken token, string rbac, Utilizer? utilizer, bool isPermitted)
+	{
+		if (this._configuration.BasicTokenCacheTTL is > 0)
+		{
+			var cacheKey = this.GetCacheKey(token, rbac);
+			var cacheOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(this._configuration.BasicTokenCacheTTL.Value));
+			this._memoryCache.Set(cacheKey, new CacheEntry
+			{
+				Token = token.AccessToken,
+				Utilizer = utilizer,
+				IsAuthorized = isPermitted
+			}, cacheOptions);
+		}
+	}
+	
 	// ReSharper disable once UnusedMember.Local
 	private void PurgeAllCache()
 	{
@@ -177,6 +198,8 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 	private class CacheEntry
 	{
 		#region Properties
+		
+		public string? Token { get; set; }
 		
 		public Utilizer? Utilizer { get; init; }
 		

@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using Ertis.Core.Helpers;
 using ErtisAuth.Extensions.Mailkit.Models;
 using Newtonsoft.Json;
@@ -15,24 +10,18 @@ namespace ErtisAuth.Extensions.Mailkit.Providers;
 
 public class SendGridProvider : IMailProvider
 {
-	#region Fields
-
-	private string slug;
-	
-	#endregion
-	
 	#region Properties
-
+	
 	[JsonProperty("guid")]
 	[JsonPropertyName("guid")]
-	public string Guid { get; set; }
+	public string? Guid { get; set; }
 	
 	[JsonProperty("type")]
 	[JsonPropertyName("type")]
 	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public MailProviderType Type => MailProviderType.SendGrid;
-
+	
 	[JsonProperty("deliveryMode")]
 	[JsonPropertyName("deliveryMode")]
 	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
@@ -41,7 +30,7 @@ public class SendGridProvider : IMailProvider
 	
 	[JsonProperty("name")]
 	[JsonPropertyName("name")]
-	public string Name { get; set; }
+	public required string Name { get; set; }
 	
 	[JsonProperty("slug")]
 	[JsonPropertyName("slug")]
@@ -49,23 +38,23 @@ public class SendGridProvider : IMailProvider
 	{
 		get
 		{
-			if (string.IsNullOrEmpty(this.slug))
+			if (string.IsNullOrEmpty(field))
 			{
-				this.slug = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
+				field = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
 			}
-
-			return this.slug;
+			
+			return field;
 		}
 	}
 	
 	[JsonProperty("apiKey")]
 	[JsonPropertyName("apiKey")]
-	public string ApiKey { get; set; }
+	public string? ApiKey { get; set; }
 	
 	#endregion
 	
 	#region Methods
-
+	
 	public async Task SendMailAsync(
 		string fromName,
 		string fromAddress,
@@ -80,7 +69,7 @@ public class SendGridProvider : IMailProvider
 		}
 		
 		var client = new SendGridClient(this.ApiKey);
-		var email = new SendGridMessage()
+		var email = new SendGridMessage
 		{
 			From = new EmailAddress(fromAddress, fromName),
 			Subject = subject,
@@ -102,6 +91,6 @@ public class SendGridProvider : IMailProvider
 	{
 		throw new NotImplementedException("This provider is not supported with template mailing");
 	}
-
+	
 	#endregion
 }

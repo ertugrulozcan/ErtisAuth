@@ -1,12 +1,11 @@
 using ErtisAuth.Dto.Models.Resources;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace ErtisAuth.Dto.Models
+namespace ErtisAuth.Dto.Models;
+
+public interface IHasSysDto
 {
-	public interface IHasSysDto
-	{
-		[BsonIgnoreIfNull]
-		[BsonElement("sys")]
-		SysModelDto Sys { get; set; }
-	}
+	[BsonIgnoreIfNull]
+	[BsonElement("sys")]
+	SysModelDto? Sys { get; set; }
 }

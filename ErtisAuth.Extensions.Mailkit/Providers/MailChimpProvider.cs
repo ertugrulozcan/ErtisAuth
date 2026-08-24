@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using Ertis.Core.Helpers;
 using Ertis.Net.Http;
 using ErtisAuth.Extensions.Mailkit.Extensions;
@@ -16,17 +10,11 @@ namespace ErtisAuth.Extensions.Mailkit.Providers;
 
 public class MailChimpProvider : IMailProvider
 {
-    #region Fields
-
-    private string slug;
-	
-    #endregion
-    
     #region Properties
     
     [JsonProperty("guid")]
     [JsonPropertyName("guid")]
-    public string Guid { get; set; }
+    public string? Guid { get; set; }
 	
     [JsonProperty("type")]
     [JsonPropertyName("type")]
@@ -42,7 +30,7 @@ public class MailChimpProvider : IMailProvider
 	
     [JsonProperty("name")]
     [JsonPropertyName("name")]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 	
     [JsonProperty("slug")]
     [JsonPropertyName("slug")]
@@ -50,23 +38,23 @@ public class MailChimpProvider : IMailProvider
     {
         get
         {
-            if (string.IsNullOrEmpty(this.slug))
+            if (string.IsNullOrEmpty(field))
             {
-                this.slug = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
+                field = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
             }
-
-            return this.slug;
+            
+            return field;
         }
     }
 	
     [JsonProperty("apiKey")]
     [JsonPropertyName("apiKey")]
-    public string ApiKey { get; set; }
-
+    public string? ApiKey { get; set; }
+    
     #endregion
     
     #region Methods
-
+    
     public Task SendMailAsync(
         string fromName, 
         string fromAddress, 
@@ -126,7 +114,7 @@ public class MailChimpProvider : IMailProvider
                 Async = true
             }
         ), cancellationToken: cancellationToken);
-
+        
         if (response.IsSuccess)
         {
             Console.WriteLine("MailChimp template mail sent");

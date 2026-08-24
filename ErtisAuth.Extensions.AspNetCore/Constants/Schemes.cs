@@ -1,7 +1,6 @@
-namespace ErtisAuth.Extensions.AspNetCore.Constants
+namespace ErtisAuth.Extensions.AspNetCore.Constants;
+
+public static class Schemes
 {
-	public static class Schemes
-	{
-		public const string ErtisAuthAuthorizationSchemeName = "ErtisAuth";
-	}
+	public const string ErtisAuthAuthorizationSchemeName = "ErtisAuth";
 }

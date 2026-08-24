@@ -1,4 +1,4 @@
-using System.Linq;
+using MongoDB.Bson;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
@@ -6,36 +6,35 @@ using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Dto.Models.Memberships;
 using ErtisAuth.Extensions.Mailkit.Providers;
 using ErtisAuth.Extensions.Mailkit.Serialization;
-using MongoDB.Bson;
 
 namespace ErtisAuth.Infrastructure.Mapping.Extensions;
 
 public static class MembershipExtensions
 {
     #region Methods
-
+    
     public static Membership ToModel(this MembershipDto dto)
     {
         return new Membership
         {
             Id = dto.Id,
-            Name = dto.Name,
-            Slug = dto.Slug,
+            Name = dto.Name ?? string.Empty,
+            Slug = dto.Slug ?? string.Empty,
             HashAlgorithm = dto.HashAlgorithm,
             DefaultEncoding = dto.DefaultEncoding,
             DefaultLanguage = dto.DefaultLanguage,
             ExpiresIn = dto.ExpiresIn,
-            SecretKey = dto.SecretKey,
+            SecretKey = dto.SecretKey ?? string.Empty,
             RefreshTokenExpiresIn = dto.RefreshTokenExpiresIn,
             ResetPasswordTokenExpiresIn = dto.ResetPasswordTokenExpiresIn,
-            MailProviders = dto.MailProviders?.Select(ToMailProvider).ToArray(),
+            MailProviders = dto.MailProviders?.Select(ToMailProvider).Where(x => x != null).Cast<IMailProvider>().ToArray(),
             UserActivation = dto.UserActivation is "active" or "Active" ? Status.Active : Status.Passive,
             CodePolicy = dto.CodePolicy,
             OtpSettings = dto.OtpSettings?.ToModel(),
             Sys = dto.Sys?.ToModel()
         };
     }
-        
+    
     public static MembershipDto ToDto(this Membership model)
     {
         return new MembershipDto
@@ -58,7 +57,7 @@ public static class MembershipExtensions
         };
     }
     
-    private static IMailProvider ToMailProvider(BsonDocument bsonDocument)
+    private static IMailProvider? ToMailProvider(BsonDocument bsonDocument)
     {
         return MailProviderJsonConverter.Deserialize(bsonDocument.ToJson());
     }
@@ -68,10 +67,10 @@ public static class MembershipExtensions
         return new OtpSettings
         {
             Host = dto.Host,
-            Policy = dto.Policy?.ToModel(),
+            Policy = dto.Policy?.ToModel()
         };
     }
-		
+    
     private static OtpSettingsDto ToDto(this OtpSettings model)
     {
         return new OtpSettingsDto
@@ -91,7 +90,7 @@ public static class MembershipExtensions
             ExpiresIn = dto.ExpiresIn
         };
     }
-		
+    
     private static OtpPasswordPolicyDto ToDto(this OtpPasswordPolicy model)
     {
         return new OtpPasswordPolicyDto
@@ -102,6 +101,6 @@ public static class MembershipExtensions
             ExpiresIn = model.ExpiresIn
         };
     }
-
+    
     #endregion
 }

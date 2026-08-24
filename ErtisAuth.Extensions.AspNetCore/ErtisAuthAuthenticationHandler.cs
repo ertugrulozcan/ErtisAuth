@@ -1,12 +1,9 @@
-using System;
-using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using System.Threading.Tasks;
 using Ertis.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
-using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Extensions.Authorization.Annotations;
 using Microsoft.AspNetCore.Authentication;
@@ -17,14 +14,13 @@ using Microsoft.Extensions.Options;
 
 namespace ErtisAuth.Extensions.AspNetCore;
 
-// ReSharper disable once ClassNeverInstantiated.Global
 public class ErtisAuthAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
 	#region Services
-
+	
 	private readonly IAuthorizationHandler<BasicToken> _basicAuthorizationHandler;
 	private readonly IAuthorizationHandler<BearerToken> _bearerAuthorizationHandler;
-
+	
 	#endregion
 	
 	#region Constructors
@@ -50,7 +46,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 	}
 	
 	#endregion
-
+	
 	protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
 	{
 		try
@@ -124,6 +120,22 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 	private async Task<ClaimsIdentity> GetClaimsIdentityAsync(bool passAuthorization = false)
 	{
 		var utilizer = passAuthorization ? await this.CheckAuthenticationAsync() : await this.CheckAuthorizationAsync();
+		
+		if (string.IsNullOrEmpty(utilizer.Username))
+		{
+			throw ErtisAuthException.Unauthorized("Utilizer username is null or empty in claims");
+		}
+		
+		if (string.IsNullOrEmpty(utilizer.Role))
+		{
+			throw ErtisAuthException.Unauthorized("Utilizer role is null or empty in claims");
+		}
+		
+		if (string.IsNullOrEmpty(utilizer.Token))
+		{
+			throw ErtisAuthException.Unauthorized("Utilizer token is null or empty in claims");
+		}
+		
 		return new ClaimsIdentity(
 			new []
 			{

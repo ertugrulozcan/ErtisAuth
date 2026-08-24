@@ -1,10 +1,6 @@
-using System.Threading;
-using System.Threading.Tasks;
+namespace ErtisAuth.Abstractions.Services;
 
-namespace ErtisAuth.Abstractions.Services
+public interface IScheduledJobService
 {
-	public interface IScheduledJobService
-	{
-		ValueTask ScheduleTokenCleanerJobsAsync(CancellationToken cancellationToken = default);
-	}
+	ValueTask ScheduleTokenCleanerJobsAsync(CancellationToken cancellationToken = default);
 }

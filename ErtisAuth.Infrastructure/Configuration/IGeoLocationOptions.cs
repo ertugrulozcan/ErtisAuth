@@ -1,20 +1,20 @@
-namespace ErtisAuth.Infrastructure.Configuration
+// ReSharper disable UnusedMember.Global
+namespace ErtisAuth.Infrastructure.Configuration;
+
+public interface IGeoLocationOptions
 {
-	public interface IGeoLocationOptions
-	{
-		#region Properties
-
-		bool Enabled { get; set; }
-
-		#endregion
-	}
+	#region Properties
 	
-	public class GeoLocationOptions : IGeoLocationOptions
-	{
-		#region Properties
+	bool Enabled { get; set; }
+	
+	#endregion
+}
 
-		public bool Enabled { get; set; }
-
-		#endregion
-	}
+public class GeoLocationOptions : IGeoLocationOptions
+{
+	#region Properties
+	
+	public bool Enabled { get; set; }
+	
+	#endregion
 }

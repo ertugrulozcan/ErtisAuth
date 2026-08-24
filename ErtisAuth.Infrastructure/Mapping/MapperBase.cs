@@ -1,18 +1,18 @@
-namespace ErtisAuth.Infrastructure.Mapping
+namespace ErtisAuth.Infrastructure.Mapping;
+
+public abstract class MapperBase
 {
-	public abstract class MapperBase
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="typeMap"></param>
+	// ReSharper disable once UnusedParameter.Local
+	protected MapperBase(MappingCollection typeMap)
 	{
-		#region Constructors
-
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		/// <param name="typeMap"></param>
-		protected MapperBase(MappingCollection typeMap)
-		{
-			
-		}
-
-		#endregion
+		
 	}
+	
+	#endregion
 }

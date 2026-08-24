@@ -1,8 +1,4 @@
-using System;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Ertis.Data.Models;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
@@ -16,11 +12,11 @@ namespace ErtisAuth.Infrastructure.Services;
 public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto>, ITokenCodeService
 {
 	#region Constants
-
+	
 	private static readonly char[] Letters = new [] { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' };
 	private static readonly char[] Digits = new [] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 	private static readonly char[] AllChars = Letters.Concat(Digits).ToArray();
-
+	
 	#endregion
 	
 	#region Services
@@ -28,11 +24,11 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 	private readonly ITokenCodePolicyService _tokenCodePolicyService;
 	private readonly ITokenService _tokenService;
 	private readonly IUserService _userService;
-
+	
 	#endregion
 	
     #region Constructors
-
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -53,12 +49,12 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 		this._tokenService = tokenService;
 		this._userService = userService;
 	}
-
+	
 	#endregion
-
+	
 	#region Methods
-
-	private async Task<TokenCode> GetTokenCode(
+	
+	private async Task<TokenCode?> GetTokenCode(
 		string code, 
 		string membershipId,
 		CancellationToken cancellationToken = default)
@@ -74,7 +70,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
-
+		
 		if (string.IsNullOrEmpty(membership.CodePolicy))
 		{
 			throw ErtisAuthException.TokenCodePolicyNotFound();
@@ -101,24 +97,24 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 			CreatedAt = DateTime.Now,
 			MembershipId = membershipId
 		}, cancellationToken: cancellationToken);
-
+		
 		return insertedDto.ToModel();
 	}
-
+	
 	private static string GenerateCode(TokenCodePolicy policy)
 	{
 		var chars = AllChars.ToArray();
 		var onlyDigits = false;
-		if (policy.ContainsDigits && !policy.ContainsLetters)
+		if (policy is { ContainsDigits: true, ContainsLetters: false })
 		{
 			chars = Digits.ToArray();
 			onlyDigits = true;
 		}
-		else if (policy.ContainsLetters && !policy.ContainsDigits)
+		else if (policy is { ContainsLetters: true, ContainsDigits: false })
 		{
 			chars = Letters.ToArray();
 		}
-
+		
 		var stringBuilder = new StringBuilder();
 		var random = new Random(DateTime.Now.Microsecond);
 		var beforeIndex = -1;
@@ -130,7 +126,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 				index += random.Next(0, chars.Length);
 				index %= chars.Length;
 			}
-
+			
 			var character = chars[index];
 			if (onlyDigits && i == 0 && character == '0')
 			{
@@ -143,7 +139,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 		
 		return stringBuilder.ToString().ToUpper();
 	}
-
+	
 	public async Task<TokenCode> AuthorizeCodeAsync(string code, Utilizer utilizer, string membershipId, CancellationToken cancellationToken = default)
 	{
 		var tokenCode = await this.GetTokenCode(code, membershipId, cancellationToken: cancellationToken);
@@ -151,36 +147,29 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 		{
 			throw ErtisAuthException.InvalidTokenCode();
 		}
-
+		
 		if (tokenCode.ExpireTime < DateTime.Now)
 		{
 			throw ErtisAuthException.TokenCodeExpired();
 		}
-
-		var user = await this._userService.GetUserAsync(membershipId, utilizer.Id, cancellationToken: cancellationToken);
+		
+		var user = await this._userService.GetUserAsync(membershipId, utilizer.Id!, cancellationToken: cancellationToken);
 		if (user == null)
 		{
-			throw ErtisAuthException.UserNotFound(utilizer.Id, "id");
+			throw ErtisAuthException.UserNotFound(utilizer.Id ?? string.Empty, "id");
 		}
 		
 		var token = await this._tokenService.GenerateTokenAsync(user, membershipId, cancellationToken: cancellationToken);
-		if (token != null)
+		tokenCode.AssignToken(token, user.Id);
+		var updatedDto = await this.repository.UpdateAsync(tokenCode.ToDto(), tokenCode.Id, new UpdateOptions
 		{
-			tokenCode.AssignToken(token, user.Id);
-			var updatedDto = await this.repository.UpdateAsync(tokenCode.ToDto(), tokenCode.Id, new UpdateOptions
-			{
-				TriggerBeforeActionBinder = false,
-				TriggerAfterActionBinder = false
-			}, cancellationToken: cancellationToken);
-
-			return updatedDto.ToModel();
-		}
-		else
-		{
-			throw ErtisAuthException.InvalidToken("Token could not generated");
-		}
+			TriggerBeforeActionBinder = false,
+			TriggerAfterActionBinder = false
+		}, cancellationToken: cancellationToken);
+		
+		return updatedDto.ToModel();
 	}
-
+	
 	public async Task<BearerToken> GenerateTokenAsync(string code, string membershipId, CancellationToken cancellationToken = default)
 	{
 		var tokenCode = await this.GetTokenCode(code, membershipId, cancellationToken: cancellationToken);
@@ -188,17 +177,17 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 		{
 			throw ErtisAuthException.InvalidToken();
 		}
-
+		
 		if (tokenCode.Token == null)
 		{
 			throw ErtisAuthException.UnauthorizedTokenCode();
 		}
-
+		
 		if (tokenCode.Token.IsExpired)
 		{
 			throw ErtisAuthException.TokenWasExpired();
 		}
-
+		
 		return tokenCode.Token;
 	}
 	

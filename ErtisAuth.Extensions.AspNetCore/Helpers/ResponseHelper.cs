@@ -1,26 +1,25 @@
 using Ertis.Core.Models.Response;
 using Newtonsoft.Json;
 
-namespace ErtisAuth.Extensions.AspNetCore.Helpers
+namespace ErtisAuth.Extensions.AspNetCore.Helpers;
+
+public static class ResponseHelper
 {
-	public static class ResponseHelper
+	#region Methods
+	
+	public static bool TryParseError(string json, out ErrorModel? error)
 	{
-		#region Methods
-
-		public static bool TryParseError(string json, out ErrorModel error)
+		try
 		{
-			try
-			{
-				error = JsonConvert.DeserializeObject<ErrorModel>(json);
-				return error != null;
-			}
-			catch
-			{
-				error = null;
-				return false;
-			}
+			error = JsonConvert.DeserializeObject<ErrorModel>(json);
+			return error != null;
 		}
-
-		#endregion
+		catch
+		{
+			error = null;
+			return false;
+		}
 	}
+	
+	#endregion
 }

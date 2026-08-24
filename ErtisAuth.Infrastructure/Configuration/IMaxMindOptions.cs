@@ -1,24 +1,24 @@
-namespace ErtisAuth.Infrastructure.Configuration
+// ReSharper disable UnusedMember.Global
+namespace ErtisAuth.Infrastructure.Configuration;
+
+public interface IMaxMindOptions
 {
-	public interface IMaxMindOptions
-	{
-		#region Properties
-		
-		string LicenseKey { get; set; }
-		
-		int AccountId { get; set; }
-		
-		#endregion
-	}
+	#region Properties
 	
-	public class MaxMindOptions : IMaxMindOptions
-	{
-		#region Properties
+	string? LicenseKey { get; set; }
+	
+	int AccountId { get; set; }
+	
+	#endregion
+}
 
-		public string LicenseKey { get; set; }
-		
-		public int AccountId { get; set; }
-
-		#endregion
-	}
+public class MaxMindOptions : IMaxMindOptions
+{
+	#region Properties
+	
+	public string? LicenseKey { get; set; }
+	
+	public int AccountId { get; set; }
+	
+	#endregion
 }

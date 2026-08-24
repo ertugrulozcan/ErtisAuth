@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Linq;
 using Ertis.Schema.Serialization;
 using Ertis.Schema.Types;
 using ErtisAuth.Core.Models.Users;
@@ -11,19 +10,19 @@ namespace ErtisAuth.Infrastructure.Mapping.Extensions;
 public static class UserTypeExtensions
 {
     #region Methods
-
+    
     public static UserType ToModel(this UserTypeDto dto)
     {
         var json = dto.Properties.ToJson();
         var properties = FieldInfoCollectionJsonConverter.Deserialize(json);
-
+        
         return new UserType
         {
             Id = dto.Id,
-            Name = dto.Name,
-            Slug = dto.Slug,
+            Name = dto.Name ?? throw new InvalidOperationException("User type name is null"),
+            Slug = dto.Slug ?? throw new InvalidOperationException("User type slug is null"),
             Description = dto.Description,
-            Properties = new ReadOnlyCollection<IFieldInfo>(properties.ToList()),
+            Properties = new ReadOnlyCollection<IFieldInfo>(properties?.ToList() ?? new List<IFieldInfo>()),
             AllowAdditionalProperties = dto.AllowAdditionalProperties,
             IsAbstract = dto.IsAbstract,
             IsSealed = dto.IsSealed,
@@ -32,12 +31,12 @@ public static class UserTypeExtensions
             Sys = dto.Sys.ToModel()
         };
     }
-		
+    
     public static UserTypeDto ToDto(this UserType model)
     {
         var json = FieldInfoCollectionJsonConverter.Serialize(model.Properties);
         var bsonDocument = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(json);
-            
+        
         return new UserTypeDto
         {
             Id = model.Id,
@@ -53,6 +52,6 @@ public static class UserTypeExtensions
             Sys = model.Sys.ToDto()
         };
     }
-
+    
     #endregion
 }

@@ -1,14 +1,13 @@
 using Newtonsoft.Json;
 
-namespace ErtisAuth.WebAPI.Models.Request.Tokens
-{
-	public class RefreshTokenFormModel
-	{
-		#region Properties
+namespace ErtisAuth.WebAPI.Models.Request.Tokens;
 
-		[JsonProperty("token")]
-		public string Token { get; set; }
-		
-		#endregion
-	}
+public class RefreshTokenFormModel
+{
+	#region Properties
+	
+	[JsonProperty("token")]
+	public string? Token { get; set; }
+	
+	#endregion
 }

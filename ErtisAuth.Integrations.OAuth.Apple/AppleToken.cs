@@ -6,7 +6,7 @@ namespace ErtisAuth.Integrations.OAuth.Apple;
 public class AppleToken : IProviderToken
 {
 	#region Properties
-		
+	
 	[JsonProperty("accessToken")]
 	public string? AccessToken { get; set; }
 	

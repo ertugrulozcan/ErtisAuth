@@ -1,20 +1,19 @@
 using Newtonsoft.Json;
 
-namespace ErtisAuth.WebAPI.Models.Request.Applications
+namespace ErtisAuth.WebAPI.Models.Request.Applications;
+
+public class CreateApplicationFormModel
 {
-	public class CreateApplicationFormModel
-	{
-		#region Properties
-
-		[JsonProperty("name")]
-		public string Name { get; set; }
-		
-		[JsonProperty("slug")]
-		public string Slug { get; set; }
-
-		[JsonProperty("role")]
-		public string Role { get; set; }
-		
-		#endregion
-	}
+	#region Properties
+	
+	[JsonProperty("name")]
+	public string? Name { get; set; }
+	
+	[JsonProperty("slug")]
+	public string? Slug { get; set; }
+	
+	[JsonProperty("role")]
+	public string? Role { get; set; }
+	
+	#endregion
 }

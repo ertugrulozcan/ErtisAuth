@@ -1,10 +1,6 @@
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Dto.Models.Identity;
 
-namespace ErtisAuth.Dao.Repositories.Interfaces
-{
-	public interface IActiveTokensRepository : IMongoRepository<ActiveTokenDto>
-	{
-		
-	}
-}
+namespace ErtisAuth.Dao.Repositories.Interfaces;
+
+public interface IActiveTokensRepository : IMongoRepository<ActiveTokenDto>;

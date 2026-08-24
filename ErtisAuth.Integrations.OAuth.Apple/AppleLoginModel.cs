@@ -14,9 +14,9 @@ public class AppleLoginModel
 	public AppleUserAuthorizationModel? Authorization { get; set; }
 	
 	#endregion
-
+	
 	#region Methods
-
+	
 	public AppleLoginRequestBase ToLoginRequest(bool isAppleNative)
 	{
 		var handler = new JwtSecurityTokenHandler();
@@ -57,7 +57,7 @@ public class AppleLoginModel
 			};
 		}
 	}
-
+	
 	#endregion
 }
 

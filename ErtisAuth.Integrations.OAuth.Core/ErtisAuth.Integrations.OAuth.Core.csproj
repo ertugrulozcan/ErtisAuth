@@ -1,21 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <PackageId>ErtisAuth.Integrations.OAuth.Core</PackageId>
-        <PackageVersion>9.2.1</PackageVersion>
-        <Authors>Ertuğrul Özcan</Authors>
-        <Description>ErtisAuth.Integrations.OAuth.Core</Description>
-        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <Copyright>Ertuğrul Özcan | Copyright 2026 (c)</Copyright>
-        <PackageReleaseNotes>.Net 9</PackageReleaseNotes>
-        <PackageTags>ErtisAuth.Integrations.OAuth.Core</PackageTags>
-        <Title>ErtisAuth.Integrations.OAuth.Core</Title>
-        <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.2.1</AssemblyVersion>
-        <FileVersion>9.2.1</FileVersion>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
-
+    
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     </ItemGroup>

@@ -1,14 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
-
+    
     <ItemGroup>
         <ProjectReference Include="..\ErtisAuth.Events\ErtisAuth.Events.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Hosting\ErtisAuth.Extensions.Hosting.csproj" />
     </ItemGroup>
-
+    
     <ItemGroup>
-        <PackageReference Include="Ertis.MongoDB.Queries" Version="9.0.7" />
+        <PackageReference Include="Ertis.MongoDB.Queries" Version="10.0.0" />
     </ItemGroup>
 </Project>

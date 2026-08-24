@@ -7,38 +7,32 @@ namespace ErtisAuth.Core.Models.Identity;
 
 public class TokenCodePolicy : MembershipBoundedResource, IHasSysInfo
 {
-    #region Fields
-
-    private string slug;
-
-    #endregion
-    
     #region Properties
     
     [JsonProperty("name")]
     [JsonPropertyName("name")]
-    public string Name { get; set; }
-		
+    public required string Name { get; set; }
+    
     [JsonProperty("slug")]
     [JsonPropertyName("slug")]
     public string Slug
     {
         get
         {
-            if (string.IsNullOrEmpty(this.slug))
+            if (string.IsNullOrEmpty(field))
             {
-                this.slug = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
+                field = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
             }
-
-            return this.slug;
+            
+            return field;
         }
-        set => this.slug = Slugifier.Slugify(value, Slugifier.Options.Ignore('_'));
+        set => field = Slugifier.Slugify(value, Slugifier.Options.Ignore('_'));
     }
     
     [JsonProperty("description")]
     [JsonPropertyName("description")]
-    public string Description { get; set; }
-
+    public string? Description { get; set; }
+    
     [JsonProperty("length")]
     [JsonPropertyName("length")]
     public int Length { get; set; }
@@ -57,7 +51,7 @@ public class TokenCodePolicy : MembershipBoundedResource, IHasSysInfo
     
     [JsonProperty("sys")]
     [JsonPropertyName("sys")]
-    public SysModel Sys { get; set; }
+    public SysModel? Sys { get; set; }
     
     #endregion
 }

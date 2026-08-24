@@ -7,7 +7,7 @@ namespace ErtisAuth.Infrastructure.Mapping.Extensions;
 public static class UserExtensions
 {
     #region Methods
-
+    
     public static User ToModel(this UserDto dto)
     {
         return new User
@@ -56,6 +56,6 @@ public static class UserExtensions
         dto.PasswordHash = model.PasswordHash;
         return dto;
     }
-
+    
     #endregion
 }

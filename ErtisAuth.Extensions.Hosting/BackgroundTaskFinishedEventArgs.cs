@@ -1,16 +1,16 @@
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Extensions.Hosting;
 
 public class BackgroundTaskFinishedEventArgs<TIn> : EventArgs
 {
 	#region Properties
-
-	// ReSharper disable once UnusedAutoPropertyAccessor.Global
+	
 	public TIn? InitialArgs { get; }
-
+	
 	#endregion
 	
 	#region Constructors
-
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -19,25 +19,22 @@ public class BackgroundTaskFinishedEventArgs<TIn> : EventArgs
 	{
 		this.InitialArgs = args;
 	}
-
+	
 	#endregion
 }
 
-// ReSharper disable once ClassNeverInstantiated.Global
 public class BackgroundTaskFinishedEventArgs<TIn, TOut> : EventArgs
 {
 	#region Properties
-
-	// ReSharper disable once UnusedAutoPropertyAccessor.Global
+	
 	public TIn? InitialArgs { get; }
 	
-	// ReSharper disable once UnusedAutoPropertyAccessor.Global
 	public TOut? Result { get; }
-
+	
 	#endregion
 	
 	#region Constructors
-
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -48,6 +45,6 @@ public class BackgroundTaskFinishedEventArgs<TIn, TOut> : EventArgs
 		this.InitialArgs = args;
 		this.Result = result;
 	}
-
+	
 	#endregion
 }

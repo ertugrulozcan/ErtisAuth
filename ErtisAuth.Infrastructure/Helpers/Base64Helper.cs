@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 
 namespace ErtisAuth.Infrastructure.Helpers;
@@ -6,7 +5,7 @@ namespace ErtisAuth.Infrastructure.Helpers;
 public static class Base64Helper
 {
     #region Methods
-
+    
     public static string Decode(string base64, Encoding encoding)
     {
         try
@@ -18,6 +17,6 @@ public static class Base64Helper
             return Microsoft.IdentityModel.Tokens.Base64UrlEncoder.Decode(base64);
         }
     }
-
+    
     #endregion
 }

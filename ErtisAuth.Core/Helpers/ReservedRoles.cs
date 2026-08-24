@@ -1,17 +1,25 @@
-namespace ErtisAuth.Core.Helpers
-{
-    public static class ReservedRoles
-    {
-        public const string Administrator = "admin";
-        public const string Server = "server";
+// ReSharper disable UnusedMember.Global
+namespace ErtisAuth.Core.Helpers;
 
-        public static string[] ToArray()
+public static class ReservedRoles
+{
+    #region Constants
+    
+    public const string Administrator = "admin";
+    public const string Server = "server";
+    
+    #endregion
+    
+    #region Methods
+    
+    public static string[] ToArray()
+    {
+        return new[]
         {
-            return new[]
-            {
-                Administrator,
-                Server
-            };
-        }
+            Administrator,
+            Server
+        };
     }
+    
+    #endregion
 }

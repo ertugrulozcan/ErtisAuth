@@ -5,25 +5,24 @@ using ErtisAuth.Integrations.OAuth.Microsoft;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ErtisAuth.Integrations.OAuth.Extensions
+namespace ErtisAuth.Integrations.OAuth.Extensions;
+
+public static class DependencyInjectionExtensions
 {
-	public static class DependencyInjectionExtensions
+	#region Methods
+	
+	public static void AddProviders(this IServiceCollection services)
 	{
-		#region Methods
-
-		public static void AddProviders(this IServiceCollection services)
-		{
-			services.AddSingleton<IFacebookAuthenticator, FacebookAuthenticator>();
-			services.AddSingleton<IGoogleAuthenticator, GoogleAuthenticator>();
-			services.AddSingleton<IMicrosoftAuthenticator, MicrosoftAuthenticator>();
-			services.AddSingleton<IAppleAuthenticator, AppleAuthenticator>();
-		}
-		
-		public static void UseProviders(this IApplicationBuilder applicationBuilder)
-		{
-			AuthenticatorFactory.Current.Configure(applicationBuilder.ApplicationServices);
-		}
-
-		#endregion
+		services.AddSingleton<IFacebookAuthenticator, FacebookAuthenticator>();
+		services.AddSingleton<IGoogleAuthenticator, GoogleAuthenticator>();
+		services.AddSingleton<IMicrosoftAuthenticator, MicrosoftAuthenticator>();
+		services.AddSingleton<IAppleAuthenticator, AppleAuthenticator>();
 	}
+	
+	public static void UseProviders(this IApplicationBuilder applicationBuilder)
+	{
+		AuthenticatorFactory.Current.Configure(applicationBuilder.ApplicationServices);
+	}
+	
+	#endregion
 }

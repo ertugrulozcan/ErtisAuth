@@ -1,7 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Events;
@@ -16,13 +12,13 @@ namespace ErtisAuth.Infrastructure.Services;
 public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePolicy, TokenCodePolicyDto>, ITokenCodePolicyService
 {
 	#region Services
-
+	
 	private readonly IEventService _eventService;
-
+	
 	#endregion
 	
     #region Constructors
-
+	
     /// <summary>
     /// Constructor
     /// </summary>
@@ -40,18 +36,18 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 	    this.OnUpdated += this.OnUpdatedEventHandler;
 	    this.OnDeleted += this.OnDeletedEventHandler;
     }
-
+	
     #endregion
     
     #region Read Methods
     
-    public TokenCodePolicy GetBySlug(string slug, string membershipId)
+    public TokenCodePolicy? GetBySlug(string slug, string membershipId)
     {
 	    var dto = this.repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
 	    return dto == null ? null : Mapper.Current.Map<TokenCodePolicyDto, TokenCodePolicy>(dto);
     }
-		
-    public async ValueTask<TokenCodePolicy> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
+	
+    public async ValueTask<TokenCodePolicy?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
     {
 	    var dto = await this.repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 	    return dto == null ? null : Mapper.Current.Map<TokenCodePolicyDto, TokenCodePolicy>(dto);
@@ -60,19 +56,19 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
     #endregion
     
     #region Event Handlers
-
-    private void OnCreatedEventHandler(object sender, CreateResourceEventArgs<TokenCodePolicy> eventArgs)
+	
+    private void OnCreatedEventHandler(object? sender, CreateResourceEventArgs<TokenCodePolicy> eventArgs)
     {
 	    this._eventService.FireEventAsync(this, new ErtisAuthEvent
 	    {
 		    EventType = ErtisAuthEventType.TokenCodePolicyCreated,
 		    UtilizerId = eventArgs.Utilizer.Id,
 		    Document = eventArgs.Resource,
-		    MembershipId = eventArgs.MembershipId
+		    MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
 	    });
     }
-		
-    private void OnUpdatedEventHandler(object sender, UpdateResourceEventArgs<TokenCodePolicy> eventArgs)
+	
+    private void OnUpdatedEventHandler(object? sender, UpdateResourceEventArgs<TokenCodePolicy> eventArgs)
     {
 	    this._eventService.FireEventAsync(this, new ErtisAuthEvent
 	    {
@@ -80,21 +76,21 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 		    UtilizerId = eventArgs.Utilizer.Id,
 		    Document = eventArgs.Updated,
 		    Prior = eventArgs.Prior,
-		    MembershipId = eventArgs.MembershipId
+		    MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
 	    });
     }
-		
-    private void OnDeletedEventHandler(object sender, DeleteResourceEventArgs<TokenCodePolicy> eventArgs)
+	
+    private void OnDeletedEventHandler(object? sender, DeleteResourceEventArgs<TokenCodePolicy> eventArgs)
     {
 	    this._eventService.FireEventAsync(this, new ErtisAuthEvent
 	    {
 		    EventType = ErtisAuthEventType.TokenCodePolicyDeleted,
 		    UtilizerId = eventArgs.Utilizer.Id,
 		    Document = eventArgs.Resource,
-		    MembershipId = eventArgs.MembershipId
+		    MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
 	    });
     }
-
+	
     #endregion
     
     #region Methods
@@ -147,19 +143,19 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 			destination.Description = source.Description;
 		}
 	}
-
-	protected override bool IsAlreadyExist(TokenCodePolicy model, string membershipId, TokenCodePolicy exclude = default) =>
+	
+	protected override bool IsAlreadyExist(TokenCodePolicy model, string membershipId, TokenCodePolicy? exclude = null) =>
 		this.IsAlreadyExistAsync(model, membershipId, exclude).ConfigureAwait(false).GetAwaiter().GetResult();
-
-	protected override async Task<bool> IsAlreadyExistAsync(TokenCodePolicy model, string membershipId, TokenCodePolicy exclude = default)
+	
+	protected override async Task<bool> IsAlreadyExistAsync(TokenCodePolicy model, string membershipId, TokenCodePolicy? exclude = null, CancellationToken cancellationToken = default)
 	{
 		if (exclude == null)
 		{
-			return await this.GetBySlugAsync(model.Slug, membershipId) != null;	
+			return await this.GetBySlugAsync(model.Slug, membershipId, cancellationToken: cancellationToken) != null;	
 		}
 		else
 		{
-			var current = await this.GetBySlugAsync(model.Slug, membershipId);
+			var current = await this.GetBySlugAsync(model.Slug, membershipId, cancellationToken: cancellationToken);
 			if (current != null)
 			{
 				return current.Id != exclude.Id;	
@@ -180,6 +176,6 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 	{
 		return ErtisAuthException.TokenCodePolicyNotFound(slug);
 	}
-
+	
 	#endregion
 }

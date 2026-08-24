@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.AspNetCore.Helpers;
@@ -38,11 +37,11 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 	#endregion
 	
 	#region Methods
-
+	
 	public async Task<Utilizer> CheckAuthenticationAsync(BearerToken token)
 	{
 		var meResponse = await this._authenticationService.WhoAmIAsync(token);
-		if (meResponse.IsSuccess)
+		if (meResponse is { IsSuccess: true, Data: not null })
 		{
 			Utilizer utilizer = meResponse.Data;
 			utilizer.Token = token.AccessToken;
@@ -52,7 +51,7 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 		else
 		{
 			var errorMessage = meResponse.Message;
-			if (ResponseHelper.TryParseError(meResponse.Message, out var error))
+			if (errorMessage != null && ResponseHelper.TryParseError(errorMessage, out var error) && error != null)
 			{
 				errorMessage = error.Message;
 			}
@@ -76,9 +75,14 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 	public async Task<AuthorizationResult> CheckAuthorizationAsync(BearerToken token, HttpContext context)
 	{
 		var meResponse = await this._authenticationService.WhoAmIAsync(token);
-		if (meResponse.IsSuccess)
+		if (meResponse is { IsSuccess: true, Data: not null })
 		{
 			var rbacDefinition = context.GetRbacDefinition(meResponse.Data.Id);
+			if (rbacDefinition == null)
+			{
+				throw ErtisAuthException.Unauthorized("An error occured on bearer authorization check (rbac definition is null)");
+			}
+			
 			var rbac = rbacDefinition.ToString();
 			var isPermittedForAction = await this._roleService.CheckPermissionAsync(rbac, token);
 			if (!isPermittedForAction)
@@ -95,7 +99,7 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 		else
 		{
 			var errorMessage = meResponse.Message;
-			if (ResponseHelper.TryParseError(meResponse.Message, out var error))
+			if (errorMessage != null && ResponseHelper.TryParseError(errorMessage, out var error) && error != null)
 			{
 				errorMessage = error.Message;
 			}

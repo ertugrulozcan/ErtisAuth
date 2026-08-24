@@ -6,17 +6,17 @@ namespace ErtisAuth.Extensions.AspNetCore.Models;
 public class AuthorizationResult
 {
 	#region Properties
-
+	
 	public Utilizer Utilizer { get; }
 	
 	public bool IsAuthorized { get; }
 	
 	public Rbac Rbac { get; }
-
+	
 	#endregion
-
+	
 	#region Constructors
-
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -29,6 +29,6 @@ public class AuthorizationResult
 		this.Rbac = rbac;
 		this.IsAuthorized = isAuthorized;
 	}
-
+	
 	#endregion
 }

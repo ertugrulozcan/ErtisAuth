@@ -6,14 +6,14 @@ namespace ErtisAuth.Extensions.Mailkit.Models;
 public class Recipient
 {
 	#region Properties
-
+	
 	[JsonProperty("displayName")]
 	[JsonPropertyName("displayName")]
-	public string DisplayName { get; set; }
+	public required string DisplayName { get; set; }
 	
 	[JsonProperty("emailAddress")]
 	[JsonPropertyName("emailAddress")]
-	public string EmailAddress { get; set; }
-
+	public required string EmailAddress { get; set; }
+	
 	#endregion
 }

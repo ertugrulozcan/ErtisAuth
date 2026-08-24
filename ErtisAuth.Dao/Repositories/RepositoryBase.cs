@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Ertis.Data.Models;
 using Ertis.Data.Repository;
 using Ertis.MongoDB.Client;
@@ -17,9 +12,8 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 {
 	#region Properties
 	
-	// ReSharper disable once ReturnTypeCanBeEnumerable.Global
 	protected virtual IIndexDefinition[] Indexes => Array.Empty<IIndexDefinition>();
-
+	
 	#endregion
     
 	#region Constructors
@@ -35,16 +29,16 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 		IMongoClientProvider clientProvider, 
 		IDatabaseSettings settings, 
 		string collectionName, 
-		IRepositoryActionBinder actionBinder = null) : 
+		IRepositoryActionBinder? actionBinder = null) : 
 		base(clientProvider, settings, collectionName, actionBinder)
 	{
 		
 	}
-
+	
 	#endregion
-
+	
 	#region Index Methods
-
+	
 	public async Task CreateIndexesAsync(CancellationToken cancellationToken = default)
 	{
 		if (!this.Indexes.Any())
@@ -63,11 +57,11 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 					missingIndexes.Add(index);
 				}
 			}
-
+			
 			if (missingIndexes.Any())
 			{
 				await this.CreateManyIndexAsync(missingIndexes, cancellationToken);
-
+				
 				foreach (var index in missingIndexes)
 				{
 					Console.WriteLine($"Index '{index.Key}' created on {this.CollectionName} collection.");
@@ -83,6 +77,6 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 			Console.WriteLine(ex);
 		}
 	}
-
+	
 	#endregion
 }

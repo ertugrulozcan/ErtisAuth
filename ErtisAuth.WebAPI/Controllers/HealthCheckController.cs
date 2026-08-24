@@ -1,105 +1,101 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Ertis.MongoDB.Database;
 using ErtisAuth.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ErtisAuth.WebAPI.Controllers
+namespace ErtisAuth.WebAPI.Controllers;
+
+[ApiController]
+[Route("api/v{v:apiVersion}")]
+public class HealthCheckController : ControllerBase
 {
-	[ApiController]
-	[Route("api/v{v:apiVersion}")]
-	public class HealthCheckController : ControllerBase
+	#region Services
+	
+	private readonly IMongoDatabase database;
+	private readonly IMembershipService membershipService;
+	
+	#endregion
+	
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="database"></param>
+	/// <param name="membershipService"></param>
+	public HealthCheckController(IMongoDatabase database, IMembershipService membershipService)
 	{
-		#region Services
-
-		private readonly IMongoDatabase database;
-		private readonly IMembershipService membershipService;
-
-		#endregion
-		
-		#region Constructors
-
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		/// <param name="database"></param>
-		/// <param name="membershipService"></param>
-		public HealthCheckController(IMongoDatabase database, IMembershipService membershipService)
+		this.database = database;
+		this.membershipService = membershipService;
+	}
+	
+	#endregion
+	
+	#region Methods
+	
+	[HttpGet("healthcheck")]
+	public async Task<IActionResult> HealthCheck()
+	{
+		try
 		{
-			this.database = database;
-			this.membershipService = membershipService;
-		}
-
-		#endregion
-		
-		#region Methods
-
-		[HttpGet("healthcheck")]
-		public async Task<IActionResult> HealthCheck()
-		{
-			try
-			{
-				var dbStatisticsTask = this.database.GetDatabaseStatisticsAsync();
-				var listCollectionsTask = this.database.ListCollectionsAsync();
-				
-				var tasks = new Task[]
-				{
-					dbStatisticsTask,
-					listCollectionsTask
-				};
-
-				Task.WaitAll(tasks);
-
-				var dbStatistics = await dbStatisticsTask;
-				if (dbStatistics == null)
-				{
-					return this.Ok(new
-					{
-						Status = "Unhealthy",
-						Message = "Database statistics could not fetched"
-					});
-				}
+			var dbStatisticsTask = this.database.GetDatabaseStatisticsAsync();
+			var listCollectionsTask = this.database.ListCollectionsAsync();
 			
-				var memberships = await this.membershipService.GetAsync();
-				
-				var collectionList = (await listCollectionsTask).ToList();
-				if (!collectionList.Contains("memberships") ||
-					!collectionList.Contains("roles") ||
-					!collectionList.Contains("users") ||
-					!memberships.Items.Any())
-				{
-					return this.Ok(new
-					{
-						Status = "Unhealthy",
-						Message = "Database have not migrated yet"
-					});
-				}
-				
+			var tasks = new Task[]
+			{
+				dbStatisticsTask,
+				listCollectionsTask
+			};
+			
+			Task.WaitAll(tasks);
+			
+			var dbStatistics = await dbStatisticsTask;
+			if (dbStatistics == null)
+			{
 				return this.Ok(new
 				{
-					Status = "Healthy"
+					Status = "Unhealthy",
+					Message = "Database statistics could not fetched"
 				});
 			}
-			catch (Exception ex)
+			
+			var memberships = await this.membershipService.GetAsync();
+			
+			var collectionList = (await listCollectionsTask).ToList();
+			if (!collectionList.Contains("memberships") ||
+				!collectionList.Contains("roles") ||
+				!collectionList.Contains("users") ||
+				!memberships.Items.Any())
 			{
-				Console.WriteLine(ex);
-				return this.StatusCode(500, ex);
+				return this.Ok(new
+				{
+					Status = "Unhealthy",
+					Message = "Database have not migrated yet"
+				});
 			}
+			
+			return this.Ok(new
+			{
+				Status = "Healthy"
+			});
 		}
-
-		[HttpGet("ping")]
-		public IActionResult Ping()
+		catch (Exception ex)
 		{
-			return this.Ok("Pong");
+			Console.WriteLine(ex);
+			return this.StatusCode(500, ex);
 		}
-		
-		[HttpGet("build-id")]
-		public IActionResult BuildId()
-		{
-			return this.Ok("9.0.5.1");
-		}
-
-		#endregion
 	}
+	
+	[HttpGet("ping")]
+	public IActionResult Ping()
+	{
+		return this.Ok("Pong");
+	}
+	
+	[HttpGet("build-id")]
+	public IActionResult BuildId()
+	{
+		return this.Ok("9.0.5.1");
+	}
+	
+	#endregion
 }

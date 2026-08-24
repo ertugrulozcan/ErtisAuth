@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
@@ -11,7 +8,6 @@ using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.Authorization.Annotations;
 using ErtisAuth.Identity.Attributes;
 using ErtisAuth.WebAPI.Extensions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -23,14 +19,14 @@ namespace ErtisAuth.WebAPI.Controllers;
 public class CodePoliciesController : QueryControllerBase
 {
     #region Services
-
+	
 	private readonly ITokenCodePolicyService _codePolicyService;
 	private readonly IMembershipService membershipService;
 	
 	#endregion
-
+	
 	#region Constructors
-
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -41,7 +37,7 @@ public class CodePoliciesController : QueryControllerBase
 		this._codePolicyService = codePolicyService;
 		this.membershipService = membershipService;
 	}
-
+	
 	#endregion
 	
 	#region Create Methods
@@ -60,7 +56,7 @@ public class CodePoliciesController : QueryControllerBase
 		{
 			return this.MembershipNotFound(membershipId);
 		}
-
+		
 		model.MembershipId = membershipId;
 		var utilizer = this.GetUtilizer();
 		var policy = await this._codePolicyService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
@@ -101,7 +97,7 @@ public class CodePoliciesController : QueryControllerBase
 	{
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
-			
+		
 		var policies = await this._codePolicyService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return this.Ok(policies);
 	}
@@ -120,9 +116,9 @@ public class CodePoliciesController : QueryControllerBase
 	
 	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
 	{
-		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipId) && membershipId is string)
+		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this._codePolicyService.QueryAsync(membershipId.ToString(), query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._codePolicyService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -133,7 +129,7 @@ public class CodePoliciesController : QueryControllerBase
 	#endregion
 	
 	#region Update Methods
-
+	
 	[HttpPut("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Update)]
@@ -153,9 +149,9 @@ public class CodePoliciesController : QueryControllerBase
 	}
 	
 	#endregion
-
+	
 	#region Delete Methods
-
+	
 	[HttpDelete("{id}")]
 	[RbacObject("{id}")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -186,6 +182,6 @@ public class CodePoliciesController : QueryControllerBase
 	{
 		return await this.BulkDeleteAsync(this._codePolicyService, membershipId, ids, cancellationToken: cancellationToken);
 	}
-
+	
 	#endregion
 }

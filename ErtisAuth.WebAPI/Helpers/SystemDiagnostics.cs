@@ -1,8 +1,6 @@
-using System;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 
+// ReSharper disable UnusedMember.Global
 namespace ErtisAuth.WebAPI.Helpers;
 
 internal static class SystemDiagnostics
@@ -19,16 +17,16 @@ internal static class SystemDiagnostics
 	    {
 		    var startTime = DateTime.UtcNow;
 		    var startCpuUsage = Process.GetProcesses().Sum(a => a.TotalProcessorTime.TotalMilliseconds);
-	    
-		    System.Threading.Thread.Sleep(500);
-	    
+			
+		    Thread.Sleep(500);
+			
 		    var endTime = DateTime.UtcNow;
 		    var endCpuUsage = Process.GetProcesses().Sum(a => a.TotalProcessorTime.TotalMilliseconds);
-	    
+			
 		    var cpuUsedMs = endCpuUsage - startCpuUsage;
 		    var totalMsPassed = (endTime - startTime).TotalMilliseconds;
 		    var cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * totalMsPassed);
-	    
+			
 		    return cpuUsageTotal * 100.0;
 	    }
 	    catch (Exception e)
@@ -37,7 +35,7 @@ internal static class SystemDiagnostics
 		    return 0;
 	    }
     }
-
+	
     /// <summary>
     /// Get the system overall memory usage percentage.
     /// </summary>
@@ -48,8 +46,8 @@ internal static class SystemDiagnostics
 	    {
 		    var totalMemory = GetTotalMemoryInKb() * 1024;
 		    var usedMemory = GetUsedMemoryForAllProcesses();
-	    
-		    return (usedMemory * 100.0) / totalMemory;
+			
+		    return usedMemory * 100.0 / totalMemory;
 	    }
 	    catch (Exception e)
 	    {
@@ -71,7 +69,7 @@ internal static class SystemDiagnostics
 		    return 0;
 	    }
     }
-
+	
     internal static long GetTotalMemoryInKb()
     {
 	    try
@@ -81,35 +79,33 @@ internal static class SystemDiagnostics
 		    {
 			    return totalMemoryInKb;
 		    }
-	    
+			
 		    // ReSharper disable once StringLiteralTypo
 		    const string path = "/proc/meminfo";
 		    if (!File.Exists(path))
 		    {
 			    throw new FileNotFoundException($"File not found: {path}");
 		    }
-	    
-		    using (var reader = new StreamReader(path))
-		    {
-			    string line;
-			    while (!string.IsNullOrWhiteSpace(line = reader.ReadLine()))
-			    {
-				    if (line.Contains("MemTotal", StringComparison.OrdinalIgnoreCase))
-				    {
-					    // e.g. MemTotal: 16370152 kB
-					    var parts = line.Split(':');
-					    var valuePart = parts[1].Trim();
-					    parts = valuePart.Split(' ');
-					    var numberString = parts[0].Trim();
-				    
-					    var result = long.TryParse(numberString, out totalMemoryInKb);
-					    return result ? totalMemoryInKb : throw new Exception($"Cannot parse 'MemTotal' value from the file {path}.");
-				    }
-			    }
-		    
-			    throw new Exception($"Cannot find the 'MemTotal' property from the file {path}.");
-		    }
-	    }
+			
+			using var reader = new StreamReader(path);
+			string? line;
+			while (!string.IsNullOrWhiteSpace(line = reader.ReadLine()))
+			{
+				if (line.Contains("MemTotal", StringComparison.OrdinalIgnoreCase))
+				{
+					// e.g. MemTotal: 16370152 kB
+					var parts = line.Split(':');
+					var valuePart = parts[1].Trim();
+					parts = valuePart.Split(' ');
+					var numberString = parts[0].Trim();
+					
+					var result = long.TryParse(numberString, out totalMemoryInKb);
+					return result ? totalMemoryInKb : throw new Exception($"Cannot parse 'MemTotal' value from the file {path}.");
+				}
+			}
+			
+			throw new Exception($"Cannot find the 'MemTotal' property from the file {path}.");
+		}
 	    catch (Exception e)
 	    {
 		    Console.WriteLine(e);

@@ -1,4 +1,3 @@
-using System;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -19,12 +18,12 @@ public class ScopedBearerToken : TokenBase
 	
 	[JsonProperty("scopes")]
 	[JsonPropertyName("scopes")]
-	public string[] Scopes { get; set; }
+	public string[]? Scopes { get; set; }
 	
 	#endregion
-
+	
 	#region Constructors
-
+	
 	/// <summary>
 	/// Private Constructor
 	/// </summary>
@@ -44,7 +43,7 @@ public class ScopedBearerToken : TokenBase
 		this.ExpiresIn = expiresIn;
 		this.CreatedAt = DateTime.Now;
 	}
-
+	
 	public ScopedBearerToken(BearerToken bearerToken, string[] scopes)
 	{
 		this.AccessToken = bearerToken.AccessToken;
@@ -52,11 +51,11 @@ public class ScopedBearerToken : TokenBase
 		this.CreatedAt = bearerToken.CreatedAt;
 		this.Scopes = scopes;
 	}
-
+	
 	#endregion
-
+	
 	#region Methods
-
+	
 	public static ScopedBearerToken CreateTemp(string token)
 	{
 		return new ScopedBearerToken
@@ -89,9 +88,9 @@ public class ScopedBearerToken : TokenBase
 				bearerToken.CreatedAt = created_at;
 			}
 		}
-
+		
 		return bearerToken;
 	}
-
+	
 	#endregion
 }

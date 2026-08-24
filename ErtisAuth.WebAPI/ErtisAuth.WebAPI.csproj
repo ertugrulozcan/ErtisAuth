@@ -1,26 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
-
+    
     <ItemGroup>
         <PackageReference Include="Ertis.Extensions.AspNetCore" Version="9.0.5" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.10" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.11" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
-        <PackageReference Include="Sentry" Version="6.4.1" />
-        <PackageReference Include="Serilog" Version="4.3.1" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
-        <PackageReference Include="Microsoft.NETCore.Targets" Version="5.0.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8"/>
+        <PackageReference Include="Sentry.AspNetCore" Version="6.9.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
     </ItemGroup>
-
+    
     <ItemGroup>
         <ProjectReference Include="..\ErtisAuth.Extensions.ApplicationInsights\ErtisAuth.Extensions.ApplicationInsights.csproj" />
-        <ProjectReference Include="..\ErtisAuth.Extensions.Prometheus\ErtisAuth.Extensions.Prometheus.csproj" />
-        <ProjectReference Include="..\ErtisAuth.Infrastructure\ErtisAuth.Infrastructure.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Database\ErtisAuth.Extensions.Database.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Http\ErtisAuth.Extensions.Http.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Extensions.Prometheus\ErtisAuth.Extensions.Prometheus.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Quartz\ErtisAuth.Extensions.Quartz.csproj" />
-        <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Apple\ErtisAuth.Integrations.OAuth.Apple.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Infrastructure\ErtisAuth.Infrastructure.csproj" />
     </ItemGroup>
 </Project>

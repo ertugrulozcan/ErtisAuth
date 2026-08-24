@@ -1,4 +1,3 @@
-using System;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Dto.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Core;
@@ -8,10 +7,10 @@ namespace ErtisAuth.Infrastructure.Mapping.Extensions;
 public static class ProviderExtensions
 {
     #region Methods
-
+    
     public static Provider ToModel(this ProviderDto dto)
     {
-        return new Provider(TryParseEnum<KnownProviders>(dto.Name))
+        return new Provider(TryParseEnum<KnownProviders>(dto.Name ?? throw new InvalidOperationException("Provider name is null")))
         {
             Id = dto.Id,
             Description = dto.Description,
@@ -28,7 +27,7 @@ public static class ProviderExtensions
             Sys = dto.Sys?.ToModel()
         };
     }
-        
+    
     public static ProviderDto ToDto(this Provider model)
     {
         return new ProviderDto
@@ -61,6 +60,6 @@ public static class ProviderExtensions
             return defaultValue;
         }
     }
-
+    
     #endregion
 }

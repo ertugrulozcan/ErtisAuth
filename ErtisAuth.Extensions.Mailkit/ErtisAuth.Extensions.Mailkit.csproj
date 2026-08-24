@@ -1,29 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <PackageId>ErtisAuth.Extensions.Mailkit</PackageId>
-        <PackageVersion>9.2.1</PackageVersion>
-        <Authors>Ertuğrul Özcan</Authors>
-        <Description>ErtisAuth.Extensions.Mailkit</Description>
-        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <Copyright>Ertuğrul Özcan | Copyright 2026 (c)</Copyright>
-        <PackageReleaseNotes>.Net 9</PackageReleaseNotes>
-        <PackageTags>ErtisAuth.Extensions.Mailkit</PackageTags>
-        <Title>ErtisAuth.Extensions.Mailkit</Title>
-        <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.2.1</AssemblyVersion>
-        <FileVersion>9.2.1</FileVersion>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
-
+    
     <ItemGroup>
-      <PackageReference Include="Ertis.Net" Version="9.0.9" />
-      <PackageReference Include="MailKit" Version="4.16.0" />
-      <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.9" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-      <PackageReference Include="SendGrid" Version="9.29.3" />
+        <FrameworkReference Include="Microsoft.AspNetCore.App" Version="5.0.0" />
     </ItemGroup>
     
+    <ItemGroup>
+        <PackageReference Include="Ertis.Core" Version="10.0.0" />
+        <PackageReference Include="Ertis.Net" Version="10.0.0" />
+        <PackageReference Include="MailKit" Version="4.17.0" />
+        <PackageReference Include="SendGrid" Version="9.29.3" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
+    </ItemGroup>
 </Project>

@@ -6,7 +6,6 @@ public enum Status
 {
 	[EnumMember(Value = "passive")]
 	Passive,
-		
 	[EnumMember(Value = "active")]
 	Active
 }

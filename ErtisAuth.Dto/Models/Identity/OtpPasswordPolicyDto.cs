@@ -1,11 +1,12 @@
 using MongoDB.Bson.Serialization.Attributes;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Dto.Models.Identity;
 
 public class OtpPasswordPolicyDto
 {
     #region Properties
-
+    
     [BsonElement("length")]
     public int Length { get; set; }
     
@@ -17,6 +18,6 @@ public class OtpPasswordPolicyDto
     
     [BsonElement("expires_in")]
     public int? ExpiresIn { get; set; }
-
+    
     #endregion
 }

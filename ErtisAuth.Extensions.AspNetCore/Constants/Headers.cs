@@ -1,7 +1,6 @@
-namespace ErtisAuth.Extensions.AspNetCore.Constants
+namespace ErtisAuth.Extensions.AspNetCore.Constants;
+
+public static class Headers
 {
-	public static class Headers
-	{
-		public const string AUTHORIZATION = "Authorization";
-	}
+	public const string AUTHORIZATION = "Authorization";
 }

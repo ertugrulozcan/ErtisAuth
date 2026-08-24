@@ -1,10 +1,10 @@
-namespace ErtisAuth.Core.Models
+// ReSharper disable UnusedMember.Global
+namespace ErtisAuth.Core.Models;
+
+public enum CrudOperation
 {
-    public enum CrudOperation
-    {
-        Create,
-        Read,
-        Update,
-        Delete
-    }
+    Create,
+    Read,
+    Update,
+    Delete
 }

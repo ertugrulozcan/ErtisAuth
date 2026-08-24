@@ -1,6 +1,7 @@
 using ErtisAuth.Dto.Models.Resources;
 using MongoDB.Bson.Serialization.Attributes;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Dto.Models.Identity;
 
 public class TokenCodePolicyDto : EntityBase, IHasMembership, IHasSysDto
@@ -8,13 +9,13 @@ public class TokenCodePolicyDto : EntityBase, IHasMembership, IHasSysDto
     #region Properties
     
     [BsonElement("name")]
-    public string Name { get; set; }
+    public string? Name { get; set; }
 		
     [BsonElement("slug")]
-    public string Slug { get; set; }
+    public string? Slug { get; set; }
     
     [BsonElement("description")]
-    public string Description { get; set; }
+    public string? Description { get; set; }
     
     [BsonElement("length")]
     public int Length { get; set; }
@@ -29,10 +30,10 @@ public class TokenCodePolicyDto : EntityBase, IHasMembership, IHasSysDto
     public int ExpiresIn { get; set; }
     
     [BsonElement("membership_id")]
-    public string MembershipId { get; set; }
+    public required string MembershipId { get; set; }
     
     [BsonElement("sys")]
-    public SysModelDto Sys { get; set; }
+    public SysModelDto? Sys { get; set; }
     
     #endregion
 }

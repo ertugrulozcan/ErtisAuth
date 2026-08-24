@@ -8,7 +8,7 @@ namespace ErtisAuth.Infrastructure.Mapping.Extensions;
 public static class ClientInfoExtensions
 {
     #region Methods
-
+    
     public static ClientInfo ToModel(this ClientInfoDto dto)
     {
         return new ClientInfo
@@ -35,7 +35,7 @@ public static class ClientInfoExtensions
     public static ClientInfoDto ToDto(this ClientInfo clientInfo)
     {
         var geoLocation = clientInfo.GeoLocation;
-        GeoLocationInfoDto geoLocationDto = null;
+        GeoLocationInfoDto? geoLocationDto = null;
         if (geoLocation != null)
         {
             geoLocationDto = new GeoLocationInfoDto
@@ -61,6 +61,6 @@ public static class ClientInfoExtensions
             GeoLocation = geoLocationDto
         };
     }
-
+    
     #endregion
 }

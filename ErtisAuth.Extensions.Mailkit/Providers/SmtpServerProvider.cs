@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using Ertis.Core.Helpers;
 using ErtisAuth.Extensions.Mailkit.Models;
 using Newtonsoft.Json;
@@ -16,18 +11,12 @@ namespace ErtisAuth.Extensions.Mailkit.Providers;
 
 public class SmtpServerProvider : IMailProvider
 {
-	#region Fields
-
-	private string slug;
-	
-	#endregion
-	
 	#region Properties
 	
 	[JsonProperty("guid")]
 	[JsonPropertyName("guid")]
-	public string Guid { get; set; }
-
+	public string? Guid { get; set; }
+	
 	[JsonProperty("type")]
 	[JsonPropertyName("type")]
 	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
@@ -42,7 +31,7 @@ public class SmtpServerProvider : IMailProvider
 	
 	[JsonProperty("name")]
 	[JsonPropertyName("name")]
-	public string Name { get; set; }
+	public required string Name { get; set; }
 	
 	[JsonProperty("slug")]
 	[JsonPropertyName("slug")]
@@ -50,39 +39,39 @@ public class SmtpServerProvider : IMailProvider
 	{
 		get
 		{
-			if (string.IsNullOrEmpty(this.slug))
+			if (string.IsNullOrEmpty(field))
 			{
-				this.slug = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
+				field = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
 			}
-
-			return this.slug;
+			
+			return field;
 		}
 	}
 	
 	[JsonProperty("host")]
 	[JsonPropertyName("host")]
-	public string Host { get; set; }
-        
+	public required string Host { get; set; }
+	
 	[JsonProperty("port")]
 	[JsonPropertyName("port")]
-	public int Port { get; set; }
-        
+	public required int Port { get; set; }
+	
 	[JsonProperty("tls_enabled")]
 	[JsonPropertyName("tls_enabled")]
 	public bool TlsEnabled { get; set; }
-        
+	
 	[JsonProperty("username")]
 	[JsonPropertyName("username")]
-	public string Username { get; set; }
-        
+	public required string Username { get; set; }
+	
 	[JsonProperty("password")]
 	[JsonPropertyName("password")]
-	public string Password { get; set; }
-
+	public required string Password { get; set; }
+	
 	#endregion
 	
 	#region Methods
-
+	
 	public async Task SendMailAsync(
 		string fromName,
 		string fromAddress,
@@ -95,25 +84,23 @@ public class SmtpServerProvider : IMailProvider
 		message.From.Add(new MailboxAddress(fromName, fromAddress));
 		message.To.AddRange(recipients.Select(x => new MailboxAddress(x.DisplayName, x.EmailAddress)));
 		message.Subject = subject;
-
+		
 		var builder = new BodyBuilder { HtmlBody = htmlBody };
 		message.Body = builder.ToMessageBody();
-
-		using (var client = new SmtpClient())
+		
+		using var client = new SmtpClient();
+		if (this.TlsEnabled)
 		{
-			if (this.TlsEnabled)
-			{
-				await client.ConnectAsync(this.Host, this.Port, SecureSocketOptions.StartTlsWhenAvailable, cancellationToken: cancellationToken);
-			}
-			else
-			{
-				await client.ConnectAsync(this.Host, this.Port, cancellationToken: cancellationToken);
-			}
-
-			await client.AuthenticateAsync(this.Username, this.Password, cancellationToken: cancellationToken);
-			await client.SendAsync(message, cancellationToken: cancellationToken);
-			await client.DisconnectAsync(true, cancellationToken: cancellationToken);
+			await client.ConnectAsync(this.Host, this.Port, SecureSocketOptions.StartTlsWhenAvailable, cancellationToken: cancellationToken);
 		}
+		else
+		{
+			await client.ConnectAsync(this.Host, this.Port, cancellationToken: cancellationToken);
+		}
+		
+		await client.AuthenticateAsync(this.Username, this.Password, cancellationToken: cancellationToken);
+		await client.SendAsync(message, cancellationToken: cancellationToken);
+		await client.DisconnectAsync(true, cancellationToken: cancellationToken);
 	}
 	
 	public Task SendMailWithTemplateAsync(
@@ -127,6 +114,6 @@ public class SmtpServerProvider : IMailProvider
 	{
 		throw new NotImplementedException("This provider is not supported with template mailing");
 	}
-
+	
 	#endregion
 }

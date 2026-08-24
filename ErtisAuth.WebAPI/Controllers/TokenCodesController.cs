@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
@@ -18,13 +16,13 @@ namespace ErtisAuth.WebAPI.Controllers;
 public class TokenCodesController : ControllerBase
 {
     #region Services
-
+	
 	private readonly ITokenCodeService _tokenCodeService;
 	
 	#endregion
-
+	
 	#region Constructors
-
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -33,7 +31,7 @@ public class TokenCodesController : ControllerBase
 	{
 		this._tokenCodeService = tokenCodeService;
 	}
-
+	
 	#endregion
 	
 	#region Methods
@@ -54,7 +52,7 @@ public class TokenCodesController : ControllerBase
 		{
 			throw ErtisAuthException.UnsupportedTokenType();
 		}
-
+		
 		var utilizer = this.GetUtilizer();
 		await this._tokenCodeService.AuthorizeCodeAsync(code, utilizer, membershipId, cancellationToken: cancellationToken);
 		return this.Ok();
@@ -65,14 +63,7 @@ public class TokenCodesController : ControllerBase
 	public async Task<IActionResult> GenerateToken([FromRoute] string membershipId, [FromRoute] string code)
 	{
 		var token = await this._tokenCodeService.GenerateTokenAsync(code, membershipId);
-		if (token != null)
-		{
-			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
-		}
-		else
-		{
-			return this.InvalidCredentials();
-		}
+		return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 	}
 	
 	private TokenBase GetToken()
@@ -82,12 +73,12 @@ public class TokenCodesController : ControllerBase
 		{
 			throw ErtisAuthException.AuthorizationHeaderMissing();
 		}
-
-		if (!TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
+		
+		if (tokenTypeStr == null || !TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
 		{
 			throw ErtisAuthException.UnsupportedTokenType();
 		}
-
+		
 		TokenBase token = tokenType switch
 		{
 			SupportedTokenTypes.None => throw ErtisAuthException.UnsupportedTokenType(),
@@ -95,7 +86,7 @@ public class TokenCodesController : ControllerBase
 			SupportedTokenTypes.Bearer => BearerToken.CreateTemp(stringToken),
 			_ => throw ErtisAuthException.UnsupportedTokenType()
 		};
-
+		
 		return token;
 	}
 	

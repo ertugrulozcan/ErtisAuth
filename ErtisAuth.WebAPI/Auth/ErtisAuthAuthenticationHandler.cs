@@ -1,8 +1,5 @@
-using System;
-using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using System.Threading.Tasks;
 using Ertis.Core.Exceptions;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
@@ -11,9 +8,6 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Extensions.Authorization.Annotations;
 using ErtisAuth.Extensions.Http.Extensions;
 using ErtisAuth.WebAPI.Extensions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ErtisAuth.WebAPI.Auth;
@@ -21,7 +15,7 @@ namespace ErtisAuth.WebAPI.Auth;
 public class ErtisAuthAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
 	#region Services
-
+	
 	private readonly ITokenService tokenService;
 	private readonly IRoleService roleService;
 	private readonly IAccessControlService accessControlService;
@@ -29,7 +23,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 	#endregion
 	
 	#region Constructors
-
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -52,11 +46,11 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 		this.roleService = roleService;
 		this.accessControlService = accessControlService;
 	}
-
+	
 	#endregion
 	
 	#region Methods
-
+	
 	protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
 	{
 		try
@@ -78,7 +72,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 					isUnauthorizedEndpoint = true;
 				}
 			}
-
+			
 			if (!isAuthorizedEndpoint)
 			{
 				if (isUnauthorizedEndpoint)
@@ -95,6 +89,22 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 			}
 			
 			var utilizer = await this.CheckAuthorizationAsync();
+			
+			if (string.IsNullOrEmpty(utilizer.Username))
+			{
+				throw ErtisAuthException.Unauthorized("Utilizer username is null or empty in claims");
+			}
+			
+			if (string.IsNullOrEmpty(utilizer.Role))
+			{
+				throw ErtisAuthException.Unauthorized("Utilizer role is null or empty in claims");
+			}
+			
+			if (string.IsNullOrEmpty(utilizer.Token))
+			{
+				throw ErtisAuthException.Unauthorized("Utilizer token is null or empty in claims");
+			}
+			
 			var identity = new ClaimsIdentity(
 				new []
 				{
@@ -110,9 +120,9 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				null, 
 				"Utilizer", 
 				utilizer.Role);
-
+			
 			this.Context.User.AddIdentity(identity);
-
+			
 			var principal = new ClaimsPrincipal(identity);
 			return AuthenticateResult.Success(new AuthenticationTicket(principal, this.Scheme.Name));
 		}
@@ -165,7 +175,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 		{
 			throw ErtisAuthException.UnsupportedTokenType();
 		}
-
+		
 		TokenTypeExtensions.TryParseTokenType(tokenType, out var _tokenType);
 		switch (_tokenType)
 		{
@@ -186,6 +196,11 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 					if (role != null)
 					{
 						var rbac = this.Context.GetRbacDefinition(application.Id);
+						if (rbac == null)
+						{
+							throw ErtisAuthException.AccessDenied("Rbac definition not found");
+						}
+						
 						if (!this.accessControlService.HasPermission(role, rbac, applicationUtilizer))
 						{
 							throw ErtisAuthException.AccessDenied($"Your authorization role ({role.Slug}) is unauthorized for this action ({rbac})");	
@@ -202,8 +217,13 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				{
 					throw ErtisAuthException.InvalidToken();
 				}
-    
+				
 				var user = verifyTokenResult.User;
+				if (user == null)
+				{
+					throw ErtisAuthException.AccessDenied("User not found");
+				}
+				
 				Utilizer userUtilizer= user;
 				if (!string.IsNullOrEmpty(user.Role))
 				{
@@ -211,6 +231,11 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 					if (role != null)
 					{
 						var rbac = this.Context.GetRbacDefinition(user.Id);
+						if (rbac == null)
+						{
+							throw ErtisAuthException.AccessDenied("Rbac definition not found");
+						}
+						
 						if (!this.accessControlService.HasPermission(role, rbac, userUtilizer))
 						{
 							throw ErtisAuthException.AccessDenied($"Your authorization role ({role.Slug}) is unauthorized for this action ({rbac})");		
@@ -229,6 +254,6 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				throw ErtisAuthException.UnsupportedTokenType();
 		}
 	}
-
+	
 	#endregion
 }

@@ -9,11 +9,11 @@ public class OtpSettings
     
     [JsonProperty("host")]
     [JsonPropertyName("host")]
-    public string Host { get; set; }
+    public string? Host { get; set; }
     
     [JsonProperty("policy")]
     [JsonPropertyName("policy")]
-    public OtpPasswordPolicy Policy { get; set; }
-
+    public OtpPasswordPolicy? Policy { get; set; }
+    
     #endregion
 }

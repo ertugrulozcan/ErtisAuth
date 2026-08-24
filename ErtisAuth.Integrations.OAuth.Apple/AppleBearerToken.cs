@@ -5,7 +5,7 @@ namespace ErtisAuth.Integrations.OAuth.Apple;
 public class AppleBearerToken
 {
 	#region Properties
-
+	
 	[JsonProperty("access_token")]
 	public string? AccessToken { get; set; }
 	
@@ -20,6 +20,6 @@ public class AppleBearerToken
 	
 	[JsonProperty("id_token")]
 	public string? IdToken { get; set; }
-
+	
 	#endregion
 }

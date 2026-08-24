@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Ertis.MongoDB.Queries;
 using Ertis.Schema.Dynamics.Legacy;
 using ErtisAuth.Abstractions.Services;
@@ -20,21 +15,21 @@ namespace ErtisAuth.Infrastructure.Services;
 public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePassword, OneTimePasswordDto>, IOneTimePasswordService
 {
 	#region Constants
-
+	
 	private static readonly char[] Letters = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' };
 	private static readonly char[] Digits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 	private static readonly char[] AllChars = Letters.Concat(Digits).ToArray();
-
+	
 	#endregion
 	
 	#region Services
-
+	
 	private readonly IUserService _userService;
-
+	
 	#endregion
 	
     #region Constructors
-
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -48,7 +43,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	{
 		this._userService = userService;
 	}
-
+	
 	#endregion
 	
 	#region Membership Methods
@@ -60,12 +55,12 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
-
+		
 		return membership;
 	}
-
+	
 	#endregion
-
+	
 	#region Methods
 	
 	protected override bool ValidateModel(OneTimePassword model, out IEnumerable<string> errors)
@@ -105,39 +100,39 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		errors = errorList;
 		return !errors.Any();
 	}
-
+	
 	protected override void Overwrite(OneTimePassword destination, OneTimePassword source)
 	{
 		destination.Id = source.Id;
 		destination.MembershipId = source.MembershipId;
-			
+		
 		if (this.IsIdentical(destination, source))
 		{
 			throw ErtisAuthException.IdenticalDocument();
 		}
 	}
-
-	protected override bool IsAlreadyExist(OneTimePassword model, string membershipId, OneTimePassword exclude = default)
+	
+	protected override bool IsAlreadyExist(OneTimePassword model, string membershipId, OneTimePassword? exclude = null)
 	{
 		return false;
 	}
-
-	protected override async Task<bool> IsAlreadyExistAsync(OneTimePassword model, string membershipId, OneTimePassword exclude = default)
+	
+	protected override async Task<bool> IsAlreadyExistAsync(OneTimePassword model, string membershipId, OneTimePassword? exclude = null, CancellationToken cancellationToken = default)
 	{
 		await Task.CompletedTask;
 		return false;
 	}
-
+	
 	protected override ErtisAuthException GetAlreadyExistError(OneTimePassword model)
 	{
-		return null;
+		return ErtisAuthException.OneTimePasswordAlreadyExists();
 	}
-
+	
 	protected override ErtisAuthException GetNotFoundError(string id)
 	{
 		return ErtisAuthException.OneTimePasswordNotFound(id);
 	}
-
+	
 	public async Task<OneTimePassword> GenerateAsync(
 		Utilizer utilizer, 
 		string membershipId, 
@@ -162,6 +157,10 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		}
 		
 		var user = dynamicObject.Deserialize<User>();
+		if (user == null)
+		{
+			throw ErtisAuthException.UserNotFound(userId, "userId");
+		}
 		
 		var results = await this.QueryAsync(membershipId, QueryBuilder.Equals("user_id", userId).ToString(), 0, 1, cancellationToken: cancellationToken);
 		var currentDynamic = results.Items.FirstOrDefault();
@@ -169,7 +168,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		{
 			var otpDynamicObject = new DynamicObject(currentDynamic);
 			var currentOtp = otpDynamicObject.Deserialize<OneTimePassword>();
-			if (!currentOtp.Token.IsExpired)
+			if (currentOtp?.Token is { IsExpired: false })
 			{
 				return currentOtp;
 			}
@@ -185,7 +184,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			Token = resetPasswordToken,
 			MembershipId = membershipId
 		};
-
+		
 		return await this.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 	}
 	
@@ -193,16 +192,16 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	{
 		var chars = AllChars.ToArray();
 		var onlyDigits = false;
-		if (policy.ContainsDigits && !policy.ContainsLetters)
+		if (policy is { ContainsDigits: true, ContainsLetters: false })
 		{
 			chars = Digits.ToArray();
 			onlyDigits = true;
 		}
-		else if (policy.ContainsLetters && !policy.ContainsDigits)
+		else if (policy is { ContainsLetters: true, ContainsDigits: false })
 		{
 			chars = Letters.ToArray();
 		}
-
+		
 		var stringBuilder = new StringBuilder();
 		var random = new Random(DateTime.Now.Microsecond);
 		var beforeIndex = -1;
@@ -214,7 +213,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 				index += random.Next(0, chars.Length);
 				index %= chars.Length;
 			}
-
+			
 			var character = chars[index];
 			if (onlyDigits && i == 0 && character == '0')
 			{
@@ -227,12 +226,12 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		
 		return stringBuilder.ToString().ToUpper();
 	}
-
-	public async Task<OneTimePassword> VerifyOtpAsync(
+	
+	public async Task<OneTimePassword?> VerifyOtpAsync(
 		string username, 
 		string password, 
 		string membershipId, 
-		string host,
+		string? host,
 		CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(host))
@@ -266,29 +265,29 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 				{
 					throw ErtisAuthException.OtpExpired();
 				}
-
+				
 				return otp;
 			}
 		}
 		
 		return null;
 	}
-
+	
 	public async Task ClearExpiredPasswordsAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
-		var expiredOtps = new List<OneTimePassword>();
+		var expiredOtpList = new List<OneTimePassword>();
 		var results = await this.GetAsync(membershipId, cancellationToken: cancellationToken);
 		foreach (var oneTimePassword in results.Items)
 		{
 			if (oneTimePassword.Token is { IsExpired: true })
 			{
-				expiredOtps.Add(oneTimePassword);
+				expiredOtpList.Add(oneTimePassword);
 			}
 		}
 		
-		await this.repository.BulkDeleteAsync(expiredOtps.Select(x => x.ToDto()), cancellationToken: cancellationToken);
+		await this.repository.BulkDeleteAsync(expiredOtpList.Select(x => x.ToDto()), cancellationToken: cancellationToken);
 	}
-
+	
 	public async Task RevokeResetPasswordTokenAsync(Utilizer utilizer, string membershipId, string resetToken, CancellationToken cancellationToken = default)
 	{
 		try
@@ -301,7 +300,10 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			{
 				var otpDynamicObject = new DynamicObject(currentDynamic);
 				var otp = otpDynamicObject.Deserialize<OneTimePassword>();
-				await this.DeleteAsync(utilizer, membershipId, otp.Id, cancellationToken: cancellationToken);
+				if (otp != null)
+				{
+					await this.DeleteAsync(utilizer, membershipId, otp.Id, cancellationToken: cancellationToken);
+				}
 			}
 		}
 		catch (Exception ex)
@@ -309,6 +311,6 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			Console.WriteLine(ex);
 		}
 	}
-
+	
 	#endregion
 }

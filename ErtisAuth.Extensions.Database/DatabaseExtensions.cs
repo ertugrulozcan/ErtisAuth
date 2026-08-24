@@ -6,7 +6,7 @@ namespace ErtisAuth.Extensions.Database;
 public static class DatabaseExtensions
 {
 	#region Methods
-
+	
 	public static void CheckDatabaseIndexes(this IApplicationBuilder app)
 	{
 		CheckDatabaseIndexesAsync(app.ApplicationServices).ConfigureAwait(false).GetAwaiter().GetResult();

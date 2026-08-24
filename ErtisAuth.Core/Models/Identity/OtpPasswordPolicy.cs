@@ -6,7 +6,7 @@ namespace ErtisAuth.Core.Models.Identity;
 public class OtpPasswordPolicy
 {
     #region Properties
-
+    
     [JsonProperty("length")]
     [JsonPropertyName("length")]
     public int Length { get; set; }

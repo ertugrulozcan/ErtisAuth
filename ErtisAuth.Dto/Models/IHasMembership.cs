@@ -1,7 +1,6 @@
-namespace ErtisAuth.Dto.Models
+namespace ErtisAuth.Dto.Models;
+
+public interface IHasMembership
 {
-	public interface IHasMembership
-	{
-		string MembershipId { get; }
-	}
+	string MembershipId { get; }
 }

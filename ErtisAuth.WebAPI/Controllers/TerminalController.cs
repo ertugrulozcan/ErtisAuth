@@ -1,9 +1,5 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.Authorization.Annotations;
@@ -94,7 +90,7 @@ public class TerminalController : ControllerBase
         #region Properties
         
         // ReSharper disable once UnusedAutoPropertyAccessor.Global
-        public string Command { get; set; }
+        public string? Command { get; set; }
         
         #endregion
     }

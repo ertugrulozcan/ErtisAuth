@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.AspNetCore.Models;
 using Microsoft.AspNetCore.Http;

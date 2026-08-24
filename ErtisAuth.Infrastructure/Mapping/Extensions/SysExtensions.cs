@@ -6,14 +6,14 @@ namespace ErtisAuth.Infrastructure.Mapping.Extensions;
 public static class SysExtensions
 {
     #region Methods
-
-    public static SysModel ToModel(this SysModelDto dto)
+    
+    public static SysModel? ToModel(this SysModelDto? dto)
     {
         if (dto == null)
         {
             return null;
         }
-            
+        
         return new SysModel
         {
             CreatedAt = dto.CreatedAt,
@@ -22,14 +22,14 @@ public static class SysExtensions
             ModifiedBy = dto.ModifiedBy
         };
     }
-        
-    public static SysModelDto ToDto(this SysModel model)
+    
+    public static SysModelDto? ToDto(this SysModel? model)
     {
         if (model == null)
         {
             return null;
         }
-            
+        
         return new SysModelDto
         {
             CreatedAt = model.CreatedAt,
@@ -38,6 +38,6 @@ public static class SysExtensions
             ModifiedBy = model.ModifiedBy
         };
     }
-
+    
     #endregion
 }

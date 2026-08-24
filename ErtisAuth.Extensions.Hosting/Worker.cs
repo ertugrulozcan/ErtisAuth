@@ -6,21 +6,21 @@ namespace ErtisAuth.Extensions.Hosting;
 public sealed class Worker : IHostedService, IDisposable
 {
 	#region Services
-
+	
 	private readonly IBackgroundTaskQueue _taskQueue;
 	private readonly ILogger<Worker> _logger;
-
+	
 	#endregion
-
+	
 	#region Fields
-
+	
 	private Task? _executingTask;
 	private CancellationTokenSource? _stoppingCts;
-
+	
 	#endregion
-
+	
 	#region Constructors
-
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -31,17 +31,17 @@ public sealed class Worker : IHostedService, IDisposable
 		this._taskQueue = taskQueue;
 		this._logger = logger;
 	}
-
+	
 	#endregion
-
+	
 	#region Methods
-
+	
 	private async Task ExecuteBackgroundTaskQueueAsync(CancellationToken stoppingToken)
 	{
 		while (!stoppingToken.IsCancellationRequested)
 		{
 			var workItem = await this._taskQueue.DequeueAsync(stoppingToken);
-
+			
 			try
 			{
 				await workItem(stoppingToken);
@@ -52,7 +52,7 @@ public sealed class Worker : IHostedService, IDisposable
 			}
 		}
 	}
-
+	
 	private async Task ExecuteAsync(CancellationToken stoppingToken)
 	{
 		while (!stoppingToken.IsCancellationRequested)
@@ -60,27 +60,30 @@ public sealed class Worker : IHostedService, IDisposable
 			await this.ExecuteBackgroundTaskQueueAsync(stoppingToken);
 		}
 	}
-
+	
 	public Task StartAsync(CancellationToken cancellationToken)
 	{
 		this._logger.LogInformation("Queue processing worker has started");
 		
 		this._stoppingCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 		this._executingTask = ExecuteAsync(_stoppingCts.Token);
-
+		
 		return _executingTask.IsCompleted ? this._executingTask : Task.CompletedTask;
 	}
-
+	
 	public async Task StopAsync(CancellationToken cancellationToken)
 	{
 		if (this._executingTask == null)
 		{
 			return;
 		}
-
+		
 		try
 		{
-			this._stoppingCts?.Cancel();
+			if (this._stoppingCts != null)
+			{
+				await this._stoppingCts.CancelAsync();	
+			}
 		}
 		finally
 		{
@@ -88,15 +91,15 @@ public sealed class Worker : IHostedService, IDisposable
 			await Task.WhenAny(this._executingTask, Task.Delay(Timeout.Infinite, cancellationToken)).ConfigureAwait(false);
 		}
 	}
-
+	
 	#endregion
-
+	
 	#region Disposing
-
+	
 	public void Dispose()
 	{
 		this._stoppingCts?.Cancel();
 	}
-
+	
 	#endregion
 }

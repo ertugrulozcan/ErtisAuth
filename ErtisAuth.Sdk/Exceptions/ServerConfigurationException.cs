@@ -1,9 +1,4 @@
-using System;
+// ReSharper disable UnusedType.Global
+namespace ErtisAuth.Sdk.Exceptions;
 
-namespace ErtisAuth.Sdk.Exceptions
-{
-    public class ServerConfigurationException : Exception
-    {
-        
-    }
-}
+public class ServerConfigurationException : Exception;

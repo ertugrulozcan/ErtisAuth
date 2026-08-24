@@ -8,15 +8,15 @@ namespace ErtisAuth.Infrastructure.Mapping.Extensions;
 public static class WebhookExtensions
 {
     #region Methods
-
+    
     public static Webhook ToModel(this WebhookDto dto)
     {
         return new Webhook
         {
             Id = dto.Id,
-            Name = dto.Name,
+            Name = dto.Name ?? throw new InvalidOperationException("Webhook name is null"),
             Description = dto.Description,
-            Event = dto.Event,
+            Event = dto.Event ?? throw new InvalidOperationException("Webhook event is null"),
             Status = dto.Status is "active" or "Active" ? WebhookStatus.Active : dto.Status is "passive" or "Passive" ? WebhookStatus.Passive : null,
             Request = dto.Request?.ToModel(),
             TryCount = dto.TryCount,
@@ -41,8 +41,13 @@ public static class WebhookExtensions
         };
     }
     
-    private static WebhookRequest ToModel(this WebhookRequestDto dto)
+    private static WebhookRequest? ToModel(this WebhookRequestDto dto)
     {
+        if (dto.Method == null || dto.Url == null)
+        {
+            return null;
+        }
+        
         return new WebhookRequest
         {
             Url = dto.Url,
@@ -54,7 +59,7 @@ public static class WebhookExtensions
     
     private static WebhookRequestDto ToDto(this WebhookRequest model)
     {
-        BsonDocument body = null;
+        BsonDocument? body = null;
         if (model.Body != null)
         {
             var json = model.Body.ToString();
@@ -72,6 +77,6 @@ public static class WebhookExtensions
             Body = body
         };
     }
-
+    
     #endregion
 }

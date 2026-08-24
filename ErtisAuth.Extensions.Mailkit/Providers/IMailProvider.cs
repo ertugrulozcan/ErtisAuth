@@ -1,7 +1,4 @@
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using ErtisAuth.Extensions.Mailkit.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -14,8 +11,8 @@ public interface IMailProvider
 	
 	[JsonProperty("guid")]
 	[JsonPropertyName("guid")]
-	string Guid { get; }
-
+	string? Guid { get; }
+	
 	[JsonProperty("type")]
 	[JsonPropertyName("type")]
 	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
@@ -35,11 +32,11 @@ public interface IMailProvider
 	[JsonProperty("slug")]
 	[JsonPropertyName("slug")]
 	string Slug { get; }
-
+	
 	#endregion
-
+	
 	#region Methods
-
+	
 	Task SendMailAsync(
 		string fromName,
 		string fromAddress,
@@ -47,7 +44,7 @@ public interface IMailProvider
 		string subject,
 		string htmlBody,
 		CancellationToken cancellationToken = default);
-
+	
 	Task SendMailWithTemplateAsync(
 		string fromName,
 		string fromAddress,

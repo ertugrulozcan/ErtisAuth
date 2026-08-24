@@ -1,15 +1,16 @@
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Extensions.Hosting;
 
 public class BackgroundTaskStartedEventArgs<TIn> : EventArgs
 {
 	#region Properties
-
+	
 	public TIn? InitialArgs { get; }
-
+	
 	#endregion
 	
 	#region Constructors
-
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -18,6 +19,6 @@ public class BackgroundTaskStartedEventArgs<TIn> : EventArgs
 	{
 		this.InitialArgs = args;
 	}
-
+	
 	#endregion
 }

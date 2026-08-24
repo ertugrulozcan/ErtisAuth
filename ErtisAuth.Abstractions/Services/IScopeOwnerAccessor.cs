@@ -1,7 +1,6 @@
-namespace ErtisAuth.Abstractions.Services
+namespace ErtisAuth.Abstractions.Services;
+
+public interface IScopeOwnerAccessor
 {
-	public interface IScopeOwnerAccessor
-	{
-		string GetRequestOwner();
-	}
+	string? GetRequestOwner();
 }

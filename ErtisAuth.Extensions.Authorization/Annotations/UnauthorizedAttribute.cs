@@ -3,5 +3,5 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace ErtisAuth.Extensions.Authorization.Annotations;
 
-[System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Struct | System.AttributeTargets.Method)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Method)]
 public class UnauthorizedAttribute() : AuthorizeAttribute(Policies.ErtisAuthAuthorizationPolicyName);

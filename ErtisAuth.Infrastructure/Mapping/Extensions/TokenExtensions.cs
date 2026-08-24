@@ -1,22 +1,22 @@
-using System;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dto.Models.Identity;
 
+// ReSharper disable MemberCanBePrivate.Global
 namespace ErtisAuth.Infrastructure.Mapping.Extensions;
 
 public static class TokenExtensions
 {
     #region Bearer Token Methods
-
+    
     private static BearerToken ToModel(this BearerTokenDto dto)
     {
         return new BearerToken(
-            dto.AccessToken, 
+            dto.AccessToken ?? throw new ArgumentNullException(nameof(dto.AccessToken)), 
             TimeSpan.FromSeconds(dto.ExpiresIn), 
             dto.RefreshToken, 
             TimeSpan.FromSeconds(dto.RefreshTokenExpiresIn));
     }
-
+    
     private static BearerTokenDto ToDto(this BearerToken model)
     {
         return new BearerTokenDto
@@ -27,11 +27,11 @@ public static class TokenExtensions
             RefreshTokenExpiresIn = model.RefreshTokenExpiresInTimeStamp 
         };
     }
-
+    
     #endregion
     
     #region Active Token Methods
-
+    
     public static ActiveToken ToModel(this ActiveTokenDto dto)
     {
         return new ActiveToken
@@ -52,7 +52,7 @@ public static class TokenExtensions
             ClientInfo = dto.ClientInfo?.ToModel()
         };
     }
-		
+    
     public static ActiveTokenDto ToDto(this ActiveToken model)
     {
         return new ActiveTokenDto
@@ -90,11 +90,11 @@ public static class TokenExtensions
             RevokedAt = dto.RevokedAt
         };
     }
-
+    
     #endregion
     
     #region Token Code Methods
-
+    
     public static TokenCode ToModel(this TokenCodeDto dto)
     {
         return new TokenCode
@@ -108,7 +108,7 @@ public static class TokenExtensions
             Token = dto.Token?.ToModel()
         };
     }
-		
+    
     public static TokenCodeDto ToDto(this TokenCode model)
     {
         return new TokenCodeDto
@@ -128,8 +128,8 @@ public static class TokenExtensions
         return new TokenCodePolicy
         {
             Id = dto.Id,
-            Name = dto.Name,
-            Slug = dto.Slug,
+            Name = dto.Name ?? string.Empty,
+            Slug = dto.Slug ?? string.Empty,
             Description = dto.Description,
             Length = dto.Length,
             ContainsLetters = dto.ContainsLetters,
@@ -139,7 +139,7 @@ public static class TokenExtensions
             Sys = dto.Sys?.ToModel()
         };
     }
-		
+    
     public static TokenCodePolicyDto ToDto(this TokenCodePolicy model)
     {
         return new TokenCodePolicyDto
@@ -158,14 +158,14 @@ public static class TokenExtensions
     }
     
     #endregion
-
+    
     #region Reset Password Token Methods
-
+    
     public static ResetPasswordToken ToModel(this ResetPasswordTokenDto dto)
     {
         return new ResetPasswordToken(dto.Token, TimeSpan.FromSeconds(dto.ExpiresInTimeStamp), dto.CreatedAt);
     }
-		
+    
     public static ResetPasswordTokenDto ToDto(this ResetPasswordToken model)
     {
         return new ResetPasswordTokenDto
@@ -175,11 +175,11 @@ public static class TokenExtensions
             CreatedAt = model.CreatedAt
         };
     }
-
+    
     #endregion
     
     #region Onetime Token Methods
-
+    
     public static OneTimePassword ToModel(this OneTimePasswordDto dto)
     {
         return new OneTimePassword
@@ -189,11 +189,11 @@ public static class TokenExtensions
             EmailAddress = dto.EmailAddress,
             Username = dto.Username,
             Password = dto.Password,
-            Token = dto.Token.ToModel(),
+            Token = dto.Token?.ToModel(),
             MembershipId = dto.MembershipId
         };
     }
-		
+    
     public static OneTimePasswordDto ToDto(this OneTimePassword model)
     {
         return new OneTimePasswordDto
@@ -203,10 +203,10 @@ public static class TokenExtensions
             EmailAddress = model.EmailAddress,
             Username = model.Username,
             Password = model.Password,
-            Token = model.Token.ToDto(),
+            Token = model.Token?.ToDto(),
             MembershipId = model.MembershipId
         };
     }
-
+    
     #endregion
 }

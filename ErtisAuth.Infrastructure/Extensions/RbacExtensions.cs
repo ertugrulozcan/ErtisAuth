@@ -1,94 +1,90 @@
-using System;
-using System.Linq;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 
-namespace ErtisAuth.Infrastructure.Extensions
+namespace ErtisAuth.Infrastructure.Extensions;
+
+public static class RbacExtensions
 {
-	public static class RbacExtensions
+	#region Methods
+	
+	public static bool HasPermission(this Role role, Rbac rbac)
 	{
-		#region Methods
-
-		public static bool HasPermission(this Role role, Rbac rbac)
+		bool isPermittedFilter(string permission)
 		{
-			bool isPermittedFilter(string permission)
+			if (Rbac.TryParse(permission, out var userRbac) && userRbac != null)
 			{
-				if (Rbac.TryParse(permission, out var userRbac))
-				{
-					bool isSubjectPermitted = userRbac.Subject.IsAll() || userRbac.Subject.Equals(rbac.Subject);
-					bool isResourcePermitted = userRbac.Resource.IsAll() || userRbac.Resource.Equals(rbac.Resource, StringComparison.CurrentCultureIgnoreCase);
-					bool isActionPermitted = userRbac.Action.IsAll() || userRbac.Action.Equals(rbac.Action, StringComparison.CurrentCultureIgnoreCase);
-					bool isObjectPermitted = userRbac.Object.IsAll() || userRbac.Object.Equals(rbac.Object);
-
-					bool isPermitted = isSubjectPermitted && isResourcePermitted && isActionPermitted && isObjectPermitted;
-
-					if (isPermitted)
-					{
-						return true;
-					}
-				}
-
-				return false;
-			}
-
-			var matchedPermissions = role.Permissions?.Where(isPermittedFilter) ?? new string[] {};
-			var matchedForbiddens = role.Forbidden?.Where(isPermittedFilter) ?? new string[] {};
-
-			return !matchedForbiddens.Any() && matchedPermissions.Any();
-		}
-
-		public static bool HasOwnUpdatePermission(this Role role, Rbac rbac, Utilizer utilizer)
-		{
-			if (rbac.Action.Slug != Rbac.GetSegment(Rbac.CrudActions.Update).Slug)
-			{
-				return false;
-			}
-			
-			if (rbac.Resource== "users" && utilizer.Type == Utilizer.UtilizerType.User)
-			{
-				if (rbac.Object == utilizer.Id)
+				var isSubjectPermitted = userRbac.Subject.IsAll() || userRbac.Subject.Equals(rbac.Subject);
+				var isResourcePermitted = userRbac.Resource.IsAll() || userRbac.Resource.Equals(rbac.Resource, StringComparison.CurrentCultureIgnoreCase);
+				var isActionPermitted = userRbac.Action.IsAll() || userRbac.Action.Equals(rbac.Action, StringComparison.CurrentCultureIgnoreCase);
+				var isObjectPermitted = userRbac.Object.IsAll() || userRbac.Object.Equals(rbac.Object);
+				
+				var isPermitted = isSubjectPermitted && isResourcePermitted && isActionPermitted && isObjectPermitted;
+				if (isPermitted)
 				{
 					return true;
 				}
 			}
 			
-			if (rbac.Resource== "applications" && utilizer.Type == Utilizer.UtilizerType.Application)
-			{
-				if (rbac.Object == utilizer.Id)
-				{
-					return true;
-				}
-			}
-
 			return false;
 		}
 		
-		public static bool HasOwnUpdatePermission(this Role role, Rbac rbac, IUtilizer utilizer)
+		var matchedPermissions = role.Permissions?.Where(isPermittedFilter) ?? Array.Empty<string>();
+		var matchedForbiddens = role.Forbidden?.Where(isPermittedFilter) ?? Array.Empty<string>();
+		
+		return !matchedForbiddens.Any() && matchedPermissions.Any();
+	}
+	
+	public static bool HasOwnUpdatePermission(this Role _, Rbac rbac, Utilizer utilizer)
+	{
+		if (rbac.Action.Slug != Rbac.GetSegment(Rbac.CrudActions.Update).Slug)
 		{
-			if (rbac.Action.Slug != Rbac.GetSegment(Rbac.CrudActions.Update).Slug)
-			{
-				return false;
-			}
-			
-			if (rbac.Resource== "users" && utilizer.UtilizerType == Utilizer.UtilizerType.User)
-			{
-				if (rbac.Object == utilizer.Id)
-				{
-					return true;
-				}
-			}
-			
-			if (rbac.Resource== "applications" && utilizer.UtilizerType == Utilizer.UtilizerType.Application)
-			{
-				if (rbac.Object == utilizer.Id)
-				{
-					return true;
-				}
-			}
-
 			return false;
 		}
-
-		#endregion
+		
+		if (rbac.Resource== "users" && utilizer.Type == Utilizer.UtilizerType.User)
+		{
+			if (rbac.Object == utilizer.Id)
+			{
+				return true;
+			}
+		}
+		
+		if (rbac.Resource== "applications" && utilizer.Type == Utilizer.UtilizerType.Application)
+		{
+			if (rbac.Object == utilizer.Id)
+			{
+				return true;
+			}
+		}
+		
+		return false;
 	}
+	
+	public static bool HasOwnUpdatePermission(this Role _, Rbac rbac, IUtilizer utilizer)
+	{
+		if (rbac.Action.Slug != Rbac.GetSegment(Rbac.CrudActions.Update).Slug)
+		{
+			return false;
+		}
+		
+		if (rbac.Resource== "users" && utilizer.UtilizerType == Utilizer.UtilizerType.User)
+		{
+			if (rbac.Object == utilizer.Id)
+			{
+				return true;
+			}
+		}
+		
+		if (rbac.Resource== "applications" && utilizer.UtilizerType == Utilizer.UtilizerType.Application)
+		{
+			if (rbac.Object == utilizer.Id)
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	#endregion
 }

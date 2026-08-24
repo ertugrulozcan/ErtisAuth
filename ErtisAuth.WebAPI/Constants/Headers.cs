@@ -1,8 +1,7 @@
-namespace ErtisAuth.WebAPI.Constants
+namespace ErtisAuth.WebAPI.Constants;
+
+public static class Headers
 {
-	public static class Headers
-	{
-		public const string AUTHORIZATION = "Authorization";
-		public const string X_ERTIS_ALIAS = "X-Ertis-Alias";
-	}
+	public const string AUTHORIZATION = "Authorization";
+	public const string X_ERTIS_ALIAS = "X-Ertis-Alias";
 }

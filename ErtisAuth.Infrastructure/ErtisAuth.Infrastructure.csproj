@@ -1,22 +1,23 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Ertis.TemplateEngine" Version="9.0.5" />
-        <PackageReference Include="AutoMapper" Version="16.1.1" />
-        <PackageReference Include="Sentry" Version="6.4.1" />
-        <PackageReference Include="TinyMapper" Version="3.0.3" />
-        <PackageReference Include="Mapster" Version="7.4.0" />
-        <PackageReference Include="MaxMind.GeoIP2" Version="5.4.1" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.10" />
-    </ItemGroup>
-
+    
     <ItemGroup>
         <ProjectReference Include="..\ErtisAuth.Abstractions\ErtisAuth.Abstractions.csproj" />
         <ProjectReference Include="..\ErtisAuth.Dao\ErtisAuth.Dao.csproj" />
         <ProjectReference Include="..\ErtisAuth.Identity\ErtisAuth.Identity.csproj" />
         <ProjectReference Include="..\ErtisAuth.Integrations.OAuth\ErtisAuth.Integrations.OAuth.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="AutoMapper" Version="16.2.0" />
+        <PackageReference Include="Ertis.TemplateEngine" Version="10.0.0" />
+        <PackageReference Include="Mapster" Version="10.0.12" />
+        <PackageReference Include="MaxMind.GeoIP2" Version="6.1.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.11" />
+        <PackageReference Include="TinyMapper" Version="3.0.3" />
     </ItemGroup>
 </Project>

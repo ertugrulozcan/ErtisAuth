@@ -1,24 +1,24 @@
-namespace ErtisAuth.Infrastructure.Configuration
+// ReSharper disable UnusedMember.Global
+namespace ErtisAuth.Infrastructure.Configuration;
+
+public interface IIp2LocationOptions
 {
-	public interface IIp2LocationOptions
-	{
-		#region Properties
-		
-		string LicenseKey { get; set; }
-		
-		string Package { get; set; }
-		
-		#endregion
-	}
+	#region Properties
 	
-	public class Ip2LocationOptions : IIp2LocationOptions
-	{
-		#region Properties
+	string? LicenseKey { get; set; }
+	
+	string? Package { get; set; }
+	
+	#endregion
+}
 
-		public string LicenseKey { get; set; }
-		
-		public string Package { get; set; }
-
-		#endregion
-	}
+public class Ip2LocationOptions : IIp2LocationOptions
+{
+	#region Properties
+	
+	public string? LicenseKey { get; set; }
+	
+	public string? Package { get; set; }
+	
+	#endregion
 }

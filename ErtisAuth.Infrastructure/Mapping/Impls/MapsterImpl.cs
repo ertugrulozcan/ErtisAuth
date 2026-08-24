@@ -1,31 +1,32 @@
 using Mapster;
 
-namespace ErtisAuth.Infrastructure.Mapping.Impls
+// ReSharper disable UnusedType.Global
+// ReSharper disable MemberCanBePrivate.Global
+namespace ErtisAuth.Infrastructure.Mapping.Impls;
+
+public class MapsterImpl : MapperBase, IMapper
 {
-	public class MapsterImpl : MapperBase, IMapper
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="typeMap"></param>
+	public MapsterImpl(MappingCollection typeMap) : base(typeMap)
 	{
-		#region Constructors
-
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		/// <param name="typeMap"></param>
-		public MapsterImpl(MappingCollection typeMap) : base(typeMap)
-		{
-			
-		}
-
-		#endregion
 		
-		#region Methods
-
-		public TOut Map<TIn, TOut>(TIn instance)
-			where TIn : class
-			where TOut : class
-		{
-			return instance.Adapt<TOut>();
-		}
-
-		#endregion
 	}
+	
+	#endregion
+	
+	#region Methods
+	
+	public TOut Map<TIn, TOut>(TIn instance)
+		where TIn : class
+		where TOut : class
+	{
+		return instance.Adapt<TOut>();
+	}
+	
+	#endregion
 }

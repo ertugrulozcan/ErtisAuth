@@ -1,13 +1,13 @@
-namespace ErtisAuth.Integrations.OAuth.Core
+// ReSharper disable UnusedMemberInSuper.Global
+namespace ErtisAuth.Integrations.OAuth.Core;
+
+public interface IProviderToken
 {
-	public interface IProviderToken
-	{
-		#region Properties
-
-		string AccessToken { get; set; }
-		
-		long ExpiresIn { get; set; }
-
-		#endregion
-	}
+	#region Properties
+	
+	string? AccessToken { get; set; }
+	
+	long ExpiresIn { get; set; }
+	
+	#endregion
 }

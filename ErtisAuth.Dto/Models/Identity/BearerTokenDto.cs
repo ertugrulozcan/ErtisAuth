@@ -1,16 +1,17 @@
 using MongoDB.Bson.Serialization.Attributes;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Dto.Models.Identity;
 
 public class BearerTokenDto
 {
     #region Properties
-
+	
     [BsonElement("access_token")]
-    public string AccessToken { get; set; }
+    public string? AccessToken { get; set; }
     
     [BsonElement("refresh_token")]
-    public string RefreshToken { get; set; }
+    public string? RefreshToken { get; set; }
     
     [BsonElement("expires_in")]
     public int ExpiresIn { get; set; }

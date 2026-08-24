@@ -3,7 +3,4 @@ using ErtisAuth.Dto.Models.Identity;
 
 namespace ErtisAuth.Dao.Repositories.Interfaces;
 
-public interface IOneTimePasswordRepository : IMongoRepository<OneTimePasswordDto>
-{
-    
-}
+public interface IOneTimePasswordRepository : IMongoRepository<OneTimePasswordDto>;

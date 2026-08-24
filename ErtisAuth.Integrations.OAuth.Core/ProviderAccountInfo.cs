@@ -1,15 +1,15 @@
-namespace ErtisAuth.Integrations.OAuth.Core
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+namespace ErtisAuth.Integrations.OAuth.Core;
+
+public class ProviderAccountInfo
 {
-	public class ProviderAccountInfo
-	{
-		#region Properties
-
-		public string Provider { get; set; }
-		
-		public string UserId { get; set; }
-
-		public string Token { get; set; }
-		
-		#endregion
-	}
+	#region Properties
+	
+	public string? Provider { get; set; }
+	
+	public string? UserId { get; set; }
+	
+	public string? Token { get; set; }
+	
+	#endregion
 }

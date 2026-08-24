@@ -11,17 +11,35 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Integrations.OAuth.Apple;
 
-public interface IAppleAuthenticator : IProviderAuthenticator,
-	IProviderAuthenticator<AppleLoginRequestBase, AppleToken?, AppleUser?>;
+public interface IAppleAuthenticator : IProviderAuthenticator, IProviderAuthenticator<AppleLoginRequestBase, AppleToken, AppleUser>;
 
 public class AppleAuthenticator : IAppleAuthenticator
 {
 	#region Constants
-
+	
 	private const string VerifyTokenEndpoint = "https://appleid.apple.com/auth/token";
 	private const string RevokeTokenEndpoint = "https://appleid.apple.com/auth/revoke";
 	private const string Authority = "https://appleid.apple.com";
-
+	
+	#endregion
+	
+	#region Services
+	
+	private readonly HttpClient _httpClient;
+	
+	#endregion
+	
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="httpClientFactory"></param>
+	public AppleAuthenticator(IHttpClientFactory httpClientFactory)
+	{
+		this._httpClient = httpClientFactory.CreateClient();
+	}
+	
 	#endregion
 	
 	#region Methods
@@ -41,13 +59,12 @@ public class AppleAuthenticator : IAppleAuthenticator
 			}
 			
 			var secret = GenerateAppleClientSecret(provider);
-			if (string.IsNullOrEmpty(secret))
+			if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(provider.AppClientId) || string.IsNullOrEmpty(provider.RedirectUri))
 			{
 				return false;
 			}
 			
-			using var httpClient = new HttpClient();
-			var response = await httpClient.PostAsync(VerifyTokenEndpoint, new FormUrlEncodedContent(new[]
+			var response = await this._httpClient.PostAsync(VerifyTokenEndpoint, new FormUrlEncodedContent(new[]
 			{
 				new KeyValuePair<string, string>("client_id", provider.AppClientId),
 				new KeyValuePair<string, string>("client_secret", secret),
@@ -63,7 +80,6 @@ public class AppleAuthenticator : IAppleAuthenticator
 				{
 					// Set AccessToken
 					request.Token.AccessToken = appleBearerToken.AccessToken;
-						
 					return !string.IsNullOrEmpty(appleBearerToken.AccessToken) && !string.IsNullOrEmpty(appleBearerToken.IdToken);
 				}
 			}
@@ -85,19 +101,18 @@ public class AppleAuthenticator : IAppleAuthenticator
 			return false;
 		}
 	}
-
+	
 	public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider, CancellationToken cancellationToken = default)
 	{
 		try
 		{
 			var secret = GenerateAppleClientSecret(provider);
-			if (string.IsNullOrEmpty(secret))
+			if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(provider.AppClientId))
 			{
 				return false;
 			}
-
-			using var httpClient = new HttpClient();
-			var response = await httpClient.PostAsync(RevokeTokenEndpoint, new FormUrlEncodedContent(new[]
+			
+			var response = await this._httpClient.PostAsync(RevokeTokenEndpoint, new FormUrlEncodedContent(new[]
 			{
 				new KeyValuePair<string, string>("client_id", provider.AppClientId),
 				new KeyValuePair<string, string>("client_secret", secret),
@@ -114,16 +129,21 @@ public class AppleAuthenticator : IAppleAuthenticator
 		}
 	}
 	
-	private static string GenerateAppleClientSecret(Provider provider)
+	private static string? GenerateAppleClientSecret(Provider provider)
 	{
+		if (string.IsNullOrEmpty(provider.PrivateKey) || string.IsNullOrEmpty(provider.AppClientId))
+		{
+			return null;
+		}
+		
 		var ecdsa = ECDsa.Create();
 		ecdsa.ImportPkcs8PrivateKey(Convert.FromBase64String(ClearPrivateKey(provider.PrivateKey)), out _);
-
+		
 		var jwtHeader = new JwtHeader(new SigningCredentials(new ECDsaSecurityKey(ecdsa), SecurityAlgorithms.EcdsaSha256));
 		jwtHeader.Clear();
 		jwtHeader.Add("alg", "ES256");
 		jwtHeader.Add("kid", provider.PrivateKeyId);
-
+		
 		var jwtPayload = new JwtPayload(
 			provider.TeamId,
 			Authority,
@@ -134,7 +154,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 			DateTime.UtcNow,
 			DateTime.UtcNow.Add(TimeSpan.FromMinutes(5))
 		);
-
+		
 		var jwt = new JwtSecurityToken(jwtHeader, jwtPayload);
 		return new JwtSecurityTokenHandler().WriteToken(jwt);
 	}

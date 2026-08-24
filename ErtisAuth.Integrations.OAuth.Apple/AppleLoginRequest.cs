@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Integrations.OAuth.Apple;
 
-public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken?, AppleUser?> 
+public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken, AppleUser> 
 {
 	#region Properties
 	
@@ -12,27 +12,27 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken?,
 	public abstract KnownProviders Provider { get; }
 	
     [JsonProperty("user")]
-    public AppleUser? User { get; set; }
+    public required AppleUser User { get; set; }
     
     [JsonProperty("token")]
     public AppleToken? Token { get; set; }
-
+	
     [JsonIgnore]
-    public string? UserId => this.User?.Id;
+    public string? UserId => this.User.Id;
     
     [JsonIgnore]
-    public string? EmailAddress => this.User?.EmailAddress;
+    public string? EmailAddress => this.User.EmailAddress;
     
     [JsonIgnore]
     public string? AccessToken => this.Token?.AccessToken;
     
     [JsonIgnore]
     public string? AvatarUrl => null;
-
+	
     #endregion
-
+	
     #region Methods
-
+	
     public bool IsValid()
     {
     	if (this.User is { } user)
@@ -41,12 +41,12 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken?,
     		{
     			return false;
     		}
-    	
+			
     		if (string.IsNullOrEmpty(user.FirstName))
     		{
     			return false;
     		}
-    	
+			
     		if (string.IsNullOrEmpty(user.EmailAddress))
     		{
     			return false;
@@ -56,26 +56,26 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken?,
     	{
     		return false;
     	}
-
+		
     	// ReSharper disable once ConvertIfStatementToReturnStatement
     	if (this.Token == null || string.IsNullOrEmpty(this.Token.AccessToken))
     	{
     		return false;
     	}
-
+		
     	return true;
     }
-
-    public object ToUser(string membershipId, string role, string userType)
+	
+    public object ToUser(string membershipId, string? role, string? userType)
     {
     	return new User
     	{
     		MembershipId = membershipId,
-    		FirstName = this.User?.FirstName,
-    		LastName = this.User?.LastName,
-    		Username = this.User?.EmailAddress,
-    		EmailAddress = this.User?.EmailAddress,
-    		Role = role,
+    		FirstName = this.User.FirstName,
+    		LastName = this.User.LastName,
+    		Username = this.User.EmailAddress ?? string.Empty,
+    		EmailAddress = this.User.EmailAddress,
+    		Role = role ?? string.Empty,
     		UserType = userType,
     		SourceProvider = KnownProviders.Apple.ToString(),
     		ConnectedAccounts = new ProviderAccountInfo[]
@@ -89,7 +89,7 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken?,
     		}
     	};
     }
-
+	
     #endregion
 }
 

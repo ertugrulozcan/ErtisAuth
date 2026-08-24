@@ -1,14 +1,13 @@
 using Newtonsoft.Json;
 
-namespace ErtisAuth.WebAPI.Models.Request.Users
+namespace ErtisAuth.WebAPI.Models.Request.Users;
+
+public class ChangePasswordFormModel
 {
-	public class ChangePasswordFormModel
-	{
-		#region Properties
-
-		[JsonProperty("password")]
-		public string Password { get; set; }
-
-		#endregion
-	}
+	#region Properties
+	
+	[JsonProperty("password")]
+	public string? Password { get; set; }
+	
+	#endregion
 }
