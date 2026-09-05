@@ -40,7 +40,7 @@ public class TokenCleanerJob : IJob, IDisposable
 	
 	#region Methods
 	
-	public async Task Execute(IJobExecutionContext context)
+	public async ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -48,12 +48,12 @@ public class TokenCleanerJob : IJob, IDisposable
 			var membershipId = dataMap.GetString("membership_id");
 			if (!string.IsNullOrEmpty(membershipId))
 			{
-				var membership = await this.membershipService.GetAsync(membershipId);
+				var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 				if (membership != null)
 				{
-					await this.tokenService.ClearExpiredActiveTokens(membershipId);
-					await this.tokenService.ClearRevokedTokens(membershipId);
-					await this.tokenCodeService.ClearExpiredTokenCodes(membershipId);
+					await this.tokenService.ClearExpiredActiveTokens(membershipId, cancellationToken: cancellationToken);
+					await this.tokenService.ClearRevokedTokens(membershipId, cancellationToken: cancellationToken);
+					await this.tokenCodeService.ClearExpiredTokenCodes(membershipId, cancellationToken: cancellationToken);
 				}
 				else
 				{

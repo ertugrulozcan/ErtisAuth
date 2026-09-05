@@ -3,7 +3,6 @@ using ErtisAuth.Extensions.Quartz.Jobs;
 using ErtisAuth.Extensions.Quartz.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
-using Quartz.AspNetCore;
 
 namespace ErtisAuth.Extensions.Quartz.Extensions;
 
@@ -17,7 +16,7 @@ public static class ErtisAuthQuartzExtensions
 		services.AddQuartz();
 		
 		// Quartz on ASP.NET Core hosting
-		services.AddQuartzServer(options =>
+		services.AddQuartzHostedService(options =>
 		{
 			// when shutting down we want jobs to complete gracefully
 			options.WaitForJobsToComplete = true;

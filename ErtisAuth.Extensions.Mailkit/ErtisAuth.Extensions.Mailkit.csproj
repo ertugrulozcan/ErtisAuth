@@ -10,8 +10,8 @@
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="Ertis.Core" Version="10.0.0" />
-        <PackageReference Include="Ertis.Net" Version="10.0.0" />
+        <PackageReference Include="Ertis.Core" Version="10.0.2" />
+        <PackageReference Include="Ertis.Net" Version="10.0.1" />
         <PackageReference Include="MailKit" Version="4.17.0" />
         <PackageReference Include="SendGrid" Version="9.29.3" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />

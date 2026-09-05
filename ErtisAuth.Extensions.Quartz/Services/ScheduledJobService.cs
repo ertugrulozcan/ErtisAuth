@@ -87,7 +87,7 @@ public class ScheduledJobService : IScheduledJobService
 			var trigger = TriggerBuilder.Create()
 				.WithIdentity(jobName + "-trigger")
 				.WithSimpleSchedule(x => x
-					.WithIntervalInSeconds(membership.ExpiresIn)
+					.WithInterval(TimeSpan.FromSeconds(membership.ExpiresIn))
 					.RepeatForever())
 				.StartNow()
 				.Build();
@@ -116,7 +116,7 @@ public class ScheduledJobService : IScheduledJobService
 			var trigger = TriggerBuilder.Create()
 				.WithIdentity(jobName + "-trigger")
 				.WithSimpleSchedule(x => x
-					.WithIntervalInSeconds((int)TTLs.RESET_PASSWORD_TOKEN_TTL.TotalSeconds)
+					.WithInterval(TimeSpan.FromSeconds((int)TTLs.RESET_PASSWORD_TOKEN_TTL.TotalSeconds))
 					.RepeatForever())
 				.StartNow()
 				.Build();

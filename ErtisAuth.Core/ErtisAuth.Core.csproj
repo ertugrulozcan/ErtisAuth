@@ -11,7 +11,7 @@
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="Ertis.Core" Version="10.0.0" />
+        <PackageReference Include="Ertis.Core" Version="10.0.2" />
         <PackageReference Include="Ertis.Schema" Version="10.0.0" />
     </ItemGroup>
 </Project>
