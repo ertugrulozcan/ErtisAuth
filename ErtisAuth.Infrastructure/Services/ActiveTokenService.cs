@@ -3,38 +3,21 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Identity;
-using ErtisAuth.Infrastructure.Configuration;
 using ErtisAuth.Infrastructure.Mapping.Extensions;
 
 namespace ErtisAuth.Infrastructure.Services;
 
 public class ActiveTokenService : MembershipBoundedService<ActiveToken, ActiveTokenDto>, IActiveTokenService
 {
-	#region Services
-	
-	private readonly IGeoLocationService geoLocationService;
-	private readonly IGeoLocationOptions geoLocationOptions;
-	
-	#endregion
-	
 	#region Constructors
 	
 	/// <summary>
 	/// Constructor
 	/// </summary>
 	/// <param name="membershipService"></param>
-	/// <param name="geoLocationService"></param>
-	/// <param name="geoLocationOptions"></param>
 	/// <param name="repository"></param>
-	public ActiveTokenService(
-		IMembershipService membershipService,
-		IGeoLocationService geoLocationService,
-		IGeoLocationOptions geoLocationOptions,
-		IActiveTokensRepository repository) : base(membershipService, repository)
-	{
-		this.geoLocationService = geoLocationService;
-		this.geoLocationOptions = geoLocationOptions;
-	}
+	public ActiveTokenService(IMembershipService membershipService, IActiveTokensRepository repository) : base(membershipService, repository)
+	{ }
 	
 	#endregion
 	
@@ -60,7 +43,7 @@ public class ActiveTokenService : MembershipBoundedService<ActiveToken, ActiveTo
 		string? userAgent = null,
 		CancellationToken cancellationToken = default)
 	{
-		var clientInfo = await this.GetClientInfo(ipAddress, userAgent, cancellationToken: cancellationToken);
+		var clientInfo = this.GetClientInfo(ipAddress, userAgent);
 		var insertedDto = await this.repository.InsertAsync(new ActiveTokenDto
 		{
 			AccessToken = token.AccessToken,
@@ -81,25 +64,13 @@ public class ActiveTokenService : MembershipBoundedService<ActiveToken, ActiveTo
 		return insertedDto.ToModel();
 	}
 	
-	private async Task<ClientInfo> GetClientInfo(string? ipAddress, string? userAgent, CancellationToken cancellationToken = default)
+	private ClientInfo GetClientInfo(string? ipAddress, string? userAgent)
 	{
 		var clientInfo = new ClientInfo
 		{
 			IPAddress = ipAddress,
 			UserAgent = userAgent
 		};
-		
-		try
-		{
-			if (this.geoLocationOptions.Enabled && !string.IsNullOrEmpty(ipAddress))
-			{
-				clientInfo.GeoLocation = await this.geoLocationService.LookupAsync(ipAddress, cancellationToken: cancellationToken);
-			}
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine(ex);
-		}
 		
 		return clientInfo;
 	}

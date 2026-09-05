@@ -22,7 +22,6 @@ using ErtisAuth.Extensions.Quartz.Extensions;
 using ErtisAuth.Identity.Jwt.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Adapters;
-using ErtisAuth.Infrastructure.Configuration;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.Integrations.OAuth.Extensions;
 using ErtisAuth.WebAPI.Adapters;
@@ -125,43 +124,6 @@ builder.Services.AddSingleton<IMailServiceBackgroundWorker, MailServiceBackgroun
 // Mailkit
 builder.Services.AddMailkit();
 
-// GeoLocation Tracking
-builder.Services.Configure<GeoLocationOptions>(builder.Configuration.GetSection("GeoLocationTracking"));
-builder.Services.AddSingleton<IGeoLocationOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<GeoLocationOptions>>().Value);
-if (builder.Configuration.GetSection("GeoLocationTracking").GetValue<bool>("Enabled"))
-{
-	var provider = builder.Configuration.GetSection("GeoLocationTracking").GetValue<string>("Provider");
-	if (!string.IsNullOrEmpty(provider))
-	{
-		switch (provider)
-		{
-			case "MaxMind":
-				builder.Services.Configure<MaxMindOptions>(builder.Configuration.GetSection("MaxMind"));
-				builder.Services.AddSingleton<IMaxMindOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<MaxMindOptions>>().Value);
-				builder.Services.AddSingleton<IGeoLocationService, MaxMindGeoLocationService>();
-				break;
-			case "Ip2Location":
-				builder.Services.Configure<Ip2LocationOptions>(builder.Configuration.GetSection("Ip2Location"));
-				builder.Services.AddSingleton<IIp2LocationOptions>(serviceProvider => serviceProvider.GetRequiredService<IOptions<Ip2LocationOptions>>().Value);
-				builder.Services.AddSingleton<IGeoLocationService, Ip2LocationService>();
-				break;
-			default:
-				Console.WriteLine("Unknown geo location provider: " + provider);
-				builder.Services.AddSingleton<IGeoLocationService, GeoLocationDisabledService>();
-				break;
-		}
-	}
-	else
-	{
-		Console.WriteLine("Geo location provider is undefined");
-		builder.Services.AddSingleton<IGeoLocationService, GeoLocationDisabledService>();
-	}
-}
-else
-{
-	builder.Services.AddSingleton<IGeoLocationService, GeoLocationDisabledService>();
-}
-
 // Prometheus
 builder.Services.AddPrometheus();
 
@@ -203,13 +165,6 @@ builder.Services.AddApiVersioning(o => {
 // Quartz
 builder.Services.AddQuartzJobs();
 
-// Swagger
-if (builder.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
-{
-	var swaggerVersion = $"v{major}";
-	builder.Services.AddSwaggerGen(c => { c.SwaggerDoc(swaggerVersion, new OpenApiInfo { Title = "ErtisAuth.WebAPI", Version = swaggerVersion }); });	
-}
-
 // Sentry
 var sentryDsn = builder.Configuration.GetSection("Sentry").GetValue<string>("Dsn");
 if (!string.IsNullOrEmpty(sentryDsn))
@@ -234,6 +189,20 @@ builder.Logging.AddJsonConsole(options =>
 	options.TimestampFormat = "HH:mm:ss";
 });
 
+// Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+	options.SwaggerDoc("v1", new OpenApiInfo
+	{
+		Title = "ErtisAuth.WebAPI",
+		Description = "ErtisAuth API Documentation",
+		Version = $"v{major}"
+	});
+	
+	options.CustomSchemaIds(x => x.FullName);
+});
+
 builder.Services
 	.AddControllers()
 	.AddNewtonsoftJson(options =>
@@ -248,15 +217,10 @@ builder.Services.AddRazorPages();
 var app = builder.Build();
 
 // Swagger
-if (app.Environment.IsDevelopment() && builder.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEnabled"))
+if (app.Environment.IsDevelopment())
 {
 	app.UseSwagger();
-	app.UseSwaggerUI(options =>
-	{
-		var swaggerVersion = $"V{major}";
-		options.SwaggerEndpoint("/swagger/v1/swagger.json", "ErtisAuth.WebAPI " + swaggerVersion);
-		options.DefaultModelsExpandDepth(-1);
-	});	
+	app.UseSwaggerUI();
 }
 
 // Database
