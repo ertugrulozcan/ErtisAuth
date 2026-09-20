@@ -1,6 +1,8 @@
+using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Integrations.OAuth.Core;
-using Newtonsoft.Json;
+using JsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Integrations.OAuth.Google;
 
@@ -9,27 +11,35 @@ public class GoogleLoginRequest : IProviderLoginRequest<GoogleToken, GoogleUser>
 	#region Properties
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public KnownProviders Provider => KnownProviders.Google;
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public required GoogleUser User { get; set; }
 	
 	[JsonProperty("token")]
+	[JsonPropertyName("token")]
 	public GoogleToken? Token { get; set; }
 	
 	[JsonProperty("clientId")]
+	[JsonPropertyName("clientId")]
 	public string? ClientId { get; set; }
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public string? UserId => this.User.Id;
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public string? EmailAddress => this.User.EmailAddress;
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public string? AccessToken => this.Token?.AccessToken;
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public string? AvatarUrl => this.User.Picture;
 	
 	#endregion

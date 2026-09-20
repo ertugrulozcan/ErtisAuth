@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using System.Text.Json;
 using Ertis.Core.Exceptions;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
@@ -148,7 +149,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				{
 					this.Context.Response.StatusCode = (int) ex.StatusCode;
 					this.Context.Response.ContentType = "application/json";
-					var result = Newtonsoft.Json.JsonConvert.SerializeObject(ex.Error);
+					var result = JsonSerializer.Serialize(ex.Error);
 					await this.Context.Response.WriteAsync(result);
 				});
 			}

@@ -27,8 +27,10 @@ public class ProviderRepository : RepositoryBase<ProviderDto>, IProviderReposito
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
-	/// <param name="actionBinder"></param>
-	public ProviderRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(clientProvider, settings, "providers", actionBinder)
+	public ProviderRepository(
+		IMongoClientProvider clientProvider, 
+		IDatabaseSettings settings) : 
+		base(clientProvider, settings, "providers")
 	{
 		
 	}

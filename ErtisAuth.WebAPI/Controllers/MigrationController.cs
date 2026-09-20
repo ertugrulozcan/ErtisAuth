@@ -3,13 +3,13 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Applications;
-using ErtisAuth.WebAPI.Models.Request.Migration;
+using ErtisAuth.WebAPI.Models.Migration;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
-[Route("api/v{v:apiVersion}/migrate")]
+[Route("migrate")]
 public class MigrationController : ControllerBase
 {
 	#region Services

@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Linq;
+using NewtonsoftJsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
 // ReSharper disable UnusedMember.Global
 namespace ErtisAuth.Core.Models.Identity;
@@ -10,14 +10,14 @@ public class ScopedBearerToken : TokenBase
 {
     #region Properties
 	
-	[JsonProperty("token_type")]
 	[JsonPropertyName("token_type")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
-	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+	[NewtonsoftJsonProperty("token_type")]
+	[JsonConverter(typeof(JsonStringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	public override SupportedTokenTypes TokenType => SupportedTokenTypes.Bearer;
 	
-	[JsonProperty("scopes")]
 	[JsonPropertyName("scopes")]
+	[NewtonsoftJsonProperty("scopes")]
 	public string[]? Scopes { get; set; }
 	
 	#endregion
@@ -65,31 +65,20 @@ public class ScopedBearerToken : TokenBase
 		};
 	}
 	
-	public static ScopedBearerToken ParseFromJson(string json)
+	public static ScopedBearerToken? ParseFromJson(string json)
 	{
-		var bearerToken = new ScopedBearerToken();
-		
-		var obj = JsonConvert.DeserializeObject(json);
-		if (obj is JObject jObject)
+		var bearerToken = System.Text.Json.JsonSerializer.Deserialize<BearerToken>(json);
+		if (bearerToken == null)
 		{
-			if (jObject.TryGetValue("access_token", out var accessToken))
-			{
-				var access_token = accessToken.ToString();
-				bearerToken.AccessToken = access_token;
-			}
-			
-			if (jObject.TryGetValue("expires_in", out var expiresIn) && int.TryParse(expiresIn.ToString(), out var expires_in))
-			{
-				bearerToken.ExpiresIn = TimeSpan.FromSeconds(expires_in);
-			}
-			
-			if (jObject.TryGetValue("created_at", out var createdAt) && DateTime.TryParse(createdAt.ToString(), out var created_at))
-			{
-				bearerToken.CreatedAt = created_at;
-			}
+			return null;
 		}
 		
-		return bearerToken;
+		return new ScopedBearerToken
+		{
+			AccessToken = bearerToken.AccessToken,
+			ExpiresIn = bearerToken.ExpiresIn,
+			CreatedAt = bearerToken.CreatedAt
+		};
 	}
 	
 	#endregion

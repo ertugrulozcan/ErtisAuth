@@ -16,7 +16,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("tokens")]
-[Route("api/v{v:apiVersion}/memberships/{membershipId}/active-tokens")]
+[Route("memberships/{membershipId}/active-tokens")]
 public class ActiveTokensController : QueryControllerBase
 {
 	#region Services

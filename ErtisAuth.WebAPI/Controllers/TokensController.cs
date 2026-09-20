@@ -6,13 +6,12 @@ using ErtisAuth.Integrations.OAuth.Facebook;
 using ErtisAuth.Integrations.OAuth.Google;
 using ErtisAuth.Integrations.OAuth.Microsoft;
 using ErtisAuth.WebAPI.Extensions;
-using ErtisAuth.WebAPI.Models.Request.Tokens;
+using ErtisAuth.WebAPI.Models.Tokens;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
-[Route("api/v{v:apiVersion}")]
 public class TokensController : ControllerBase
 {
 	#region Services

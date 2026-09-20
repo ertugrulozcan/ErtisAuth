@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
-[Route("api/v{v:apiVersion}")]
 public class HealthCheckController : ControllerBase
 {
 	#region Services
@@ -89,12 +88,6 @@ public class HealthCheckController : ControllerBase
 	public IActionResult Ping()
 	{
 		return this.Ok("Pong");
-	}
-	
-	[HttpGet("build-id")]
-	public IActionResult BuildId()
-	{
-		return this.Ok("9.0.5.1");
 	}
 	
 	#endregion

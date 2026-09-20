@@ -2,12 +2,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.Json;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Abstractions;
 using ErtisAuth.Integrations.OAuth.Core;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
 
 namespace ErtisAuth.Integrations.OAuth.Apple;
 
@@ -75,7 +75,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 			
 			if (response.StatusCode == HttpStatusCode.OK)
 			{
-				var appleBearerToken = JsonConvert.DeserializeObject<AppleBearerToken>(await response.Content.ReadAsStringAsync(cancellationToken));
+				var appleBearerToken = JsonSerializer.Deserialize<AppleBearerToken>(await response.Content.ReadAsStringAsync(cancellationToken));
 				if (appleBearerToken != null)
 				{
 					// Set AccessToken

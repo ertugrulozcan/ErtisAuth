@@ -1,4 +1,3 @@
-using Ertis.Data.Repository;
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
@@ -28,8 +27,10 @@ public class EventRepository : RepositoryBase<EventDto>, IEventRepository
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
-	/// <param name="actionBinder"></param>
-	public EventRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(clientProvider, settings, "events", actionBinder)
+	public EventRepository(
+		IMongoClientProvider clientProvider, 
+		IDatabaseSettings settings) : 
+		base(clientProvider, settings, "events")
 	{
 		
 	}

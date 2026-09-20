@@ -1,4 +1,3 @@
-using Ertis.Data.Repository;
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
@@ -23,13 +22,11 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
 	/// <param name="collectionName"></param>
-	/// <param name="actionBinder"></param>
 	protected DynamicRepositoryBase(
 		IMongoClientProvider clientProvider, 
 		IDatabaseSettings settings, 
-		string collectionName, 
-		IRepositoryActionBinder? actionBinder = null) : 
-		base(clientProvider, settings, collectionName, actionBinder)
+		string collectionName) : 
+		base(clientProvider, settings, collectionName)
 	{
 		
 	}

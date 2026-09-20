@@ -25,7 +25,10 @@ public class CodePolicyRepository : RepositoryBase<TokenCodePolicyDto>, ICodePol
     /// </summary>
     /// <param name="clientProvider"></param>
     /// <param name="settings"></param>
-    public CodePolicyRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings) : base(clientProvider, settings, "code-policies")
+    public CodePolicyRepository(
+        IMongoClientProvider clientProvider, 
+        IDatabaseSettings settings) : 
+        base(clientProvider, settings, "code-policies")
     {
         
     }

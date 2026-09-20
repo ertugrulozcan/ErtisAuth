@@ -21,7 +21,7 @@ public class ApplicationService : MembershipBoundedService<Application>, IApplic
 	/// </summary>
 	/// <param name="ertisAuthOptions"></param>
 	/// <param name="restHandler"></param>
-	public ApplicationService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+	public ApplicationService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
 	{
 		
 	}

@@ -1,7 +1,8 @@
 using System.Text.Json.Serialization;
 using ErtisAuth.Extensions.Mailkit.Models;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
 namespace ErtisAuth.Extensions.Mailkit.Providers;
 
@@ -15,13 +16,13 @@ public interface IMailProvider
 	
 	[JsonProperty("type")]
 	[JsonPropertyName("type")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	MailProviderType Type { get; }
 	
 	[JsonProperty("deliveryMode")]
 	[JsonPropertyName("deliveryMode")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	MailDeliveryMode DeliveryMode { get; }
 	

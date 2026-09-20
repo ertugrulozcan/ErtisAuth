@@ -26,7 +26,7 @@ public abstract class MembershipBoundedService : BaseRestService
 	/// </summary>
 	/// <param name="ertisAuthOptions"></param>
 	/// <param name="restHandler"></param>
-	protected MembershipBoundedService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(restHandler)
+	protected MembershipBoundedService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(restHandler)
 	{
 		if (string.IsNullOrEmpty(ertisAuthOptions.BaseUrl))
 		{
@@ -54,7 +54,7 @@ public abstract class MembershipBoundedService<T> : ReadonlyMembershipBoundedSer
 	/// </summary>
 	/// <param name="ertisAuthOptions"></param>
 	/// <param name="restHandler"></param>
-	protected MembershipBoundedService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+	protected MembershipBoundedService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
 	{
 		
 	}

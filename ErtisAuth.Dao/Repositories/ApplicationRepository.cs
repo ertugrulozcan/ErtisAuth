@@ -1,4 +1,3 @@
-using Ertis.Data.Repository;
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
@@ -29,8 +28,10 @@ public class ApplicationRepository : RepositoryBase<ApplicationDto>, IApplicatio
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
-	/// <param name="actionBinder"></param>
-	public ApplicationRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(clientProvider, settings, "applications", actionBinder)
+	public ApplicationRepository(
+		IMongoClientProvider clientProvider, 
+		IDatabaseSettings settings) : 
+		base(clientProvider, settings, "applications")
 	{
 		
 	}

@@ -28,7 +28,10 @@ public class TokenCodeRepository : RepositoryBase<TokenCodeDto>, ITokenCodeRepos
     /// </summary>
     /// <param name="clientProvider"></param>
     /// <param name="settings"></param>
-    public TokenCodeRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings) : base(clientProvider, settings, "codes")
+    public TokenCodeRepository(
+        IMongoClientProvider clientProvider, 
+        IDatabaseSettings settings) : 
+        base(clientProvider, settings, "codes")
     {
         
     }

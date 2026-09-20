@@ -4,6 +4,7 @@ using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Extensions.Mailkit.Models;
 using Newtonsoft.Json;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Core.Models.Mailing;
 
@@ -39,7 +40,7 @@ public class MailHook : MembershipBoundedResource, IHasSysInfo
     [JsonPropertyName("event")]
     public string? Event { get; set; }
     
-    [Newtonsoft.Json.JsonIgnore]
+    [NewtonsoftJsonIgnore]
     [System.Text.Json.Serialization.JsonIgnore]
     public ErtisAuthEventType? EventType
     {
@@ -65,7 +66,7 @@ public class MailHook : MembershipBoundedResource, IHasSysInfo
     [JsonPropertyName("status")]
     public string? Status { get; set; }
     
-    [Newtonsoft.Json.JsonIgnore]
+    [NewtonsoftJsonIgnore]
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsActive => this.Status == "active";
     

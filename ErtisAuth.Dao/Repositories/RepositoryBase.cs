@@ -1,5 +1,4 @@
 using Ertis.Data.Models;
-using Ertis.Data.Repository;
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
@@ -24,13 +23,11 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
 	/// <param name="collectionName"></param>
-	/// <param name="actionBinder"></param>
 	protected RepositoryBase(
 		IMongoClientProvider clientProvider, 
 		IDatabaseSettings settings, 
-		string collectionName, 
-		IRepositoryActionBinder? actionBinder = null) : 
-		base(clientProvider, settings, collectionName, actionBinder)
+		string collectionName) : 
+		base(clientProvider, settings, collectionName)
 	{
 		
 	}

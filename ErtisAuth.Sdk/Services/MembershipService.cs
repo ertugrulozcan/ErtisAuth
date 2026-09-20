@@ -4,11 +4,9 @@ using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
-using ErtisAuth.Extensions.Mailkit.Serialization;
 using ErtisAuth.Sdk.Configuration;
 using ErtisAuth.Sdk.Helpers;
 using ErtisAuth.Sdk.Services.Interfaces;
-using Newtonsoft.Json;
 
 // ReSharper disable UnusedType.Global
 namespace ErtisAuth.Sdk.Services;
@@ -29,7 +27,7 @@ public class MembershipService : BaseRestService, IMembershipService
 	/// </summary>
 	/// <param name="ertisAuthOptions"></param>
 	/// <param name="restHandler"></param>
-	public MembershipService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(restHandler)
+	public MembershipService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(restHandler)
 	{
 		this.AuthApiBaseUrl = ertisAuthOptions.BaseUrl;
 	}
@@ -65,8 +63,7 @@ public class MembershipService : BaseRestService, IMembershipService
 			HttpMethod.Get, 
 			$"{this.AuthApiBaseUrl}/memberships/{membershipId}", 
 			null, 
-			HeaderCollection.Add("Authorization", token.ToString()),
-			converters: new JsonConverter[] { new MailProviderJsonConverter() }, 
+			HeaderCollection.Add("Authorization", token.ToString()), 
 			cancellationToken: cancellationToken);
 	}
 	
@@ -155,7 +152,7 @@ public class MembershipService : BaseRestService, IMembershipService
 			$"{this.AuthApiBaseUrl}/memberships/_query", 
 			QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 			HeaderCollection.Add("Authorization", token.ToString()),
-			new JsonRequestBody(JsonConvert.DeserializeObject(query) ?? "{}"),
+			new JsonRequestBody(query),
 			cancellationToken: cancellationToken);
 	}
 	

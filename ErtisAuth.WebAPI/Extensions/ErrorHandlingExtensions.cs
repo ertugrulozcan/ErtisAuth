@@ -1,15 +1,15 @@
 using System.Net;
+using System.Text.Json;
 using Ertis.Core.Exceptions;
 using Ertis.Core.Models.Response;
 using Ertis.Schema.Exceptions;
-using ErtisAuth.Core.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace ErtisAuth.WebAPI.Extensions;
 
 public static class ErrorHandlingExtensions
 {
-	public static void ConfigureGlobalExceptionHandler(this IApplicationBuilder app)
+	public static void UseGlobalExceptionHandler(this IApplicationBuilder app)
 	{
 		app.UseExceptionHandler(appError =>
 		{
@@ -104,22 +104,7 @@ public static class ErrorHandlingExtensions
 							break;
 					}
 					
-					if (SentrySdk.IsEnabled && contextFeature.Error is ErtisAuthException { Capture: true } ertisAuthException)
-					{
-						var sentryEvent = new SentryEvent(ertisAuthException)
-						{
-							Message = ertisAuthException.Message
-						};
-						
-						if (ertisAuthException.Extra != null)
-						{
-							sentryEvent.SetExtras(ertisAuthException.Extra);
-						}
-						
-						SentrySdk.CaptureEvent(sentryEvent);
-					}
-					
-					var json = Newtonsoft.Json.JsonConvert.SerializeObject(errorModel);
+					var json = JsonSerializer.Serialize(errorModel);
 					await context.Response.WriteAsync(json);
 					await context.Response.CompleteAsync();
 				}

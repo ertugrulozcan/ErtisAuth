@@ -21,7 +21,7 @@ public class WebhookService : MembershipBoundedService<Webhook>, IWebhookService
 	/// </summary>
 	/// <param name="ertisAuthOptions"></param>
 	/// <param name="restHandler"></param>
-	public WebhookService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+	public WebhookService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
 	{
 		
 	}

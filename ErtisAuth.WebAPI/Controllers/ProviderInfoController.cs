@@ -4,7 +4,7 @@ using ErtisAuth.Abstractions.Services;
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
-[Route("api/v{v:apiVersion}/memberships/{membershipId}/active-providers")]
+[Route("memberships/{membershipId}/active-providers")]
 public class ProviderInfoController : ControllerBase
 {
 	#region Services

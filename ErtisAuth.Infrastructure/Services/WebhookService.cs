@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
 using Ertis.Net.Http;
@@ -10,7 +11,6 @@ using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Webhooks;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Mapping;
-using Newtonsoft.Json;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -19,7 +19,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 	#region Services
 	
 	private readonly IEventService eventService;
-	private readonly IRestHandler restHandler;
+	private readonly ISystemRestHandler restHandler;
 	
 	#endregion
 	
@@ -35,7 +35,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 	public WebhookService(
 		IMembershipService membershipService, 
 		IEventService eventService,
-		IRestHandler restHandler,
+		ISystemRestHandler restHandler,
 		IWebhookRepository webhookRepository) : base(membershipService, webhookRepository)
 	{
 		this.eventService = eventService;
@@ -65,7 +65,8 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 			
 			var query = QueryBuilder.Where(expressions);
 			var webhooksDynamicCollection = this.Query(ertisAuthEvent.MembershipId, query.ToString());
-			var webhooks = JsonConvert.DeserializeObject<PaginationCollection<Webhook>>(JsonConvert.SerializeObject(webhooksDynamicCollection));
+			var json = JsonSerializer.Serialize(webhooksDynamicCollection);
+			var webhooks = JsonSerializer.Deserialize<PaginationCollection<Webhook>>(json);
 			if (webhooks != null)
 			{
 				foreach (var webhook in webhooks.Items)

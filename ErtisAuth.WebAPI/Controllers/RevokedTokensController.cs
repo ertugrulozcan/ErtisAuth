@@ -14,7 +14,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("tokens")]
-[Route("api/v{v:apiVersion}/memberships/{membershipId}/revoked-tokens")]
+[Route("memberships/{membershipId}/revoked-tokens")]
 public class RevokedTokensController : QueryControllerBase
 {
 	#region Services

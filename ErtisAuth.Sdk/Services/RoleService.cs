@@ -23,7 +23,7 @@ public class RoleService : MembershipBoundedService<Role>, IRoleService
 	/// </summary>
 	/// <param name="ertisAuthOptions"></param>
 	/// <param name="restHandler"></param>
-	public RoleService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+	public RoleService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
 	{
 		
 	}

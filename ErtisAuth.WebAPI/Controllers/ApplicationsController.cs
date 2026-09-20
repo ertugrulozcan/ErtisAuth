@@ -8,7 +8,7 @@ using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.Authorization.Annotations;
 using ErtisAuth.Identity.Attributes;
 using ErtisAuth.WebAPI.Extensions;
-using ErtisAuth.WebAPI.Models.Request.Applications;
+using ErtisAuth.WebAPI.Models.Applications;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -16,7 +16,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("applications")]
-[Route("api/v{v:apiVersion}/memberships/{membershipId}/[controller]")]
+[Route("memberships/{membershipId}/[controller]")]
 public class ApplicationsController : QueryControllerBase
 {
 	#region Services

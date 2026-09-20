@@ -12,7 +12,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("terminal")]
-[Route("api/v{v:apiVersion}/terminal")]
+[Route("terminal")]
 public class TerminalController : ControllerBase
 {
     #region Methods

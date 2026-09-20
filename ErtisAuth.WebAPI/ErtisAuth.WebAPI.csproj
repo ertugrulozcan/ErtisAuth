@@ -10,8 +10,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.11" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
-        <PackageReference Include="Sentry.AspNetCore" Version="6.10.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.17.6" />
     </ItemGroup>
     
     <ItemGroup>
@@ -20,7 +19,6 @@
         <ProjectReference Include="..\ErtisAuth.Extensions.Database\ErtisAuth.Extensions.Database.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Http\ErtisAuth.Extensions.Http.csproj" />
         <ProjectReference Include="..\ErtisAuth.Extensions.Prometheus\ErtisAuth.Extensions.Prometheus.csproj" />
-        <ProjectReference Include="..\ErtisAuth.Extensions.Quartz\ErtisAuth.Extensions.Quartz.csproj" />
         <ProjectReference Include="..\ErtisAuth.Infrastructure\ErtisAuth.Infrastructure.csproj" />
     </ItemGroup>
 </Project>

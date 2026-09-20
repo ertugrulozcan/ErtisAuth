@@ -12,7 +12,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("tokens")]
-[Route("api/v{v:apiVersion}/memberships/{membershipId}/codes")]
+[Route("memberships/{membershipId}/codes")]
 public class TokenCodesController : ControllerBase
 {
     #region Services

@@ -2,7 +2,8 @@ using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
 namespace ErtisAuth.Core.Models.Identity;
 
@@ -29,7 +30,7 @@ public struct Utilizer
 	
 	[JsonProperty("type")]
 	[JsonPropertyName("type")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public UtilizerType Type { get; set; }
 	
@@ -64,7 +65,7 @@ public struct Utilizer
 	
 	[JsonProperty("tokenType")]
 	[JsonPropertyName("tokenType")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public SupportedTokenTypes TokenType { get; set; }
 	

@@ -1,4 +1,3 @@
-using Ertis.Data.Repository;
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
@@ -25,8 +24,10 @@ public class MembershipRepository : RepositoryBase<MembershipDto>, IMembershipRe
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
-	/// <param name="actionBinder"></param>
-	public MembershipRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(clientProvider, settings, "memberships", actionBinder)
+	public MembershipRepository(
+		IMongoClientProvider clientProvider, 
+		IDatabaseSettings settings) : 
+		base(clientProvider, settings, "memberships")
 	{
 		
 	}

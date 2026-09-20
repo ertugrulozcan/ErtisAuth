@@ -26,7 +26,7 @@ public class UserService : MembershipBoundedService<User>, IUserService
 	/// </summary>
 	/// <param name="ertisAuthOptions"></param>
 	/// <param name="restHandler"></param>
-	public UserService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+	public UserService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
 	{
 		
 	}
@@ -67,13 +67,12 @@ public class UserService : MembershipBoundedService<User>, IUserService
 		Sorting? sorting = null,
 		CancellationToken cancellationToken = default)
 	{
-		var body = (string.IsNullOrEmpty(query) ? new { } : Newtonsoft.Json.JsonConvert.DeserializeObject(query)) ?? new { };
 		return await this.ExecuteRequestAsync<PaginationCollection<T>>(
 			HttpMethod.Post,
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/_query",
 			QueryStringHelper.GetQueryString(skip, limit, withCount, sorting),
 			HeaderCollection.Add("Authorization", token.ToString()),
-			new JsonRequestBody(body),
+			new JsonRequestBody(query),
 			cancellationToken: cancellationToken);
 	}
 	
@@ -107,7 +106,7 @@ public class UserService : MembershipBoundedService<User>, IUserService
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/active-tokens/_query", 
 			QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 			HeaderCollection.Add("Authorization", token.ToString()),
-			new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)!),
+			new JsonRequestBody(query),
 			cancellationToken: cancellationToken);
 	}
 	
@@ -141,7 +140,7 @@ public class UserService : MembershipBoundedService<User>, IUserService
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/revoked-tokens/_query", 
 			QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 			HeaderCollection.Add("Authorization", token.ToString()),
-			new JsonRequestBody(Newtonsoft.Json.JsonConvert.DeserializeObject(query)!),
+			new JsonRequestBody(query),
 			cancellationToken: cancellationToken);
 	}
 	

@@ -4,7 +4,8 @@ using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.Mailkit.Providers;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
 namespace ErtisAuth.Core.Models.Memberships;
 
@@ -70,7 +71,7 @@ public class Membership : ResourceBase, IHasSysInfo
 	
 	[JsonProperty("user_activation")]
 	[JsonPropertyName("user_activation")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public Status UserActivation { get; set; }
 	

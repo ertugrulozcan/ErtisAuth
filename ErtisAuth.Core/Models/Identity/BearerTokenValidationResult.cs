@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 // ReSharper disable MemberCanBePrivate.Global
 namespace ErtisAuth.Core.Models.Identity;
@@ -13,7 +14,7 @@ public readonly struct BearerTokenValidationResult : ITokenValidationResult
 	[JsonPropertyName("verified")]
 	public bool IsValidated { get; }
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public bool IsRefreshToken { get; }
 	
@@ -36,15 +37,15 @@ public readonly struct BearerTokenValidationResult : ITokenValidationResult
 		}
 	}
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public string[]? Scopes { get; init; }
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public User? User { get; }
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public TimeSpan RemainingTime { get; }
 	

@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
@@ -13,8 +14,8 @@ public class ActivationToken
 	[JsonProperty("reset_token")]
 	[JsonPropertyName("reset_token")]
 	public string Token { get; protected set; }
-		
-	[Newtonsoft.Json.JsonIgnore]
+	
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public TimeSpan ExpiresIn { get; protected set; }
 	
@@ -26,7 +27,7 @@ public class ActivationToken
 	[JsonPropertyName("created_at")]
 	public DateTime CreatedAt { get; protected set; }
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public bool IsExpired => DateTime.Now > this.CreatedAt.Add(this.ExpiresIn);
 	

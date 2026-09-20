@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Ertis.Core.Collections;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
@@ -5,7 +6,6 @@ using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Events;
 using MongoDB.Bson;
-using Newtonsoft.Json;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -56,14 +56,14 @@ public class EventService : MembershipBoundedService<ErtisAuthEventBase, EventDt
 		BsonDocument? documentBson = null;
 		if (ertisAuthEvent.Document != null)
 		{
-			string documentJson = JsonConvert.SerializeObject(ertisAuthEvent.Document);
+			string documentJson = JsonSerializer.Serialize(ertisAuthEvent.Document);
 			documentBson = BsonDocument.Parse(documentJson);
 		}
 		
 		BsonDocument? priorBson = null;
 		if (ertisAuthEvent.Prior != null)
 		{
-			string priorJson = JsonConvert.SerializeObject(ertisAuthEvent.Prior);
+			string priorJson = JsonSerializer.Serialize(ertisAuthEvent.Prior);
 			priorBson = BsonDocument.Parse(priorJson);
 		}
 		

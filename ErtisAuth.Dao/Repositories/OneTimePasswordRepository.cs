@@ -25,7 +25,10 @@ public class OneTimePasswordRepository : RepositoryBase<OneTimePasswordDto>, IOn
     /// </summary>
     /// <param name="clientProvider"></param>
     /// <param name="settings"></param>
-    public OneTimePasswordRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings) : base(clientProvider, settings, "otps")
+    public OneTimePasswordRepository(
+        IMongoClientProvider clientProvider, 
+        IDatabaseSettings settings) : 
+        base(clientProvider, settings, "otps")
     {
         
     }

@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
 // ReSharper disable UnusedMember.Global
 namespace ErtisAuth.Extensions.Mailkit.Models;
@@ -96,8 +97,8 @@ public class MailChimpRecipient
     
     [JsonProperty("type")]
     [JsonPropertyName("type")]
-    [Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
     [System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+    [NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
     public MailChimpRecipientType Type { get; set; }
     
     #endregion

@@ -24,7 +24,10 @@ public class RevokedTokensRepository : RepositoryBase<RevokedTokenDto>, IRevoked
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
-	public RevokedTokensRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings) : base(clientProvider, settings, "revoked_tokens")
+	public RevokedTokensRepository(
+		IMongoClientProvider clientProvider, 
+		IDatabaseSettings settings) : 
+		base(clientProvider, settings, "revoked_tokens")
 	{
 		
 	}

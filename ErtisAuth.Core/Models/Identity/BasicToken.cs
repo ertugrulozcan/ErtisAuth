@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
 namespace ErtisAuth.Core.Models.Identity;
 
@@ -10,7 +11,7 @@ public class BasicToken : TokenBase
 	
 	[JsonProperty("token_type")]
 	[JsonPropertyName("token_type")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public override SupportedTokenTypes TokenType => SupportedTokenTypes.Basic;
 	

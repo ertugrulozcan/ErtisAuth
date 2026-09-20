@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
-[Route("api/v{v:apiVersion}/server")]
+[Route("server")]
 public class ServerController : ControllerBase
 {
 	#region Services

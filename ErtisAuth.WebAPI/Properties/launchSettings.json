@@ -3,9 +3,9 @@
 	"profiles": {
 		"ErtisAuth.WebAPI": {
 			"commandName": "Project",
-			"dotnetRunMessages": "true",
+			"dotnetRunMessages": true,
 			"launchBrowser": true,
-			"launchUrl": "swagger",
+			"launchUrl": "documentation",
 			"applicationUrl": "http://localhost:9716",
 			"environmentVariables": {
 				"ASPNETCORE_ENVIRONMENT": "Development"

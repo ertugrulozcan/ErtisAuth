@@ -2,15 +2,16 @@ using Ertis.Schema.Dynamics.Legacy;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Events;
+using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Extensions.Hosting;
 using ErtisAuth.Extensions.Mailkit.Models;
+using ErtisAuth.Extensions.Mailkit.Providers;
 using ErtisAuth.Extensions.Mailkit.Services.Interfaces;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class MailServiceBackgroundWorker : BackgroundWorker<MailServiceBackgroundWorkerArgs>, IMailServiceBackgroundWorker
+public class MailServiceBackgroundWorker : IMailServiceBackgroundWorker
 {
     #region Services
 	
@@ -28,13 +29,10 @@ public class MailServiceBackgroundWorker : BackgroundWorker<MailServiceBackgroun
 	/// <param name="mailService"></param>
 	/// <param name="eventService"></param>
 	/// <param name="userRepository"></param>
-	/// <param name="taskQueue"></param>
 	public MailServiceBackgroundWorker(
 		IMailService mailService,
 		IEventService eventService,
-		IUserRepository userRepository,
-		IBackgroundTaskQueue taskQueue) :
-		base(taskQueue)
+		IUserRepository userRepository)
 	{
 		this._mailService = mailService;
 		this._eventService = eventService;
@@ -45,7 +43,7 @@ public class MailServiceBackgroundWorker : BackgroundWorker<MailServiceBackgroun
 	
 	#region Methods
 	
-	protected override async ValueTask ExecuteAsync(MailServiceBackgroundWorkerArgs? args = null, CancellationToken cancellationToken = default)
+	private async ValueTask ExecuteAsync(MailServiceBackgroundWorkerArgs? args = null, CancellationToken cancellationToken = default)
 	{
 		if (args?.Mailhook == null || args.MailProvider == null)
 		{
@@ -156,6 +154,25 @@ public class MailServiceBackgroundWorker : BackgroundWorker<MailServiceBackgroun
 			}
 		}
 	}
+	
+	#endregion
+}
+
+public class MailServiceBackgroundWorkerArgs
+{
+	#region Properties
+	
+	public MailHook? Mailhook { get; init; }
+	
+	public IMailProvider? MailProvider { get; init; }
+	
+	public string? UserId { get; init; }
+	
+	public string? MembershipId { get; init; }
+	
+	public object? Payload { get; init; }
+	
+	public MailHookVariable[]? Variables { get; init; }
 	
 	#endregion
 }

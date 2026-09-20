@@ -4,7 +4,8 @@ using Ertis.Net.Http;
 using ErtisAuth.Extensions.Mailkit.Extensions;
 using ErtisAuth.Extensions.Mailkit.Models;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
 namespace ErtisAuth.Extensions.Mailkit.Providers;
 
@@ -18,13 +19,13 @@ public class MailChimpProvider : IMailProvider
 	
     [JsonProperty("type")]
     [JsonPropertyName("type")]
-    [Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+    [NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
     [System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
     public MailProviderType Type => MailProviderType.MailChimp;
     
     [JsonProperty("deliveryMode")]
     [JsonPropertyName("deliveryMode")]
-    [Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+    [NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
     [System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
     public MailDeliveryMode DeliveryMode => MailDeliveryMode.Template;
 	

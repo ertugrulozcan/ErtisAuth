@@ -21,7 +21,7 @@ public class MicrosoftAuthenticator : IMicrosoftAuthenticator
 	
 	#region Services
 	
-	private readonly IRestHandler restHandler;
+	private readonly ISystemRestHandler restHandler;
 	
 	#endregion
 	
@@ -31,7 +31,7 @@ public class MicrosoftAuthenticator : IMicrosoftAuthenticator
 	/// Constructor
 	/// </summary>
 	/// <param name="restHandler"></param>
-	public MicrosoftAuthenticator(IRestHandler restHandler)
+	public MicrosoftAuthenticator(ISystemRestHandler restHandler)
 	{
 		this.restHandler = restHandler;
 	}

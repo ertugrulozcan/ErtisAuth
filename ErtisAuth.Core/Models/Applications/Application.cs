@@ -3,6 +3,7 @@ using Ertis.Core.Helpers;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Identity;
 using Newtonsoft.Json;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Core.Models.Applications;
 
@@ -46,7 +47,7 @@ public class Application : MembershipBoundedResource, IUtilizer, IHasSysInfo
 	[JsonPropertyName("sys")]
 	public SysModel? Sys { get; set; }
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public Utilizer.UtilizerType UtilizerType => Utilizer.UtilizerType.Application;
 	

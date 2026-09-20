@@ -1,6 +1,8 @@
+using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Integrations.OAuth.Core;
-using Newtonsoft.Json;
+using JsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Integrations.OAuth.Microsoft;
 
@@ -9,27 +11,35 @@ public class MicrosoftLoginRequest : IProviderLoginRequest<MicrosoftToken, Micro
 	#region Properties
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public KnownProviders Provider => KnownProviders.Microsoft;
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public required MicrosoftUser User { get; set; }
 	
 	[JsonProperty("token")]
+	[JsonPropertyName("token")]
 	public MicrosoftToken? Token { get; set; }
 	
 	[JsonProperty("clientId")]
+	[JsonPropertyName("clientId")]
 	public string? ClientId { get; set; }
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public string? UserId => this.User.Id;
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public string? EmailAddress => this.User.EmailAddress;
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public string? AccessToken => this.Token?.AccessToken;
 	
 	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public string? AvatarUrl => this.User.Photo;
 	
 	#endregion

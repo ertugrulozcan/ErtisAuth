@@ -1,30 +1,32 @@
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Linq;
+using NewtonsoftJsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Local
 namespace ErtisAuth.Core.Models.Identity;
 
 public class BearerToken : TokenBase, IRefreshableToken
 {
 	#region Properties
 	
-	[JsonProperty("token_type")]
 	[JsonPropertyName("token_type")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
-	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+	[NewtonsoftJsonProperty("token_type")]
+	[JsonConverter(typeof(JsonStringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	public override SupportedTokenTypes TokenType => SupportedTokenTypes.Bearer;
 	
-	[JsonProperty("refresh_token")]
 	[JsonPropertyName("refresh_token")]
+	[NewtonsoftJsonProperty("refresh_token")]
 	public string? RefreshToken { get; private set; }
 	
-	[Newtonsoft.Json.JsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
+	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public TimeSpan RefreshExpiresIn { get; private set; }
 	
-	[JsonProperty("refresh_token_expires_in")]
 	[JsonPropertyName("refresh_token_expires_in")]
+	[NewtonsoftJsonProperty("refresh_token_expires_in")]
 	public int RefreshTokenExpiresInTimeStamp => (int) this.RefreshExpiresIn.TotalSeconds;
 	
 	#endregion
@@ -68,45 +70,9 @@ public class BearerToken : TokenBase, IRefreshableToken
 		};
 	}
 	
-	public static BearerToken ParseFromJson(string json)
+	public static BearerToken? ParseFromJson(string json)
 	{
-		var bearerToken = new BearerToken();
-		
-		var obj = JsonConvert.DeserializeObject(json);
-		if (obj is JObject jObject)
-		{
-			if (jObject.TryGetValue("access_token", out var accessTokenNode))
-			{
-				var access_token = accessTokenNode.ToString();
-				bearerToken.AccessToken = access_token;
-			}
-			
-			if (jObject.TryGetValue("refresh_token", out var refreshTokenNode))
-			{
-				var refresh_token = refreshTokenNode.ToString();
-				bearerToken.RefreshToken = refresh_token;
-			}
-			
-			if (jObject.TryGetValue("expires_in", out var expiresInNode))
-			{
-				int.TryParse(expiresInNode.ToString(), out var expires_in);
-				bearerToken.ExpiresIn = TimeSpan.FromSeconds(expires_in);
-			}
-			
-			if (jObject.TryGetValue("refresh_token_expires_in", out var refreshTokenExpiresInNode))
-			{
-				int.TryParse(refreshTokenExpiresInNode.ToString(), out var refresh_token_expires_in);
-				bearerToken.RefreshExpiresIn = TimeSpan.FromSeconds(refresh_token_expires_in);
-			}
-			
-			if (jObject.TryGetValue("created_at", out var createdAtNode))
-			{
-				DateTime.TryParse(createdAtNode.ToString(), out var created_at);
-				bearerToken.CreatedAt = created_at;
-			}
-		}
-		
-		return bearerToken;
+		return System.Text.Json.JsonSerializer.Deserialize<BearerToken>(json);
 	}
 	
 	#endregion

@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Applications;
 using Newtonsoft.Json;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Core.Models.Identity;
 
@@ -16,7 +17,7 @@ public readonly struct BasicTokenValidationResult : ITokenValidationResult
 	[JsonPropertyName("token")]
 	public string Token { get; }
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public Application Application { get; }
 	

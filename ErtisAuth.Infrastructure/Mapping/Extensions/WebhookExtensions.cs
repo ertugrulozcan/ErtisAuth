@@ -1,5 +1,4 @@
 using ErtisAuth.Core.Models.Webhooks;
-using ErtisAuth.Dto.Extensions;
 using ErtisAuth.Dto.Models.Webhooks;
 using MongoDB.Bson;
 
@@ -53,7 +52,7 @@ public static class WebhookExtensions
             Url = dto.Url,
             Method = dto.Method,
             Headers = dto.Headers,
-            Body = dto.Body?.ToDynamicObject()
+            Body = dto.Body
         };
     }
     

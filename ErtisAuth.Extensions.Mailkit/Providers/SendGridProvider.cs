@@ -1,10 +1,11 @@
 using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
 using ErtisAuth.Extensions.Mailkit.Models;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using SendGrid;
 using SendGrid.Helpers.Mail;
+using Newtonsoft.Json;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
 namespace ErtisAuth.Extensions.Mailkit.Providers;
 
@@ -18,13 +19,13 @@ public class SendGridProvider : IMailProvider
 	
 	[JsonProperty("type")]
 	[JsonPropertyName("type")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public MailProviderType Type => MailProviderType.SendGrid;
 	
 	[JsonProperty("deliveryMode")]
 	[JsonPropertyName("deliveryMode")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public MailDeliveryMode DeliveryMode => MailDeliveryMode.Default; 
 	

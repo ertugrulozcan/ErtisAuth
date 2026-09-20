@@ -26,7 +26,7 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
     /// </summary>
     /// <param name="ertisAuthOptions"></param>
     /// <param name="restHandler"></param>
-    protected ReadonlyMembershipBoundedService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+    protected ReadonlyMembershipBoundedService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
     {
 	    
     }
@@ -164,13 +164,12 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
 		Sorting? sorting = null,
 		CancellationToken cancellationToken = default)
 	{
-		var body = (string.IsNullOrEmpty(query) ? new { } : Newtonsoft.Json.JsonConvert.DeserializeObject(query)) ?? new { };
 		return await this.ExecuteRequestAsync<PaginationCollection<T>>(
 			HttpMethod.Post,
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/_query",
 			QueryStringHelper.GetQueryString(skip, limit, withCount, sorting),
 			HeaderCollection.Add("Authorization", token.ToString()),
-			new JsonRequestBody(body),
+			new JsonRequestBody(query),
 			cancellationToken: cancellationToken);
 	}
 	
@@ -202,13 +201,12 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default)
 	{
-		var body = (string.IsNullOrEmpty(query) ? new { } : Newtonsoft.Json.JsonConvert.DeserializeObject(query)) ?? new { };
 		return await this.ExecuteRequestAsync<PaginationCollection<T>>(
 			HttpMethod.Post, 
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/_query", 
 			QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 			HeaderCollection.Add("Authorization", token.ToString()),
-			new JsonRequestBody(body),
+			new JsonRequestBody(query),
 			cancellationToken: cancellationToken);
 	}
 	

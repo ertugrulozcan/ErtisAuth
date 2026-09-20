@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
 using ErtisAuth.Core.Models.Events;
@@ -8,7 +9,6 @@ using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dto.Models.Mailing;
 using ErtisAuth.Events.EventArgs;
-using Newtonsoft.Json;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -78,7 +78,8 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
 			
 			var query = QueryBuilder.Where(expressions);
 			var mailHooksDynamicCollection = this.Query(ertisAuthEvent.MembershipId, query.ToString());
-			var mailHooks = JsonConvert.DeserializeObject<PaginationCollection<MailHook>>(JsonConvert.SerializeObject(mailHooksDynamicCollection));
+			var json = JsonSerializer.Serialize(mailHooksDynamicCollection);
+			var mailHooks = JsonSerializer.Deserialize<PaginationCollection<MailHook>>(json);
 			if (mailHooks != null)
 			{
 				foreach (var mailHook in mailHooks.Items)
@@ -175,6 +176,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
 				var mailProvider = membership?.MailProviders?.FirstOrDefault(x => x.Slug == mailHook.MailProvider);
 				if (mailProvider != null)
 				{
+					/*
 					await this._mailServiceBackgroundWorker.StartAsync(new MailServiceBackgroundWorkerArgs
 					{
 						Mailhook = mailHook,
@@ -184,6 +186,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
 						Payload = payload,
 						Variables = mailHook.Variables
 					});
+					*/
 				}
 			}
 		}

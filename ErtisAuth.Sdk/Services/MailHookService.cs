@@ -21,7 +21,7 @@ public class MailHookService : MembershipBoundedService<MailHook>, IMailHookServ
     /// </summary>
     /// <param name="ertisAuthOptions"></param>
     /// <param name="restHandler"></param>
-    public MailHookService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+    public MailHookService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
     {
 		
     }

@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Core.Models.Identity;
 
@@ -18,7 +19,7 @@ public class ResetPasswordToken
 	[JsonPropertyName("reset_token")]
 	public string Token { get; protected set; }
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public TimeSpan ExpiresIn
 	{
@@ -46,7 +47,7 @@ public class ResetPasswordToken
 	[JsonPropertyName("created_at")]
 	public DateTime CreatedAt { get; protected set; }
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public bool IsExpired => DateTime.UtcNow > this.CreatedAt.Add(this.ExpiresIn);
 	

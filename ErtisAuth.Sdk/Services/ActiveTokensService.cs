@@ -21,7 +21,7 @@ public class ActiveTokensService : ReadonlyMembershipBoundedService<ActiveToken>
     /// </summary>
     /// <param name="ertisAuthOptions"></param>
     /// <param name="restHandler"></param>
-    public ActiveTokensService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+    public ActiveTokensService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
     {
 		
     }

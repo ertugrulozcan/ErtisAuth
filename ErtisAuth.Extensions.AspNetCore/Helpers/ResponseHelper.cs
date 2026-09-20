@@ -1,5 +1,5 @@
+using System.Text.Json;
 using Ertis.Core.Models.Response;
-using Newtonsoft.Json;
 
 namespace ErtisAuth.Extensions.AspNetCore.Helpers;
 
@@ -11,7 +11,7 @@ public static class ResponseHelper
 	{
 		try
 		{
-			error = JsonConvert.DeserializeObject<ErrorModel>(json);
+			error = JsonSerializer.Deserialize<ErrorModel>(json);
 			return error != null;
 		}
 		catch

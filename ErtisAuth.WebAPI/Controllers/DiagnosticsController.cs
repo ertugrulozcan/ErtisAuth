@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
-[Route("api/v{v:apiVersion}/diagnostics")]
+[Route("diagnostics")]
 public class DiagnosticsController : ControllerBase
 {
 	#region Methods

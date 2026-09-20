@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Core.Models.Identity;
 
@@ -23,7 +24,7 @@ public interface IUtilizer
 	[JsonPropertyName("forbidden")]
 	IEnumerable<string>? Forbidden { get; set; }
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	Utilizer.UtilizerType UtilizerType { get; }
 	

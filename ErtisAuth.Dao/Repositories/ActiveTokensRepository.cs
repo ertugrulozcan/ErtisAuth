@@ -29,7 +29,10 @@ public class ActiveTokensRepository : RepositoryBase<ActiveTokenDto>, IActiveTok
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
-	public ActiveTokensRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings) : base(clientProvider, settings, "active_tokens")
+	public ActiveTokensRepository(
+		IMongoClientProvider clientProvider, 
+		IDatabaseSettings settings) : 
+		base(clientProvider, settings, "active_tokens")
 	{
 		
 	}

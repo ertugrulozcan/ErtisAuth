@@ -2,7 +2,9 @@ using System.Text.Json.Serialization;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Events;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Core.Models.Webhooks;
 
@@ -22,7 +24,7 @@ public class Webhook : MembershipBoundedResource, IHasSysInfo
 	[JsonPropertyName("event")]
 	public required string Event { get; set; }
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public ErtisAuthEventType? EventType
 	{
@@ -41,11 +43,11 @@ public class Webhook : MembershipBoundedResource, IHasSysInfo
 	
 	[JsonProperty("status")]
 	[JsonPropertyName("status")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public WebhookStatus? Status { get; set; }
 	
-	[Newtonsoft.Json.JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	[System.Text.Json.Serialization.JsonIgnore]
 	public bool IsActive => this.Status == WebhookStatus.Active;
 	

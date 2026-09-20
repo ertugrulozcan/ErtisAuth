@@ -1,35 +1,41 @@
 using System.Text.Json.Serialization;
 using ErtisAuth.Core.Exceptions;
-using Newtonsoft.Json;
+using NewtonsoftJsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Core.Models.Identity;
 
 public abstract class TokenBase
 {
 	#region Properties
 	
-	[JsonProperty("access_token")]
 	[JsonPropertyName("access_token")]
+	[NewtonsoftJsonProperty("access_token")]
 	public string AccessToken { get; set; } = null!;
 	
-	[JsonProperty("token_type")]
 	[JsonPropertyName("token_type")]
+	[NewtonsoftJsonProperty("token_type")]
+	[JsonConverter(typeof(JsonStringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	public abstract SupportedTokenTypes TokenType { get; }
 	
-	[Newtonsoft.Json.JsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
-	protected TimeSpan ExpiresIn { get; set; }
+	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
+	internal TimeSpan ExpiresIn { get; set; }
 	
-	[JsonProperty("expires_in")]
 	[JsonPropertyName("expires_in")]
+	[NewtonsoftJsonProperty("expires_in")]
 	public int ExpiresInTimeStamp => (int) this.ExpiresIn.TotalSeconds;
 	
-	[JsonProperty("created_at")]
 	[JsonPropertyName("created_at")]
+	[NewtonsoftJsonProperty("created_at")]
 	public DateTime CreatedAt { get; protected set; }
 	
-	[Newtonsoft.Json.JsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
+	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public bool IsExpired => DateTime.Now > this.CreatedAt.Add(this.ExpiresIn);
 	
 	#endregion

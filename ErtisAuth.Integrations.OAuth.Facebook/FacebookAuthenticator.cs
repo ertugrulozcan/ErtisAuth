@@ -27,7 +27,7 @@ public class FacebookAuthenticator : IFacebookAuthenticator
 	
 	#region Services
 	
-	private readonly IRestHandler restHandler;
+	private readonly ISystemRestHandler restHandler;
 	
 	#endregion
 	
@@ -37,7 +37,7 @@ public class FacebookAuthenticator : IFacebookAuthenticator
 	/// Constructor
 	/// </summary>
 	/// <param name="restHandler"></param>
-	public FacebookAuthenticator(IRestHandler restHandler)
+	public FacebookAuthenticator(ISystemRestHandler restHandler)
 	{
 		this.restHandler = restHandler;
 	}

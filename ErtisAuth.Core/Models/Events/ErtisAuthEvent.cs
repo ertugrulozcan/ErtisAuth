@@ -2,7 +2,8 @@ using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
 namespace ErtisAuth.Core.Models.Events;
 
@@ -12,7 +13,7 @@ public class ErtisAuthEvent : ErtisAuthEventBase
 	
 	[JsonProperty("event_type")]
 	[JsonPropertyName("event_type")]
-	[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 	public required ErtisAuthEventType EventType { get; set; }
 	

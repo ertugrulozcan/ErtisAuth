@@ -21,7 +21,7 @@ public class RevokedTokensService : ReadonlyMembershipBoundedService<RevokedToke
     /// </summary>
     /// <param name="ertisAuthOptions"></param>
     /// <param name="restHandler"></param>
-    public RevokedTokensService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+    public RevokedTokensService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
     {
 		
     }

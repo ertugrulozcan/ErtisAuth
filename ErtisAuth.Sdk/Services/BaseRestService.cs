@@ -1,7 +1,6 @@
 using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
-using Newtonsoft.Json;
 
 // ReSharper disable UnusedMember.Global
 namespace ErtisAuth.Sdk.Services;
@@ -10,7 +9,7 @@ public abstract class BaseRestService
 {
 	#region Services
 	
-	private readonly IRestHandler restHandler;
+	private readonly ISystemRestHandler restHandler;
 	
 	#endregion
 	
@@ -20,7 +19,7 @@ public abstract class BaseRestService
 	/// Constructor
 	/// </summary>
 	/// <param name="restHandler"></param>
-	protected BaseRestService(IRestHandler restHandler)
+	protected BaseRestService(ISystemRestHandler restHandler)
 	{
 		this.restHandler = restHandler;
 	}
@@ -33,10 +32,9 @@ public abstract class BaseRestService
 		HttpMethod method,
 		string url,
 		IHeaderCollection? headers = null,
-		IRequestBody? body = null, 
-		JsonConverter[]? converters = null)
+		IRequestBody? body = null)
 	{
-		return this.restHandler.ExecuteRequest<TResult>(method, url, headers, body, converters: converters);
+		return this.restHandler.ExecuteRequest<TResult>(method, url, headers, body);
 	}
     
 	public async Task<IResponseResult<TResult>> ExecuteRequestAsync<TResult>(
@@ -44,10 +42,9 @@ public abstract class BaseRestService
 		string url,
 		IHeaderCollection? headers = null,
 		IRequestBody? body = null, 
-		JsonConverter[]? converters = null, 
 		CancellationToken cancellationToken = default)
 	{
-		return await this.restHandler.ExecuteRequestAsync<TResult>(method, url, headers, body, converters: converters, cancellationToken: cancellationToken);
+		return await this.restHandler.ExecuteRequestAsync<TResult>(method, url, headers, body, cancellationToken: cancellationToken);
 	}
 	
 	protected IResponseResult<TResult> ExecuteRequest<TResult>(
@@ -55,10 +52,9 @@ public abstract class BaseRestService
 		string baseUrl,
 		IQueryString? queryString = null,
 		IHeaderCollection? headers = null,
-		IRequestBody? body = null, 
-		JsonConverter[]? converters = null)
+		IRequestBody? body = null)
 	{
-		return this.restHandler.ExecuteRequest<TResult>(method, baseUrl, queryString, headers, body, converters: converters);
+		return this.restHandler.ExecuteRequest<TResult>(method, baseUrl, queryString, headers, body);
 	}
 	
 	protected async Task<IResponseResult<TResult>> ExecuteRequestAsync<TResult>(
@@ -67,10 +63,9 @@ public abstract class BaseRestService
 		IQueryString? queryString = null,
 		IHeaderCollection? headers = null,
 		IRequestBody? body = null, 
-		JsonConverter[]? converters = null, 
 		CancellationToken cancellationToken = default)
 	{
-		return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, converters: converters, cancellationToken: cancellationToken);
+		return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken);
 	}
     
 	public IResponseResult ExecuteRequest(

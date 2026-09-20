@@ -1,4 +1,3 @@
-using Ertis.Data.Repository;
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
@@ -27,8 +26,10 @@ public class MailHookRepository : RepositoryBase<MailHookDto>, IMailHookReposito
     /// </summary>
     /// <param name="clientProvider"></param>
     /// <param name="settings"></param>
-    /// <param name="actionBinder"></param>
-    public MailHookRepository(IMongoClientProvider clientProvider, IDatabaseSettings settings, IRepositoryActionBinder actionBinder) : base(clientProvider, settings, "mailhooks", actionBinder)
+    public MailHookRepository(
+        IMongoClientProvider clientProvider, 
+        IDatabaseSettings settings) : 
+        base(clientProvider, settings, "mailhooks")
     {
 		
     }
