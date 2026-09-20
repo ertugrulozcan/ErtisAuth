@@ -1,4 +1,3 @@
-using ErtisAuth.Dto.Models.GeoLocation;
 using MongoDB.Bson.Serialization.Attributes;
 
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
@@ -13,9 +12,6 @@ public class ClientInfoDto
 	
 	[BsonElement("user_agent")]
 	public string? UserAgent { get; set; }
-	
-	[BsonElement("geo_location")]
-	public GeoLocationInfoDto? GeoLocation { get; set; }
 	
 	#endregion
 }

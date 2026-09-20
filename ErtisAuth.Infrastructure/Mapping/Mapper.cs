@@ -1,7 +1,6 @@
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
-using ErtisAuth.Core.Models.GeoLocation;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
@@ -11,7 +10,6 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Dto.Models.Applications;
 using ErtisAuth.Dto.Models.Events;
-using ErtisAuth.Dto.Models.GeoLocation;
 using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Dto.Models.Mailing;
 using ErtisAuth.Dto.Models.Memberships;
@@ -73,10 +71,6 @@ public sealed class Mapper : IMapper
 		mappings.Add<WebhookRequest, WebhookRequestDto>();
 		mappings.Add<ClientInfoDto, ClientInfo>();
 		mappings.Add<ClientInfo, ClientInfoDto>();
-		mappings.Add<GeoLocationInfoDto, GeoLocationInfo>();
-		mappings.Add<GeoLocationInfo, GeoLocationInfoDto>();
-		mappings.Add<CoordinateDto, Coordinate>();
-		mappings.Add<Coordinate, CoordinateDto>();
 		this.Implementation = new TinyMapperImpl(mappings);
 		
 		this.CustomMappers = new CustomMapperCollection();

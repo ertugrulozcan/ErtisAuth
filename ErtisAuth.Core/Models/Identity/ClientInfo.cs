@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using ErtisAuth.Core.Models.GeoLocation;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Identity;
@@ -15,10 +14,6 @@ public class ClientInfo
 	[JsonProperty("user_agent")]
 	[JsonPropertyName("user_agent")]
 	public string? UserAgent { get; set; }
-	
-	[JsonProperty("geo_location")]
-	[JsonPropertyName("geo_location")]
-	public GeoLocationInfo? GeoLocation { get; set; }
 	
 	#endregion
 }
