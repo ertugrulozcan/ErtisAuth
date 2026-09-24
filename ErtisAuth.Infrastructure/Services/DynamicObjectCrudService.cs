@@ -2,7 +2,7 @@ using Ertis.Core.Collections;
 using Ertis.MongoDB.Models;
 using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Repository;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Infrastructure.Helpers;
@@ -105,12 +105,6 @@ public class DynamicObjectCrudService : IDynamicObjectCrudService
 				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
 			}
 			
-			Console.WriteLine(ex);
-			throw;
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine(ex);
 			throw;
 		}
 	}
@@ -134,12 +128,6 @@ public class DynamicObjectCrudService : IDynamicObjectCrudService
 				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
 			}
 			
-			Console.WriteLine(ex);
-			throw;
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine(ex);
 			throw;
 		}
 	}

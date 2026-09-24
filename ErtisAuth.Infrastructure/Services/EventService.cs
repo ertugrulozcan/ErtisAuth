@@ -4,12 +4,11 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Events;
 using MongoDB.Bson;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class EventService : MembershipBoundedService<ErtisAuthEventBase, EventDto>, IEventService
+public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventService
 {
 	#region Constructors
 	
@@ -29,8 +28,6 @@ public class EventService : MembershipBoundedService<ErtisAuthEventBase, EventDt
 	
 	public event EventHandler<ErtisAuthEvent>? EventFired;
 	
-	public event EventHandler<ErtisAuthCustomEvent>? CustomEventFired;
-	
 	#endregion
 	
 	#region Fire Methods
@@ -43,15 +40,7 @@ public class EventService : MembershipBoundedService<ErtisAuthEventBase, EventDt
 		return ertisAuthEvent;
 	}
 	
-	public async ValueTask<ErtisAuthCustomEvent> FireEventAsync(object sender, ErtisAuthCustomEvent ertisAuthCustomEvent, CancellationToken cancellationToken = default)
-	{
-		var insertedEvent = await this.SaveEventAsync(ertisAuthCustomEvent, cancellationToken: cancellationToken);
-		ertisAuthCustomEvent.Id = insertedEvent.Id;
-		this.CustomEventFired?.Invoke(sender, ertisAuthCustomEvent);
-		return ertisAuthCustomEvent;
-	}
-	
-	private async Task<EventDto> SaveEventAsync(ErtisAuthEventBase ertisAuthEvent, CancellationToken cancellationToken = default)
+	private async Task<ErtisAuthEvent> SaveEventAsync(ErtisAuthEvent ertisAuthEvent, CancellationToken cancellationToken = default)
 	{
 		BsonDocument? documentBson = null;
 		if (ertisAuthEvent.Document != null)
@@ -73,65 +62,39 @@ public class EventService : MembershipBoundedService<ErtisAuthEventBase, EventDt
 		var timeZoneDiff = local - utc;
 		ertisAuthEvent.EventTime = utc.Add(timeZoneDiff);
 		
-		string? eventType;
-		if (ertisAuthEvent.IsCustomEvent)
-		{
-			var ertisAuthCustomEvent = ertisAuthEvent as ErtisAuthCustomEvent;
-			eventType = ertisAuthCustomEvent?.EventType;
-		}
-		else
-		{
-			var ertisAuthNativeEvent = ertisAuthEvent as ErtisAuthEvent;
-			eventType = ertisAuthNativeEvent?.EventType.ToString();
-		}
+		ertisAuthEvent.Document = documentBson;
+		ertisAuthEvent.Prior = priorBson;
 		
-		if (string.IsNullOrEmpty(eventType))
-		{
-			eventType = "Unknown";
-		}
-		
-		var eventDto = new EventDto
-		{
-			EventType = eventType,
-			UtilizerId = ertisAuthEvent.UtilizerId,
-			MembershipId = ertisAuthEvent.MembershipId,
-			Document = documentBson,
-			Prior = priorBson,
-			EventTime = ertisAuthEvent.EventTime
-		};
-		
-		return await this.repository.InsertAsync(eventDto, cancellationToken: cancellationToken);
+		return await this._repository.InsertAsync(ertisAuthEvent, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
 	
 	#region Get Methods
 	
-	public override ErtisAuthEventBase? Get(string membershipId, string id)
+	public override ErtisAuthEvent? Get(string membershipId, string id)
 	{
-		var membership = this.membershipService.Get(membershipId);
+		var membership = this._membershipService.Get(membershipId);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var dto = this.repository.FindOne(x => x.Id == id && x.MembershipId == membershipId);
-		return dto != null ? DtoToModel(dto) : null;
+		return this._repository.FindOne(x => x.Id == id && x.MembershipId == membershipId);
 	}
 	
-	public override async ValueTask<ErtisAuthEventBase?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async ValueTask<ErtisAuthEvent?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var dto = await this.repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-		return dto != null ? DtoToModel(dto) : null;
+		return await this._repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 	}
 	
-	public override IPaginationCollection<ErtisAuthEventBase> Get(
+	public override IPaginationCollection<ErtisAuthEvent> Get(
 		string membershipId, 
 		int? skip = null, 
 		int? limit = null, 
@@ -139,21 +102,16 @@ public class EventService : MembershipBoundedService<ErtisAuthEventBase, EventDt
 		string? orderBy = null, 
 		SortDirection? sortDirection = null)
 	{
-		var membership = this.membershipService.Get(membershipId);
+		var membership = this._membershipService.Get(membershipId);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var paginatedDtoCollection = this.repository.Find(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
-		return new PaginationCollection<ErtisAuthEventBase>
-        {
-        	Items = paginatedDtoCollection.Items.Select(DtoToModel),
-        	Count = paginatedDtoCollection.Count
-        };
+		return this._repository.Find(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
 	}
 	
-	public override async ValueTask<IPaginationCollection<ErtisAuthEventBase>> GetAsync(
+	public override async ValueTask<IPaginationCollection<ErtisAuthEvent>> GetAsync(
 		string membershipId, 
 		int? skip = null, 
 		int? limit = null, 
@@ -162,62 +120,13 @@ public class EventService : MembershipBoundedService<ErtisAuthEventBase, EventDt
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var paginatedDtoCollection = await this.repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
-		return new PaginationCollection<ErtisAuthEventBase>
-		{
-			Items = paginatedDtoCollection.Items.Select(DtoToModel),
-			Count = paginatedDtoCollection.Count
-		};
-	}
-	
-	#endregion
-	
-	#region Mapping Methods
-	
-	private static ErtisAuthEventBase DtoToModel(EventDto dto)
-	{
-		if (dto.IsCustomEvent)
-		{
-			return DtoToCustomModel(dto);
-		}
-		else
-		{
-			return DtoToNativeModel(dto);
-		}
-	}
-	
-	private static ErtisAuthEvent DtoToNativeModel(EventDto dto)
-	{
-		return new ErtisAuthEvent
-		{
-			Id = dto.Id,
-			MembershipId = dto.MembershipId,
-			UtilizerId = dto.UtilizerId,
-			EventType = Enum.Parse<ErtisAuthEventType>(dto.EventType),
-			Document = dto.Document,
-			Prior = dto.Prior,
-			EventTime = dto.EventTime
-		};
-	}
-	
-	private static ErtisAuthCustomEvent DtoToCustomModel(EventDto dto)
-	{
-		return new ErtisAuthCustomEvent
-		{
-			Id = dto.Id,
-			MembershipId = dto.MembershipId,
-			UtilizerId = dto.UtilizerId,
-			EventType = dto.EventType,
-			Document = dto.Document,
-			Prior = dto.Prior,
-			EventTime = dto.EventTime
-		};			
+		return await this._repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -226,48 +135,48 @@ public class EventService : MembershipBoundedService<ErtisAuthEventBase, EventDt
 	
 	public dynamic? GetDynamic(string membershipId, string id)
 	{
-		var membership = this.membershipService.Get(membershipId);
+		var membership = this._membershipService.Get(membershipId);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var result = this.repository.Query(x => x.Id == id && x.MembershipId == membershipId, 0, 1, sorting: null);
+		var result = this._repository.Query(x => x.Id == id && x.MembershipId == membershipId, 0, 1, sorting: null);
 		return result.Items.FirstOrDefault();
 	}
 	
 	public async ValueTask<dynamic?> GetDynamicAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var result = await this.repository.QueryAsync(x => x.Id == id && x.MembershipId == membershipId, 0, 1, sorting: null, cancellationToken: cancellationToken);
+		var result = await this._repository.QueryAsync(x => x.Id == id && x.MembershipId == membershipId, 0, 1, sorting: null, cancellationToken: cancellationToken);
 		return result.Items.FirstOrDefault();
 	}
 	
 	public IPaginationCollection<dynamic> GetDynamic(string membershipId, int? skip, int? limit, bool withCount, string? orderBy, SortDirection? sortDirection)
 	{
-		var membership = this.membershipService.Get(membershipId);
+		var membership = this._membershipService.Get(membershipId);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		return this.repository.Query(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
+		return this._repository.Query(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
 	}
 	
 	public async ValueTask<IPaginationCollection<dynamic>> GetDynamicAsync(string membershipId, int? skip, int? limit, bool withCount, string? orderBy, SortDirection? sortDirection, CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		return await this.repository.QueryAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		return await this._repository.QueryAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
 	
 	#endregion

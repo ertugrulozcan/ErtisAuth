@@ -2,14 +2,13 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Identity;
 using ErtisAuth.Infrastructure.Constants;
-using ErtisAuth.Infrastructure.Mapping.Extensions;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class RevokedTokenService : MembershipBoundedService<RevokedToken, RevokedTokenDto>, IRevokedTokenService
+public class RevokedTokenService : MembershipBoundedService<RevokedToken>, IRevokedTokenService
 {
 	#region Constants
 	
@@ -20,6 +19,7 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken, Revoke
 	#region Services
 	
 	private readonly IMemoryCache _memoryCache;
+	private readonly ILogger<RevokedTokenService> _logger;
 	
 	#endregion
 	
@@ -29,11 +29,17 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken, Revoke
 	/// Constructor
 	/// </summary>
 	/// <param name="membershipService"></param>
-	/// <param name="repository"></param>
 	/// <param name="memoryCache"></param>
-	public RevokedTokenService(IMembershipService membershipService, IRevokedTokensRepository repository, IMemoryCache memoryCache) : base(membershipService, repository)
+	/// <param name="repository"></param>
+	/// <param name="logger"></param>
+	public RevokedTokenService(
+		IMembershipService membershipService, 
+		IMemoryCache memoryCache,
+		IRevokedTokensRepository repository,
+		ILogger<RevokedTokenService> logger) : base(membershipService, repository)
 	{
 		this._memoryCache = memoryCache;
+		this._logger = logger;
 	}
 	
 	#endregion
@@ -59,8 +65,7 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken, Revoke
 		var cacheKey = GetCacheKey(accessToken);
 		if (!this._memoryCache.TryGetValue<RevokedToken>(cacheKey, out var revokedToken))
 		{
-			var dto = await this.repository.FindOneAsync(x => x.Token.AccessToken == accessToken, cancellationToken: cancellationToken);
-			revokedToken = dto?.ToModel();
+			revokedToken = await this._repository.FindOneAsync(x => x.Token == accessToken, cancellationToken: cancellationToken);
 			if (revokedToken != null)
 			{
 				this._memoryCache.Set(cacheKey, revokedToken, GetCacheTTL());	
@@ -72,9 +77,9 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken, Revoke
 	
 	public async Task RevokeAsync(ActiveToken activeToken, User user, bool isRefreshToken, CancellationToken cancellationToken = default)
 	{
-		var dto = new RevokedTokenDto
+		var revokedToken = new RevokedToken
 		{
-			Token = activeToken.ToDto(),
+			Token = activeToken.AccessToken,
 			RevokedAt = DateTime.Now,
 			UserId = user.Id,
 			UserName = user.Username,
@@ -85,35 +90,35 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken, Revoke
 			TokenType = isRefreshToken ? "refresh_token" : "bearer_token"
 		};
 		
-		await this.repository.InsertAsync(dto, cancellationToken: cancellationToken);
+		await this._repository.InsertAsync(revokedToken, cancellationToken: cancellationToken);
 		var cacheKey = GetCacheKey(activeToken.AccessToken);
-		this._memoryCache.Set(cacheKey, dto.ToModel(), GetCacheTTL());
+		this._memoryCache.Set(cacheKey, revokedToken, GetCacheTTL());
 	}
 	
 	public async ValueTask ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			var revokedTokensResult = await this.repository.FindAsync(x => x.MembershipId == membershipId && x.RevokedAt < DateTime.Now.AddHours(24), sorting: null, cancellationToken: cancellationToken);
+			var revokedTokensResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.RevokedAt < DateTime.Now.AddHours(24), sorting: null, cancellationToken: cancellationToken);
 			var revokedTokens = revokedTokensResult.Items.ToArray();
 			if (revokedTokens.Any())
 			{
-				var isDeleted = await this.repository.BulkDeleteAsync(revokedTokens, cancellationToken: cancellationToken);
+				var isDeleted = await this._repository.BulkDeleteAsync(revokedTokens, cancellationToken: cancellationToken);
 				if (isDeleted)
 				{
-					Console.WriteLine($"{revokedTokens.Length} revoked token cleared");
+					this._logger.LogInformation("{Count} revoked token cleared", revokedTokens.Length);
 				}
 				
 				foreach (var revokedToken in revokedTokens)
 				{
-					var cacheKey = GetCacheKey(revokedToken.Token.AccessToken);
+					var cacheKey = GetCacheKey(revokedToken.Token!);
 					this._memoryCache.Remove(cacheKey);	
 				}
 			}
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "RevokedTokenService.ClearRevokedTokens occured an error");
 		}
 	}
 	

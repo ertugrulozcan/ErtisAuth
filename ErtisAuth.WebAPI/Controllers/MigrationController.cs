@@ -14,7 +14,7 @@ public class MigrationController : ControllerBase
 {
 	#region Services
 	
-	private readonly IMigrationService migrationService;
+	private readonly IMigrationService _migrationService;
 	
 	#endregion
 	
@@ -26,7 +26,7 @@ public class MigrationController : ControllerBase
 	/// <param name="migrationService"></param>
 	public MigrationController(IMigrationService migrationService)
 	{
-		this.migrationService = migrationService;
+		this._migrationService = migrationService;
 	}
 	
 	#endregion
@@ -91,7 +91,7 @@ public class MigrationController : ControllerBase
 		
 		this.Request.HttpContext.Items.Add("SysUtilizer", "migration");
 		
-		var migrationResult = await this.migrationService.MigrateAsync(connectionString, membership, user, application);
+		var migrationResult = await this._migrationService.MigrateAsync(connectionString, membership, user, application);
 		
 		return this.Ok(migrationResult);
 	}

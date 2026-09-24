@@ -1,25 +1,51 @@
 using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
+using JsonConverter = System.Text.Json.Serialization.JsonConverterAttribute;
 using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
 using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
 namespace ErtisAuth.Core.Models.Events;
 
-public class ErtisAuthEvent : ErtisAuthEventBase
+public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 {
 	#region Properties
 	
 	[JsonProperty("event_type")]
 	[JsonPropertyName("event_type")]
+	[BsonElement("event_type")]
 	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
-	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+	[JsonConverter(typeof(JsonStringEnumConverter))]
+	[BsonRepresentation(BsonType.String)]
 	public required ErtisAuthEventType EventType { get; set; }
 	
-	[JsonProperty("is_custom_event")] 
-	[JsonPropertyName("is_custom_event")] 
-	public override bool IsCustomEvent => false;
+	[JsonProperty("utilizer_id")]
+	[JsonPropertyName("utilizer_id")]
+	[BsonElement("utilizer_id")]
+	public required string UtilizerId { get; set; }
+	
+	[JsonProperty("membership_id")]
+	[JsonPropertyName("membership_id")]
+	[BsonElement("membership_id")]
+	public required string MembershipId { get; set; }
+	
+	[JsonProperty("document")]
+	[JsonPropertyName("document")]
+	[BsonElement("document")]
+	public dynamic? Document { get; set; }
+	
+	[JsonProperty("prior")]
+	[JsonPropertyName("prior")]
+	[BsonElement("prior")]
+	public dynamic? Prior { get; set; }
+	
+	[JsonProperty("event_time")]
+	[JsonPropertyName("event_time")]
+	[BsonElement("event_time")]
+	public DateTime EventTime { get; set; }
 	
 	#endregion
 	

@@ -1,21 +1,18 @@
-using Ertis.Core.Models.Resources;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
+using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Helpers;
+using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Roles;
-using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Constants;
-using ErtisAuth.Infrastructure.Helpers;
-using ErtisAuth.Infrastructure.Mapping;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleService
+public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 {
 	#region Constants
 	
@@ -25,14 +22,8 @@ public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleSer
 	
 	#region Services
 	
-	private readonly IEventService eventService;
+	private readonly IEventService _eventService;
 	private readonly IMemoryCache _memoryCache;
-	
-	#endregion
-	
-	#region Properties
-	
-	private Dictionary<string, Role> ServerRoleDictionary { get; } = new();
 	
 	#endregion
 	
@@ -51,7 +42,7 @@ public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleSer
 		IMemoryCache memoryCache,
 		IRoleRepository roleRepository) : base(membershipService, roleRepository)
 	{
-		this.eventService = eventService;
+		this._eventService = eventService;
 		this._memoryCache = memoryCache;
 		
 		this.Initialize();
@@ -72,12 +63,13 @@ public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleSer
 	
 	private async ValueTask InitializeAsync()
 	{
-		var memberships = await this.membershipService.GetAsync();
+		var memberships = await this._membershipService.GetAsync();
 		foreach (var membership in memberships.Items)
 		{
 			var utilizer = new Utilizer
 			{
 				Id = "system",
+				Username = "system",
 				Role = ReservedRoles.Administrator,
 				Type = Utilizer.UtilizerType.System,
 				MembershipId = membership.Id
@@ -86,16 +78,54 @@ public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleSer
 			var adminRole = await this.GetBySlugAsync(ReservedRoles.Administrator, membership.Id);
 			if (adminRole == null)
 			{
-				await this.CreateAsync(utilizer, membership.Id, new Role
-				{
-					Name = "Administrator",
-					Slug = ReservedRoles.Administrator,
-					Description = "Administrator",
-					MembershipId = membership.Id,
-					Permissions = RoleHelper.AssertAdminPermissionsForReservedResources()
-				});
+				await this.CreateAdministratorRoleAsync(membership, utilizer);
 			}
 		}
+	}
+	
+	private async Task CreateAdministratorRoleAsync(Membership membership, Utilizer utilizer, CancellationToken cancellationToken = default)
+	{
+		string[] reservedResources = {
+			"memberships",
+			"users",
+			"user-types",
+			"applications",
+			"roles",
+			"sessions",
+			"events",
+			"providers",
+			"tokens",
+			"webhooks",
+			"mailhooks"
+		};
+		
+		RbacSegment[] adminPrivileges =
+		{
+			Rbac.CrudActionSegments.Create,
+			Rbac.CrudActionSegments.Read,
+			Rbac.CrudActionSegments.Update,
+			Rbac.CrudActionSegments.Delete
+		};
+		
+		var permissions = new List<string>();
+		foreach (var resource in reservedResources)
+		{
+			var resourceSegment = new RbacSegment(resource);
+			foreach (var privilege in adminPrivileges)
+			{
+				var rbac = new Rbac(RbacSegment.All, resourceSegment, privilege, RbacSegment.All);
+				permissions.Add(rbac.ToString());
+			}
+		}
+		
+		await this.CreateAsync(utilizer, membership.Id, new Role
+		{
+			Name = "Administrator",
+			Slug = ReservedRoles.Administrator,
+			Description = "Administrator",
+			MembershipId = membership.Id,
+			Permissions = permissions
+		}, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -104,7 +134,7 @@ public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleSer
 	
 	private void RoleCreatedEventHandler(object? sender, CreateResourceEventArgs<Role> eventArgs)
 	{
-		this.eventService.FireEventAsync(this, new ErtisAuthEvent
+		this._eventService.FireEventAsync(this, new ErtisAuthEvent
 		{
 			EventType = ErtisAuthEventType.RoleCreated,
 			UtilizerId = eventArgs.Utilizer.Id,
@@ -115,7 +145,7 @@ public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleSer
 	
 	private void RoleUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Role> eventArgs)
 	{
-		this.eventService.FireEventAsync(this, new ErtisAuthEvent
+		this._eventService.FireEventAsync(this, new ErtisAuthEvent
 		{
 			EventType = ErtisAuthEventType.RoleUpdated,
 			UtilizerId = eventArgs.Utilizer.Id,
@@ -127,7 +157,7 @@ public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleSer
 	
 	private void RoleDeletedEventHandler(object? sender, DeleteResourceEventArgs<Role> eventArgs)
 	{
-		this.eventService.FireEventAsync(this, new ErtisAuthEvent
+		this._eventService.FireEventAsync(this, new ErtisAuthEvent
 		{
 			EventType = ErtisAuthEventType.RoleDeleted,
 			UtilizerId = eventArgs.Utilizer.Id,
@@ -308,99 +338,36 @@ public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleSer
 	
 	public override Role? Get(string membershipId, string id)
 	{
-		if (id == ReservedRoles.Server)
-		{
-			return this.GetServerRole(membershipId);
-		}
-		
 		var role = this.GetFromCacheById(membershipId, id);
 		return role ?? base.Get(membershipId, id);
 	}
 	
 	public override async ValueTask<Role?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 	{
-		if (id == ReservedRoles.Server)
-		{
-			return await this.GetServerRoleAsync(membershipId, cancellationToken: cancellationToken);
-		}
-		
 		var role = this.GetFromCacheById(membershipId, id);
 		return role ?? await base.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 	}
 	
 	public Role? GetBySlug(string slug, string membershipId)
 	{
-		if (slug == ReservedRoles.Server)
-		{
-			return this.GetServerRole(membershipId);
-		}
-		
 		var role = this.GetFromCacheBySlug(membershipId, slug);
 		if (role != null)
 		{
 			return role;
 		}
 		
-		var dto = this.repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
-		return dto == null ? null : Mapper.Current.Map<RoleDto, Role>(dto);
+		return this._repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
 	}
 	
 	public async ValueTask<Role?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
 	{
-		if (slug == ReservedRoles.Server)
-		{
-			return await this.GetServerRoleAsync(membershipId, cancellationToken: cancellationToken);
-		}
-		
 		var role = this.GetFromCacheBySlug(membershipId, slug);
 		if (role != null)
 		{
 			return role;
 		}
 		
-		var dto = await this.repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-		return dto == null ? null : Mapper.Current.Map<RoleDto, Role>(dto);
-	}
-	
-	private Role GetServerRole(string membershipId) =>
-		this.GetServerRoleAsync(membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
-	
-	private async Task<Role> GetServerRoleAsync(string membershipId, CancellationToken cancellationToken = default)
-	{
-		if (this.ServerRoleDictionary.TryGetValue(membershipId, out var role))
-		{
-			return role;
-		}
-		
-		// Check membership
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		
-		var serverRole = new Role
-		{
-			Id = "server",
-			Name = "server",
-			Slug = "server",
-			Description = "An on the fly role instance required for password set/reset etc operations",
-			Permissions = new[]
-			{
-				"*.users.reset-password.*",
-				"*.users.set-password.*"
-			},
-			Forbidden = null,
-			MembershipId = membershipId,
-			Sys = new SysModel
-			{
-				CreatedAt = DateTime.Now,
-				CreatedBy = "system"
-			}
-		};
-		
-		this.ServerRoleDictionary.Add(membershipId, serverRole);
-		return serverRole;
+		return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -409,7 +376,7 @@ public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleSer
 	
 	public override Role Create(Utilizer utilizer, string membershipId, Role model)
 	{
-		if (model.Slug is ReservedRoles.Administrator or ReservedRoles.Server && utilizer.Type != Utilizer.UtilizerType.System)
+		if (model.Slug is ReservedRoles.Administrator && utilizer.Type != Utilizer.UtilizerType.System)
 		{
 			throw ErtisAuthException.ReservedRoleName(model.Slug);
 		}
@@ -421,7 +388,7 @@ public class RoleService : MembershipBoundedCrudService<Role, RoleDto>, IRoleSer
 	
 	public override async ValueTask<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
 	{
-		if (model.Slug is ReservedRoles.Administrator or ReservedRoles.Server && utilizer.Type != Utilizer.UtilizerType.System)
+		if (model.Slug is ReservedRoles.Administrator && utilizer.Type != Utilizer.UtilizerType.System)
 		{
 			throw ErtisAuthException.ReservedRoleName(model.Slug);
 		}

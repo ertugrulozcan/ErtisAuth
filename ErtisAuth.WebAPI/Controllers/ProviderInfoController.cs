@@ -9,7 +9,7 @@ public class ProviderInfoController : ControllerBase
 {
 	#region Services
 	
-	private readonly IProviderService providerService;
+	private readonly IProviderService _providerService;
 	
 	#endregion
 	
@@ -21,7 +21,7 @@ public class ProviderInfoController : ControllerBase
 	/// <param name="providerService"></param>
 	public ProviderInfoController(IProviderService providerService)
 	{
-		this.providerService = providerService;
+		this._providerService = providerService;
 	}
 	
 	#endregion
@@ -35,7 +35,7 @@ public class ProviderInfoController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId)
 	{
-		var providers = await this.providerService.GetProvidersAsync(membershipId);
+		var providers = await this._providerService.GetProvidersAsync(membershipId);
 		var activeProviders = providers.Where(x => x.IsActive != null && x.IsActive.Value);
 		return this.Ok(activeProviders.Select(x => new
 		{

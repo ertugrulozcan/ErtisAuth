@@ -4,12 +4,10 @@ using Ertis.Schema.Types;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
-using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Applications;
-using ErtisAuth.Infrastructure.Helpers;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -17,12 +15,12 @@ public class MigrationService : IMigrationService
 {
 	#region Services
 	
-	private readonly IDatabaseSettings databaseSettings;
-	private readonly IMembershipService membershipService;
-	private readonly IRoleService roleService;
-	private readonly IUserService userService;
-	private readonly IUserTypeService userTypeService;
-	private readonly IApplicationService applicationService;
+	private readonly IDatabaseSettings _databaseSettings;
+	private readonly IMembershipService _membershipService;
+	private readonly IRoleService _roleService;
+	private readonly IUserService _userService;
+	private readonly IUserTypeService _userTypeService;
+	private readonly IApplicationService _applicationService;
 	
 	#endregion
 	
@@ -45,12 +43,12 @@ public class MigrationService : IMigrationService
 		IUserTypeService userTypeService,
 		IApplicationService applicationService)
 	{
-		this.databaseSettings = databaseSettings;
-		this.membershipService = membershipService;
-		this.roleService = roleService;
-		this.userService = userService;
-		this.userTypeService = userTypeService;
-		this.applicationService = applicationService;
+		this._databaseSettings = databaseSettings;
+		this._membershipService = membershipService;
+		this._roleService = roleService;
+		this._userService = userService;
+		this._userTypeService = userTypeService;
+		this._applicationService = applicationService;
 	}
 	
 	#endregion
@@ -60,13 +58,13 @@ public class MigrationService : IMigrationService
 	public async ValueTask<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPassword _user, Application? _application)
 	{
 		// Validation
-		if (connectionString != this.databaseSettings.ConnectionString)
+		if (connectionString != this._databaseSettings.ConnectionString)
 		{
 			throw ErtisAuthException.MigrationRejected("Connection string could not validated");
 		}
 		
 		// 1. Membership
-		var membership = await this.membershipService.CreateAsync(new Membership
+		var membership = await this._membershipService.CreateAsync(new Membership
 		{
 			Name = _membership.Name,
 			Slug = _membership.Slug,
@@ -88,26 +86,14 @@ public class MigrationService : IMigrationService
 		};
 		
 		// 2. Role
-		Role adminRole;
-		var currentAdminRole = await this.roleService.GetBySlugAsync(ReservedRoles.Administrator, membership.Id);
-		if (currentAdminRole == null)
+		var adminRole = await this._roleService.GetBySlugAsync(ReservedRoles.Administrator, membership.Id);
+		if (adminRole == null)
 		{
-			adminRole = await this.roleService.CreateAsync(utilizer, membership.Id, new Role
-			{
-				Name = "Administrator",
-				Slug = ReservedRoles.Administrator,
-				Description = "Administrator",
-				MembershipId = membership.Id,
-				Permissions = RoleHelper.AssertAdminPermissionsForReservedResources()
-			});
-		}
-		else
-		{
-			adminRole = currentAdminRole;
+			throw ErtisAuthException.RoleNotFound("admin");
 		}
 		
 		// 3. User Type
-		var userType = await this.userTypeService.CreateAsync(utilizer, membership.Id, new UserType
+		var userType = await this._userTypeService.CreateAsync(utilizer, membership.Id, new UserType
 		{
 			Name = string.IsNullOrEmpty(_user.UserType) ? "User" : _user.UserType,
 			Properties = Array.Empty<IFieldInfo>(),
@@ -118,7 +104,7 @@ public class MigrationService : IMigrationService
 		});
 		
 		// 4. User (admin)
-		var adminUser = await this.userService.CreateAsync(utilizer, membership.Id, new UserWithPassword
+		var adminUser = await this._userService.CreateAsync(utilizer, membership.Id, new UserWithPassword
 		{
 			Username = _user.Username,
 			FirstName = _user.FirstName,
@@ -134,7 +120,7 @@ public class MigrationService : IMigrationService
 		// 5. Application
 		if (_application != null)
 		{
-			var application = await this.applicationService.CreateAsync(utilizer, membership.Id, new Application
+			var application = await this._applicationService.CreateAsync(utilizer, membership.Id, new Application
 			{
 				Name = _application.Name,
 				Slug = _application.Slug,

@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Users;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
+using JsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
 using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 // ReSharper disable MemberCanBePrivate.Global
@@ -12,18 +14,22 @@ public readonly struct BearerTokenValidationResult : ITokenValidationResult
 	
 	[JsonProperty("verified")]
 	[JsonPropertyName("verified")]
+	[BsonElement("verified")]
 	public bool IsValidated { get; }
 	
+	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
 	public bool IsRefreshToken { get; }
 	
 	[JsonProperty("token")]
 	[JsonPropertyName("token")]
+	[BsonElement("token")]
 	public string Token { get; }
 	
 	[JsonProperty("token_kind")]
 	[JsonPropertyName("token_kind")]
+	[BsonElement("token_kind")]
 	public string TokenKind
 	{
 		get
@@ -37,20 +43,24 @@ public readonly struct BearerTokenValidationResult : ITokenValidationResult
 		}
 	}
 	
+	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
 	public string[]? Scopes { get; init; }
 	
+	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
 	public User? User { get; }
 	
+	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
 	public TimeSpan RemainingTime { get; }
 	
 	[JsonProperty("remaining_time")]
 	[JsonPropertyName("remaining_time")]
+	[BsonElement("remaining_time")]
 	public int RemainingTimeUnixEpoch => (int) this.RemainingTime.TotalSeconds;
 	
 	#endregion

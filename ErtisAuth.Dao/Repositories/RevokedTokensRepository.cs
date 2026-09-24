@@ -2,11 +2,12 @@ using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Identity;
+using ErtisAuth.Core.Models.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
-public class RevokedTokensRepository : RepositoryBase<RevokedTokenDto>, IRevokedTokensRepository
+public class RevokedTokensRepository : RepositoryBase<RevokedToken>, IRevokedTokensRepository
 {
 	#region Properties
     
@@ -24,10 +25,12 @@ public class RevokedTokensRepository : RepositoryBase<RevokedTokenDto>, IRevoked
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
+	/// <param name="logger"></param>
 	public RevokedTokensRepository(
 		IMongoClientProvider clientProvider, 
-		IDatabaseSettings settings) : 
-		base(clientProvider, settings, "revoked_tokens")
+		IDatabaseSettings settings,
+		ILogger<RevokedTokensRepository> logger) : 
+		base(clientProvider, settings, logger, "revoked_tokens")
 	{
 		
 	}

@@ -1,0 +1,33 @@
+using ErtisAuth.Extensions.Authorization.Extensions;
+using Microsoft.AspNetCore.Authorization;
+
+namespace ErtisAuth.Extensions.AspNetCore.Middleware;
+
+public class ErtisAuthAuthorizationRequirement : IAuthorizationRequirement;
+
+public class ErtisAuthAuthorizationHandler : AuthorizationHandler<ErtisAuthAuthorizationRequirement>
+{
+	#region Methods
+	
+	protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ErtisAuthAuthorizationRequirement requirement)
+	{
+		var allowedClaims = new[]
+		{
+			ClaimExtensions.UtilizerClaimName,
+			ClaimExtensions.PublicClaimName
+		};
+		
+		if (context.User.Identities.Any(x => allowedClaims.Contains(x.NameClaimType)))
+		{
+			context.Succeed(requirement);
+		}
+		else
+		{
+			context.Fail();
+		}
+		
+		return Task.CompletedTask;
+	}
+	
+	#endregion
+}

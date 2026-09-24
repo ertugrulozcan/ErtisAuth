@@ -1,9 +1,8 @@
 using Ertis.Net.Rest;
 using ErtisAuth.Abstractions.Services;
-using ErtisAuth.Identity.Jwt.Services;
-using ErtisAuth.Identity.Jwt.Services.Interfaces;
+using ErtisAuth.Extensions.AspNetCore.Middleware;
+using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Infrastructure.Services;
-using ErtisAuth.WebAPI.Auth;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ErtisAuth.WebAPI.Extensions;
@@ -14,13 +13,14 @@ public static class ServiceExtensions
 	
 	public static void AddServices(this IServiceCollection services)
 	{
-		services.AddSingleton<ICryptographyService, CryptographyService>();
+		services.AddSingleton<ISystemRestHandler, SystemRestHandler>();
 		services.AddSingleton<IJwtService, JwtService>();
 		services.AddSingleton<ITokenService, TokenService>();
 		services.AddSingleton<IActiveTokenService, ActiveTokenService>();
 		services.AddSingleton<IRevokedTokenService, RevokedTokenService>();
 		services.AddSingleton<IAccessControlService, AccessControlService>();
 		services.AddSingleton<IMembershipService, MembershipService>();
+		services.AddSingleton<IEventService, EventService>();
 		services.AddSingleton<IUserTypeService, UserTypeService>();
 		services.AddSingleton<IUserService, UserService>();
 		services.AddSingleton<IApplicationService, ApplicationService>();
@@ -31,9 +31,9 @@ public static class ServiceExtensions
 		services.AddSingleton<IProviderService, ProviderService>();
 		services.AddSingleton<IWebhookService, WebhookService>();
 		services.AddSingleton<IMailHookService, MailHookService>();
-		services.AddSingleton<IEventService, EventService>();
+		services.AddSingleton<IMailServiceBackgroundWorker, MailServiceBackgroundWorker>();
 		services.AddSingleton<IMigrationService, MigrationService>();
-		services.AddSingleton<ISystemRestHandler, SystemRestHandler>();
+		services.AddSingleton<IUtilizerService, UtilizerService>();
 		services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
 	}
 	

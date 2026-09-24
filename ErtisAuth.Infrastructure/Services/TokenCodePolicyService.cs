@@ -1,15 +1,13 @@
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Identity;
-using ErtisAuth.Events.EventArgs;
-using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePolicy, TokenCodePolicyDto>, ITokenCodePolicyService
+public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePolicy>, ITokenCodePolicyService
 {
 	#region Services
 	
@@ -43,14 +41,12 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
     
     public TokenCodePolicy? GetBySlug(string slug, string membershipId)
     {
-	    var dto = this.repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
-	    return dto == null ? null : Mapper.Current.Map<TokenCodePolicyDto, TokenCodePolicy>(dto);
+	    return this._repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
     }
 	
     public async ValueTask<TokenCodePolicy?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
     {
-	    var dto = await this.repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-	    return dto == null ? null : Mapper.Current.Map<TokenCodePolicyDto, TokenCodePolicy>(dto);
+	    return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
     }
     
     #endregion

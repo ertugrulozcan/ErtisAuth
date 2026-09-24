@@ -30,7 +30,7 @@ public interface IProviderLoginRequest<TToken, TUser> : IProviderLoginRequest wh
 {
 	#region Properties
 	
-	TUser User { get; set; }
+	TUser? User { get; set; }
 	
 	TToken? Token { get; set; }
 	

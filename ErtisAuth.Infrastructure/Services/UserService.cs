@@ -1,9 +1,12 @@
 using System.Net;
 using System.Text;
+using System.Security.Cryptography;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Resources;
 using Ertis.MongoDB.Queries;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
 using Ertis.Schema.Exceptions;
 using Ertis.Schema.Extensions;
 using Ertis.Schema.Types;
@@ -13,7 +16,9 @@ using Ertis.Schema.Validation;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Constants;
+using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Cryptography;
 using ErtisAuth.Core.Models.Users;
@@ -22,11 +27,7 @@ using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Users;
-using ErtisAuth.Events.EventArgs;
-using ErtisAuth.Identity.Jwt.Services.Interfaces;
 using ErtisAuth.Infrastructure.Helpers;
-using ErtisAuth.Infrastructure.Mapping.Extensions;
 using ErtisAuth.Integrations.OAuth.Core;
 using Microsoft.Extensions.Logging;
 
@@ -42,7 +43,6 @@ public class UserService : DynamicObjectCrudService, IUserService
     private readonly IAccessControlService _accessControlService;
     private readonly IEventService _eventService;
     private readonly IJwtService _jwtService;
-    private readonly ICryptographyService _cryptographyService;
     private readonly IMailHookService _mailHookService;
     private readonly ILogger<UserService> _logger;
 	
@@ -59,7 +59,6 @@ public class UserService : DynamicObjectCrudService, IUserService
     /// <param name="accessControlService"></param>
     /// <param name="eventService"></param>
     /// <param name="jwtService"></param>
-    /// <param name="cryptographyService"></param>
     /// <param name="mailHookService"></param>
     /// <param name="repository"></param>
     /// <param name="logger"></param>
@@ -70,7 +69,6 @@ public class UserService : DynamicObjectCrudService, IUserService
         IAccessControlService accessControlService,
         IEventService eventService,
         IJwtService jwtService,
-        ICryptographyService cryptographyService,
         IMailHookService mailHookService,
         IUserRepository repository,
         ILogger<UserService> logger) : base(repository)
@@ -81,7 +79,6 @@ public class UserService : DynamicObjectCrudService, IUserService
         this._accessControlService = accessControlService;
         this._eventService = eventService;
         this._jwtService = jwtService;
-        this._cryptographyService = cryptographyService;
         this._mailHookService = mailHookService;
         this._logger = logger;
     }
@@ -529,17 +526,317 @@ public class UserService : DynamicObjectCrudService, IUserService
     {
         if (!string.IsNullOrEmpty(password))
         {
-	        model.SetValue("password_hash", this._cryptographyService.CalculatePasswordHash(membership, password), true);
+	        model.SetValue("password_hash", this.CalculatePasswordHash(membership, password), true);
         }
     }
     
-    // ReSharper disable once MemberCanBeMadeStatic.Local
-    private void HidePasswordHash(DynamicObject model)
-    {
-        model.RemoveProperty("password_hash");
-    }
+	public async Task<bool> CheckPasswordAsync(Utilizer utilizer, string password, CancellationToken cancellationToken = default)
+	{
+		if (string.IsNullOrEmpty(password))
+		{
+			return false;
+		}
+		
+		var membership = await this._membershipService.GetAsync(utilizer.MembershipId, cancellationToken: cancellationToken);
+		if (membership == null)
+		{
+			throw ErtisAuthException.MembershipNotFound(utilizer.MembershipId);
+		}
+		
+		var user = await this.GetUserWithPasswordAsync(membership, utilizer.Id);
+		if (user == null)
+		{
+			throw ErtisAuthException.UserNotFound(utilizer.Id, "_id");
+		}
+		
+		var passwordHash = this.CalculatePasswordHash(membership, password);
+		return !string.IsNullOrEmpty(passwordHash.Trim()) && !string.IsNullOrEmpty(user.PasswordHash?.Trim()) && user.PasswordHash == passwordHash;
+	}
+	
+	public string CalculatePasswordHash(Membership membership, string password)
+	{
+		if (string.IsNullOrEmpty(password))
+		{
+			return password;
+		}
+		
+		var algorithm = membership.GetHashAlgorithm();
+		var encoding = membership.GetEncoding();
+		var passwordHash = GenerateHash(password, algorithm, encoding);
+		return passwordHash;
+	}
+	
+	private static string GenerateHash(string message, HashAlgorithms algorithm, Encoding encoding)
+	{
+		var data = encoding.GetBytes(message);
+		var bytes = algorithm switch
+		{
+			HashAlgorithms.MD5 => MD5.HashData(data),
+			HashAlgorithms.SHA1 => SHA1.HashData(data),
+			HashAlgorithms.SHA2_224 => ComputeDigest(new Sha224Digest(), data),
+			HashAlgorithms.SHA2_256 => SHA256.HashData(data),
+			HashAlgorithms.SHA2_384 => SHA384.HashData(data),
+			HashAlgorithms.SHA2_512 => SHA512.HashData(data),
+			HashAlgorithms.SHA2_512_224 => ComputeDigest(new Sha512tDigest(224), data),
+			HashAlgorithms.SHA2_512_256 => ComputeDigest(new Sha512tDigest(256), data),
+			HashAlgorithms.SHA3_224 => ComputeDigest(new Sha3Digest(224), data),
+			HashAlgorithms.SHA3_256 => SHA3_256.IsSupported ? SHA3_256.HashData(data) : ComputeDigest(new Sha3Digest(256), data),
+			HashAlgorithms.SHA3_384 => SHA3_384.IsSupported ? SHA3_384.HashData(data) : ComputeDigest(new Sha3Digest(384), data),
+			HashAlgorithms.SHA3_512 => SHA3_512.IsSupported ? SHA3_512.HashData(data) : ComputeDigest(new Sha3Digest(512), data),
+			_ => throw new NotSupportedException($"Not supported hash algorithm: {algorithm}")
+		};
+		
+		return Convert.ToHexStringLower(bytes);
+	}
+	
+	private static byte[] ComputeDigest(IDigest digest, byte[] data)
+	{
+		digest.BlockUpdate(data, 0, data.Length);
+		var output = new byte[digest.GetDigestSize()];
+		digest.DoFinal(output, 0);
+		return output;
+	}
 	
     #endregion
+	
+	#region Change Password
+	
+	public async Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default)
+	{
+		if (string.IsNullOrEmpty(newPassword))
+		{
+			throw ErtisAuthException.ValidationError(new []
+			{
+				"Password can not be null or empty!"
+			});
+		}
+		
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		if (membership == null)
+		{
+			throw ErtisAuthException.MembershipNotFound(membershipId);
+		}
+		
+		var user = await this.GetByIdAsync(membership.Id, userId);
+		if (user == null)
+		{
+			throw ErtisAuthException.UserNotFound(userId, "_id");
+		}
+		
+		var prior = user.Clone();
+		user.RemoveProperty("_id");
+		user.RemoveProperty("password");
+		user.RemoveProperty("password_hash");
+		user.RemoveProperty("membership_id");
+		user.SetValue("membership_id", membershipId, true);
+		
+		var passwordHash = this.CalculatePasswordHash(membership, newPassword);
+		user.SetValue("password_hash", passwordHash, true);
+		
+		var updatedUser = await base.UpdateAsync(userId, user, cancellationToken: cancellationToken);
+		await this._eventService.FireEventAsync(this, new ErtisAuthEvent
+		{
+			EventType = ErtisAuthEventType.UserPasswordChanged,
+			UtilizerId = userId,
+			Document = updatedUser,
+			Prior = prior,
+			MembershipId = membershipId
+		}, cancellationToken: cancellationToken);
+		
+		return updatedUser!;
+	}
+	
+	#endregion
+	
+	#region Forgot Password
+	
+	public async Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default)
+	{
+		if (string.IsNullOrEmpty(emailAddress))
+		{
+			throw ErtisAuthException.Synthetic(HttpStatusCode.BadRequest, "Email address required (email_address)", "UsernameOrEmailAddressRequired");
+		}
+		
+		var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+		var user = await this.GetByUsernameOrEmailAddressAsync(membershipId, emailAddress);
+		if (user == null)
+		{
+			throw ErtisAuthException.UserNotFound(emailAddress, "email_address");
+		}
+		
+		var resetPasswordToken = this.GenerateResetPasswordToken(user, membership);
+		var resetPasswordLink = GenerateResetPasswordLink(
+			resetPasswordToken, 
+			membershipId,
+			host);
+		
+		var eventPayload = new
+		{
+			resetPasswordToken.Token,
+			resetPasswordLink,
+			user,
+			membership
+		};
+		
+		await this._eventService.FireEventAsync(this, new ErtisAuthEvent
+		{
+			EventType = ErtisAuthEventType.UserPasswordReset,
+			UtilizerId = user.Id,
+			Document = eventPayload,
+			MembershipId = membershipId
+		}, cancellationToken: cancellationToken);
+		
+		await this.SendResetPasswordMailAsync(resetPasswordToken, membership, user, host, cancellationToken: cancellationToken);
+		
+		return resetPasswordToken;
+	}
+	
+	private async Task SendResetPasswordMailAsync(ResetPasswordToken resetPasswordToken, Membership membership, User user, string? host = null, CancellationToken cancellationToken = default)
+	{
+		if (string.IsNullOrEmpty(host))
+		{
+			throw ErtisAuthException.HostRequired();
+		}
+        
+		if (membership.MailProviders == null || !membership.MailProviders.Any())
+		{
+			throw ErtisAuthException.NotDefinedAnyMailProvider();
+		}
+        
+		var resetPasswordMailHook = await this._mailHookService.GetResetPasswordMailHookAsync(membership.Id, cancellationToken: cancellationToken);
+		if (resetPasswordMailHook == null)
+		{
+			throw ErtisAuthException.ResetPasswordMailHookWasNotDefined();
+		}
+		
+		var resetPasswordLink = this.GenerateResetPasswordLink(resetPasswordToken, membership.Id, host);
+		this._mailHookService.SendHookMailAsync(resetPasswordMailHook, user.Id, membership.Id, new
+		{
+			user,
+			resetPasswordLink
+		}, cancellationToken: cancellationToken);
+	}
+	
+	public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false, ResetPasswordToken.ResetPasswordTokenPurpose purpose = ResetPasswordToken.ResetPasswordTokenPurpose.ResetPassword)
+	{
+		var resetPasswordTokenTTL = TTLs.RESET_PASSWORD_TOKEN_TTL;
+		if (purpose == ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword)
+		{
+			if (membership.OtpSettings?.Policy?.ExpiresIn != null && membership.OtpSettings.Policy is { ExpiresIn: > 0 })
+			{
+				resetPasswordTokenTTL = TimeSpan.FromSeconds(membership.OtpSettings.Policy.ExpiresIn.Value);
+			}
+		}
+		else
+		{
+			if (membership is { ResetPasswordTokenExpiresIn: > 0 })
+			{
+				resetPasswordTokenTTL = TimeSpan.FromSeconds(membership.ResetPasswordTokenExpiresIn.Value);
+			}
+		}
+		
+		var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, resetPasswordTokenTTL);
+		tokenClaims.AddClaim("token_type", "reset_token");
+		
+		var resetToken = this._jwtService.GenerateToken(tokenClaims, Encoding.UTF8);
+		if (asBase64)
+		{
+			resetToken = ConvertToBase64ResetPasswordToken(resetToken, membership.Id);
+		}
+		
+		return new ResetPasswordToken(resetToken, resetPasswordTokenTTL);
+	}
+	
+	private static string ConvertToBase64ResetPasswordToken(string resetPasswordToken, string membershipId)
+	{
+		return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{membershipId}:{resetPasswordToken}"));
+	}
+	
+	private string GenerateResetPasswordLink(ResetPasswordToken resetPasswordToken, string membershipId, string host)
+	{
+		var base64 = ConvertToBase64ResetPasswordToken(resetPasswordToken.Token, membershipId);
+		return $"{host.TrimEnd('/')}?rpt={base64}";
+	}
+	
+	public async Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			string payload;
+			
+			try
+			{
+				payload = Encoding.UTF8.GetString(Convert.FromBase64String(resetToken));
+			}
+			catch (FormatException)
+			{
+				payload = Microsoft.IdentityModel.Tokens.Base64UrlEncoder.Decode(resetToken);
+			}
+			
+			var parts = payload.Split(':');
+			if (parts.Length > 1)
+			{
+				if (MongoDB.Bson.ObjectId.TryParse(parts[0], out _))
+				{
+					var membershipId_ = parts[0];
+					if (membershipId == membershipId_)
+					{
+						var resetPasswordToken = string.Join(':', parts.Skip(1));
+						if (!string.IsNullOrEmpty(resetPasswordToken))
+						{
+							if (this._jwtService.TryDecodeToken(resetPasswordToken, out var securityToken) && securityToken != null)
+							{
+								var expireTime = securityToken.ValidTo.ToLocalTime();
+								if (DateTime.Now > expireTime)
+								{
+									// Token was expired!
+									throw ErtisAuthException.TokenWasExpired();	
+								}
+								
+								var user = await this.GetUserAsync(membershipId, securityToken.Subject, cancellationToken: cancellationToken);
+								return user ?? throw ErtisAuthException.UserNotFound(securityToken.Subject, "_id");
+							}
+						}
+					}
+				}
+			}
+			
+			throw ErtisAuthException.InvalidToken();
+		}
+		catch (FormatException ex)
+		{
+			this._logger.LogError(ex, "UserService.VerifyResetTokenAsync occured an error");
+			throw ErtisAuthException.InvalidToken();
+		}
+	}
+	
+	public async Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default)
+	{
+		if (string.IsNullOrEmpty(usernameOrEmailAddress))
+		{
+			throw ErtisAuthException.ValidationError(new []
+			{
+				"Username or email required!"
+			});
+		}
+		
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		if (membership == null)
+		{
+			throw ErtisAuthException.MembershipNotFound(membershipId);
+		}
+		
+		var user = await this.GetUserWithPasswordAsync(membershipId, usernameOrEmailAddress, usernameOrEmailAddress, cancellationToken: cancellationToken);
+		if (user == null)
+		{
+			throw ErtisAuthException.UserNotFound(usernameOrEmailAddress, "username or email_address");
+		}
+		
+		await this.VerifyResetTokenAsync(membershipId, resetToken, cancellationToken: cancellationToken);
+		await this.ChangePasswordAsync(utilizer, membershipId, user.Id, password, cancellationToken: cancellationToken);
+	}
+	
+	#endregion
 	
     #region Provider Methods
 	
@@ -573,7 +870,10 @@ public class UserService : DynamicObjectCrudService, IUserService
     public async Task<DynamicObject?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
     {
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        return await this.GetByIdAsync(membershipId, id);
+        var user = await this.GetByIdAsync(membershipId, id);
+		
+		user?.RemoveProperty("password_hash");
+		return user;
     }
     
     public async Task<User?> GetUserAsync(string membershipId, string id, CancellationToken cancellationToken = default)
@@ -597,8 +897,9 @@ public class UserService : DynamicObjectCrudService, IUserService
             QueryBuilder.Equals("membership_id", membershipId)
         };
 		
-        return await base.GetAsync(queries, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
-    }
+		var results = await base.GetAsync(queries, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		return results.HidePasswordHash();
+	}
     
     public async Task<IPaginationCollection<DynamicObject>> QueryAsync(
         string membershipId,
@@ -612,9 +913,10 @@ public class UserService : DynamicObjectCrudService, IUserService
         string? locale = null, 
         CancellationToken cancellationToken = default)
     {
-        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
         query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId);
-        return await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, language: locale, cancellationToken: cancellationToken);
+		var results = await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, language: locale, cancellationToken: cancellationToken);
+		return results.HidePasswordHash();
     }
     
     public async Task<IPaginationCollection<DynamicObject>> SearchAsync(
@@ -627,9 +929,10 @@ public class UserService : DynamicObjectCrudService, IUserService
         SortDirection? sortDirection = null, 
         CancellationToken cancellationToken = default)
     {
-        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
         var query = QueryBuilder.And(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.FullTextSearch(keyword)).ToString();
-        return await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		var results = await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		return results.HidePasswordHash();
     }
     
     public async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string membershipId, string id, CancellationToken cancellationToken = default)
@@ -741,7 +1044,8 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
         
         var created = await base.CreateAsync(model, cancellationToken: cancellationToken);
-        this.HidePasswordHash(created);
+		created.HidePasswordHash();
+		
 		await this.FireOnCreatedEvent(membershipId, utilizer, created);
 		
 		// SendActivationMail
@@ -760,13 +1064,12 @@ public class UserService : DynamicObjectCrudService, IUserService
     public async Task<string?> SendActivationMailAsync(string membershipId, string userId, string? host = null, CancellationToken cancellationToken = default)
     {
         var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        var dynamicObject = await this.GetAsync(userId, cancellationToken);
-        if (dynamicObject == null)
+        var user = await this.GetUserAsync(membershipId, userId, cancellationToken);
+        if (user == null)
         {
 	        throw ErtisAuthException.UserNotFound(userId, "_id");
         }
         
-        var user = dynamicObject.Deserialize<UserDto>()!.ToModel();
         if (user.IsActive)
         {
 	        throw ErtisAuthException.UserAlreadyActive();
@@ -783,7 +1086,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
     private async Task TrySendActivationMailAsync(DynamicObject userDynamicObject, MailHook activationMailHook, Membership membership, string? host)
     {
-        await this.TrySendActivationMailAsync(userDynamicObject.Deserialize<UserDto>()!.ToModel(), activationMailHook, membership, host);
+        await this.TrySendActivationMailAsync(userDynamicObject.Deserialize<User>()!, activationMailHook, membership, host);
     }
     
     private async Task<string?> TrySendActivationMailAsync(User user, MailHook? activationMailHook, Membership membership, string? host)
@@ -855,7 +1158,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         
         var tokenClaims = new TokenClaims(user.Id, user, membership, TTLs.ACTIVATION_TOKEN_TTL);
         tokenClaims.AddClaim("token_type", "activation_token");
-        var token = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
+        var token = this._jwtService.GenerateToken(tokenClaims, Encoding.UTF8);
         var activationToken = new ActivationToken(token, TTLs.ACTIVATION_TOKEN_TTL);
 		
         return activationToken;
@@ -974,8 +1277,9 @@ public class UserService : DynamicObjectCrudService, IUserService
 			return null;
 		}
 		
-        this.HidePasswordHash(current);
-        this.HidePasswordHash(updated);
+		current.HidePasswordHash();
+		updated.HidePasswordHash();
+		
         if (fireEvent)
         {
 	        await this.FireOnUpdatedEvent(membershipId, utilizer, current, updated);
@@ -1073,265 +1377,4 @@ public class UserService : DynamicObjectCrudService, IUserService
     }
 	
     #endregion
-	
-	#region Change Password
-	
-	public async Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default)
-	{
-		if (string.IsNullOrEmpty(newPassword))
-		{
-			throw ErtisAuthException.ValidationError(new []
-			{
-				"Password can not be null or empty!"
-			});
-		}
-		
-		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		
-		var user = await this.GetByIdAsync(membership.Id, userId);
-		if (user == null)
-		{
-			throw ErtisAuthException.UserNotFound(userId, "_id");
-		}
-		
-		var prior = user.Clone();
-		user.RemoveProperty("_id");
-		user.RemoveProperty("password");
-		user.RemoveProperty("password_hash");
-		user.RemoveProperty("membership_id");
-		user.SetValue("membership_id", membershipId, true);
-		
-		var passwordHash = this._cryptographyService.CalculatePasswordHash(membership, newPassword);
-		user.SetValue("password_hash", passwordHash, true);
-		
-		var updatedUser = await base.UpdateAsync(userId, user, cancellationToken: cancellationToken);
-		await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-		{
-			EventType = ErtisAuthEventType.UserPasswordChanged,
-			UtilizerId = userId,
-			Document = updatedUser,
-			Prior = prior,
-			MembershipId = membershipId
-		}, cancellationToken: cancellationToken);
-		
-		return updatedUser!;
-	}
-	
-	#endregion
-	
-	#region Forgot Password
-	
-	public async Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default)
-	{
-		if (string.IsNullOrEmpty(emailAddress))
-		{
-			throw ErtisAuthException.Synthetic(HttpStatusCode.BadRequest, "Email address required (email_address)", "UsernameOrEmailAddressRequired");
-		}
-		
-		var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-		var user = await this.GetByUsernameOrEmailAddressAsync(membershipId, emailAddress);
-		if (user == null)
-		{
-			throw ErtisAuthException.UserNotFound(emailAddress, "email_address");
-		}
-		
-		var resetPasswordToken = this.GenerateResetPasswordToken(user, membership);
-		var resetPasswordLink = GenerateResetPasswordLink(
-			resetPasswordToken, 
-			membershipId,
-			host);
-		
-		var eventPayload = new
-		{
-			resetPasswordToken.Token,
-			resetPasswordLink,
-			user,
-			membership
-		};
-		
-		await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-		{
-			EventType = ErtisAuthEventType.UserPasswordReset,
-			UtilizerId = user.Id,
-			Document = eventPayload,
-			MembershipId = membershipId
-		}, cancellationToken: cancellationToken);
-		
-		await this.SendResetPasswordMailAsync(resetPasswordToken, membership, user, host, cancellationToken: cancellationToken);
-		
-		return resetPasswordToken;
-	}
-	
-	private async Task SendResetPasswordMailAsync(ResetPasswordToken resetPasswordToken, Membership membership, User user, string? host = null, CancellationToken cancellationToken = default)
-	{
-		if (string.IsNullOrEmpty(host))
-		{
-			throw ErtisAuthException.HostRequired();
-		}
-        
-		if (membership.MailProviders == null || !membership.MailProviders.Any())
-		{
-			throw ErtisAuthException.NotDefinedAnyMailProvider();
-		}
-        
-		var resetPasswordMailHook = await this._mailHookService.GetResetPasswordMailHookAsync(membership.Id, cancellationToken: cancellationToken);
-		if (resetPasswordMailHook == null)
-		{
-			throw ErtisAuthException.ResetPasswordMailHookWasNotDefined();
-		}
-		
-		var resetPasswordLink = this.GenerateResetPasswordLink(resetPasswordToken, membership.Id, host);
-		this._mailHookService.SendHookMailAsync(resetPasswordMailHook, user.Id, membership.Id, new
-		{
-			user,
-			resetPasswordLink
-		}, cancellationToken: cancellationToken);
-	}
-	
-	public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false, ResetPasswordToken.ResetPasswordTokenPurpose purpose = ResetPasswordToken.ResetPasswordTokenPurpose.ResetPassword)
-	{
-		var resetPasswordTokenTTL = TTLs.RESET_PASSWORD_TOKEN_TTL;
-		if (purpose == ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword)
-		{
-			if (membership.OtpSettings?.Policy?.ExpiresIn != null && membership.OtpSettings.Policy is { ExpiresIn: > 0 })
-			{
-				resetPasswordTokenTTL = TimeSpan.FromSeconds(membership.OtpSettings.Policy.ExpiresIn.Value);
-			}
-		}
-		else
-		{
-			if (membership is { ResetPasswordTokenExpiresIn: > 0 })
-			{
-				resetPasswordTokenTTL = TimeSpan.FromSeconds(membership.ResetPasswordTokenExpiresIn.Value);
-			}
-		}
-		
-		var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, resetPasswordTokenTTL);
-		tokenClaims.AddClaim("token_type", "reset_token");
-		
-		var resetToken = this._jwtService.GenerateToken(tokenClaims, HashAlgorithms.SHA2_256, Encoding.UTF8);
-		if (asBase64)
-		{
-			resetToken = ConvertToBase64ResetPasswordToken(resetToken, membership.Id);
-		}
-		
-		return new ResetPasswordToken(resetToken, resetPasswordTokenTTL);
-	}
-	
-	private static string ConvertToBase64ResetPasswordToken(string resetPasswordToken, string membershipId)
-	{
-		return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{membershipId}:{resetPasswordToken}"));
-	}
-	
-	private string GenerateResetPasswordLink(ResetPasswordToken resetPasswordToken, string membershipId, string host)
-	{
-		var base64 = ConvertToBase64ResetPasswordToken(resetPasswordToken.Token, membershipId);
-		return $"{host.TrimEnd('/')}?rpt={base64}";
-	}
-	
-	public async Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default)
-	{
-		try
-		{
-			var payload = Base64Helper.Decode(resetToken, Encoding.UTF8);
-			var parts = payload.Split(':');
-			if (parts.Length > 1)
-			{
-				if (MongoDB.Bson.ObjectId.TryParse(parts[0], out _))
-				{
-					var membershipId_ = parts[0];
-					if (membershipId == membershipId_)
-					{
-						var resetPasswordToken = string.Join(':', parts.Skip(1));
-						if (!string.IsNullOrEmpty(resetPasswordToken))
-						{
-							if (this._jwtService.TryDecodeToken(resetPasswordToken, out var securityToken) && securityToken != null)
-							{
-								var expireTime = securityToken.ValidTo.ToLocalTime();
-								if (DateTime.Now > expireTime)
-								{
-									// Token was expired!
-									throw ErtisAuthException.TokenWasExpired();	
-								}
-								
-								var dynamicObject = await this.GetAsync(membershipId, securityToken.Subject, cancellationToken: cancellationToken);
-								if (dynamicObject == null)
-								{
-									throw ErtisAuthException.UserNotFound(securityToken.Subject, "_id");
-								}
-								
-								return dynamicObject.Deserialize<User>()!;
-							}
-						}
-					}
-				}
-			}
-			
-			throw ErtisAuthException.InvalidToken();
-		}
-		catch (FormatException ex)
-		{
-			Console.WriteLine(ex);
-			throw ErtisAuthException.InvalidToken();
-		}
-	}
-	
-	public async Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default)
-	{
-		if (string.IsNullOrEmpty(usernameOrEmailAddress))
-		{
-			throw ErtisAuthException.ValidationError(new []
-			{
-				"Username or email required!"
-			});
-		}
-		
-		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		
-		var user = await this.GetUserWithPasswordAsync(membershipId, usernameOrEmailAddress, usernameOrEmailAddress, cancellationToken: cancellationToken);
-		if (user == null)
-		{
-			throw ErtisAuthException.UserNotFound(usernameOrEmailAddress, "username or email_address");
-		}
-		
-		await this.VerifyResetTokenAsync(membershipId, resetToken, cancellationToken: cancellationToken);
-		await this.ChangePasswordAsync(utilizer, membershipId, user.Id, password, cancellationToken: cancellationToken);
-	}
-	
-	#endregion
-	
-	#region Check Password
-	
-	public async Task<bool> CheckPasswordAsync(Utilizer utilizer, string password, CancellationToken cancellationToken = default)
-	{
-		if (string.IsNullOrEmpty(password))
-		{
-			return false;
-		}
-		
-		var membership = await this._membershipService.GetAsync(utilizer.MembershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(utilizer.MembershipId);
-		}
-		
-		var user = await this.GetUserWithPasswordAsync(membership, utilizer.Id);
-		if (user == null)
-		{
-			throw ErtisAuthException.UserNotFound(utilizer.Id, "_id");
-		}
-		
-		var passwordHash = this._cryptographyService.CalculatePasswordHash(membership, password);
-		return !string.IsNullOrEmpty(passwordHash.Trim()) && !string.IsNullOrEmpty(user.PasswordHash?.Trim()) && user.PasswordHash == passwordHash;
-	}
-	
-	#endregion
 }

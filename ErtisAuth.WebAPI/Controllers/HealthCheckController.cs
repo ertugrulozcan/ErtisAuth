@@ -9,8 +9,8 @@ public class HealthCheckController : ControllerBase
 {
 	#region Services
 	
-	private readonly IMongoDatabase database;
-	private readonly IMembershipService membershipService;
+	private readonly IMongoDatabase _database;
+	private readonly IMembershipService _membershipService;
 	
 	#endregion
 	
@@ -23,8 +23,8 @@ public class HealthCheckController : ControllerBase
 	/// <param name="membershipService"></param>
 	public HealthCheckController(IMongoDatabase database, IMembershipService membershipService)
 	{
-		this.database = database;
-		this.membershipService = membershipService;
+		this._database = database;
+		this._membershipService = membershipService;
 	}
 	
 	#endregion
@@ -36,8 +36,8 @@ public class HealthCheckController : ControllerBase
 	{
 		try
 		{
-			var dbStatisticsTask = this.database.GetDatabaseStatisticsAsync();
-			var listCollectionsTask = this.database.ListCollectionsAsync();
+			var dbStatisticsTask = this._database.GetDatabaseStatisticsAsync();
+			var listCollectionsTask = this._database.ListCollectionsAsync();
 			
 			var tasks = new Task[]
 			{
@@ -57,7 +57,7 @@ public class HealthCheckController : ControllerBase
 				});
 			}
 			
-			var memberships = await this.membershipService.GetAsync();
+			var memberships = await this._membershipService.GetAsync();
 			
 			var collectionList = (await listCollectionsTask).ToList();
 			if (!collectionList.Contains("memberships") ||
@@ -79,7 +79,6 @@ public class HealthCheckController : ControllerBase
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
 			return this.StatusCode(500, ex);
 		}
 	}

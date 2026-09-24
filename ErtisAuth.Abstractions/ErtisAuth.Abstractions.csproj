@@ -6,10 +6,10 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\ErtisAuth.Events\ErtisAuth.Events.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="Ertis.MongoDB.Queries" Version="10.0.1" />
+      <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
     </ItemGroup>
 </Project>

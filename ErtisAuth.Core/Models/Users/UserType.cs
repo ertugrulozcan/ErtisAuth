@@ -1,14 +1,20 @@
-using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using Ertis.Core.Helpers;
 using Ertis.Core.Models.Resources;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
 using Ertis.Schema.Extensions;
 using Ertis.Schema.Serialization;
 using Ertis.Schema.Types;
 using Ertis.Schema.Validation;
 using ErtisAuth.Core.Exceptions;
-using Newtonsoft.Json;
+
+using NewtonsoftJsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
+using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
+using NewtonsoftFieldInfoCollectionJsonConverter = Ertis.Schema.Serialization.Legacy.FieldInfoCollectionJsonConverter;
 
 namespace ErtisAuth.Core.Models.Users;
 
@@ -18,6 +24,15 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
     
     public const string ORIGIN_USER_TYPE_NAME = "Base User";
     public const string ORIGIN_USER_TYPE_SLUG = "base-user";
+    
+    private static readonly JsonSerializerOptions PropertiesJsonSerializerOptions = new()
+    {
+        Converters =
+        {
+            new FieldInfoJsonConverter(),
+            new FieldInfoCollectionJsonConverterFactory()
+        }
+    };
     
     #endregion
     
@@ -29,10 +44,10 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
     
     #region Properties
     
-    [JsonProperty("name")]
     [JsonPropertyName("name")]
-    [field: AllowNull, MaybeNull]
-    public string Name
+    [NewtonsoftJsonProperty("name")]
+    [BsonElement("name")]
+    public required string Name
     {
         get;
         set
@@ -46,8 +61,9 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
         }
     }
     
-    [JsonProperty("slug")]
     [JsonPropertyName("slug")]
+    [NewtonsoftJsonProperty("slug")]
+    [BsonElement("slug")]
     public string Slug
     {
         get
@@ -62,25 +78,48 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
         set => field = Slugifier.Slugify(value, Slugifier.Options.Ignore('_'));
     }
     
-    [JsonProperty("description")]
     [JsonPropertyName("description")]
+    [NewtonsoftJsonProperty("description")]
+    [BsonElement("description")]
     public string? Description { get; set; }
     
-    [JsonProperty("properties")]
     [JsonPropertyName("properties")]
-    [Newtonsoft.Json.JsonConverter(typeof(FieldInfoCollectionJsonConverter))]
-    public IReadOnlyCollection<IFieldInfo> Properties
+    [NewtonsoftJsonProperty("properties")]
+    [JsonConverter(typeof(FieldInfoCollectionJsonConverterFactory))]
+    [NewtonsoftJsonConverter(typeof(NewtonsoftFieldInfoCollectionJsonConverter))]
+    [BsonIgnore]
+    public IReadOnlyCollection<IFieldInfo> Properties { get => field ?? new List<IFieldInfo>(); set; }
+    
+    [JsonIgnore]
+    [NewtonsoftJsonIgnore]
+    [BsonElement("properties")]
+    // ReSharper disable once UnusedMember.Local
+    private BsonDocument? PropertiesDocument
     {
-        get => field ?? new List<IFieldInfo>();
-        set => field = value ?? throw ErtisAuthException.UserTypePropertiesRequired();
+        get
+        {
+            var json = JsonSerializer.Serialize(this.Properties, PropertiesJsonSerializerOptions);
+            return MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(json);
+        }
+        set
+        {
+            var json = value.ToJson();
+            var properties = JsonSerializer.Deserialize<IReadOnlyCollection<IFieldInfo>>(json, PropertiesJsonSerializerOptions);
+            if (properties != null)
+            {
+                this.Properties = properties;
+            }
+        }
     }
     
-    [JsonProperty("allowAdditionalProperties")]
     [JsonPropertyName("allowAdditionalProperties")]
+    [NewtonsoftJsonProperty("allowAdditionalProperties")]
+    [BsonElement("allowAdditionalProperties")]
     public bool AllowAdditionalProperties { get; init; }
     
-    [JsonProperty("isAbstract")]
     [JsonPropertyName("isAbstract")]
+    [NewtonsoftJsonProperty("isAbstract")]
+    [BsonElement("isAbstract")]
     public bool IsAbstract
     {
         get;
@@ -95,8 +134,9 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
         }
     }
     
-    [JsonProperty("isSealed")]
     [JsonPropertyName("isSealed")]
+    [NewtonsoftJsonProperty("isSealed")]
+    [BsonElement("isSealed")]
     public bool IsSealed
     {
         get => this.isSealed;
@@ -110,13 +150,15 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
             this.isSealed = value;
         }
     }
-	
-    [JsonProperty("baseType")]
+    
     [JsonPropertyName("baseType")]
+    [NewtonsoftJsonProperty("baseType")]
+    [BsonElement("baseType")]
     public string? BaseUserType { get; set; }
-	
-    [JsonProperty("sys")]
+    
     [JsonPropertyName("sys")]
+    [NewtonsoftJsonProperty("sys")]
+    [BsonElement("sys")]
     public SysModel? Sys { get; set; }
     
     #endregion

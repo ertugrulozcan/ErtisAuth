@@ -2,8 +2,9 @@ using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Events;
-using ErtisAuth.Extensions.Mailkit.Models;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
+using JsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
 using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Core.Models.Mailing;
@@ -14,10 +15,12 @@ public class MailHook : MembershipBoundedResource, IHasSysInfo
     
     [JsonProperty("name")]
     [JsonPropertyName("name")]
+    [BsonElement("name")]
     public required string Name { get; set; }
     
     [JsonProperty("slug")]
     [JsonPropertyName("slug")]
+    [BsonElement("slug")]
     public string Slug
     {
         get
@@ -34,14 +37,17 @@ public class MailHook : MembershipBoundedResource, IHasSysInfo
 	
     [JsonProperty("description")]
     [JsonPropertyName("description")]
+    [BsonElement("description")]
     public string? Description { get; set; }
 	
     [JsonProperty("event")]
     [JsonPropertyName("event")]
+    [BsonElement("event")]
     public string? Event { get; set; }
     
+    [JsonIgnore]
+    [BsonIgnore]
     [NewtonsoftJsonIgnore]
-    [System.Text.Json.Serialization.JsonIgnore]
     public ErtisAuthEventType? EventType
     {
         get
@@ -64,46 +70,57 @@ public class MailHook : MembershipBoundedResource, IHasSysInfo
     
     [JsonProperty("status")]
     [JsonPropertyName("status")]
+    [BsonElement("status")]
     public string? Status { get; set; }
     
+    [JsonIgnore]
+    [BsonIgnore]
     [NewtonsoftJsonIgnore]
-    [System.Text.Json.Serialization.JsonIgnore]
     public bool IsActive => this.Status == "active";
     
     [JsonProperty("mailSubject")]
     [JsonPropertyName("mailSubject")]
+    [BsonElement("mailSubject")]
     public string? MailSubject { get; set; }
     
     [JsonProperty("mailTemplate")]
     [JsonPropertyName("mailTemplate")]
+    [BsonElement("mailTemplate")]
     public string? MailTemplate { get; set; }
     
     [JsonProperty("fromName")]
     [JsonPropertyName("fromName")]
+    [BsonElement("fromName")]
     public string? FromName { get; set; }
     
     [JsonProperty("fromAddress")]
     [JsonPropertyName("fromAddress")]
+    [BsonElement("fromAddress")]
     public string? FromAddress { get; set; }
     
     [JsonProperty("sendToUtilizer")]
     [JsonPropertyName("sendToUtilizer")]
+    [BsonElement("sendToUtilizer")]
     public bool SendToUtilizer { get; set; }
     
     [JsonProperty("recipients")]
     [JsonPropertyName("recipients")]
+    [BsonElement("recipients")]
     public Recipient[]? Recipients { get; set; }
     
     [JsonProperty("mailProvider")]
     [JsonPropertyName("mailProvider")]
+    [BsonElement("mailProvider")]
     public string? MailProvider { get; set; }
     
     [JsonProperty("variables")]
     [JsonPropertyName("variables")]
+    [BsonElement("variables")]
     public MailHookVariable[]? Variables { get; set; }
     
     [JsonProperty("sys")]
     [JsonPropertyName("sys")]
+    [BsonElement("sys")]
     public SysModel? Sys { get; set; }
     
     #endregion
@@ -115,10 +132,12 @@ public class MailHookVariable
     
     [JsonProperty("key")]
     [JsonPropertyName("key")]
+    [BsonElement("key")]
     public string? Key { get; set; }
     
     [JsonProperty("value")]
     [JsonPropertyName("value")]
+    [BsonElement("value")]
     public string? Value { get; set; }
     
     #endregion

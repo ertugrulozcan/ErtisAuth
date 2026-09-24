@@ -2,11 +2,12 @@ using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Events;
+using ErtisAuth.Core.Models.Events;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
-public class EventRepository : RepositoryBase<EventDto>, IEventRepository
+public class EventRepository : RepositoryBase<ErtisAuthEvent>, IEventRepository
 {
 	#region Properties
     
@@ -27,10 +28,12 @@ public class EventRepository : RepositoryBase<EventDto>, IEventRepository
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
+	/// <param name="logger"></param>
 	public EventRepository(
 		IMongoClientProvider clientProvider, 
-		IDatabaseSettings settings) : 
-		base(clientProvider, settings, "events")
+		IDatabaseSettings settings,
+		ILogger<EventRepository> logger) : 
+		base(clientProvider, settings, logger, "events")
 	{
 		
 	}

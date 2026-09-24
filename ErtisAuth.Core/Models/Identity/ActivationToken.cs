@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
+using JsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
 using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 // ReSharper disable UnusedMember.Global
@@ -13,22 +15,31 @@ public class ActivationToken
 	
 	[JsonProperty("reset_token")]
 	[JsonPropertyName("reset_token")]
+	[BsonElement("reset_token")]
 	public string Token { get; protected set; }
 	
+	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
 	public TimeSpan ExpiresIn { get; protected set; }
 	
 	[JsonProperty("expires_in")]
 	[JsonPropertyName("expires_in")]
-	public int ExpiresInTimeStamp => (int) this.ExpiresIn.TotalSeconds;
+	[BsonElement("expires_in")]
+	public int ExpiresInTimeStamp
+	{
+		get => (int)this.ExpiresIn.TotalSeconds;
+		set => this.ExpiresIn = TimeSpan.FromSeconds(value);
+	}
 	
 	[JsonProperty("created_at")]
 	[JsonPropertyName("created_at")]
+	[BsonElement("created_at")]
 	public DateTime CreatedAt { get; protected set; }
 	
+	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
 	public bool IsExpired => DateTime.Now > this.CreatedAt.Add(this.ExpiresIn);
 	
 	#endregion

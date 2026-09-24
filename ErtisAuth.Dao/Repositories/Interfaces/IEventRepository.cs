@@ -1,6 +1,6 @@
 using Ertis.MongoDB.Repository;
-using ErtisAuth.Dto.Models.Events;
+using ErtisAuth.Core.Models.Events;
 
 namespace ErtisAuth.Dao.Repositories.Interfaces;
 
-public interface IEventRepository : IMongoRepository<EventDto>;
+public interface IEventRepository : IMongoRepository<ErtisAuthEvent>;

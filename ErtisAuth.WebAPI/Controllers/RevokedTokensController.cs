@@ -4,9 +4,8 @@ using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.WebAPI.Helpers;
+using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Core.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -19,7 +18,7 @@ public class RevokedTokensController : QueryControllerBase
 {
 	#region Services
 	
-	private readonly IRevokedTokenService revokedTokenService;
+	private readonly IRevokedTokenService _revokedTokenService;
 	
 	#endregion
 	
@@ -31,7 +30,7 @@ public class RevokedTokensController : QueryControllerBase
 	/// <param name="revokedTokenService"></param>
 	public RevokedTokensController(IRevokedTokenService revokedTokenService)
 	{
-		this.revokedTokenService = revokedTokenService;
+		this._revokedTokenService = revokedTokenService;
 	}
 	
 	#endregion
@@ -42,10 +41,10 @@ public class RevokedTokensController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
-		this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
-		this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
+		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		var revokedTokens = await this.revokedTokenService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		var revokedTokens = await this._revokedTokenService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return this.Ok(revokedTokens);
 	}
 	
@@ -60,8 +59,7 @@ public class RevokedTokensController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			var dtos = await this.revokedTokenService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
-			return QueryHelper.FixTimeZoneOffsetInQueryResult(dtos);
+			return await this._revokedTokenService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 		}
 		else
 		{

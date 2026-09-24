@@ -2,6 +2,7 @@ using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
@@ -28,10 +29,12 @@ public class UserRepository : DynamicRepositoryBase, IUserRepository
     /// </summary>
     /// <param name="clientProvider"></param>
     /// <param name="settings"></param>
+    /// <param name="logger"></param>
     public UserRepository(
         IMongoClientProvider clientProvider, 
-        IDatabaseSettings settings) : 
-        base(clientProvider, settings, "users")
+        IDatabaseSettings settings,
+        ILogger<UserRepository> logger) : 
+        base(clientProvider, settings, logger, "users")
     {
         
     }

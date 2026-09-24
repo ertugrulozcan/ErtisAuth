@@ -5,20 +5,19 @@ using Ertis.Schema.Types;
 using Ertis.Schema.Types.CustomTypes;
 using Ertis.Schema.Types.Primitives;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
-using ErtisAuth.Dto.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Constants;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class UserTypeService : MembershipBoundedCrudService<UserType, UserTypeDto>, IUserTypeService
+public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserTypeService
 {
     #region Constants
 	
@@ -28,7 +27,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType, UserTypeDt
     
     #region Services
 	
-    private readonly IEventService eventService;
+    private readonly IEventService _eventService;
     private readonly IMemoryCache _memoryCache;
 	
     #endregion
@@ -258,7 +257,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType, UserTypeDt
         IMemoryCache memoryCache)
         : base(membershipService, repository)
     {
-        this.eventService = eventService;
+        this._eventService = eventService;
         this._memoryCache = memoryCache;
         
         this.OnCreated += this.UserTypeCreatedEventHandler;
@@ -272,7 +271,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType, UserTypeDt
 	
     private void UserTypeCreatedEventHandler(object? sender, CreateResourceEventArgs<UserType> eventArgs)
     {
-        this.eventService.FireEventAsync(this, new ErtisAuthEvent
+        this._eventService.FireEventAsync(this, new ErtisAuthEvent
         {
 	        EventType = ErtisAuthEventType.UserTypeCreated,
 	        UtilizerId = eventArgs.Utilizer.Id,
@@ -283,7 +282,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType, UserTypeDt
 	
     private void UserTypeUpdatedEventHandler(object? sender, UpdateResourceEventArgs<UserType> eventArgs)
     {
-        this.eventService.FireEventAsync(this, new ErtisAuthEvent
+        this._eventService.FireEventAsync(this, new ErtisAuthEvent
         {
 	        EventType = ErtisAuthEventType.UserTypeUpdated,
 	        UtilizerId = eventArgs.Utilizer.Id,
@@ -295,7 +294,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType, UserTypeDt
 	
     private void UserTypeDeletedEventHandler(object? sender, DeleteResourceEventArgs<UserType> eventArgs)
     {
-        this.eventService.FireEventAsync(this, new ErtisAuthEvent
+        this._eventService.FireEventAsync(this, new ErtisAuthEvent
         {
 	        EventType = ErtisAuthEventType.UserTypeDeleted,
 	        UtilizerId = eventArgs.Utilizer.Id,

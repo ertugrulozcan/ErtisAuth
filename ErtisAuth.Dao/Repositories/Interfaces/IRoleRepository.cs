@@ -1,6 +1,6 @@
 using Ertis.MongoDB.Repository;
-using ErtisAuth.Dto.Models.Roles;
+using ErtisAuth.Core.Models.Roles;
 
 namespace ErtisAuth.Dao.Repositories.Interfaces;
 
-public interface IRoleRepository : IMongoRepository<RoleDto>;
+public interface IRoleRepository : IMongoRepository<Role>;

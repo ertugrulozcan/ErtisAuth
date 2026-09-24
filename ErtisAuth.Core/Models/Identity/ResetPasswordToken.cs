@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
+using JsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
 using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Core.Models.Identity;
@@ -17,10 +19,12 @@ public class ResetPasswordToken
 	
 	[JsonProperty("reset_token")]
 	[JsonPropertyName("reset_token")]
+	[BsonElement("reset_token")]
 	public string Token { get; protected set; }
 	
+	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
 	public TimeSpan ExpiresIn
 	{
 		get => this.expiresIn;
@@ -33,6 +37,7 @@ public class ResetPasswordToken
 	
 	[JsonProperty("expires_in")]
 	[JsonPropertyName("expires_in")]
+	[BsonElement("expires_in")]
 	public int ExpiresInTimeStamp
 	{
 		get => this.expiresInTimeStamp;
@@ -45,10 +50,12 @@ public class ResetPasswordToken
 	
 	[JsonProperty("created_at")]
 	[JsonPropertyName("created_at")]
+	[BsonElement("created_at")]
 	public DateTime CreatedAt { get; protected set; }
 	
+	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
 	public bool IsExpired => DateTime.UtcNow > this.CreatedAt.Add(this.ExpiresIn);
 	
 	#endregion

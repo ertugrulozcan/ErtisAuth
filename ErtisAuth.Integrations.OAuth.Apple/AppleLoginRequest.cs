@@ -16,7 +16,7 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken, 
 	
     [JsonProperty("user")]
 	[JsonPropertyName("user")]
-    public required AppleUser User { get; set; }
+    public AppleUser? User { get; set; }
     
     [JsonProperty("token")]
 	[JsonPropertyName("token")]
@@ -24,11 +24,11 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken, 
 	
     [JsonIgnore]
 	[NewtonsoftJsonIgnore]
-    public string? UserId => this.User.Id;
+    public string? UserId => this.User?.Id;
     
     [JsonIgnore]
 	[NewtonsoftJsonIgnore]
-    public string? EmailAddress => this.User.EmailAddress;
+    public string? EmailAddress => this.User?.EmailAddress;
     
     [JsonIgnore]
 	[NewtonsoftJsonIgnore]
@@ -80,10 +80,10 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken, 
     	return new User
     	{
     		MembershipId = membershipId,
-    		FirstName = this.User.FirstName,
-    		LastName = this.User.LastName,
-    		Username = this.User.EmailAddress ?? string.Empty,
-    		EmailAddress = this.User.EmailAddress,
+    		FirstName = this.User?.FirstName,
+    		LastName = this.User?.LastName,
+    		Username = this.User?.EmailAddress ?? string.Empty,
+    		EmailAddress = this.User?.EmailAddress,
     		Role = role ?? string.Empty,
     		UserType = userType,
     		SourceProvider = KnownProviders.Apple.ToString(),

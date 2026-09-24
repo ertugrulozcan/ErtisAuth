@@ -1,6 +1,6 @@
 using Ertis.MongoDB.Repository;
-using ErtisAuth.Dto.Models.Webhooks;
+using ErtisAuth.Core.Models.Webhooks;
 
 namespace ErtisAuth.Dao.Repositories.Interfaces;
 
-public interface IWebhookRepository : IMongoRepository<WebhookDto>;
+public interface IWebhookRepository : IMongoRepository<Webhook>;

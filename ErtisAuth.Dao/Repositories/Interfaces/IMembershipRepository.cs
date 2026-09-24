@@ -1,6 +1,6 @@
 using Ertis.MongoDB.Repository;
-using ErtisAuth.Dto.Models.Memberships;
+using ErtisAuth.Core.Models.Memberships;
 
 namespace ErtisAuth.Dao.Repositories.Interfaces;
 
-public interface IMembershipRepository : IMongoRepository<MembershipDto>;
+public interface IMembershipRepository : IMongoRepository<Membership>;

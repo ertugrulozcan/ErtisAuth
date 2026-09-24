@@ -96,11 +96,6 @@ public static class HashParser
 				outputBitSize = 512;
 				stateSize = 0;
 				return true;
-			case "SHA0":
-				algorithm = HashAlgorithms.SHA0;
-				outputBitSize = specificOutputSize > 0 ? specificOutputSize : 160;
-				stateSize = specificStateSize > 0 ? specificStateSize : 160;
-				return true;
 			case "SHA1":
 				algorithm = HashAlgorithms.SHA1;
 				outputBitSize = specificOutputSize > 0 ? specificOutputSize : 160;

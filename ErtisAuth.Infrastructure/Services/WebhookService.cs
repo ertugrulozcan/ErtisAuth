@@ -4,22 +4,22 @@ using Ertis.MongoDB.Queries;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Webhooks;
-using ErtisAuth.Events.EventArgs;
-using ErtisAuth.Infrastructure.Mapping;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>, IWebhookService
+public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookService
 {
 	#region Services
 	
-	private readonly IEventService eventService;
-	private readonly ISystemRestHandler restHandler;
+	private readonly IEventService _eventService;
+	private readonly ISystemRestHandler _restHandler;
+	private readonly ILogger<WebhookService> _logger;
 	
 	#endregion
 	
@@ -31,17 +31,21 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 	/// <param name="membershipService"></param>
 	/// <param name="eventService"></param>
 	/// <param name="restHandler"></param>
-	/// <param name="webhookRepository"></param>
+	/// <param name="repository"></param>
+	/// <param name="logger"></param>
 	public WebhookService(
 		IMembershipService membershipService, 
 		IEventService eventService,
 		ISystemRestHandler restHandler,
-		IWebhookRepository webhookRepository) : base(membershipService, webhookRepository)
+		IWebhookRepository repository,
+		ILogger<WebhookService> logger) : 
+		base(membershipService, repository)
 	{
-		this.eventService = eventService;
-		this.restHandler = restHandler;
+		this._eventService = eventService;
+		this._restHandler = restHandler;
+		this._logger = logger;
 		
-		this.eventService.EventFired += EventServiceOnEventFired;
+		this._eventService.EventFired += EventServiceOnEventFired;
 		
 		this.OnCreated += this.WebhookCreatedEventHandler;
 		this.OnUpdated += this.WebhookUpdatedEventHandler;
@@ -77,7 +81,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "WebhookService.OnEventFired occured an error");
 		}
 	}
 	
@@ -85,7 +89,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 	{
 		try
 		{
-			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.WebhookCreated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -95,7 +99,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "WebhookService.WebhookCreatedEventHandler occured an error");
 		}
 	}
 	
@@ -103,7 +107,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 	{
 		try
 		{
-			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.WebhookUpdated,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -114,7 +118,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "WebhookService.WebhookUpdatedEventHandler occured an error");
 		}
 	}
 	
@@ -122,7 +126,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 	{
 		try
 		{
-			await this.eventService.FireEventAsync(this, new ErtisAuthEvent
+			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
 			{
 				EventType = ErtisAuthEventType.WebhookDeleted,
 				UtilizerId = eventArgs.Utilizer.Id,
@@ -132,7 +136,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "WebhookService.WebhookDeletedEventHandler occured an error");
 		}
 	}
 	
@@ -155,15 +159,14 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 					}
 					catch (Exception ex)
 					{
-						Console.WriteLine("Webhook execution occured an exception");
-						Console.WriteLine(ex);
+						this._logger.LogError(ex, "Webhook execution occured an exception");
 					}
 				});
 			}
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "WebhookService.ExecuteWebhookAsync occured an error");
 		}
 	}
 	
@@ -215,7 +218,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 			{
 				try
 				{
-					var response = await this.restHandler.ExecuteRequestAsync(httpMethod, url, QueryString.Empty, headers, body);
+					var response = await this._restHandler.ExecuteRequestAsync(httpMethod, url, QueryString.Empty, headers, body);
 					var webhookExecutionResult = new WebhookExecutionResult
 					{
 						WebhookId = webhook.Id,
@@ -237,7 +240,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 							Document = webhookExecutionResult
 						};
 						
-						await this.eventService.FireEventAsync(this, e);
+						await this._eventService.FireEventAsync(this, e);
 						break;
 					}
 					else
@@ -250,7 +253,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 							Document = webhookExecutionResult
 						};
 						
-						await this.eventService.FireEventAsync(this, e);
+						await this._eventService.FireEventAsync(this, e);
 					}
 				}
 				catch (Exception ex)
@@ -273,13 +276,13 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 						Document = webhookExecutionResult
 					};
 					
-					await this.eventService.FireEventAsync(this, e);
+					await this._eventService.FireEventAsync(this, e);
 				}
 			}
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "WebhookService.ExecuteWebhookRequestAsync occured an error");
 		}
 	}
 	
@@ -428,14 +431,12 @@ public class WebhookService : MembershipBoundedCrudService<Webhook, WebhookDto>,
 	
 	private Webhook? GetWebhookByName(string name, string membershipId)
 	{
-		var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
-		return dto == null ? null : Mapper.Current.Map<WebhookDto, Webhook>(dto);
+		return this._repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
 	}
 	
 	private async Task<Webhook?> GetWebhookByNameAsync(string name, string membershipId)
 	{
-		var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
-		return dto == null ? null : Mapper.Current.Map<WebhookDto, Webhook>(dto);
+		return await this._repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
 	}
 	
 	#endregion

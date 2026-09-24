@@ -1,6 +1,6 @@
 using Ertis.MongoDB.Repository;
-using ErtisAuth.Dto.Models.Identity;
+using ErtisAuth.Core.Models.Identity;
 
 namespace ErtisAuth.Dao.Repositories.Interfaces;
 
-public interface IOneTimePasswordRepository : IMongoRepository<OneTimePasswordDto>;
+public interface IOneTimePasswordRepository : IMongoRepository<OneTimePassword>;

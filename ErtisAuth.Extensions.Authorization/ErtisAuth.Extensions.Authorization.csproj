@@ -1,11 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
-    
-    <ItemGroup>
-        <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
-    </ItemGroup>
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="Ertis.TemplateEngine" Version="10.0.0" />
+		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
+	</ItemGroup>
 </Project>

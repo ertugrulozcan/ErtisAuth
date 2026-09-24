@@ -1,0 +1,30 @@
+using ErtisAuth.Core.Models.Roles;
+
+// ReSharper disable UnusedMember.Global
+namespace ErtisAuth.Core.Attributes;
+
+[AttributeUsage(AttributeTargets.Method)]
+public class RbacActionAttribute : RbacAttribute
+{
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="action"></param>
+	public RbacActionAttribute(Rbac.CrudActions action) : base(Rbac.GetSegment(action))
+	{
+		
+	}
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="customAction"></param>
+	public RbacActionAttribute(string customAction) : base(customAction)
+	{
+		
+	}
+	
+	#endregion
+}

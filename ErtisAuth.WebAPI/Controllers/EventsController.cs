@@ -5,9 +5,9 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.Authorization.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -20,8 +20,7 @@ public class EventsController : QueryControllerBase
 {
 	#region Services
 	
-	private readonly IEventService eventService;
-	private readonly IMembershipService membershipService;
+	private readonly IEventService _eventService;
 	
 	#endregion
 	
@@ -31,11 +30,9 @@ public class EventsController : QueryControllerBase
 	/// Constructor
 	/// </summary>
 	/// <param name="eventService"></param>
-	/// <param name="membershipService"></param>
-	public EventsController(IEventService eventService, IMembershipService membershipService)
+	public EventsController(IEventService eventService)
 	{
-		this.eventService = eventService;
-		this.membershipService = membershipService;
+		this._eventService = eventService;
 	}
 	
 	#endregion
@@ -47,7 +44,7 @@ public class EventsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<ActionResult<ErtisAuthEvent>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var ertisAuthEvent = await this.eventService.GetDynamicAsync(membershipId, id);
+		var ertisAuthEvent = await this._eventService.GetDynamicAsync(membershipId, id);
 		if (ertisAuthEvent != null)
 		{
 			return this.Ok(ertisAuthEvent);
@@ -62,10 +59,10 @@ public class EventsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
-		this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
-		this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
+		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		var events = await this.eventService.GetDynamicAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		var events = await this._eventService.GetDynamicAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return this.Ok(events);
 	}
 	
@@ -80,55 +77,12 @@ public class EventsController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this.eventService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._eventService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
 			throw ErtisAuthException.MembershipIdRequired();
 		}
-	}
-	
-	#endregion
-	
-	#region Create Methods
-	
-	[HttpPost]
-	[RbacAction(Rbac.CrudActions.Create)]
-	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] ErtisAuthCustomEvent model, CancellationToken cancellationToken = default)
-	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			return this.MembershipNotFound(membershipId);
-		}
-		
-		// Validation
-		if (string.IsNullOrEmpty(model.EventType))
-		{
-			return this.BadRequest("event_type is required field");
-		}
-		
-		var eventType = model.EventType;
-		eventType = eventType.Replace(" ", string.Empty);
-		
-		var utilizerId = model.UtilizerId;
-		if (string.IsNullOrEmpty(utilizerId))
-		{
-			var utilizer = this.GetUtilizer();
-			utilizerId = utilizer.Id;
-		}
-		
-		var ertisAuthCustomEvent = new ErtisAuthCustomEvent
-		{
-			EventType = eventType,
-			Document = model.Document,
-			Prior = model.Prior,
-			MembershipId = membershipId,
-			UtilizerId = utilizerId
-		};
-		
-		var ertisAuthEvent = await this.eventService.FireEventAsync(this, ertisAuthCustomEvent, cancellationToken: cancellationToken);
-		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{ertisAuthEvent.Id}", ertisAuthEvent);
 	}
 	
 	#endregion

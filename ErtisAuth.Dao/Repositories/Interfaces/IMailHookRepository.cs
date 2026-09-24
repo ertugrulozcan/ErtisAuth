@@ -1,6 +1,6 @@
 using Ertis.MongoDB.Repository;
-using ErtisAuth.Dto.Models.Mailing;
+using ErtisAuth.Core.Models.Mailing;
 
 namespace ErtisAuth.Dao.Repositories.Interfaces;
 
-public interface IMailHookRepository : IMongoRepository<MailHookDto>;
+public interface IMailHookRepository : IMongoRepository<MailHook>;

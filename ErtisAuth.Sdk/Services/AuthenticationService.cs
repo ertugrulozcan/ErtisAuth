@@ -32,7 +32,7 @@ public class AuthenticationService : MembershipBoundedService, IAuthenticationSe
 	public IResponseResult<BearerToken> GetToken(string username, string password, string? ipAddress = null, string? userAgent = null)
 	{
 		var url = $"{this.BaseUrl}/generate-token";
-		var headers = HeaderCollection.Add("X-Ertis-Alias", this.MembershipId);
+		var headers = HeaderCollection.Add("Membership", this.MembershipId);
 		if (!string.IsNullOrEmpty(ipAddress))
 		{
 			headers.Add("X-IpAddress", ipAddress);
@@ -56,7 +56,7 @@ public class AuthenticationService : MembershipBoundedService, IAuthenticationSe
 	public async Task<IResponseResult<BearerToken>> GetTokenAsync(string username, string password, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default)
 	{
 		var url = $"{this.BaseUrl}/generate-token";
-		var headers = HeaderCollection.Add("X-Ertis-Alias", this.MembershipId);
+		var headers = HeaderCollection.Add("Membership", this.MembershipId);
 		if (!string.IsNullOrEmpty(ipAddress))
 		{
 			headers.Add("X-IpAddress", ipAddress);

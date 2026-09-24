@@ -2,7 +2,8 @@ using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Identity.Attributes;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Core.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -13,7 +14,7 @@ public class ServerController : ControllerBase
 {
 	#region Services
 	
-	private readonly IMembershipService membershipService;
+	private readonly IMembershipService _membershipService;
 	
 	#endregion
 	
@@ -25,7 +26,7 @@ public class ServerController : ControllerBase
 	/// <param name="membershipService"></param>
 	public ServerController(IMembershipService membershipService)
 	{
-		this.membershipService = membershipService;
+		this._membershipService = membershipService;
 	}
 	
 	#endregion
@@ -39,7 +40,7 @@ public class ServerController : ControllerBase
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		var getMembershipsResult = await this.membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		var getMembershipsResult = await this._membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return this.Ok(new PaginationCollection<dynamic>
 		{
 			Count = getMembershipsResult.Count,
@@ -48,7 +49,7 @@ public class ServerController : ControllerBase
 				_id = x.Id,
 				name = x.Name,
 				slug = x.Slug,
-				secret_key = Identity.Cryptography.StringCipher.Encrypt(x.SecretKey, x.Id)
+				secret_key = StringCipher.Encrypt(x.SecretKey, x.Id)
 			})
 		});
 	}

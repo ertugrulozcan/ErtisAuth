@@ -2,11 +2,12 @@ using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Memberships;
+using ErtisAuth.Core.Models.Memberships;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
-public class MembershipRepository : RepositoryBase<MembershipDto>, IMembershipRepository
+public class MembershipRepository : RepositoryBase<Membership>, IMembershipRepository
 {
 	#region Properties
     
@@ -24,10 +25,12 @@ public class MembershipRepository : RepositoryBase<MembershipDto>, IMembershipRe
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
+	/// <param name="logger"></param>
 	public MembershipRepository(
 		IMongoClientProvider clientProvider, 
-		IDatabaseSettings settings) : 
-		base(clientProvider, settings, "memberships")
+		IDatabaseSettings settings,
+		ILogger<MembershipRepository> logger) : 
+		base(clientProvider, settings, logger, "memberships")
 	{
 		
 	}

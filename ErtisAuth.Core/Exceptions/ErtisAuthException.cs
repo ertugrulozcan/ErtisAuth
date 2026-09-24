@@ -8,14 +8,6 @@ namespace ErtisAuth.Core.Exceptions;
 
 public class ErtisAuthException : ErtisException
 {
-	#region Properties
-	
-	public bool Capture { get; set; }
-	
-	public IReadOnlyDictionary<string, object?>? Extra { get; set; }
-	
-	#endregion
-	
 	#region Constructors
 	
 	// ReSharper disable once MemberCanBePrivate.Global
@@ -63,11 +55,6 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException AuthorizationHeaderMissing()
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "Authorization header missing or empty", "AuthorizationHeaderMissing");
-	}
-	
-	public static ErtisAuthException XErtisAliasMissing(string aliasName)
-	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, $"Membership id should be added in headers with '{aliasName}' key", "XErtisAliasMissing");
 	}
 	
 	public static ErtisAuthException InvalidToken(string? message = null)
@@ -198,14 +185,6 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "Membership id required", "MembershipIdRequired");
 	}
 	
-	public static ValidationException MalformedMembership(string membershipId, IEnumerable<string> errors)
-	{
-		return new ValidationException(HttpStatusCode.NotImplemented, $"Membership is not configured properly (membership_id: '{membershipId}')", "MalformedMembership")
-		{
-			Errors = errors
-		};
-	}
-	
 	public static ErtisAuthException MembershipAlreadyExists(string membershipId)
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"Membership is already exists ({membershipId})", "MembershipAlreadyExists");
@@ -214,11 +193,6 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException MembershipCouldNotDeleted(string membershipId)
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"This membership is already using by some membership related resources, it's could not be deleted ({membershipId})", "MembershipCouldNotDeleted");
-	}
-	
-	public static ErtisAuthException NotDefinedAnyMailProvider()
-	{
-		return new ErtisAuthException(HttpStatusCode.NotImplemented, "No mail provider has been defined yet", "NotDefinedAnyMailProvider");
 	}
 	
 	public static ErtisAuthException UserAlreadyActive()
@@ -336,11 +310,7 @@ public class ErtisAuthException : ErtisException
 	
 	public static ErtisAuthException UserTypeImmutable(IReadOnlyDictionary<string, object?>? extras = null)
 	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is an immutable field. It's cannot be updated.", "UserTypeImmutable")
-		{
-			Capture = true, 
-			Extra = extras
-		};
+		return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is an immutable field. It's cannot be updated.", "UserTypeImmutable");
 	}
 	
 	public static ErtisAuthException UserTypeCanNotBeDelete()
@@ -503,6 +473,16 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException ResetPasswordMailHookWasNotDefined()
 	{
 		return new ErtisAuthException(HttpStatusCode.NotImplemented, "The reset password mail hook was not defined or not configured correctly or passive", "ResetPasswordMailHookWasNotDefined");
+	}
+	
+	public static ErtisAuthException NotDefinedAnyMailProvider()
+	{
+		return new ErtisAuthException(HttpStatusCode.NotImplemented, "No mail provider has been defined yet", "NotDefinedAnyMailProvider");
+	}
+	
+	public static ErtisAuthException UnknownMailProvider(string type)
+	{
+		return new ErtisAuthException(HttpStatusCode.NotImplemented, $"Unknown mail provider: <{type}>", "UnknownMailProvider");
 	}
 	
 	#endregion

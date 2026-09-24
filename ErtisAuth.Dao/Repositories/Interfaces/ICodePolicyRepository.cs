@@ -1,6 +1,6 @@
 using Ertis.MongoDB.Repository;
-using ErtisAuth.Dto.Models.Identity;
+using ErtisAuth.Core.Models.Identity;
 
 namespace ErtisAuth.Dao.Repositories.Interfaces;
 
-public interface ICodePolicyRepository : IMongoRepository<TokenCodePolicyDto>;
+public interface ICodePolicyRepository : IMongoRepository<TokenCodePolicy>;

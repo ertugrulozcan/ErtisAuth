@@ -1,13 +1,14 @@
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.WebAPI.Models.Users;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,6 +25,7 @@ public class UsersController : QueryControllerBase
 	private readonly IUserService _userService;
 	private readonly ITokenService _tokenService;
 	private readonly IOneTimePasswordService _oneTimePasswordService;
+	private readonly IUtilizerService _utilizerService;
 	
 	#endregion
 	
@@ -35,11 +37,17 @@ public class UsersController : QueryControllerBase
 	/// <param name="userService"></param>
 	/// <param name="tokenService"></param>
 	/// <param name="oneTimePasswordService"></param>
-	public UsersController(IUserService userService, ITokenService tokenService, IOneTimePasswordService oneTimePasswordService)
+	/// <param name="utilizerService"></param>
+	public UsersController(
+		IUserService userService, 
+		ITokenService tokenService, 
+		IOneTimePasswordService oneTimePasswordService,
+		IUtilizerService utilizerService)
 	{
 		this._userService = userService;
 		this._tokenService = tokenService;
 		this._oneTimePasswordService = oneTimePasswordService;
+		this._utilizerService = utilizerService;
 	}
 	
 	#endregion
@@ -58,7 +66,6 @@ public class UsersController : QueryControllerBase
 		var user = await this._userService.GetAsync(membershipId, id);
 		if (user != null)
 		{
-			user.RemoveProperty("password_hash");
 			return this.Ok(user);
 		}
 		else
@@ -77,14 +84,7 @@ public class UsersController : QueryControllerBase
 	{
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
-		
-		var users = await this._userService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
-		foreach (var user in users.Items)
-		{
-			user.RemoveProperty("password_hash");
-		}
-		
-		return this.Ok(users);
+		return this.Ok(await this._userService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
 	}
 	
 	[HttpPost("_query")]
@@ -149,7 +149,7 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] DynamicObject model, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
 		var user = await this._userService.CreateAsync(utilizer, membershipId, model, host, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user["_id"]}", user);
@@ -169,7 +169,7 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] DynamicObject model, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var user = await this._userService.UpdateAsync(utilizer, membershipId, id, model, cancellationToken: cancellationToken);
 		return this.Ok(user);
 	}
@@ -187,7 +187,7 @@ public class UsersController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Delete)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		if (await this._userService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
@@ -204,9 +204,32 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	[RbacAction(Rbac.CrudActions.Delete)]
-	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[]? ids, CancellationToken cancellationToken = default)
 	{
-		return await this.BulkDeleteAsync(this._userService, membershipId, ids, cancellationToken: cancellationToken);
+		if (ids != null)
+		{
+			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+			var isDeleted = await this._userService.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
+			if (isDeleted != null)
+			{
+				if (isDeleted.Value)
+				{
+					return this.NoContent();
+				}
+				else
+				{
+					return this.BulkDeleteFailed(ids);
+				}
+			}
+			else
+			{
+				return this.BulkDeletePartial();
+			}
+		}
+		else
+		{
+			return this.BadRequest();
+		}
 	}
 	
 	#endregion
@@ -223,7 +246,7 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> ManualActivateUser([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		return this.Ok(await this._userService.ActivateUserByIdAsync(utilizer, membershipId, id, cancellationToken: cancellationToken));
 	}
 	
@@ -237,7 +260,7 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> ManualFreezeUser([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		await this._tokenService.RevokeAllAsync(membershipId, id, cancellationToken: cancellationToken);
 		return this.Ok(await this._userService.FreezeUserByIdAsync(utilizer, membershipId, id, cancellationToken: cancellationToken));
 	}
@@ -246,7 +269,7 @@ public class UsersController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Update)]
 	public async Task<IActionResult> ActivateUser([FromRoute] string membershipId, [FromQuery] string uat, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		return this.Ok(await this._userService.ActivateUserAsync(utilizer, membershipId, uat, cancellationToken: cancellationToken));
 	}
 	
@@ -309,7 +332,7 @@ public class UsersController : QueryControllerBase
 			return this.PasswordRequired();
 		}
 		
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		await this._userService.ChangePasswordAsync(utilizer, membershipId, id, model.Password, cancellationToken: cancellationToken);
 		return this.Ok();
 	}
@@ -327,7 +350,7 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> ResetPassword([FromRoute] string membershipId, [FromBody] ResetPasswordFormModel model, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
 		if (string.IsNullOrEmpty(host))
 		{
@@ -387,7 +410,7 @@ public class UsersController : QueryControllerBase
 			return this.PasswordRequired();
 		}
 		
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		await this._userService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password, cancellationToken: cancellationToken);
 		await this._oneTimePasswordService.RevokeResetPasswordTokenAsync(utilizer, membershipId, model.ResetToken, cancellationToken: cancellationToken);
 		return this.Ok();
@@ -406,7 +429,7 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> CheckPassword([FromRoute] string membershipId, [FromQuery] string password, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		if (membershipId != utilizer.MembershipId)
 		{
 			return this.Unauthorized();
@@ -437,7 +460,7 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> GenerateOneTimePassword([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var otp = await this._oneTimePasswordService.GenerateAsync(utilizer, membershipId, id, cancellationToken: cancellationToken);
 		return this.Ok(otp);
 	}

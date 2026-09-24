@@ -5,10 +5,9 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.WebAPI.Extensions;
-using ErtisAuth.WebAPI.Helpers;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.Authorization.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -21,7 +20,7 @@ public class ActiveTokensController : QueryControllerBase
 {
 	#region Services
 	
-	private readonly IActiveTokenService activeTokenService;
+	private readonly IActiveTokenService _activeTokenService;
 	
 	#endregion
 	
@@ -33,7 +32,7 @@ public class ActiveTokensController : QueryControllerBase
 	/// <param name="activeTokenService"></param>
 	public ActiveTokensController(IActiveTokenService activeTokenService)
 	{
-		this.activeTokenService = activeTokenService;
+		this._activeTokenService = activeTokenService;
 	}
 	
 	#endregion
@@ -45,7 +44,7 @@ public class ActiveTokensController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<ActionResult<ActiveToken>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var activeToken = await this.activeTokenService.GetAsync(membershipId, id);
+		var activeToken = await this._activeTokenService.GetAsync(membershipId, id);
 		if (activeToken != null)
 		{
 			return this.Ok(activeToken);
@@ -63,7 +62,7 @@ public class ActiveTokensController : QueryControllerBase
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		var activeTokens = await this.activeTokenService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		var activeTokens = await this._activeTokenService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return this.Ok(activeTokens);
 	}
 	
@@ -78,8 +77,7 @@ public class ActiveTokensController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			var dtos = await this.activeTokenService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
-			return QueryHelper.FixTimeZoneOffsetInQueryResult(dtos);	
+			return await this._activeTokenService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -91,7 +89,7 @@ public class ActiveTokensController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<IActionResult> Aggregate([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
-		var aggregationResults = await this.activeTokenService.AggregateAsync(membershipId, await this.ExtractRequestBodyAsync(cancellationToken: cancellationToken), cancellationToken: cancellationToken);
+		var aggregationResults = await this._activeTokenService.AggregateAsync(membershipId, await this.ExtractRequestBodyAsync(cancellationToken: cancellationToken), cancellationToken: cancellationToken);
 		return this.Ok(aggregationResults);
 	}
 	

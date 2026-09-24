@@ -3,11 +3,18 @@ using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
 public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositoryBase
 {
+	#region Services
+	
+	private readonly ILogger<DynamicRepositoryBase> _logger;
+	
+	#endregion
+	
 	#region Properties
 	
 	protected virtual IIndexDefinition[] Indexes => Array.Empty<IIndexDefinition>();
@@ -21,14 +28,16 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
+	/// <param name="logger"></param>
 	/// <param name="collectionName"></param>
 	protected DynamicRepositoryBase(
 		IMongoClientProvider clientProvider, 
-		IDatabaseSettings settings, 
+		IDatabaseSettings settings,
+		ILogger<DynamicRepositoryBase> logger, 
 		string collectionName) : 
 		base(clientProvider, settings, collectionName)
 	{
-		
+		this._logger = logger;
 	}
 	
 	#endregion
@@ -60,17 +69,17 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
 				
 				foreach (var index in missingIndexes)
 				{
-					Console.WriteLine($"Index '{index.Key}' created on {this.CollectionName} collection.");
+					this._logger.LogInformation("Index '{Key}' created on {CollectionName} collection", index.Key, this.CollectionName);
 				}
 			}
 			else
 			{
-				Console.WriteLine($"All indexes already exist on {this.CollectionName} collection.");
+				this._logger.LogInformation("All indexes already exist on {CollectionName} collection", this.CollectionName);
 			}
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "DynamicRepositoryBase.CreateIndexesAsync occured an error");
 		}
 	}
 	

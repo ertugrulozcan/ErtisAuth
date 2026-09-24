@@ -5,9 +5,10 @@ using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.WebAPI.Models.Roles;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,9 +22,10 @@ public class RolesController : QueryControllerBase
 {
 	#region Services
 	
-	private readonly IRoleService roleService;
-	private readonly IAccessControlService accessControlService;
-	private readonly IMembershipService membershipService;
+	private readonly IRoleService _roleService;
+	private readonly IAccessControlService _accessControlService;
+	private readonly IMembershipService _membershipService;
+	private readonly IUtilizerService _utilizerService;
 	
 	#endregion
 	
@@ -35,11 +37,18 @@ public class RolesController : QueryControllerBase
 	/// <param name="roleService"></param>
 	/// <param name="accessControlService"></param>
 	/// <param name="membershipService"></param>
-	public RolesController(IRoleService roleService, IAccessControlService accessControlService, IMembershipService membershipService)
+	/// <param name="utilizerService"></param>
+	public RolesController(
+		IRoleService roleService, 
+		IAccessControlService accessControlService, 
+		IMembershipService membershipService,
+		IUtilizerService utilizerService)
 	{
-		this.roleService = roleService;
-		this.accessControlService = accessControlService;
-		this.membershipService = membershipService;
+		this._roleService = roleService;
+		this._accessControlService = accessControlService;
+		this._membershipService = membershipService;
+		this._utilizerService = utilizerService;
+		this._utilizerService = utilizerService;
 	}
 	
 	#endregion
@@ -50,7 +59,7 @@ public class RolesController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Create)]
 	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateRoleFormModel model, CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			return this.MembershipNotFound(membershipId);
@@ -66,8 +75,8 @@ public class RolesController : QueryControllerBase
 			MembershipId = membershipId
 		};
 		
-		var utilizer = this.GetUtilizer();
-		var role = await this.roleService.CreateAsync(utilizer, membershipId, roleModel, cancellationToken: cancellationToken);
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var role = await this._roleService.CreateAsync(utilizer, membershipId, roleModel, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{role.Id}", role);
 	}
 	
@@ -80,7 +89,7 @@ public class RolesController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<ActionResult<Role>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var role = await this.roleService.GetAsync(membershipId, id);
+		var role = await this._roleService.GetAsync(membershipId, id);
 		if (role != null)
 		{
 			return this.Ok(role);
@@ -95,10 +104,10 @@ public class RolesController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
-		this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
-		this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
+		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		var roles = await this.roleService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		var roles = await this._roleService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return this.Ok(roles);
 	}
 	
@@ -113,7 +122,7 @@ public class RolesController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this.roleService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._roleService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -138,7 +147,7 @@ public class RolesController : QueryControllerBase
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		return this.Ok(await this.roleService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+		return this.Ok(await this._roleService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
 	}
 	
 	#endregion
@@ -161,8 +170,8 @@ public class RolesController : QueryControllerBase
 			MembershipId = membershipId
 		};
 		
-		var utilizer = this.GetUtilizer();
-		var role = await this.roleService.UpdateAsync(utilizer, membershipId, roleModel, cancellationToken: cancellationToken);
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var role = await this._roleService.UpdateAsync(utilizer, membershipId, roleModel, cancellationToken: cancellationToken);
 		return this.Ok(role);
 	}
 	
@@ -175,8 +184,8 @@ public class RolesController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Delete)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
-		if (await this.roleService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		if (await this._roleService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}
@@ -192,9 +201,32 @@ public class RolesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	[RbacAction(Rbac.CrudActions.Delete)]
-	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[]? ids, CancellationToken cancellationToken = default)
 	{
-		return await this.BulkDeleteAsync(this.roleService, membershipId, ids, cancellationToken: cancellationToken);
+		if (ids != null)
+		{
+			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+			var isDeleted = await this._roleService.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
+			if (isDeleted != null)
+			{
+				if (isDeleted.Value)
+				{
+					return this.NoContent();
+				}
+				else
+				{
+					return this.BulkDeleteFailed(ids);
+				}
+			}
+			else
+			{
+				return this.BulkDeletePartial();
+			}
+		}
+		else
+		{
+			return this.BadRequest();
+		}
 	}
 	
 	#endregion
@@ -203,15 +235,15 @@ public class RolesController : QueryControllerBase
 	
 	[HttpGet("{id}/check-permission")]
 	[RbacAction(Rbac.CrudActions.Read)]
-	public async Task<IActionResult> CheckPermissionByRole([FromRoute] string membershipId, [FromRoute] string id)
+	public async Task<IActionResult> CheckPermissionByRole([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var role = await this.roleService.GetAsync(membershipId, id);
+		var role = await this._roleService.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 		if (role != null)
 		{
-			var utilizer = this.GetUtilizer();
+			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 			if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
 			{
-				if (rbac != null && this.accessControlService.HasPermission(role, rbac, utilizer))
+				if (rbac != null && this._accessControlService.HasPermission(role, rbac, utilizer))
 				{
 					return this.Ok();
 				}
@@ -233,15 +265,15 @@ public class RolesController : QueryControllerBase
 	
 	[HttpGet("check-permission")]
 	[RbacAction(Rbac.CrudActions.Read)]
-	public async Task<IActionResult> CheckPermissionByToken([FromRoute] string membershipId)
+	public async Task<IActionResult> CheckPermissionByToken([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
-		var role = utilizer.Role != null ? await this.roleService.GetBySlugAsync(utilizer.Role, membershipId) : null;
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var role = utilizer.Role != null ? await this._roleService.GetBySlugAsync(utilizer.Role, membershipId, cancellationToken: cancellationToken) : null;
 		if (role != null)
 		{
 			if (this.TryExtractPermissionParameter(out var rbac, out var errorModel))
 			{
-				if (rbac != null && this.accessControlService.HasPermission(role, rbac, utilizer))
+				if (rbac != null && this._accessControlService.HasPermission(role, rbac, utilizer))
 				{
 					return this.Ok();
 				}

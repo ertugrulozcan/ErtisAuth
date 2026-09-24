@@ -1,25 +1,24 @@
 using Ertis.MongoDB.Queries;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
 using Ertis.Schema.Types;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Providers;
+using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Providers;
-using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Constants;
-using ErtisAuth.Infrastructure.Mapping;
 using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Integrations.OAuth.Extensions;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDto>, IProviderService
+public class ProviderService : MembershipBoundedCrudService<Provider>, IProviderService
 {
 	#region Constants
 	
@@ -29,11 +28,12 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 	
 	#region Services
 	
-	private readonly IUserService userService;
-	private readonly IUserTypeService userTypeService;
-	private readonly ITokenService tokenService;
-	private readonly IEventService eventService;
+	private readonly IUserService _userService;
+	private readonly IUserTypeService _userTypeService;
+	private readonly ITokenService _tokenService;
+	private readonly IEventService _eventService;
 	private readonly IMemoryCache _memoryCache;
+	private readonly ILogger<ProviderService> _logger;
 	
 	#endregion
 	
@@ -47,22 +47,25 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 	/// <param name="userTypeService"></param>
 	/// <param name="tokenService"></param>
 	/// <param name="eventService"></param>
-	/// <param name="providerRepository"></param>
 	/// <param name="memoryCache"></param>
+	/// <param name="repository"></param>
+	/// <param name="logger"></param>
 	public ProviderService(
 		IMembershipService membershipService,
 		IUserService userService,
 		IUserTypeService userTypeService,
 		ITokenService tokenService,
-		IEventService eventService, 
-		IProviderRepository providerRepository, 
-		IMemoryCache memoryCache) : base(membershipService, providerRepository)
+		IEventService eventService,
+		IMemoryCache memoryCache,
+		IProviderRepository repository, 
+		ILogger<ProviderService> logger) : base(membershipService, repository)
 	{
-		this.userService = userService;
-		this.userTypeService = userTypeService;
-		this.tokenService = tokenService;
-		this.eventService = eventService;
+		this._userService = userService;
+		this._userTypeService = userTypeService;
+		this._tokenService = tokenService;
+		this._eventService = eventService;
 		this._memoryCache = memoryCache;
+		this._logger = logger;
 		
 		this.OnCreated += this.ProviderCreatedEventHandler;
 		this.OnUpdated += this.ProviderUpdatedEventHandler;
@@ -75,7 +78,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 	
 	private void ProviderCreatedEventHandler(object? sender, CreateResourceEventArgs<Provider> eventArgs)
 	{
-		this.eventService.FireEventAsync(this, new ErtisAuthEvent
+		this._eventService.FireEventAsync(this, new ErtisAuthEvent
 		{
 			EventType = ErtisAuthEventType.ProviderCreated,
 			UtilizerId = eventArgs.Utilizer.Id,
@@ -86,7 +89,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 	
 	private void ProviderUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Provider> eventArgs)
 	{
-		this.eventService.FireEventAsync(this, new ErtisAuthEvent
+		this._eventService.FireEventAsync(this, new ErtisAuthEvent
 		{
 			EventType = ErtisAuthEventType.ProviderUpdated,
 			UtilizerId = eventArgs.Utilizer.Id,
@@ -98,7 +101,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 	
 	private void ProviderDeletedEventHandler(object? sender, DeleteResourceEventArgs<Provider> eventArgs)
 	{
-		this.eventService.FireEventAsync(this, new ErtisAuthEvent
+		this._eventService.FireEventAsync(this, new ErtisAuthEvent
 		{
 			EventType = ErtisAuthEventType.ProviderDeleted,
 			UtilizerId = eventArgs.Utilizer.Id,
@@ -240,14 +243,12 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 	
 	private Provider? GetByName(string name, string membershipId)
 	{
-		var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
-		return dto == null ? null : Mapper.Current.Map<ProviderDto, Provider>(dto);
+		return this._repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
 	}
 	
 	private async Task<Provider?> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
 	{
-		var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-		return dto == null ? null : Mapper.Current.Map<ProviderDto, Provider>(dto);
+		return await this._repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -287,6 +288,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 		var utilizer = new Utilizer
 		{
 			Id = "system",
+			Username = "system",
 			Role = ReservedRoles.Administrator,
 			Type = Utilizer.UtilizerType.System,
 			MembershipId = membershipId
@@ -320,7 +322,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex);
+				this._logger.LogError(ex, "ProviderService.GetProvidersAsync occured an error");
 			}
 		}
 		
@@ -410,6 +412,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 					var utilizer = new Utilizer
 					{
 						Id = "system",
+						Username = "system",
 						Role = ReservedRoles.Administrator,
 						Type = Utilizer.UtilizerType.System,
 						MembershipId = membershipId
@@ -426,17 +429,17 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 						throw ErtisAuthException.UserInactive(user?.Id ?? string.Empty);
 					}
 					
-					var userType = await this.userTypeService.GetByNameOrSlugAsync(membershipId, (isNewUser ? provider.DefaultUserType : user?.UserType)!, cancellationToken: cancellationToken);
+					var userType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, (isNewUser ? provider.DefaultUserType : user?.UserType)!, cancellationToken: cancellationToken);
 					
 					this.EnsureConnectedAccounts(user!, request, provider);
 					var dynamicUser = new DynamicObject(user!);
 					this.SetAvatar(dynamicUser, request, userType);
 					
 					var upsertedUser = isNewUser ?
-						await this.userService.CreateAsync(utilizer, membershipId, dynamicUser, cancellationToken: cancellationToken) :
-						await this.userService.UpdateAsync(utilizer, membershipId, user!.Id, dynamicUser, false, cancellationToken: cancellationToken);
+						await this._userService.CreateAsync(utilizer, membershipId, dynamicUser, cancellationToken: cancellationToken) :
+						await this._userService.UpdateAsync(utilizer, membershipId, user!.Id, dynamicUser, false, cancellationToken: cancellationToken);
 					
-					return await this.tokenService.GenerateTokenAsync(upsertedUser?.Deserialize<User>()!, membershipId, ipAddress, userAgent, cancellationToken: cancellationToken);
+					return await this._tokenService.GenerateTokenAsync(upsertedUser?.Deserialize<User>()!, membershipId, ipAddress, userAgent, cancellationToken: cancellationToken);
 				}
 				else
 				{
@@ -458,7 +461,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 	{
 		try
 		{
-			var user = await this.tokenService.GetTokenOwnerUserAsync(token, cancellationToken: cancellationToken);
+			var user = await this._tokenService.GetTokenOwnerUserAsync(token, cancellationToken: cancellationToken);
 			if (user is { ConnectedAccounts: not null })
 			{
 				var needUserUpdate = false;
@@ -498,6 +501,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 					var utilizer = new Utilizer
 					{
 						Id = "system",
+						Username = "system",
 						Role = ReservedRoles.Administrator,
 						Type = Utilizer.UtilizerType.System,
 						MembershipId = user.MembershipId
@@ -505,13 +509,13 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 					
 					user.ConnectedAccounts = connectedAccounts.ToArray();
 					var dynamicUser = new DynamicObject(user);
-					await this.userService.UpdateAsync(utilizer, user.MembershipId, user.Id, dynamicUser, false, cancellationToken: cancellationToken);	
+					await this._userService.UpdateAsync(utilizer, user.MembershipId, user.Id, dynamicUser, false, cancellationToken: cancellationToken);	
 				}
 			}
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "ProviderService.LogoutAsync occured an error");
 		}
 	}
 	
@@ -522,7 +526,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 			QueryBuilder.Equals("connected_accounts.Provider", provider.Name), 
 			QueryBuilder.Equals("connected_accounts.UserId", request.UserId)).ToString();
 		
-		var queryUsersResult = await this.userService.QueryAsync(membershipId, query, 0, 1, cancellationToken: cancellationToken);
+		var queryUsersResult = await this._userService.QueryAsync(membershipId, query, 0, 1, cancellationToken: cancellationToken);
 		if (queryUsersResult.Items.Any())
 		{
 			var dynamicUser = queryUsersResult.Items.First();
@@ -534,7 +538,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider, ProviderDt
 				QueryBuilder.Equals("membership_id", membershipId), 
 				QueryBuilder.Equals("email_address", request.EmailAddress)).ToString();
 			
-			var queryUsers2Result = await this.userService.QueryAsync(membershipId, query2, 0, 1, cancellationToken: cancellationToken);
+			var queryUsers2Result = await this._userService.QueryAsync(membershipId, query2, 0, 1, cancellationToken: cancellationToken);
 			if (queryUsers2Result.Items.Any())
 			{
 				var dynamicUser = queryUsers2Result.Items.First();

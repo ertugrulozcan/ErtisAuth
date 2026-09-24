@@ -1,8 +1,5 @@
-using System.IdentityModel.Tokens.Jwt;
 using ErtisAuth.Core.Models.Identity;
-using ErtisAuth.Extensions.AspNetCore.Constants;
 using ErtisAuth.Core.Exceptions;
-using ErtisAuth.Extensions.Authorization.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,9 +13,9 @@ public static class ControllerExtensions
 	
 	public static string? GetAuthorizationHeader(this HttpRequest request)
 	{
-		if (request.Headers.ContainsKey(Headers.AUTHORIZATION))
+		if (request.Headers.ContainsKey("Authorization"))
 		{
-			return request.Headers[Headers.AUTHORIZATION];
+			return request.Headers["Authorization"];
 		}
 		
 		return null;
@@ -26,9 +23,9 @@ public static class ControllerExtensions
 	
 	public static string? GetAuthorizationHeader(this ControllerBase controller)
 	{
-		if (controller.Request.Headers.ContainsKey(Headers.AUTHORIZATION))
+		if (controller.Request.Headers.ContainsKey("Authorization"))
 		{
-			return controller.Request.Headers[Headers.AUTHORIZATION];
+			return controller.Request.Headers["Authorization"];
 		}
 		
 		return null;
@@ -46,48 +43,20 @@ public static class ControllerExtensions
 		return TokenBase.ExtractToken(authorizationHeader, out tokenType);
 	}
 	
-	public static Utilizer? GetUtilizer(this ControllerBase controller, bool fallbackByToken = true)
+	public static string? GetMembershipId(this ControllerBase controller)
 	{
-		var claimUser = controller.User;
-		var utilizerIdentity = claimUser.Identities.FirstOrDefault(x => x.NameClaimType == "Utilizer");
-		if (utilizerIdentity != null)
+		var headers = new[]
 		{
-			return utilizerIdentity.ConvertToUtilizer();
-		}
-		else if (fallbackByToken)
+			"Membership",
+			"MembershipId",
+			"X-Ertis-Alias"
+		};
+		
+		foreach (var header in headers)
 		{
-			var token = controller.GetTokenFromHeader(out var tokenTypeString);
-			if (string.IsNullOrEmpty(token))
+			if (controller.Request.Headers.ContainsKey(header))
 			{
-				throw ErtisAuthException.InvalidToken("Authorization token not found");
-			}
-			
-			if (string.IsNullOrEmpty(tokenTypeString) || !TokenTypeExtensions.TryParseTokenType(tokenTypeString, out var tokenType) || tokenType == SupportedTokenTypes.None)
-			{
-				throw ErtisAuthException.UnsupportedTokenType();
-			}
-			
-			// ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
-			switch (tokenType)
-			{
-				case SupportedTokenTypes.Basic:
-				{
-					var applicationId = token.Split(':')[0];
-					return new Utilizer
-					{
-						Id = applicationId,
-						Type = Utilizer.UtilizerType.Application,
-						Token = token,
-						TokenType = SupportedTokenTypes.Basic,
-						MembershipId = string.Empty
-					};
-				}
-				case SupportedTokenTypes.Bearer:
-				{
-					var handler = new JwtSecurityTokenHandler();
-					var jwt = (JwtSecurityToken) handler.ReadToken(token);
-					return jwt.ConvertToUtilizer();
-				}
+				return controller.Request.Headers[header].ToString();
 			}
 		}
 		
@@ -99,9 +68,129 @@ public static class ControllerExtensions
 		return controller.BadRequest(ErtisAuthException.AuthorizationHeaderMissing().Error);
 	}
 	
+	public static BadRequestObjectResult MembershipIdRequired(this ControllerBase controller)
+	{
+		return controller.BadRequest(ErtisAuthException.MembershipIdRequired().Error);
+	}
+	
+	public static BadRequestObjectResult PasswordRequired(this ControllerBase controller)
+	{
+		return controller.BadRequest(ErtisAuthException.PasswordRequired().Error);
+	}
+	
+	public static BadRequestObjectResult EmailAddressRequired(this ControllerBase controller)
+	{
+		return controller.BadRequest(ErtisAuthException.EmailAddressRequired().Error);
+	}
+	
+	public static BadRequestObjectResult ResetTokenRequired(this ControllerBase controller)
+	{
+		return controller.BadRequest(ErtisAuthException.ResetTokenRequired().Error);
+	}
+	
+	public static NotFoundObjectResult UserNotFound(this ControllerBase controller, string userId)
+	{
+		return controller.NotFound(ErtisAuthException.UserNotFound(userId, "_id").Error);
+	}
+	
+	public static NotFoundObjectResult UserTypeNotFound(this ControllerBase controller, string userTypeId)
+	{
+		return controller.NotFound(ErtisAuthException.UserTypeNotFound(userTypeId, "_id").Error);
+	}
+	
+	public static BadRequestObjectResult HostRequired(this ControllerBase controller)
+	{
+		return controller.BadRequest(ErtisAuthException.HostRequired().Error);
+	}
+	
+	public static NotFoundObjectResult ApplicationNotFound(this ControllerBase controller, string applicationId)
+	{
+		return controller.NotFound(ErtisAuthException.ApplicationNotFound(applicationId));
+	}
+	
+	public static NotFoundObjectResult MembershipNotFound(this ControllerBase controller, string membershipId)
+	{
+		return controller.NotFound(ErtisAuthException.MembershipNotFound(membershipId));
+	}
+	
+	public static NotFoundObjectResult RoleNotFound(this ControllerBase controller, string roleId)
+	{
+		return controller.NotFound(ErtisAuthException.RoleNotFound(roleId));
+	}
+	
+	public static NotFoundObjectResult WebhookNotFound(this ControllerBase controller, string webhookId)
+	{
+		return controller.NotFound(ErtisAuthException.WebhookNotFound(webhookId));
+	}
+	
+	public static NotFoundObjectResult MailHookNotFound(this ControllerBase controller, string mailHookId)
+	{
+		return controller.NotFound(ErtisAuthException.MailHookNotFound(mailHookId));
+	}
+	
+	public static NotFoundObjectResult ProviderNotFound(this ControllerBase controller, string providerId)
+	{
+		return controller.NotFound(ErtisAuthException.ProviderNotFound(providerId));
+	}
+	
+	public static BadRequestObjectResult UnknownPlatform(this ControllerBase controller, string platformName)
+	{
+		return controller.BadRequest(ErtisAuthException.UnknownPlatform(platformName));
+	}
+	
+	public static NotFoundObjectResult EventNotFound(this ControllerBase controller, string eventId)
+	{
+		return controller.NotFound(ErtisAuthException.EventNotFound(eventId));
+	}
+	
+	public static UnauthorizedObjectResult InvalidCredentials(this ControllerBase controller)
+	{
+		return controller.Unauthorized(ErtisAuthException.InvalidCredentials().Error);
+	}
+	
 	public static UnauthorizedObjectResult InvalidToken(this ControllerBase controller)
 	{
 		return controller.Unauthorized(ErtisAuthException.InvalidToken().Error);
+	}
+	
+	public static BadRequestObjectResult UnsupportedTokenType(this ControllerBase controller)
+	{
+		return controller.BadRequest(ErtisAuthException.UnsupportedTokenType().Error);
+	}
+	
+	public static BadRequestObjectResult BearerTokenRequired(this ControllerBase controller)
+	{
+		return controller.BadRequest(ErtisAuthException.BearerTokenRequired().Error);
+	}
+	
+	public static NotFoundObjectResult ActiveTokenNotFound(this ControllerBase controller, string activeTokenId)
+	{
+		return controller.NotFound(ErtisAuthException.ActiveTokenNotFound(activeTokenId));
+	}
+	
+	public static NotFoundObjectResult CodePolicyNotFound(this ControllerBase controller, string id)
+	{
+		return controller.NotFound(ErtisAuthException.TokenCodePolicyNotFound(id));
+	}
+	
+	public static BadRequestObjectResult SearchKeywordRequired(this ControllerBase controller)
+	{
+		return controller.BadRequest(ErtisAuthException.SearchKeywordRequired().Error);
+	}
+	
+	public static NotFoundObjectResult BulkDeleteFailed(this ControllerBase controller, IEnumerable<string> ids)
+	{
+		return controller.NotFound(ErtisAuthException.BulkDeleteFailed(ids).Error);
+	}
+	
+	public static OkObjectResult BulkDeletePartial(this ControllerBase controller)
+	{
+		return controller.Ok(ErtisAuthException.BulkDeletePartial().Error);
+	}
+	
+	public static BadRequestObjectResult CommandRequired(this ControllerBase controller)
+	{
+		return controller.BadRequest(ErtisAuthException.CommandRequired());
 	}
 	
 	#endregion

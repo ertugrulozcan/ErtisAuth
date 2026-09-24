@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using MongoDB.Bson.Serialization.Attributes;
 using NewtonsoftJsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
 using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
@@ -13,20 +14,24 @@ public class BearerToken : TokenBase, IRefreshableToken
 	
 	[JsonPropertyName("token_type")]
 	[NewtonsoftJsonProperty("token_type")]
+	[BsonElement("token_type")]
 	[JsonConverter(typeof(JsonStringEnumConverter))]
 	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	public override SupportedTokenTypes TokenType => SupportedTokenTypes.Bearer;
 	
 	[JsonPropertyName("refresh_token")]
 	[NewtonsoftJsonProperty("refresh_token")]
+	[BsonElement("refresh_token")]
 	public string? RefreshToken { get; private set; }
 	
 	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
 	public TimeSpan RefreshExpiresIn { get; private set; }
 	
 	[JsonPropertyName("refresh_token_expires_in")]
 	[NewtonsoftJsonProperty("refresh_token_expires_in")]
+	[BsonElement("refresh_token_expires_in")]
 	public int RefreshTokenExpiresInTimeStamp => (int) this.RefreshExpiresIn.TotalSeconds;
 	
 	#endregion

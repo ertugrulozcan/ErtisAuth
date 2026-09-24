@@ -2,9 +2,10 @@ using System.ComponentModel;
 using System.Diagnostics;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -15,13 +16,32 @@ namespace ErtisAuth.WebAPI.Controllers;
 [Route("terminal")]
 public class TerminalController : ControllerBase
 {
+    #region Services
+    
+    private readonly IUtilizerService _utilizerService;
+    
+    #endregion
+    
+    #region Constructors
+    
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="utilizerService"></param>
+    public TerminalController(IUtilizerService utilizerService)
+    {
+        this._utilizerService = utilizerService;
+    }
+    
+    #endregion
+    
     #region Methods
     
     [HttpPost]
     [RbacAction(Rbac.CrudActions.Read)]
     public async Task<IActionResult> ExecuteCommand([FromBody] TerminalRequest model, CancellationToken cancellationToken = default)
     {
-        var utilizer = this.GetUtilizer();
+        var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
         if (utilizer.TokenType != SupportedTokenTypes.Bearer)
         {
             return this.Forbid();

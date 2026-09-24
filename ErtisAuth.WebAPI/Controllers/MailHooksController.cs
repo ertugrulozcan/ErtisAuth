@@ -1,16 +1,14 @@
 using Ertis.Core.Collections;
-using Ertis.Core.Models.Response;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Mailing;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.Extensions.Mailkit.Extensions;
-using ErtisAuth.Extensions.Mailkit.Providers;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -23,8 +21,9 @@ public class MailHooksController : QueryControllerBase
 {
     #region Services
 	
-	private readonly IMailHookService mailHookService;
-	private readonly IMembershipService membershipService;
+	private readonly IMailHookService _mailHookService;
+	private readonly IMembershipService _membershipService;
+	private readonly IUtilizerService _utilizerService;
 	
 	#endregion
 	
@@ -35,10 +34,15 @@ public class MailHooksController : QueryControllerBase
 	/// </summary>
 	/// <param name="mailHookService"></param>
 	/// <param name="membershipService"></param>
-	public MailHooksController(IMailHookService mailHookService, IMembershipService membershipService)
+	/// <param name="utilizerService"></param>
+	public MailHooksController(
+		IMailHookService mailHookService, 
+		IMembershipService membershipService,
+		IUtilizerService utilizerService)
 	{
-		this.mailHookService = mailHookService;
-		this.membershipService = membershipService;
+		this._mailHookService = mailHookService;
+		this._membershipService = membershipService;
+		this._utilizerService = utilizerService;
 	}
 	
 	#endregion
@@ -54,15 +58,16 @@ public class MailHooksController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] MailHook model, CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			return this.MembershipNotFound(membershipId);
 		}
 		
 		model.MembershipId = membershipId;
-		var utilizer = this.GetUtilizer();
-		var mailHook = await this.mailHookService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var mailHook = await this._mailHookService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{mailHook.Id}", mailHook);
 	}
 	
@@ -79,7 +84,7 @@ public class MailHooksController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<MailHook>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var mailHook = await this.mailHookService.GetAsync(membershipId, id);
+		var mailHook = await this._mailHookService.GetAsync(membershipId, id);
 		if (mailHook != null)
 		{
 			return this.Ok(mailHook);
@@ -98,10 +103,10 @@ public class MailHooksController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
-		this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
-		this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
+		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		var mailHooks = await this.mailHookService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		var mailHooks = await this._mailHookService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return this.Ok(mailHooks);
 	}
 	
@@ -121,7 +126,7 @@ public class MailHooksController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this.mailHookService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._mailHookService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -146,7 +151,7 @@ public class MailHooksController : QueryControllerBase
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		return this.Ok(await this.mailHookService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+		return this.Ok(await this._mailHookService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
 	}
 	
 	#endregion
@@ -164,8 +169,9 @@ public class MailHooksController : QueryControllerBase
 	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] MailHook model, CancellationToken cancellationToken = default)
 	{
 		model.MembershipId = membershipId;
-		var utilizer = this.GetUtilizer();
-		var mailHook = await this.mailHookService.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var mailHook = await this._mailHookService.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 		return this.Ok(mailHook);
 	}
 	
@@ -182,8 +188,8 @@ public class MailHooksController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Delete)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
-		if (await this.mailHookService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		if (await this._mailHookService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}
@@ -199,32 +205,31 @@ public class MailHooksController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	[RbacAction(Rbac.CrudActions.Delete)]
-	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[]? ids, CancellationToken cancellationToken = default)
 	{
-		return await this.BulkDeleteAsync(this.mailHookService, membershipId, ids, cancellationToken: cancellationToken);
-	}
-	
-	#endregion
-	
-	#region Test Methods
-	
-	[HttpPost("smtp-server-test")]
-	[RbacAction(Rbac.CrudActions.Read)]
-	public async Task<IActionResult> TestSmtpServerConnectionAsync([FromBody] SmtpServerProvider server)
-	{
-		try
+		if (ids != null)
 		{
-			await server.TestConnectionAsync();
-			return this.Ok();
-		}
-		catch (Exception ex)
-		{
-			return this.StatusCode(500, new ErrorModel
+			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+			var isDeleted = await this._mailHookService.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
+			if (isDeleted != null)
 			{
-				Message = ex.Message,
-				ErrorCode = "SmtpServerConnectionError",
-				StatusCode = 500
-			});
+				if (isDeleted.Value)
+				{
+					return this.NoContent();
+				}
+				else
+				{
+					return this.BulkDeleteFailed(ids);
+				}
+			}
+			else
+			{
+				return this.BulkDeletePartial();
+			}
+		}
+		else
+		{
+			return this.BadRequest();
 		}
 	}
 	

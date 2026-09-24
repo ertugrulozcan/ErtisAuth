@@ -5,9 +5,10 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Services;
+using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.WebAPI.Models.Applications;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,8 +22,9 @@ public class ApplicationsController : QueryControllerBase
 {
 	#region Services
 	
-	private readonly IApplicationService applicationService;
-	private readonly IMembershipService membershipService;
+	private readonly IApplicationService _applicationService;
+	private readonly IMembershipService _membershipService;
+	private readonly IUtilizerService _utilizerService;
 	
 	#endregion
 	
@@ -33,10 +35,15 @@ public class ApplicationsController : QueryControllerBase
 	/// </summary>
 	/// <param name="applicationService"></param>
 	/// <param name="membershipService"></param>
-	public ApplicationsController(IApplicationService applicationService, IMembershipService membershipService)
+	/// <param name="utilizerService"></param>
+	public ApplicationsController(
+		IApplicationService applicationService, 
+		IMembershipService membershipService,
+		IUtilizerService utilizerService)
 	{
-		this.applicationService = applicationService;
-		this.membershipService = membershipService;
+		this._applicationService = applicationService;
+		this._membershipService = membershipService;
+		this._utilizerService = utilizerService;
 	}
 	
 	#endregion
@@ -47,7 +54,7 @@ public class ApplicationsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Create)]
 	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateApplicationFormModel model, CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			return this.MembershipNotFound(membershipId);
@@ -61,8 +68,8 @@ public class ApplicationsController : QueryControllerBase
 			MembershipId = membershipId
 		};
 		
-		var utilizer = this.GetUtilizer();
-		var app = await this.applicationService.CreateAsync(utilizer, membershipId, applicationModel, cancellationToken: cancellationToken);
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var app = await this._applicationService.CreateAsync(utilizer, membershipId, applicationModel, cancellationToken: cancellationToken);
 		
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{app.Id}", app);
 	}
@@ -76,7 +83,7 @@ public class ApplicationsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<ActionResult<Application>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var app = await this.applicationService.GetAsync(membershipId, id);
+		var app = await this._applicationService.GetAsync(membershipId, id);
 		if (app != null)
 		{
 			return this.Ok(app);
@@ -94,7 +101,7 @@ public class ApplicationsController : QueryControllerBase
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		var apps = await this.applicationService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		var apps = await this._applicationService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return this.Ok(apps);
 	}
 	
@@ -109,7 +116,7 @@ public class ApplicationsController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this.applicationService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._applicationService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -134,7 +141,7 @@ public class ApplicationsController : QueryControllerBase
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		return this.Ok(await this.applicationService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+		return this.Ok(await this._applicationService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
 	}
 	
 	#endregion
@@ -155,8 +162,8 @@ public class ApplicationsController : QueryControllerBase
 			MembershipId = membershipId
 		};
 		
-		var utilizer = this.GetUtilizer();
-		var app = await this.applicationService.UpdateAsync(utilizer, membershipId, applicationModel, cancellationToken: cancellationToken);
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var app = await this._applicationService.UpdateAsync(utilizer, membershipId, applicationModel, cancellationToken: cancellationToken);
 		return this.Ok(app);
 	}
 	
@@ -169,8 +176,8 @@ public class ApplicationsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Delete)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
-		if (await this.applicationService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		if (await this._applicationService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}
@@ -186,9 +193,32 @@ public class ApplicationsController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	[RbacAction(Rbac.CrudActions.Delete)]
-	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[]? ids, CancellationToken cancellationToken = default)
 	{
-		return await this.BulkDeleteAsync(this.applicationService, membershipId, ids, cancellationToken: cancellationToken);
+		if (ids != null)
+		{
+			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+			var isDeleted = await this._applicationService.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
+			if (isDeleted != null)
+			{
+				if (isDeleted.Value)
+				{
+					return this.NoContent();
+				}
+				else
+				{
+					return this.BulkDeleteFailed(ids);
+				}
+			}
+			else
+			{
+				return this.BulkDeletePartial();
+			}
+		}
+		else
+		{
+			return this.BadRequest();
+		}
 	}
 	
 	#endregion

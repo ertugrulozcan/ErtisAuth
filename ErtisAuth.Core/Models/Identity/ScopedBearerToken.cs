@@ -1,4 +1,6 @@
 using System.Text.Json.Serialization;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using NewtonsoftJsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
 using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
 using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
@@ -14,10 +16,13 @@ public class ScopedBearerToken : TokenBase
 	[NewtonsoftJsonProperty("token_type")]
 	[JsonConverter(typeof(JsonStringEnumConverter))]
 	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
+	[BsonElement("token_type")]
+	[BsonRepresentation(BsonType.String)]
 	public override SupportedTokenTypes TokenType => SupportedTokenTypes.Bearer;
 	
 	[JsonPropertyName("scopes")]
 	[NewtonsoftJsonProperty("scopes")]
+	[BsonElement("scopes")]
 	public string[]? Scopes { get; set; }
 	
 	#endregion

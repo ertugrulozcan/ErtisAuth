@@ -1,6 +1,6 @@
 using Ertis.MongoDB.Repository;
-using ErtisAuth.Dto.Models.Users;
+using ErtisAuth.Core.Models.Users;
 
 namespace ErtisAuth.Dao.Repositories.Interfaces;
 
-public interface IUserTypeRepository : IMongoRepository<UserTypeDto>;
+public interface IUserTypeRepository : IMongoRepository<UserType>;

@@ -6,9 +6,9 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Cryptography;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -21,7 +21,7 @@ public class MembershipsController : QueryControllerBase
 {
 	#region Services
 	
-	private readonly IMembershipService membershipService;
+	private readonly IMembershipService _membershipService;
 	
 	#endregion
 	
@@ -33,7 +33,7 @@ public class MembershipsController : QueryControllerBase
 	/// <param name="membershipService"></param>
 	public MembershipsController(IMembershipService membershipService)
 	{
-		this.membershipService = membershipService;
+		this._membershipService = membershipService;
 	}
 	
 	#endregion
@@ -44,7 +44,7 @@ public class MembershipsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Create)]
 	public async Task<IActionResult> Create([FromBody] Membership model, CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.CreateAsync(model, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.CreateAsync(model, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{membership.Id}", membership);
 	}
 	
@@ -57,7 +57,7 @@ public class MembershipsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<IActionResult> Get([FromRoute] string id)
 	{
-		var membership = await this.membershipService.GetAsync(id);
+		var membership = await this._membershipService.GetAsync(id);
 		if (membership != null)
 		{
 			return this.Ok(membership);
@@ -72,10 +72,10 @@ public class MembershipsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<IActionResult> Get(CancellationToken cancellationToken = default)
 	{
-		this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
-		this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
+		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		var memberships = await this.membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		var memberships = await this._membershipService.GetAsync(skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return this.Ok(memberships);
 	}
 	
@@ -88,7 +88,7 @@ public class MembershipsController : QueryControllerBase
 	
 	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
 	{
-		return await this.membershipService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
+		return await this._membershipService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 	}
 	
 	[HttpGet("search")]
@@ -108,7 +108,7 @@ public class MembershipsController : QueryControllerBase
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		return this.Ok(await this.membershipService.SearchAsync(keyword, null, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+		return this.Ok(await this._membershipService.SearchAsync(keyword, null, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
 	}
 	
 	#endregion
@@ -120,7 +120,7 @@ public class MembershipsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Update)]
 	public async Task<IActionResult> Update([FromRoute] string id, [FromBody] Membership model, CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.UpdateAsync(model, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.UpdateAsync(model, cancellationToken: cancellationToken);
 		return this.Ok(membership);
 	}
 	
@@ -133,7 +133,7 @@ public class MembershipsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Delete)]
 	public async Task<IActionResult> Delete([FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		if (await this.membershipService.DeleteAsync(id, cancellationToken: cancellationToken))
+		if (await this._membershipService.DeleteAsync(id, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}

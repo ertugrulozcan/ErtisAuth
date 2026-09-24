@@ -5,9 +5,10 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Services;
+using ErtisAuth.Extensions.Authorization.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -21,7 +22,8 @@ public class CodePoliciesController : QueryControllerBase
     #region Services
 	
 	private readonly ITokenCodePolicyService _codePolicyService;
-	private readonly IMembershipService membershipService;
+	private readonly IMembershipService _membershipService;
+	private readonly IUtilizerService _utilizerService;
 	
 	#endregion
 	
@@ -32,10 +34,15 @@ public class CodePoliciesController : QueryControllerBase
 	/// </summary>
 	/// <param name="codePolicyService"></param>
 	/// <param name="membershipService"></param>
-	public CodePoliciesController(ITokenCodePolicyService codePolicyService, IMembershipService membershipService)
+	/// <param name="utilizerService"></param>
+	public CodePoliciesController(
+		ITokenCodePolicyService codePolicyService, 
+		IMembershipService membershipService,
+		IUtilizerService utilizerService)
 	{
 		this._codePolicyService = codePolicyService;
-		this.membershipService = membershipService;
+		this._membershipService = membershipService;
+		this._utilizerService = utilizerService;
 	}
 	
 	#endregion
@@ -51,14 +58,15 @@ public class CodePoliciesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] TokenCodePolicy model, CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			return this.MembershipNotFound(membershipId);
 		}
 		
 		model.MembershipId = membershipId;
-		var utilizer = this.GetUtilizer();
+		
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var policy = await this._codePolicyService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{policy.Id}", policy);
 	}
@@ -143,7 +151,7 @@ public class CodePoliciesController : QueryControllerBase
 		model.Id = id;
 		model.MembershipId = membershipId;
 		
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var policy = await this._codePolicyService.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 		return this.Ok(policy);
 	}
@@ -161,7 +169,7 @@ public class CodePoliciesController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Delete)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		if (await this._codePolicyService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
@@ -178,9 +186,32 @@ public class CodePoliciesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	[RbacAction(Rbac.CrudActions.Delete)]
-	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[] ids, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[]? ids, CancellationToken cancellationToken = default)
 	{
-		return await this.BulkDeleteAsync(this._codePolicyService, membershipId, ids, cancellationToken: cancellationToken);
+		if (ids != null)
+		{
+			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+			var isDeleted = await this._codePolicyService.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
+			if (isDeleted != null)
+			{
+				if (isDeleted.Value)
+				{
+					return this.NoContent();
+				}
+				else
+				{
+					return this.BulkDeleteFailed(ids);
+				}
+			}
+			else
+			{
+				return this.BulkDeletePartial();
+			}
+		}
+		else
+		{
+			return this.BadRequest();
+		}
 	}
 	
 	#endregion

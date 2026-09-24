@@ -2,11 +2,12 @@ using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Roles;
+using ErtisAuth.Core.Models.Roles;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
-public class RoleRepository : RepositoryBase<RoleDto>, IRoleRepository
+public class RoleRepository : RepositoryBase<Role>, IRoleRepository
 {
 	#region Properties
     
@@ -27,10 +28,12 @@ public class RoleRepository : RepositoryBase<RoleDto>, IRoleRepository
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
+	/// <param name="logger"></param>
 	public RoleRepository(
 		IMongoClientProvider clientProvider, 
-		IDatabaseSettings settings) : 
-		base(clientProvider, settings, "roles")
+		IDatabaseSettings settings,
+		ILogger<RoleRepository> logger) : 
+		base(clientProvider, settings, logger, "roles")
 	{
 		
 	}

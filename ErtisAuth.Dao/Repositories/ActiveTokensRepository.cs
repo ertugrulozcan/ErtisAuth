@@ -1,12 +1,13 @@
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
-public class ActiveTokensRepository : RepositoryBase<ActiveTokenDto>, IActiveTokensRepository
+public class ActiveTokensRepository : RepositoryBase<ActiveToken>, IActiveTokensRepository
 {
 	#region Properties
     
@@ -29,10 +30,12 @@ public class ActiveTokensRepository : RepositoryBase<ActiveTokenDto>, IActiveTok
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
+	/// <param name="logger"></param>
 	public ActiveTokensRepository(
 		IMongoClientProvider clientProvider, 
-		IDatabaseSettings settings) : 
-		base(clientProvider, settings, "active_tokens")
+		IDatabaseSettings settings, 
+		ILogger<ActiveTokensRepository> logger) : 
+		base(clientProvider, settings, logger, "active_tokens")
 	{
 		
 	}

@@ -1,23 +1,20 @@
 using System.Linq.Expressions;
 using Ertis.Core.Collections;
-using Ertis.Data.Models;
 using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Infrastructure.Helpers;
-using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public abstract class MembershipBoundedService<TModel, TDto> : IMembershipBoundedService<TModel> 
+public abstract class MembershipBoundedService<TModel> : IMembershipBoundedService<TModel> 
 	where TModel : class, Core.Models.IHasMembership, Core.Models.IHasIdentifier
-	where TDto : class, IEntity<string>, Dto.Models.IHasMembership
 {
 	#region Services
 	
-	protected readonly IMembershipService membershipService;
-	protected readonly IMongoRepository<TDto> repository;
+	protected readonly IMembershipService _membershipService;
+	protected readonly IMongoRepository<TModel> _repository;
 	
 	#endregion
 	
@@ -28,10 +25,10 @@ public abstract class MembershipBoundedService<TModel, TDto> : IMembershipBounde
 	/// </summary>
 	/// <param name="membershipService"></param>
 	/// <param name="repository"></param>
-	protected MembershipBoundedService(IMembershipService membershipService, IMongoRepository<TDto> repository)
+	protected MembershipBoundedService(IMembershipService membershipService, IMongoRepository<TModel> repository)
 	{
-		this.membershipService = membershipService;
-		this.repository = repository;
+		this._membershipService = membershipService;
+		this._repository = repository;
 	}
 	
 	#endregion
@@ -48,7 +45,7 @@ public abstract class MembershipBoundedService<TModel, TDto> : IMembershipBounde
 		SortDirection? sortDirection = null, 
 		IDictionary<string, bool>? selectFields = null)
 	{
-		return this.repository.Query(query, skip, limit, withCount, sortField, sortDirection, selectFields);
+		return this._repository.Query(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 	}
 	
 	public async ValueTask<IPaginationCollection<dynamic>> QueryAsync(
@@ -63,7 +60,7 @@ public abstract class MembershipBoundedService<TModel, TDto> : IMembershipBounde
 		CancellationToken cancellationToken = default)
 	{
 		query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId);
-		return await this.repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
+		return await this._repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -72,71 +69,77 @@ public abstract class MembershipBoundedService<TModel, TDto> : IMembershipBounde
 	
 	public virtual TModel? Get(string membershipId, string id)
 	{
-		var membership = this.membershipService.Get(membershipId);
+		var membership = this._membershipService.Get(membershipId);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var dto = this.repository.FindOne(x => x.Id == id && x.MembershipId == membershipId);
-		return dto != null ? Mapper.Current.Map<TDto, TModel>(dto) : null;
+		return this._repository.FindOne(x => x.Id == id && x.MembershipId == membershipId);
 	}
 	
-	public virtual async ValueTask<TModel?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+	public virtual async ValueTask<TModel?> GetAsync(
+		string membershipId, 
+		string id, 
+		CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var dto = await this.repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-		return dto != null ? Mapper.Current.Map<TDto, TModel>(dto) : null;
+		return await this._repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 	}
 	
-	protected async ValueTask<TModel?> GetAsync(string membershipId, Expression<Func<TDto, bool>> expression, CancellationToken cancellationToken = default)
+	protected async ValueTask<TModel?> GetAsync(
+		string membershipId, 
+		Expression<Func<TModel, bool>> expression, 
+		CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var entities = await this.repository.FindAsync(expression, sorting: null, cancellationToken: cancellationToken);
-		var entity = entities.Items.FirstOrDefault(x => x.MembershipId == membershipId);
-		return entity != null ? Mapper.Current.Map<TDto, TModel>(entity) : null;
+		var entities = await this._repository.FindAsync(expression, sorting: null, cancellationToken: cancellationToken);
+		return entities.Items.FirstOrDefault(x => x.MembershipId == membershipId);
 	}
 	
-	public virtual IPaginationCollection<TModel> Get(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string? orderBy = null, SortDirection? sortDirection = null)
+	public virtual IPaginationCollection<TModel> Get(
+		string membershipId, 
+		int? skip = null, 
+		int? limit = null, 
+		bool withCount = false, 
+		string? orderBy = null, 
+		SortDirection? sortDirection = null)
 	{
-		var membership = this.membershipService.Get(membershipId);
+		var membership = this._membershipService.Get(membershipId);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var paginatedDtoCollection = this.repository.Find(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
-		return new PaginationCollection<TModel>
-		{
-			Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
-			Count = paginatedDtoCollection.Count
-		};
+		return this._repository.Find(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
 	}
 	
-	public virtual async ValueTask<IPaginationCollection<TModel>> GetAsync(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string? orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default)
+	public virtual async ValueTask<IPaginationCollection<TModel>> GetAsync(
+		string membershipId, 
+		int? skip = null, 
+		int? limit = null, 
+		bool withCount = false, 
+		string? orderBy = null, 
+		SortDirection? sortDirection = null, 
+		CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var paginatedDtoCollection = await this.repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
-		return new PaginationCollection<TModel>
-		{
-			Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
-			Count = paginatedDtoCollection.Count
-		};
+		return await this._repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
 	
 	public T? Get<T>(string membershipId, string id) where T : class, Core.Models.IHasMembership
@@ -187,7 +190,7 @@ public abstract class MembershipBoundedService<TModel, TDto> : IMembershipBounde
 		string? sortField = null,
 		SortDirection? sortDirection = null)
 	{
-		var membership = this.membershipService.Get(membershipId);
+		var membership = this._membershipService.Get(membershipId);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -206,12 +209,7 @@ public abstract class MembershipBoundedService<TModel, TDto> : IMembershipBounde
 			IsDiacriticSensitive = false
 		};
 		
-		var paginatedDtoCollection = this.repository.Search(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection);
-		return new PaginationCollection<TModel>
-		{
-			Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
-			Count = paginatedDtoCollection.Count
-		};
+		return this._repository.Search(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection);
 	}
 	
 	public async ValueTask<IPaginationCollection<TModel>> SearchAsync(
@@ -224,7 +222,7 @@ public abstract class MembershipBoundedService<TModel, TDto> : IMembershipBounde
 		SortDirection? sortDirection = null,
 		CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -243,12 +241,7 @@ public abstract class MembershipBoundedService<TModel, TDto> : IMembershipBounde
 			IsDiacriticSensitive = false
 		};
 		
-		var paginatedDtoCollection = await this.repository.SearchAsync(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection, cancellationToken: cancellationToken);
-		return new PaginationCollection<TModel>
-		{
-			Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
-			Count = paginatedDtoCollection.Count
-		};
+		return await this._repository.SearchAsync(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -257,12 +250,12 @@ public abstract class MembershipBoundedService<TModel, TDto> : IMembershipBounde
 	
 	public dynamic Aggregate(string membershipId, string aggregationStagesJson)
 	{
-		return this.repository.Aggregate(QueryHelper.InjectMembershipIdToAggregation(aggregationStagesJson, membershipId));
+		return this._repository.Aggregate(QueryHelper.InjectMembershipIdToAggregation(aggregationStagesJson, membershipId));
 	}
 	
 	public async Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default)
 	{
-		return await this.repository.AggregateAsync(QueryHelper.InjectMembershipIdToAggregation(aggregationStagesJson, membershipId), cancellationToken: cancellationToken);
+		return await this._repository.AggregateAsync(QueryHelper.InjectMembershipIdToAggregation(aggregationStagesJson, membershipId), cancellationToken: cancellationToken);
 	}
 	
 	#endregion

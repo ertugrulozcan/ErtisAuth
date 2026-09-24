@@ -1,18 +1,16 @@
 using System.Text;
 using Ertis.MongoDB.Queries;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
-using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Identity;
-using ErtisAuth.Infrastructure.Mapping.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePassword, OneTimePasswordDto>, IOneTimePasswordService
+public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePassword>, IOneTimePasswordService
 {
 	#region Constants
 	
@@ -25,6 +23,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	#region Services
 	
 	private readonly IUserService _userService;
+	private readonly ILogger<OneTimePasswordService> _logger;
 	
 	#endregion
 	
@@ -36,12 +35,15 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	/// <param name="membershipService"></param>
 	/// <param name="userService"></param>
 	/// <param name="repository"></param>
+	/// <param name="logger"></param>
 	public OneTimePasswordService(
 		IMembershipService membershipService,
 		IUserService userService, 
-		IOneTimePasswordRepository repository) : base(membershipService, repository)
+		IOneTimePasswordRepository repository,
+		ILogger<OneTimePasswordService> logger) : base(membershipService, repository)
 	{
 		this._userService = userService;
+		this._logger = logger;
 	}
 	
 	#endregion
@@ -50,7 +52,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
         
 	private async Task<Membership> CheckMembershipAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -150,13 +152,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			throw ErtisAuthException.OtpHostNotConfiguredYet();
 		}
 		
-		var dynamicObject = await this._userService.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
-		if (dynamicObject == null)
-		{
-			throw ErtisAuthException.UserNotFound(userId, "userId");
-		}
-		
-		var user = dynamicObject.Deserialize<User>();
+		var user = await this._userService.GetUserAsync(membershipId, userId, cancellationToken: cancellationToken);
 		if (user == null)
 		{
 			throw ErtisAuthException.UserNotFound(userId, "userId");
@@ -285,7 +281,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			}
 		}
 		
-		await this.repository.BulkDeleteAsync(expiredOtpList.Select(x => x.ToDto()), cancellationToken: cancellationToken);
+		await this._repository.BulkDeleteAsync(expiredOtpList, cancellationToken: cancellationToken);
 	}
 	
 	public async Task RevokeResetPasswordTokenAsync(Utilizer utilizer, string membershipId, string resetToken, CancellationToken cancellationToken = default)
@@ -308,7 +304,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "OneTimePasswordService.RevokeResetPasswordTokenAsync occured an error");
 		}
 	}
 	

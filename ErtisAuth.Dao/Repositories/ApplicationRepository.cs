@@ -2,11 +2,12 @@ using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Applications;
+using ErtisAuth.Core.Models.Applications;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
-public class ApplicationRepository : RepositoryBase<ApplicationDto>, IApplicationRepository
+public class ApplicationRepository : RepositoryBase<Application>, IApplicationRepository
 {
 	#region Properties
     
@@ -28,10 +29,12 @@ public class ApplicationRepository : RepositoryBase<ApplicationDto>, IApplicatio
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
+	/// <param name="logger"></param>
 	public ApplicationRepository(
 		IMongoClientProvider clientProvider, 
-		IDatabaseSettings settings) : 
-		base(clientProvider, settings, "applications")
+		IDatabaseSettings settings,
+		ILogger<ApplicationRepository> logger) : 
+		base(clientProvider, settings, logger, "applications")
 	{
 		
 	}

@@ -16,7 +16,7 @@ public class FacebookLoginRequest : IProviderLoginRequest<FacebookUserToken, Fac
 	
 	[JsonProperty("user")]
 	[JsonPropertyName("user")]
-	public required FacebookUserToken User { get; set; }
+	public FacebookUserToken? User { get; set; }
 	
 	[JsonProperty("appId")]
 	[JsonPropertyName("appId")]
@@ -28,19 +28,19 @@ public class FacebookLoginRequest : IProviderLoginRequest<FacebookUserToken, Fac
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public string? AccessToken => this.User.AccessToken ?? this.Token?.AccessToken;
+	public string? AccessToken => this.User?.AccessToken ?? this.Token?.AccessToken;
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public string? UserId => this.User.Id;
+	public string? UserId => this.User?.Id;
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public string? EmailAddress => this.User.EmailAddress;
+	public string? EmailAddress => this.User?.EmailAddress;
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public string? AvatarUrl => this.User.Picture?.Data?.Url;
+	public string? AvatarUrl => this.User?.Picture?.Data?.Url;
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
@@ -92,10 +92,10 @@ public class FacebookLoginRequest : IProviderLoginRequest<FacebookUserToken, Fac
 		return new User
 		{
 			MembershipId = membershipId,
-			FirstName = this.User.FirstName,
-			LastName = this.User.LastName,
-			Username = this.User.EmailAddress ?? string.Empty,
-			EmailAddress = this.User.EmailAddress,
+			FirstName = this.User?.FirstName,
+			LastName = this.User?.LastName,
+			Username = this.User?.EmailAddress ?? string.Empty,
+			EmailAddress = this.User?.EmailAddress,
 			Role = role ?? string.Empty,
 			UserType = userType,
 			SourceProvider = KnownProviders.Facebook.ToString(),

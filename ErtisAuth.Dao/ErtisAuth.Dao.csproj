@@ -6,10 +6,10 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\ErtisAuth.Dto\ErtisAuth.Dto.csproj" />
+        <PackageReference Include="Ertis.Data" Version="10.0.0" />
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="Ertis.Data" Version="10.0.0" />
+        <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
     </ItemGroup>
 </Project>

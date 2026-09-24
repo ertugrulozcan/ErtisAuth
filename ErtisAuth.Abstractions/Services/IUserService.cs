@@ -1,9 +1,9 @@
 using Ertis.Core.Collections;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
+using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
-using ErtisAuth.Events.EventArgs;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedParameter.Global
@@ -61,6 +61,8 @@ public interface IUserService : IDeletableMembershipBoundedService
     Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string membershipId, string id, CancellationToken cancellationToken = default);
     
     Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string membershipId, string username, string email, CancellationToken cancellationToken = default);
+    
+    string CalculatePasswordHash(Membership membership, string password);
     
     Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default);
     

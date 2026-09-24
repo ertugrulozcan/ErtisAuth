@@ -1,5 +1,5 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json.Serialization;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Integrations.OAuth.Apple;
@@ -22,8 +22,9 @@ public class AppleLoginModel
 	
 	public AppleLoginRequestBase ToLoginRequest(bool isAppleNative)
 	{
-		var handler = new JwtSecurityTokenHandler();
-		var jwtToken = handler.ReadJwtToken(this.Authorization?.IdToken);
+		var tokenHandler = new JsonWebTokenHandler();
+		var jwtToken = tokenHandler.ReadJsonWebToken(this.Authorization?.IdToken);
+		
 		var userId = jwtToken.Subject;
 		var expirationClaim = jwtToken.Claims.FirstOrDefault(x => x.Type == "exp");
 		var expiresIn = expirationClaim != null && !string.IsNullOrEmpty(expirationClaim.Value) && long.TryParse(expirationClaim.Value, out var expiresIn_) ? expiresIn_ : 0;

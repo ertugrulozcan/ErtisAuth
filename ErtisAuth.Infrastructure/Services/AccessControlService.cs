@@ -9,7 +9,7 @@ public class AccessControlService : IAccessControlService
 {
 	#region Services
 	
-	private readonly IRoleService roleService;
+	private readonly IRoleService _roleService;
 	
 	#endregion
 	
@@ -21,7 +21,7 @@ public class AccessControlService : IAccessControlService
 	/// <param name="roleService"></param>
 	public AccessControlService(IRoleService roleService)
 	{
-		this.roleService = roleService;
+		this._roleService = roleService;
 	}
 	
 	#endregion
@@ -128,7 +128,7 @@ public class AccessControlService : IAccessControlService
 			return hasUbacPermission.Value;
 		}
 		
-		var role = this.roleService.GetBySlug(roleSlug, membershipId);
+		var role = this._roleService.GetBySlug(roleSlug, membershipId);
 		if (role != null)
 		{
 			return CheckPermission(role, rbac, utilizer);
@@ -147,7 +147,7 @@ public class AccessControlService : IAccessControlService
 			return hasUbacPermission.Value;
 		}
 		
-		var role = this.roleService.GetBySlug(roleSlug, membershipId);
+		var role = this._roleService.GetBySlug(roleSlug, membershipId);
 		if (role != null)
 		{
 			return CheckPermission(role, rbac, utilizer);

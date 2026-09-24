@@ -1,72 +1,75 @@
 using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
 using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
 using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
+using SystemJsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
+using SystemJsonConverter = System.Text.Json.Serialization.JsonConverterAttribute;
 
 namespace ErtisAuth.Core.Models.Identity;
 
 public struct Utilizer
 {
-	#region Constants
-	
-	public const string UtilizerIdClaimName = "utilizer_id";
-	public const string UtilizerTypeClaimName = "utilizer_type";
-	public const string UtilizerUsernameClaimName = "utilizer_username";
-	public const string UtilizerRoleClaimName = "role";
-	public const string MembershipIdClaimName = "membership_id";
-	public const string UtilizerTokenClaimName = "access_token";
-	public const string UtilizerTokenTypeClaimName = "token_type";
-	public const string ScopeClaimName = "scope";
-	
-	#endregion
-	
 	#region Properties
 	
 	[JsonProperty("id")]
 	[JsonPropertyName("id")]
+	[BsonElement("id")]
 	public required string Id { get; set; }
 	
 	[JsonProperty("type")]
 	[JsonPropertyName("type")]
+	[BsonElement("type")]
 	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
-	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+	[SystemJsonConverter(typeof(JsonStringEnumConverter))]
+	[BsonRepresentation(BsonType.String)]
 	public UtilizerType Type { get; set; }
 	
 	[JsonProperty("username")]
 	[JsonPropertyName("username")]
-	public string? Username { get; set; }
+	[BsonElement("username")]
+	public required string Username { get; set; }
 	
 	[JsonProperty("membership_id")]
 	[JsonPropertyName("membership_id")]
+	[BsonElement("membership_id")]
 	public required string MembershipId { get; set; }
 	
 	[JsonProperty("role")]
 	[JsonPropertyName("role")]
+	[BsonElement("role")]
 	public string? Role { get; set; }
 	
 	[JsonProperty("permissions")]
 	[JsonPropertyName("permissions")]
+	[BsonElement("permissions")]
 	public IEnumerable<string>? Permissions { get; set; }
 	
 	[JsonProperty("forbidden")]
 	[JsonPropertyName("forbidden")]
+	[BsonElement("forbidden")]
 	public IEnumerable<string>? Forbidden { get; set; }
 	
 	[JsonProperty("token")]
 	[JsonPropertyName("token")]
+	[BsonElement("token")]
 	public string? Token { get; set; }
 	
 	[JsonProperty("scopes", NullValueHandling = NullValueHandling.Ignore)]
 	[JsonPropertyName("scopes")]
-	[System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	[BsonElement("scopes")]
+	[SystemJsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	public string[]? Scopes { get; set; }
 	
 	[JsonProperty("tokenType")]
 	[JsonPropertyName("tokenType")]
+	[BsonElement("tokenType")]
 	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
-	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+	[SystemJsonConverter(typeof(JsonStringEnumConverter))]
+	[BsonRepresentation(BsonType.String)]
 	public SupportedTokenTypes TokenType { get; set; }
 	
 	#endregion

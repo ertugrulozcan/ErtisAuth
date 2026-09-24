@@ -2,13 +2,18 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Identity;
-using ErtisAuth.Infrastructure.Mapping.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class ActiveTokenService : MembershipBoundedService<ActiveToken, ActiveTokenDto>, IActiveTokenService
+public class ActiveTokenService : MembershipBoundedService<ActiveToken>, IActiveTokenService
 {
+	#region Services
+	
+	private readonly ILogger<ActiveTokenService> _logger;
+	
+	#endregion
+	
 	#region Constructors
 	
 	/// <summary>
@@ -16,8 +21,15 @@ public class ActiveTokenService : MembershipBoundedService<ActiveToken, ActiveTo
 	/// </summary>
 	/// <param name="membershipService"></param>
 	/// <param name="repository"></param>
-	public ActiveTokenService(IMembershipService membershipService, IActiveTokensRepository repository) : base(membershipService, repository)
-	{ }
+	/// <param name="logger"></param>
+	public ActiveTokenService(
+		IMembershipService membershipService,
+		IActiveTokensRepository repository,
+		ILogger<ActiveTokenService> logger) :
+		base(membershipService, repository)
+	{
+		this._logger = logger;
+	}
 	
 	#endregion
 	
@@ -25,14 +37,12 @@ public class ActiveTokenService : MembershipBoundedService<ActiveToken, ActiveTo
 	
 	public async Task<ActiveToken?> GetByAccessTokenAsync(string accessToken, CancellationToken cancellationToken = default)
 	{
-		var dto = await this.repository.FindOneAsync(x => x.AccessToken == accessToken, cancellationToken: cancellationToken);
-		return dto?.ToModel();
+		return await this._repository.FindOneAsync(x => x.AccessToken == accessToken, cancellationToken: cancellationToken);
 	}
 	
 	public async Task<ActiveToken?> GetByRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
 	{
-		var dto = await this.repository.FindOneAsync(x => x.RefreshToken == refreshToken, cancellationToken: cancellationToken);
-		return dto?.ToModel();
+		return await this._repository.FindOneAsync(x => x.RefreshToken == refreshToken, cancellationToken: cancellationToken);
 	}
 	
 	public async Task<ActiveToken> CreateAsync(
@@ -43,8 +53,8 @@ public class ActiveTokenService : MembershipBoundedService<ActiveToken, ActiveTo
 		string? userAgent = null,
 		CancellationToken cancellationToken = default)
 	{
-		var clientInfo = this.GetClientInfo(ipAddress, userAgent);
-		var insertedDto = await this.repository.InsertAsync(new ActiveTokenDto
+		var clientInfo = this.GenerateClientInfo(ipAddress, userAgent);
+		return await this._repository.InsertAsync(new ActiveToken
 		{
 			AccessToken = token.AccessToken,
 			RefreshToken = token.RefreshToken,
@@ -58,13 +68,11 @@ public class ActiveTokenService : MembershipBoundedService<ActiveToken, ActiveTo
 			FirstName = user.FirstName,
 			LastName = user.LastName,
 			MembershipId = membershipId,
-			ClientInfo = clientInfo.ToDto()
+			ClientInfo = clientInfo
 		}, cancellationToken: cancellationToken);
-		
-		return insertedDto.ToModel();
 	}
 	
-	private ClientInfo GetClientInfo(string? ipAddress, string? userAgent)
+	private ClientInfo GenerateClientInfo(string? ipAddress, string? userAgent)
 	{
 		var clientInfo = new ClientInfo
 		{
@@ -77,33 +85,33 @@ public class ActiveTokenService : MembershipBoundedService<ActiveToken, ActiveTo
 	
 	public async Task<IEnumerable<ActiveToken>> GetActiveTokensByUser(string userId, string membershipId, CancellationToken cancellationToken = default)
 	{
-		var expiredActiveTokensResult = await this.repository.FindAsync(x => x.UserId == userId && x.MembershipId == membershipId, sorting: null, cancellationToken: cancellationToken);
-		return expiredActiveTokensResult.Items.Select(x => x.ToModel());
+		var expiredActiveTokensResult = await this._repository.FindAsync(x => x.UserId == userId && x.MembershipId == membershipId, sorting: null, cancellationToken: cancellationToken);
+		return expiredActiveTokensResult.Items;
 	}
 	
 	public async Task BulkDeleteAsync(IEnumerable<ActiveToken> activeTokens, CancellationToken cancellationToken = default)
 	{
-		await this.repository.BulkDeleteAsync(activeTokens.Select(x => x.ToDto()), cancellationToken: cancellationToken);
+		await this._repository.BulkDeleteAsync(activeTokens, cancellationToken: cancellationToken);
 	}
 	
 	public async ValueTask ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			var expiredActiveTokensResult = await this.repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.Now, sorting: null, cancellationToken: cancellationToken);
+			var expiredActiveTokensResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.Now, sorting: null, cancellationToken: cancellationToken);
 			var expiredActiveTokens = expiredActiveTokensResult.Items.ToArray();
 			if (expiredActiveTokens.Any())
 			{
-				var isDeleted = await this.repository.BulkDeleteAsync(expiredActiveTokens, cancellationToken: cancellationToken);
+				var isDeleted = await this._repository.BulkDeleteAsync(expiredActiveTokens, cancellationToken: cancellationToken);
 				if (isDeleted)
 				{
-					Console.WriteLine($"{expiredActiveTokens.Length} expired active token cleared");
+					this._logger.LogInformation("{Count} expired active token cleared", expiredActiveTokens.Length);
 				}
 			}
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "ActiveTokenService.ClearExpiredActiveTokens occured an error");
 		}
 	}
 	

@@ -3,7 +3,6 @@ namespace ErtisAuth.Core.Models.Cryptography;
 public enum HashAlgorithms
 {
 	MD5,
-	SHA0,
 	SHA1,
 	SHA2_224,
 	SHA2_256,

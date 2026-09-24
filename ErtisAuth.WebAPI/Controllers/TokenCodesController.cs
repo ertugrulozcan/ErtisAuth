@@ -2,9 +2,10 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -18,6 +19,7 @@ public class TokenCodesController : ControllerBase
     #region Services
 	
 	private readonly ITokenCodeService _tokenCodeService;
+	private readonly IUtilizerService _utilizerService;
 	
 	#endregion
 	
@@ -27,9 +29,11 @@ public class TokenCodesController : ControllerBase
 	/// Constructor
 	/// </summary>
 	/// <param name="tokenCodeService"></param>
-	public TokenCodesController(ITokenCodeService tokenCodeService)
+	/// <param name="utilizerService"></param>
+	public TokenCodesController(ITokenCodeService tokenCodeService, IUtilizerService utilizerService)
 	{
 		this._tokenCodeService = tokenCodeService;
+		this._utilizerService = utilizerService;
 	}
 	
 	#endregion
@@ -53,7 +57,7 @@ public class TokenCodesController : ControllerBase
 			throw ErtisAuthException.UnsupportedTokenType();
 		}
 		
-		var utilizer = this.GetUtilizer();
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		await this._tokenCodeService.AuthorizeCodeAsync(code, utilizer, membershipId, cancellationToken: cancellationToken);
 		return this.Ok();
 	}

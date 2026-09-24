@@ -3,14 +3,12 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Memberships;
 using ErtisAuth.Infrastructure.Constants;
-using ErtisAuth.Infrastructure.Mapping;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class MembershipService : GenericCrudService<Membership, MembershipDto>, IMembershipService
+public class MembershipService : GenericCrudService<Membership>, IMembershipService
 {
 	#region Constants
 	
@@ -276,8 +274,7 @@ public class MembershipService : GenericCrudService<Membership, MembershipDto>, 
 	
 	private Membership? GetBySlug(string slug)
 	{
-		var dto = this.repository.FindOne(x => x.Slug == slug.Trim());
-		return dto == null ? null : Mapper.Current.Map<MembershipDto, Membership>(dto);
+		return this._repository.FindOne(x => x.Slug == slug.Trim());
 	}
 	
 	public Membership? GetBySecretKey(string secretKey)
@@ -285,13 +282,12 @@ public class MembershipService : GenericCrudService<Membership, MembershipDto>, 
 		var cacheKey = GetCacheKey(secretKey);
 		if (!this._memoryCache.TryGetValue<Membership>(cacheKey, out var membership))
 		{
-			var dto = this.repository.FindOne(x => x.SecretKey == secretKey);
-			if (dto == null)
+			membership = this._repository.FindOne(x => x.SecretKey == secretKey);
+			if (membership == null)
 			{
 				return null;
 			}
 			
-			membership = Mapper.Current.Map<MembershipDto, Membership>(dto);
 			this._memoryCache.Set(cacheKey, membership, GetCacheTTL());
 		}
 		
@@ -303,13 +299,12 @@ public class MembershipService : GenericCrudService<Membership, MembershipDto>, 
 		var cacheKey = GetCacheKey(secretKey);
 		if (!this._memoryCache.TryGetValue<Membership>(cacheKey, out var membership))
 		{
-			var dto = await this.repository.FindOneAsync(x => x.SecretKey == secretKey, cancellationToken: cancellationToken);
-			if (dto == null)
+			membership = await this._repository.FindOneAsync(x => x.SecretKey == secretKey, cancellationToken: cancellationToken);
+			if (membership == null)
 			{
 				return null;
 			}
 			
-			membership = Mapper.Current.Map<MembershipDto, Membership>(dto);
 			this._memoryCache.Set(cacheKey, membership, GetCacheTTL());
 		}
 		

@@ -1,18 +1,14 @@
-using Microsoft.AspNetCore.Authentication;
+using System.Text.Json.Serialization;
 using Ertis.Schema.Serialization;
+using ErtisAuth.Core;
 using ErtisAuth.Extensions.ApplicationInsights;
-using ErtisAuth.Extensions.Authorization.Constants;
 using ErtisAuth.Extensions.Database;
-using ErtisAuth.Extensions.Mailkit.Extensions;
-using ErtisAuth.Extensions.Mailkit.Serialization;
-using ErtisAuth.Extensions.Prometheus.Extensions;
+using ErtisAuth.Extensions.Prometheus;
 using ErtisAuth.Integrations.OAuth.Extensions;
-using ErtisAuth.WebAPI.Auth;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.ResponseCompression;
 using Scalar.AspNetCore;
-
-const string CORS_POLICY_KEY = "cors-policy";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,9 +24,6 @@ builder.Services.AddProviders();
 // MemoryCache
 builder.Services.AddMemoryCache();
 
-// Mailkit
-builder.Services.AddMailkit();
-
 // Prometheus
 builder.Services.AddPrometheus();
 
@@ -38,30 +31,10 @@ builder.Services.AddPrometheus();
 builder.Services.AddHttpClient();
 
 // CORS
-builder.Services.AddCors(options =>
-{
-	options.AddPolicy(CORS_POLICY_KEY,
-		policy =>
-		{
-			policy
-				.AllowAnyOrigin()
-				.AllowAnyMethod()
-				.AllowAnyHeader();
-		});
-});
+builder.Services.AddCORS();
 
-// Authentication
-builder.Services
-	.AddAuthentication()
-	.AddScheme<AuthenticationSchemeOptions, ErtisAuthAuthenticationHandler>(Policies.ErtisAuthAuthorizationPolicyName, _ => {});
-
-// Authorization
-builder.Services.AddAuthorization(options =>
-	options.AddPolicy(Policies.ErtisAuthAuthorizationPolicyName, policy =>
-	{
-		policy.AddAuthenticationSchemes(Policies.ErtisAuthAuthorizationPolicyName);
-		policy.AddRequirements(new ErtisAuthAuthorizationRequirement());
-	}));
+// Authentication & Authorization
+builder.Services.AddErtisAuth();
 
 // ApplicationInsights
 builder.Services.AddApplicationInsights(builder.Configuration);
@@ -86,11 +59,12 @@ builder.Logging.AddJsonConsole(options =>
 
 builder.Services
 	.AddControllers()
-	.AddNewtonsoftJson(options =>
+	.AddJsonOptions(options =>
 	{
-		options.SerializerSettings.Converters.Add(new DynamicObjectJsonConverter());
-		options.SerializerSettings.Converters.Add(new MailProviderJsonConverter());
-		options.SerializerSettings.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Utc;
+		options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+		options.JsonSerializerOptions.MaxDepth = 0;
+		options.JsonSerializerOptions.Converters.Add(new DynamicObjectJsonConverter());
+		options.JsonSerializerOptions.Converters.Add(new FieldInfoJsonConverter());
 	});
 
 // Graceful shutdown
@@ -102,7 +76,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
 	app.MapOpenApi();
-	app.MapScalarApiReference("/documentation", options =>
+	app.MapScalarApiReference("documentation", options =>
 	{
 		options.WithTitle("ErtisAuth");
 	});
@@ -114,9 +88,10 @@ app.UseResponseCompression();
 // Database
 app.UseMongoDB();
 
-app.UseMailkit();
+// OAuth Providers
 app.UseProviders();
-app.UseCors(CORS_POLICY_KEY);
+
+app.UseCORS();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();

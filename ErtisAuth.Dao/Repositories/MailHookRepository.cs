@@ -2,11 +2,12 @@ using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Mailing;
+using ErtisAuth.Core.Models.Mailing;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
-public class MailHookRepository : RepositoryBase<MailHookDto>, IMailHookRepository
+public class MailHookRepository : RepositoryBase<MailHook>, IMailHookRepository
 {
     #region Properties
     
@@ -26,10 +27,12 @@ public class MailHookRepository : RepositoryBase<MailHookDto>, IMailHookReposito
     /// </summary>
     /// <param name="clientProvider"></param>
     /// <param name="settings"></param>
+    /// <param name="logger"></param>
     public MailHookRepository(
         IMongoClientProvider clientProvider, 
-        IDatabaseSettings settings) : 
-        base(clientProvider, settings, "mailhooks")
+        IDatabaseSettings settings,
+        ILogger<MailHookRepository> logger) : 
+        base(clientProvider, settings, logger, "mailhooks")
     {
 		
     }

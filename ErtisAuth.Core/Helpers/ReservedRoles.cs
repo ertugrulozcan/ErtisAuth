@@ -6,7 +6,6 @@ public static class ReservedRoles
     #region Constants
     
     public const string Administrator = "admin";
-    public const string Server = "server";
     
     #endregion
     
@@ -16,8 +15,7 @@ public static class ReservedRoles
     {
         return new[]
         {
-            Administrator,
-            Server
+            Administrator
         };
     }
     

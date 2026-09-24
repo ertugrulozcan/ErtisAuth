@@ -5,7 +5,7 @@ using ErtisAuth.Integrations.OAuth.Apple;
 using ErtisAuth.Integrations.OAuth.Facebook;
 using ErtisAuth.Integrations.OAuth.Google;
 using ErtisAuth.Integrations.OAuth.Microsoft;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.WebAPI.Models.Tokens;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,10 +16,10 @@ public class TokensController : ControllerBase
 {
 	#region Services
 	
-	private readonly ITokenService tokenService;
-	private readonly IUserService userService;
-	private readonly IProviderService providerService;
-	private readonly IOneTimePasswordService oneTimePasswordService;
+	private readonly ITokenService _tokenService;
+	private readonly IUserService _userService;
+	private readonly IProviderService _providerService;
+	private readonly IOneTimePasswordService _oneTimePasswordService;
 	
 	#endregion
 	
@@ -38,10 +38,10 @@ public class TokensController : ControllerBase
 		IProviderService providerService, 
 		IOneTimePasswordService oneTimePasswordService)
 	{
-		this.tokenService = tokenService;
-		this.userService = userService;
-		this.providerService = providerService;
-		this.oneTimePasswordService = oneTimePasswordService;
+		this._tokenService = tokenService;
+		this._userService = userService;
+		this._providerService = providerService;
+		this._oneTimePasswordService = oneTimePasswordService;
 	}
 	
 	#endregion
@@ -58,12 +58,19 @@ public class TokensController : ControllerBase
 		{
 			if (token.TokenType == SupportedTokenTypes.Bearer)
 			{
-				var user = await this.userService.GetAsync(utilizer.MembershipId, utilizer.Id);
-				return this.Ok(user);
+				var user = await this._userService.GetAsync(utilizer.MembershipId, utilizer.Id);
+				if (user != null)
+				{
+					return this.Ok(user);
+				}
+				else
+				{
+					return this.UserNotFound(utilizer.Id);
+				}
 			}
 			else
 			{
-				return this.Ok(utilizer);	
+				return this.Ok(utilizer);
 			}
 		}
 		else
@@ -80,7 +87,22 @@ public class TokensController : ControllerBase
 		var utilizer = await this.GetTokenOwnerUtilizerAsync(token);
 		if (utilizer != null)
 		{
-			return this.Ok(utilizer);
+			if (token.TokenType == SupportedTokenTypes.Bearer)
+			{
+				var user = await this._userService.GetAsync(utilizer.MembershipId, utilizer.Id);
+				if (user != null)
+				{
+					return this.Ok(user);
+				}
+				else
+				{
+					return this.UserNotFound(utilizer.Id);
+				}
+			}
+			else
+			{
+				return this.Ok(utilizer);
+			}
 		}
 		else
 		{
@@ -117,8 +139,8 @@ public class TokensController : ControllerBase
 		return token.TokenType switch
 		{
 			SupportedTokenTypes.None => throw ErtisAuthException.UnsupportedTokenType(),
-			SupportedTokenTypes.Basic => await this.tokenService.WhoAmIAsync((BasicToken) token, cancellationToken: cancellationToken),
-			SupportedTokenTypes.Bearer => await this.tokenService.WhoAmIAsync((BearerToken) token, cancellationToken: cancellationToken),
+			SupportedTokenTypes.Basic => await this._tokenService.WhoAmIAsync((BasicToken) token, cancellationToken: cancellationToken),
+			SupportedTokenTypes.Bearer => await this._tokenService.WhoAmIAsync((BearerToken) token, cancellationToken: cancellationToken),
 			_ => throw ErtisAuthException.UnsupportedTokenType()
 		};
 	}
@@ -127,10 +149,10 @@ public class TokensController : ControllerBase
 	[Route("generate-token")]
 	public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenFormModel model, CancellationToken cancellationToken = default)
 	{
-		var membershipId = this.GetXErtisAlias();
+		var membershipId = this.GetMembershipId();
 		if (string.IsNullOrEmpty(membershipId))
 		{
-			return this.XErtisAliasMissing();
+			return this.MembershipIdRequired();
 		}
 		
 		var username = model.Username;
@@ -150,7 +172,7 @@ public class TokensController : ControllerBase
 		
 		if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
 		{
-			var token = await this.tokenService.GenerateTokenAsync(
+			var token = await this._tokenService.GenerateTokenAsync(
 				username, 
 				password, 
 				membershipId, 
@@ -183,7 +205,7 @@ public class TokensController : ControllerBase
 				throw ErtisAuthException.BearerTokenRequired();
 			}
 			
-			var generatedToken = await this.tokenService.GenerateTokenAsync(token, scopes, membershipId, cancellationToken: cancellationToken);
+			var generatedToken = await this._tokenService.GenerateTokenAsync(token, scopes, membershipId, cancellationToken: cancellationToken);
 			return this.Created($"{this.Request.Scheme}://{this.Request.Host}", generatedToken);
 		}
 	}
@@ -203,7 +225,7 @@ public class TokensController : ControllerBase
 			throw ErtisAuthException.UnsupportedTokenType();	
 		}
 		
-		var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false);
+		var validationResult = await this._tokenService.VerifyTokenAsync(token, tokenType, false);
 		if (validationResult.IsValidated)
 		{
 			return this.Ok(validationResult);
@@ -234,7 +256,7 @@ public class TokensController : ControllerBase
 			return this.AuthorizationHeaderMissing();
 		}
 		
-		var validationResult = await this.tokenService.VerifyTokenAsync(token, tokenType, false);
+		var validationResult = await this._tokenService.VerifyTokenAsync(token, tokenType, false);
 		if (validationResult.IsValidated)
 		{
 			return this.Ok(validationResult);
@@ -261,7 +283,7 @@ public class TokensController : ControllerBase
 			revokeBefore = this.Request.Query["revoke"] == "true";
 		}
 		
-		var token = await this.tokenService.RefreshTokenAsync(refreshToken, revokeBefore);
+		var token = await this._tokenService.RefreshTokenAsync(refreshToken, revokeBefore);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 	}
 	
@@ -286,7 +308,7 @@ public class TokensController : ControllerBase
 			revokeBefore = this.Request.Query["revoke"] == "true";
 		}
 		
-		var token = await this.tokenService.RefreshTokenAsync(refreshToken, revokeBefore);
+		var token = await this._tokenService.RefreshTokenAsync(refreshToken, revokeBefore);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 	}
 	
@@ -306,9 +328,9 @@ public class TokensController : ControllerBase
 			bool.TryParse(this.Request.Query["logout-all"], out logoutFromAllDevices);
 		}
 		
-		if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices, cancellationToken: cancellationToken))
+		if (await this._tokenService.RevokeTokenAsync(token, logoutFromAllDevices, cancellationToken: cancellationToken))
 		{
-			await this.providerService.LogoutAsync(token, cancellationToken: cancellationToken);
+			await this._providerService.LogoutAsync(token, cancellationToken: cancellationToken);
 			return this.NoContent();
 		}
 		else
@@ -338,9 +360,9 @@ public class TokensController : ControllerBase
 			bool.TryParse(this.Request.Query["logout-all"], out logoutFromAllDevices);
 		}
 		
-		if (await this.tokenService.RevokeTokenAsync(token, logoutFromAllDevices, cancellationToken: cancellationToken))
+		if (await this._tokenService.RevokeTokenAsync(token, logoutFromAllDevices, cancellationToken: cancellationToken))
 		{
-			await this.providerService.LogoutAsync(token, cancellationToken: cancellationToken);
+			await this._providerService.LogoutAsync(token, cancellationToken: cancellationToken);
 			return this.NoContent();
 		}
 		else
@@ -353,10 +375,10 @@ public class TokensController : ControllerBase
 	[Route("verify-otp")]
 	public async Task<IActionResult> VerifyOneTimePassword([FromBody] GenerateTokenFormModel model)
 	{
-		var membershipId = this.GetXErtisAlias();
+		var membershipId = this.GetMembershipId();
 		if (string.IsNullOrEmpty(membershipId))
 		{
-			return this.XErtisAliasMissing();
+			return this.MembershipIdRequired();
 		}
 		
 		var username = model.Username;
@@ -368,7 +390,7 @@ public class TokensController : ControllerBase
 			return this.InvalidCredentials();
 		}
 		
-		var otp = await this.oneTimePasswordService.VerifyOtpAsync(username, password, membershipId, host);
+		var otp = await this._oneTimePasswordService.VerifyOtpAsync(username, password, membershipId, host);
 		if (otp != null)
 		{
 			return this.Ok(otp.Token);
@@ -387,10 +409,10 @@ public class TokensController : ControllerBase
 	[Route("oauth/facebook/login")]
 	public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequest request, CancellationToken cancellationToken = default)
 	{
-		var membershipId = this.GetXErtisAlias();
+		var membershipId = this.GetMembershipId();
 		if (string.IsNullOrEmpty(membershipId))
 		{
-			return this.XErtisAliasMissing();
+			return this.MembershipIdRequired();
 		}
 		
 		string? ipAddress = null;
@@ -412,7 +434,7 @@ public class TokensController : ControllerBase
 		
 		return this.Created(
 			$"{this.Request.Scheme}://{this.Request.Host}", 
-			await this.providerService.LoginAsync(
+			await this._providerService.LoginAsync(
 				request, 
 				membershipId, 
 				ipAddress: ipAddress, 
@@ -426,10 +448,10 @@ public class TokensController : ControllerBase
 	[Route("oauth/google/login")]
 	public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken = default)
 	{
-		var membershipId = this.GetXErtisAlias();
+		var membershipId = this.GetMembershipId();
 		if (string.IsNullOrEmpty(membershipId))
 		{
-			return this.XErtisAliasMissing();
+			return this.MembershipIdRequired();
 		}
 		
 		string? ipAddress = null;
@@ -446,7 +468,7 @@ public class TokensController : ControllerBase
 		
 		return this.Created(
 			$"{this.Request.Scheme}://{this.Request.Host}", 
-			await this.providerService.LoginAsync(
+			await this._providerService.LoginAsync(
 				request, 
 				membershipId, 
 				ipAddress: ipAddress, 
@@ -460,10 +482,10 @@ public class TokensController : ControllerBase
 	[Route("oauth/microsoft/login")]
 	public async Task<IActionResult> MicrosoftLogin([FromBody] MicrosoftLoginRequest request, CancellationToken cancellationToken = default)
 	{
-		var membershipId = this.GetXErtisAlias();
+		var membershipId = this.GetMembershipId();
 		if (string.IsNullOrEmpty(membershipId))
 		{
-			return this.XErtisAliasMissing();
+			return this.MembershipIdRequired();
 		}
 		
 		string? ipAddress = null;
@@ -480,7 +502,7 @@ public class TokensController : ControllerBase
 		
 		return this.Created(
 			$"{this.Request.Scheme}://{this.Request.Host}", 
-			await this.providerService.LoginAsync(
+			await this._providerService.LoginAsync(
 				request, 
 				membershipId, 
 				ipAddress: ipAddress, 
@@ -494,10 +516,10 @@ public class TokensController : ControllerBase
 	[Route("oauth/apple/login")]
 	public async Task<IActionResult> AppleLogin([FromBody] AppleLoginModel request, [FromQuery] string platform, CancellationToken cancellationToken = default)
 	{
-		var membershipId = this.GetXErtisAlias();
+		var membershipId = this.GetMembershipId();
 		if (string.IsNullOrEmpty(membershipId))
 		{
-			return this.XErtisAliasMissing();
+			return this.MembershipIdRequired();
 		}
 		
 		var platforms = new []
@@ -524,7 +546,7 @@ public class TokensController : ControllerBase
 		
 		return this.Created(
 			$"{this.Request.Scheme}://{this.Request.Host}", 
-			await this.providerService.LoginAsync(
+			await this._providerService.LoginAsync(
 				request.ToLoginRequest(platform == "ios"), 
 				membershipId, 
 				ipAddress: ipAddress, 

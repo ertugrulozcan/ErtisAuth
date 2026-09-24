@@ -2,7 +2,9 @@ using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Identity;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
+using JsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
 using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Core.Models.Applications;
@@ -13,10 +15,12 @@ public class Application : MembershipBoundedResource, IUtilizer, IHasSysInfo
 	
 	[JsonProperty("name")]
 	[JsonPropertyName("name")]
+	[BsonElement("name")]
 	public required string Name { get; set; }
 	
 	[JsonProperty("slug")]
 	[JsonPropertyName("slug")]
+	[BsonElement("slug")]
 	public string Slug
 	{
 		get
@@ -33,22 +37,27 @@ public class Application : MembershipBoundedResource, IUtilizer, IHasSysInfo
 	
 	[JsonProperty("role")]
 	[JsonPropertyName("role")]
+	[BsonElement("role")]
 	public required string Role { get; set; }
 	
 	[JsonProperty("permissions")]
 	[JsonPropertyName("permissions")]
+	[BsonElement("permissions")]
 	public IEnumerable<string>? Permissions { get; set; }
 	
 	[JsonProperty("forbidden")]
 	[JsonPropertyName("forbidden")]
+	[BsonElement("forbidden")]
 	public IEnumerable<string>? Forbidden { get; set; }
 	
 	[JsonProperty("sys")]
 	[JsonPropertyName("sys")]
+	[BsonElement("sys")]
 	public SysModel? Sys { get; set; }
 	
+	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
 	public Utilizer.UtilizerType UtilizerType => Utilizer.UtilizerType.Application;
 	
 	#endregion

@@ -1,21 +1,17 @@
-using System.Diagnostics.CodeAnalysis;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
+using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
-using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Applications;
-using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Infrastructure.Constants;
-using ErtisAuth.Infrastructure.Mapping;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class ApplicationService : MembershipBoundedCrudService<Application, ApplicationDto>, IApplicationService
+public class ApplicationService : MembershipBoundedCrudService<Application>, IApplicationService
 {
 	#region Constants
 	
@@ -25,28 +21,9 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 	
 	#region Services
 	
-	private readonly IRoleService roleService;
-	private readonly IEventService eventService;
+	private readonly IRoleService _roleService;
+	private readonly IEventService _eventService;
 	private readonly IMemoryCache _memoryCache;
-	
-	#endregion
-	
-	#region Properties
-	
-	private Application ServerApplication
-	{
-		get
-		{
-			return field ??= new Application
-			{
-				Id = "ertisauth_server",
-				Name = "ertisauth_server",
-				Slug = "ertisauth_server",
-				Role = ReservedRoles.Server,
-				MembershipId = string.Empty
-			};
-		}
-	}
 	
 	#endregion
 	
@@ -67,8 +44,8 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 		IMemoryCache memoryCache,
 		IApplicationRepository applicationRepository) : base(membershipService, applicationRepository)
 	{
-		this.roleService = roleService;
-		this.eventService = eventService;
+		this._roleService = roleService;
+		this._eventService = eventService;
 		this._memoryCache = memoryCache;
 		
 		this.OnCreated += this.ApplicationCreatedEventHandler;
@@ -82,7 +59,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 	
 	private void ApplicationCreatedEventHandler(object? sender, CreateResourceEventArgs<Application> eventArgs)
 	{
-		this.eventService.FireEventAsync(this, new ErtisAuthEvent
+		this._eventService.FireEventAsync(this, new ErtisAuthEvent
 		{
 			EventType = ErtisAuthEventType.ApplicationCreated,
 			UtilizerId = eventArgs.Utilizer.Id,
@@ -93,7 +70,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 	
 	private void ApplicationUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Application> eventArgs)
 	{
-		this.eventService.FireEventAsync(this, new ErtisAuthEvent
+		this._eventService.FireEventAsync(this, new ErtisAuthEvent
 		{
 			EventType = ErtisAuthEventType.ApplicationUpdated,
 			UtilizerId = eventArgs.Utilizer.Id,
@@ -105,7 +82,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 	
 	private void ApplicationDeletedEventHandler(object? sender, DeleteResourceEventArgs<Application> eventArgs)
 	{
-		this.eventService.FireEventAsync(this, new ErtisAuthEvent
+		this._eventService.FireEventAsync(this, new ErtisAuthEvent
 		{
 			EventType = ErtisAuthEventType.ApplicationDeleted,
 			UtilizerId = eventArgs.Utilizer.Id,
@@ -137,7 +114,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 		}
 		else
 		{
-			var role = this.roleService.GetBySlug(model.Role, model.MembershipId);
+			var role = this._roleService.GetBySlug(model.Role, model.MembershipId);
 			if (role == null)
 			{
 				errorList.Add($"Role is invalid. There is no role named '{model.Role}'");
@@ -187,7 +164,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 		return !errors.Any();
 	}
 	
-	[SuppressMessage("ReSharper", "ConvertIfStatementToNullCoalescingAssignment")]
 	protected override void Overwrite(Application destination, Application source)
 	{
 		destination.Id = source.Id;
@@ -209,24 +185,12 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 			destination.Role = source.Role;
 		}
 		
-		if (destination.Permissions == null)
-		{
-			destination.Permissions = source.Permissions;
-		}
-		
-		if (destination.Forbidden == null)
-		{
-			destination.Forbidden = source.Forbidden;
-		}
+		destination.Permissions ??= source.Permissions;
+		destination.Forbidden ??= source.Forbidden;
 	}
 	
 	protected override bool IsAlreadyExist(Application model, string membershipId, Application? exclude = null)
 	{
-		if (model.Slug == this.ServerApplication.Slug)
-		{
-			return true;
-		}
-		
 		if (exclude == null)
 		{
 			return this.GetApplicationBySlug(model.Slug, membershipId) != null;	
@@ -247,11 +211,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 	
 	protected override async Task<bool> IsAlreadyExistAsync(Application model, string membershipId, Application? exclude = null, CancellationToken cancellationToken = default)
 	{
-		if (model.Slug == this.ServerApplication.Slug)
-		{
-			return true;
-		}
-		
 		if (exclude == null)
 		{
 			return await this.GetApplicationBySlugAsync(model.Slug, membershipId, cancellationToken: cancellationToken) != null;	
@@ -278,16 +237,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 	protected override ErtisAuthException GetNotFoundError(string id)
 	{
 		return ErtisAuthException.ApplicationNotFound(id);
-	}
-	
-	public bool IsSystemReservedApplication(Application? application)
-	{
-		if (application != null)
-		{
-			return this.ServerApplication.Id == application.Id && this.ServerApplication.Slug == application.Slug;
-		}
-		
-		return false;
 	}
 	
 	#endregion
@@ -363,21 +312,15 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 	
 	public Application? GetById(string id)
 	{
-		if (id == this.ServerApplication.Id)
-		{
-			return this.ServerApplication;
-		}
-		
 		var cacheKey = GetCacheKey("*", id);
 		if (!this._memoryCache.TryGetValue<Application>(cacheKey, out var application))
 		{
-			var dto = this.repository.FindOne(x => x.Id == id);
-			if (dto == null)
+			application = this._repository.FindOne(x => x.Id == id);
+			if (application == null)
 			{
 				return null;
 			}
 			
-			application = Mapper.Current.Map<ApplicationDto, Application>(dto);
 			this._memoryCache.Set(cacheKey, application, GetCacheTTL());
 		}
 		
@@ -386,21 +329,15 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 	
 	public async ValueTask<Application?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
 	{
-		if (id == this.ServerApplication.Id)
-		{
-			return this.ServerApplication;
-		}
-		
 		var cacheKey = GetCacheKey("*", id);
 		if (!this._memoryCache.TryGetValue<Application>(cacheKey, out var application))
 		{
-			var dto = await this.repository.FindOneAsync(x => x.Id == id, cancellationToken);
-			if (dto == null)
+			application = await this._repository.FindOneAsync(x => x.Id == id, cancellationToken);
+			if (application == null)
 			{
 				return null;
 			}
 			
-			application = Mapper.Current.Map<ApplicationDto, Application>(dto);
 			this._memoryCache.Set(cacheKey, application, GetCacheTTL());
 		}
 		
@@ -409,24 +346,12 @@ public class ApplicationService : MembershipBoundedCrudService<Application, Appl
 	
 	private Application? GetApplicationBySlug(string slug, string membershipId)
 	{
-		if (slug == this.ServerApplication.Slug)
-		{
-			return this.ServerApplication;
-		}
-		
-		var dto = this.repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
-		return dto == null ? null : Mapper.Current.Map<ApplicationDto, Application>(dto);
+		return this._repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
 	}
 	
 	private async Task<Application?> GetApplicationBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
 	{
-		if (slug == this.ServerApplication.Slug)
-		{
-			return this.ServerApplication;
-		}
-		
-		var dto = await this.repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-		return dto == null ? null : Mapper.Current.Map<ApplicationDto, Application>(dto);
+		return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 	}
 	
 	#endregion

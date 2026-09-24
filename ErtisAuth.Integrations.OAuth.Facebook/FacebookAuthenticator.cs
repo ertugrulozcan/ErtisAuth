@@ -1,4 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
 using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
@@ -7,6 +6,7 @@ using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Abstractions;
 using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Integrations.OAuth.Facebook.Models;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
 // ReSharper disable UnusedMemberInSuper.Global
@@ -93,7 +93,7 @@ public class FacebookAuthenticator : IFacebookAuthenticator
 			throw ErtisAuthException.InvalidToken("Invalid provider payload");
 		}
 		
-		if (string.IsNullOrEmpty(request.User.AccessToken))
+		if (string.IsNullOrEmpty(request.User?.AccessToken))
 		{
 			return false;
 		}
@@ -130,36 +130,27 @@ public class FacebookAuthenticator : IFacebookAuthenticator
 		
 		if (response is { IsSuccess: true, Data.Keys: not null } && response.Data.Keys.Any())
 		{
+			var tokenHandler = new JsonWebTokenHandler();
 			var jwk = JsonWebKeySet.Create(response.Json);
+			var validationParameters = new TokenValidationParameters
+			{
+				ValidateIssuerSigningKey = true,
+				ValidateIssuer = true,
+				ValidateAudience = true,
+				ValidIssuer = "https://www.facebook.com",
+				ValidAudience = request.AppId,
+				IssuerSigningKey = jwk.Keys.First(),
+				RequireExpirationTime = true,
+				RequireSignedTokens = true
+			};
 			
-			var tokenHandler = new JwtSecurityTokenHandler();
-			try
+			var validation = await tokenHandler.ValidateTokenAsync(request.AccessToken, validationParameters);
+			if (!validation.IsValid)
 			{
-				var result = tokenHandler.ValidateToken(request.AccessToken, new TokenValidationParameters
-				{
-					ValidateIssuerSigningKey = true,
-					ValidateIssuer = true,
-					ValidateAudience = true,
-					ValidIssuer = "https://www.facebook.com",
-					ValidAudience = request.AppId,
-					IssuerSigningKey = jwk.Keys.First(),
-					RequireExpirationTime = true,
-					RequireSignedTokens = true
-				}, out var validatedToken);
-				
-				Console.WriteLine($"Validated limited token id: {validatedToken.Id}");
-				var isAuthenticated = result?.Identity is { IsAuthenticated: true };
-				if (!isAuthenticated)
-				{
-					throw ErtisAuthException.Unauthorized("Token was not verified by provider (Identity is not authenticated)");
-				}
-				
-				return true;
+				throw ErtisAuthException.Unauthorized("Token was not verified by provider (Identity is not authenticated)");
 			}
-			catch (Exception ex)
-			{
-				throw ErtisAuthException.Unauthorized($"Token was not verified by provider ({ex.Message})");
-			}
+			
+			return true;
 		}
 		else
 		{

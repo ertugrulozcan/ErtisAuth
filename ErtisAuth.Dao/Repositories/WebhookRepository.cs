@@ -2,11 +2,12 @@ using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Webhooks;
+using ErtisAuth.Core.Models.Webhooks;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
-public class WebhookRepository : RepositoryBase<WebhookDto>, IWebhookRepository
+public class WebhookRepository : RepositoryBase<Webhook>, IWebhookRepository
 {
 	#region Properties
     
@@ -27,10 +28,12 @@ public class WebhookRepository : RepositoryBase<WebhookDto>, IWebhookRepository
 	/// </summary>
 	/// <param name="clientProvider"></param>
 	/// <param name="settings"></param>
+	/// <param name="logger"></param>
 	public WebhookRepository(
 		IMongoClientProvider clientProvider, 
-		IDatabaseSettings settings) : 
-		base(clientProvider, settings, "webhooks")
+		IDatabaseSettings settings,
+		ILogger<WebhookRepository> logger) : 
+		base(clientProvider, settings, logger, "webhooks")
 	{
 		
 	}

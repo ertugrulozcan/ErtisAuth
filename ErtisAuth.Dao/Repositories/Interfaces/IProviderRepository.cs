@@ -1,6 +1,6 @@
 using Ertis.MongoDB.Repository;
-using ErtisAuth.Dto.Models.Providers;
+using ErtisAuth.Core.Models.Providers;
 
 namespace ErtisAuth.Dao.Repositories.Interfaces;
 
-public interface IProviderRepository : IMongoRepository<ProviderDto>;
+public interface IProviderRepository : IMongoRepository<Provider>;

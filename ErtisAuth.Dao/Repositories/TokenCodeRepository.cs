@@ -2,11 +2,12 @@ using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Identity;
+using ErtisAuth.Core.Models.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
-public class TokenCodeRepository : RepositoryBase<TokenCodeDto>, ITokenCodeRepository
+public class TokenCodeRepository : RepositoryBase<TokenCode>, ITokenCodeRepository
 {
     #region Properties
     
@@ -28,10 +29,12 @@ public class TokenCodeRepository : RepositoryBase<TokenCodeDto>, ITokenCodeRepos
     /// </summary>
     /// <param name="clientProvider"></param>
     /// <param name="settings"></param>
+    /// <param name="logger"></param>
     public TokenCodeRepository(
         IMongoClientProvider clientProvider, 
-        IDatabaseSettings settings) : 
-        base(clientProvider, settings, "codes")
+        IDatabaseSettings settings,
+        ILogger<TokenCodeRepository> logger) : 
+        base(clientProvider, settings, logger, "codes")
     {
         
     }

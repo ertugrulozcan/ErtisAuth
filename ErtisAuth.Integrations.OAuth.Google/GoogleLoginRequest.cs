@@ -16,7 +16,7 @@ public class GoogleLoginRequest : IProviderLoginRequest<GoogleToken, GoogleUser>
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public required GoogleUser User { get; set; }
+	public GoogleUser? User { get; set; }
 	
 	[JsonProperty("token")]
 	[JsonPropertyName("token")]
@@ -28,11 +28,11 @@ public class GoogleLoginRequest : IProviderLoginRequest<GoogleToken, GoogleUser>
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public string? UserId => this.User.Id;
+	public string? UserId => this.User?.Id;
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public string? EmailAddress => this.User.EmailAddress;
+	public string? EmailAddress => this.User?.EmailAddress;
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
@@ -40,7 +40,7 @@ public class GoogleLoginRequest : IProviderLoginRequest<GoogleToken, GoogleUser>
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public string? AvatarUrl => this.User.Picture;
+	public string? AvatarUrl => this.User?.Picture;
 	
 	#endregion
 	
@@ -88,10 +88,10 @@ public class GoogleLoginRequest : IProviderLoginRequest<GoogleToken, GoogleUser>
 		return new User
 		{
 			MembershipId = membershipId,
-			FirstName = this.User.FirstName,
-			LastName = this.User.LastName,
-			Username = this.User.EmailAddress ?? string.Empty,
-			EmailAddress = this.User.EmailAddress,
+			FirstName = this.User?.FirstName,
+			LastName = this.User?.LastName,
+			Username = this.User?.EmailAddress ?? string.Empty,
+			EmailAddress = this.User?.EmailAddress,
 			Role = role ?? string.Empty,
 			UserType = userType,
 			SourceProvider = KnownProviders.Google.ToString(),

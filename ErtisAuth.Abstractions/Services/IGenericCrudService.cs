@@ -1,6 +1,6 @@
 using Ertis.Core.Collections;
+using ErtisAuth.Core.Events;
 using Ertis.MongoDB.Queries;
-using ErtisAuth.Events.EventArgs;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedMemberInSuper.Global

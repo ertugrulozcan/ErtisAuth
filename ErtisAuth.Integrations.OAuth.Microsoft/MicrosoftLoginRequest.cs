@@ -16,7 +16,7 @@ public class MicrosoftLoginRequest : IProviderLoginRequest<MicrosoftToken, Micro
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public required MicrosoftUser User { get; set; }
+	public MicrosoftUser? User { get; set; }
 	
 	[JsonProperty("token")]
 	[JsonPropertyName("token")]
@@ -28,11 +28,11 @@ public class MicrosoftLoginRequest : IProviderLoginRequest<MicrosoftToken, Micro
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public string? UserId => this.User.Id;
+	public string? UserId => this.User?.Id;
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public string? EmailAddress => this.User.EmailAddress;
+	public string? EmailAddress => this.User?.EmailAddress;
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
@@ -40,7 +40,7 @@ public class MicrosoftLoginRequest : IProviderLoginRequest<MicrosoftToken, Micro
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public string? AvatarUrl => this.User.Photo;
+	public string? AvatarUrl => this.User?.Photo;
 	
 	#endregion
 	
@@ -88,10 +88,10 @@ public class MicrosoftLoginRequest : IProviderLoginRequest<MicrosoftToken, Micro
 		return new User
 		{
 			MembershipId = membershipId,
-			FirstName = this.User.FirstName,
-			LastName = this.User.LastName,
-			Username = this.User.EmailAddress ?? string.Empty,
-			EmailAddress = this.User.EmailAddress,
+			FirstName = this.User?.FirstName,
+			LastName = this.User?.LastName,
+			Username = this.User?.EmailAddress ?? string.Empty,
+			EmailAddress = this.User?.EmailAddress,
 			Role = role ?? string.Empty,
 			UserType = userType,
 			SourceProvider = KnownProviders.Microsoft.ToString(),

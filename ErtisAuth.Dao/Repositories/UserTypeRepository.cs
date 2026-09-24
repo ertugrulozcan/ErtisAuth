@@ -2,11 +2,12 @@ using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Users;
+using ErtisAuth.Core.Models.Users;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
-public class UserTypeRepository : RepositoryBase<UserTypeDto>, IUserTypeRepository
+public class UserTypeRepository : RepositoryBase<UserType>, IUserTypeRepository
 {
     #region Properties
     
@@ -27,10 +28,12 @@ public class UserTypeRepository : RepositoryBase<UserTypeDto>, IUserTypeReposito
     /// </summary>
     /// <param name="clientProvider"></param>
     /// <param name="settings"></param>
+    /// <param name="logger"></param>
     public UserTypeRepository(
         IMongoClientProvider clientProvider, 
-        IDatabaseSettings settings) : 
-        base(clientProvider, settings, "user-types")
+        IDatabaseSettings settings,
+        ILogger<UserTypeRepository> logger) : 
+        base(clientProvider, settings, logger, "user-types")
     {
 		
     }

@@ -2,17 +2,16 @@ using System.Text.Json;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
 using ErtisAuth.Core.Models.Events;
+using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
-using ErtisAuth.Infrastructure.Mapping;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Mailing;
-using ErtisAuth.Events.EventArgs;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDto>, IMailHookService
+public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHookService
 {
     #region Constants
 	
@@ -33,6 +32,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
     
     private readonly IEventService _eventService;
     private readonly IMailServiceBackgroundWorker _mailServiceBackgroundWorker;
+	private readonly ILogger<MailHookService> _logger;
 	
     #endregion
     
@@ -45,14 +45,17 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
 	/// <param name="eventService"></param>
 	/// <param name="mailServiceBackgroundWorker"></param>
 	/// <param name="mailHookRepository"></param>
+	/// <param name="logger"></param>
 	public MailHookService(
 		IMembershipService membershipService, 
 		IEventService eventService,
 		IMailServiceBackgroundWorker mailServiceBackgroundWorker, 
-		IMailHookRepository mailHookRepository) : base(membershipService, mailHookRepository)
+		IMailHookRepository mailHookRepository,
+		ILogger<MailHookService> logger) : base(membershipService, mailHookRepository)
 	{
 		this._eventService = eventService;
 		this._mailServiceBackgroundWorker = mailServiceBackgroundWorker;
+		this._logger = logger;
 		
 		this._eventService.EventFired += EventServiceOnEventFired;
 		
@@ -93,7 +96,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "MailhookService.OnEventFired occured an error");
 		}
 	}
 	
@@ -111,7 +114,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "MailhookService.MailhookCreatedEventHandler occured an error");
 		}
 	}
 	
@@ -130,7 +133,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "MailhookService.MailhookUpdatedEventHandler occured an error");
 		}
 	}
 	
@@ -148,7 +151,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "MailhookService.MailhookDeletedEventHandler occured an error");
 		}
 	}
 	
@@ -172,7 +175,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
 		{
 			if (mailHook.IsActive)
 			{
-				var membership = await this.membershipService.GetAsync(mailHook.MembershipId, cancellationToken: cancellationToken);
+				var membership = await this._membershipService.GetAsync(mailHook.MembershipId, cancellationToken: cancellationToken);
 				var mailProvider = membership?.MailProviders?.FirstOrDefault(x => x.Slug == mailHook.MailProvider);
 				if (mailProvider != null)
 				{
@@ -192,7 +195,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "MailhookService.SendHookMailAsync occured an error");
 		}
 	}
 	
@@ -398,14 +401,12 @@ public class MailHookService : MembershipBoundedCrudService<MailHook, MailHookDt
 	
 	private MailHook? GetByName(string name, string membershipId)
 	{
-		var dto = this.repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
-		return dto == null ? null : Mapper.Current.Map<MailHookDto, MailHook>(dto);
+		return this._repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
 	}
 	
 	private async Task<MailHook?> GetByNameAsync(string name, string membershipId)
 	{
-		var dto = await this.repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
-		return dto == null ? null : Mapper.Current.Map<MailHookDto, MailHook>(dto);
+		return await this._repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
 	}
 	
 	#endregion

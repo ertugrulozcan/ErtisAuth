@@ -4,12 +4,11 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Dto.Models.Identity;
-using ErtisAuth.Infrastructure.Mapping.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto>, ITokenCodeService
+public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeService
 {
 	#region Constants
 	
@@ -24,6 +23,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 	private readonly ITokenCodePolicyService _tokenCodePolicyService;
 	private readonly ITokenService _tokenService;
 	private readonly IUserService _userService;
+	private readonly ILogger<TokenCodeService> _logger;
 	
 	#endregion
 	
@@ -37,17 +37,20 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 	/// <param name="tokenService"></param>
 	/// <param name="userService"></param>
 	/// <param name="repository"></param>
+	/// <param name="logger"></param>
 	public TokenCodeService(
 		IMembershipService membershipService,
 		ITokenCodePolicyService tokenCodePolicyService,
 		ITokenService tokenService,
 		IUserService userService,
-		ITokenCodeRepository repository) : 
+		ITokenCodeRepository repository,
+		ILogger<TokenCodeService> logger) : 
 		base(membershipService, repository)
 	{
 		this._tokenCodePolicyService = tokenCodePolicyService;
 		this._tokenService = tokenService;
 		this._userService = userService;
+		this._logger = logger;
 	}
 	
 	#endregion
@@ -59,13 +62,13 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 		string membershipId,
 		CancellationToken cancellationToken = default)
 	{
-		var results = await this.repository.FindAsync(x => x.Code == code && x.MembershipId == membershipId, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
-		return results.Items.FirstOrDefault()?.ToModel();
+		var results = await this._repository.FindAsync(x => x.Code == code && x.MembershipId == membershipId, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
+		return results.Items.FirstOrDefault();
 	}
 	
 	public async Task<TokenCode> CreateAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -83,22 +86,20 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 		}
 		
 		var code = GenerateCode(policy);
-		var current = await this.repository.FindAsync(x => x.Code == code && x.MembershipId == membershipId, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
+		var current = await this._repository.FindAsync(x => x.Code == code && x.MembershipId == membershipId, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
 		while (current.Items.Any())
 		{
 			code = GenerateCode(policy);
-			current = await this.repository.FindAsync(x => x.Code == code, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
+			current = await this._repository.FindAsync(x => x.Code == code, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
 		}
 		
-		var insertedDto = await this.repository.InsertAsync(new TokenCodeDto
+		return await this._repository.InsertAsync(new TokenCode
 		{
 			Code = code,
 			ExpiresIn = policy.ExpiresIn,
 			CreatedAt = DateTime.Now,
 			MembershipId = membershipId
 		}, cancellationToken: cancellationToken);
-		
-		return insertedDto.ToModel();
 	}
 	
 	private static string GenerateCode(TokenCodePolicy policy)
@@ -161,13 +162,12 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 		
 		var token = await this._tokenService.GenerateTokenAsync(user, membershipId, cancellationToken: cancellationToken);
 		tokenCode.AssignToken(token, user.Id);
-		var updatedDto = await this.repository.UpdateAsync(tokenCode.ToDto(), tokenCode.Id, new UpdateOptions
+		
+		return await this._repository.UpdateAsync(tokenCode, tokenCode.Id, new UpdateOptions
 		{
 			TriggerBeforeActionBinder = false,
 			TriggerAfterActionBinder = false
 		}, cancellationToken: cancellationToken);
-		
-		return updatedDto.ToModel();
 	}
 	
 	public async Task<BearerToken> GenerateTokenAsync(string code, string membershipId, CancellationToken cancellationToken = default)
@@ -195,20 +195,20 @@ public class TokenCodeService : MembershipBoundedService<TokenCode, TokenCodeDto
 	{
 		try
 		{
-			var expiredTokenCodesResult = await this.repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.Now, sorting: null, cancellationToken: cancellationToken);
+			var expiredTokenCodesResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.Now, sorting: null, cancellationToken: cancellationToken);
 			var expiredTokenCodes = expiredTokenCodesResult.Items.ToArray();
-			if (expiredTokenCodes.Any())
+			if (expiredTokenCodes.Length > 0)
 			{
-				var isDeleted = await this.repository.BulkDeleteAsync(expiredTokenCodes, cancellationToken: cancellationToken);
+				var isDeleted = await this._repository.BulkDeleteAsync(expiredTokenCodes, cancellationToken: cancellationToken);
 				if (isDeleted)
 				{
-					Console.WriteLine($"{expiredTokenCodes.Length} expired token code cleared");
+					this._logger.LogInformation("{Count} expired token code cleared", expiredTokenCodes.Length);
 				}
 			}
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "TokenCodeService.ClearExpiredTokenCodes occured an error");
 		}
 	}
 	

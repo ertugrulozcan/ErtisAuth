@@ -1,12 +1,12 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
-using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.Json;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Abstractions;
 using ErtisAuth.Integrations.OAuth.Core;
+using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ErtisAuth.Integrations.OAuth.Apple;
@@ -26,6 +26,8 @@ public class AppleAuthenticator : IAppleAuthenticator
 	#region Services
 	
 	private readonly HttpClient _httpClient;
+	private readonly JsonWebTokenHandler _tokenHandler;
+	private readonly ILogger<AppleAuthenticator> _logger;
 	
 	#endregion
 	
@@ -35,9 +37,12 @@ public class AppleAuthenticator : IAppleAuthenticator
 	/// Constructor
 	/// </summary>
 	/// <param name="httpClientFactory"></param>
-	public AppleAuthenticator(IHttpClientFactory httpClientFactory)
+	/// <param name="logger"></param>
+	public AppleAuthenticator(IHttpClientFactory httpClientFactory, ILogger<AppleAuthenticator> logger)
 	{
 		this._httpClient = httpClientFactory.CreateClient();
+		this._tokenHandler = new JsonWebTokenHandler();
+		this._logger = logger;
 	}
 	
 	#endregion
@@ -58,7 +63,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 				return false;
 			}
 			
-			var secret = GenerateAppleClientSecret(provider);
+			var secret = this.GenerateAppleClientSecret(provider);
 			if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(provider.AppClientId) || string.IsNullOrEmpty(provider.RedirectUri))
 			{
 				return false;
@@ -97,7 +102,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "AppleAuthenticator.VerifyTokenAsync occured an error");
 			return false;
 		}
 	}
@@ -106,7 +111,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 	{
 		try
 		{
-			var secret = GenerateAppleClientSecret(provider);
+			var secret = this.GenerateAppleClientSecret(provider);
 			if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(provider.AppClientId))
 			{
 				return false;
@@ -124,45 +129,45 @@ public class AppleAuthenticator : IAppleAuthenticator
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine(ex);
+			this._logger.LogError(ex, "AppleAuthenticator.RevokeTokenAsync occured an error");
 			return false;
 		}
 	}
 	
-	private static string? GenerateAppleClientSecret(Provider provider)
+	private string? GenerateAppleClientSecret(Provider provider)
 	{
 		if (string.IsNullOrEmpty(provider.PrivateKey) || string.IsNullOrEmpty(provider.AppClientId))
 		{
 			return null;
 		}
 		
-		var ecdsa = ECDsa.Create();
-		ecdsa.ImportPkcs8PrivateKey(Convert.FromBase64String(ClearPrivateKey(provider.PrivateKey)), out _);
+		using var ecdsa = ECDsa.Create();
+		ecdsa.ImportFromPem(provider.PrivateKey);
 		
-		var jwtHeader = new JwtHeader(new SigningCredentials(new ECDsaSecurityKey(ecdsa), SecurityAlgorithms.EcdsaSha256));
-		jwtHeader.Clear();
-		jwtHeader.Add("alg", "ES256");
-		jwtHeader.Add("kid", provider.PrivateKeyId);
+		var securityKey = new ECDsaSecurityKey(ecdsa)
+		{
+			KeyId = provider.PrivateKeyId,
+			CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false }
+		};
 		
-		var jwtPayload = new JwtPayload(
-			provider.TeamId,
-			Authority,
-			new List<Claim>
+		var now = DateTime.UtcNow;
+		
+		var descriptor = new SecurityTokenDescriptor
+		{
+			Issuer = provider.TeamId,
+			Audience = Authority,
+			Claims = new Dictionary<string, object>
 			{
-				new ("sub", provider.AppClientId)
+				[JwtRegisteredClaimNames.Sub] = provider.AppClientId
 			},
-			DateTime.UtcNow,
-			DateTime.UtcNow.Add(TimeSpan.FromMinutes(5))
-		);
+			IssuedAt = now,
+			NotBefore = now,
+			Expires = now.AddMinutes(5),
+			SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.EcdsaSha256)
+		};
 		
-		var jwt = new JwtSecurityToken(jwtHeader, jwtPayload);
-		return new JwtSecurityTokenHandler().WriteToken(jwt);
+		return this._tokenHandler.CreateToken(descriptor);
 	}
 	
-	private static string ClearPrivateKey(string privateKey)
-	{
-		return privateKey.Replace("-----BEGIN PRIVATE KEY-----\n", string.Empty).Replace("\n-----END PRIVATE KEY-----", string.Empty);
-	}
-    
 	#endregion
 }

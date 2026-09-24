@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
+using JsonConverter = System.Text.Json.Serialization.JsonConverterAttribute;
 using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
 using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
@@ -11,8 +13,9 @@ public class BasicToken : TokenBase
 	
 	[JsonProperty("token_type")]
 	[JsonPropertyName("token_type")]
+	[BsonElement("token_type")]
 	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
-	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+	[JsonConverter(typeof(JsonStringEnumConverter))]
 	public override SupportedTokenTypes TokenType => SupportedTokenTypes.Basic;
 	
 	#endregion

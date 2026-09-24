@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Users;
@@ -9,6 +10,7 @@ public class UserWithPasswordHash : User
 	
 	[JsonProperty("password_hash")]
 	[JsonPropertyName("password_hash")]
+	[BsonElement("password_hash")]
 	public string? PasswordHash { get; set; }
 	
 	#endregion

@@ -1,7 +1,11 @@
 using System.Text.Json.Serialization;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Events;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
+using JsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
+using JsonConverter = System.Text.Json.Serialization.JsonConverterAttribute;
 using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
 using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
@@ -14,18 +18,22 @@ public class Webhook : MembershipBoundedResource, IHasSysInfo
 	
 	[JsonProperty("name")]
 	[JsonPropertyName("name")]
+	[BsonElement("name")]
 	public required string Name { get; set; }
 	
 	[JsonProperty("description")]
 	[JsonPropertyName("description")]
+	[BsonElement("description")]
 	public string? Description { get; set; }
 	
 	[JsonProperty("event")]
 	[JsonPropertyName("event")]
+	[BsonElement("event")]
 	public required string Event { get; set; }
 	
+	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
 	public ErtisAuthEventType? EventType
 	{
 		get
@@ -43,24 +51,30 @@ public class Webhook : MembershipBoundedResource, IHasSysInfo
 	
 	[JsonProperty("status")]
 	[JsonPropertyName("status")]
+	[BsonElement("status")]
 	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
-	[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+	[JsonConverter(typeof(JsonStringEnumConverter))]
+	[BsonRepresentation(BsonType.String)]
 	public WebhookStatus? Status { get; set; }
 	
+	[JsonIgnore]
+	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	[System.Text.Json.Serialization.JsonIgnore]
 	public bool IsActive => this.Status == WebhookStatus.Active;
 	
 	[JsonProperty("request")]
 	[JsonPropertyName("request")]
+	[BsonElement("request")]
 	public WebhookRequest? Request { get; set; }
 	
 	[JsonProperty("try_count")]
 	[JsonPropertyName("try_count")]
+	[BsonElement("try_count")]
 	public int TryCount { get; set; }
 	
 	[JsonProperty("sys")]
 	[JsonPropertyName("sys")]
+	[BsonElement("sys")]
 	public SysModel? Sys { get; set; }
 	
 	#endregion

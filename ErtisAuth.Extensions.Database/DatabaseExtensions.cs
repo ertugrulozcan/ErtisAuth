@@ -1,12 +1,15 @@
-﻿using Ertis.MongoDB.Client;
+﻿using Ertis.Core.Models.Resources;
+using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Database;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using ErtisAuth.Dao.Serialization;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using IMongoDatabase = Ertis.MongoDB.Database.IMongoDatabase;
 
@@ -42,6 +45,28 @@ public static class DatabaseExtensions
 		services.AddSingleton<ICodePolicyRepository, CodePolicyRepository>();
 		services.AddSingleton<IOneTimePasswordRepository, OneTimePasswordRepository>();
 		services.AddSingleton<IEventRepository, EventRepository>();
+		
+		RegisterClassMaps();
+		RegisterDiscriminatorConventions();
+	}
+	
+	private static void RegisterClassMaps()
+	{
+		BsonClassMap.RegisterClassMap<SysModel>(classMap =>
+		{
+			classMap.AutoMap();
+			
+			classMap.MapMember(x => x.CreatedAt).SetElementName("created_at");
+			classMap.MapMember(x => x.CreatedBy).SetElementName("created_by");
+			classMap.MapMember(x => x.ModifiedAt).SetElementName("modified_at").SetIgnoreIfNull(true);
+			classMap.MapMember(x => x.ModifiedBy).SetElementName("modified_by").SetIgnoreIfNull(true);
+		});
+	}
+	
+	private static void RegisterDiscriminatorConventions()
+	{
+		// IMailProvider
+		MailProviderDiscriminatorConvention.Register();
 	}
 	
 	public static void UseMongoDB(this IApplicationBuilder app)

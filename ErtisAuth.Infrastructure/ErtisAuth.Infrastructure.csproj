@@ -8,16 +8,11 @@
     <ItemGroup>
         <ProjectReference Include="..\ErtisAuth.Abstractions\ErtisAuth.Abstractions.csproj" />
         <ProjectReference Include="..\ErtisAuth.Dao\ErtisAuth.Dao.csproj" />
-        <ProjectReference Include="..\ErtisAuth.Identity\ErtisAuth.Identity.csproj" />
         <ProjectReference Include="..\ErtisAuth.Integrations.OAuth\ErtisAuth.Integrations.OAuth.csproj" />
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="16.2.0" />
+        <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
         <PackageReference Include="Ertis.TemplateEngine" Version="10.0.0" />
-        <PackageReference Include="Mapster" Version="10.0.12" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.11" />
-        <PackageReference Include="TinyMapper" Version="3.0.3" />
     </ItemGroup>
 </Project>

@@ -5,9 +5,10 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.Extensions.Authorization.Annotations;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -20,7 +21,8 @@ public class UserTypesController : QueryControllerBase
 {
     #region Services
 	
-    private readonly IUserTypeService userTypeService;
+    private readonly IUserTypeService _userTypeService;
+	private readonly IUtilizerService _utilizerService;
 	
     #endregion
 	
@@ -30,9 +32,11 @@ public class UserTypesController : QueryControllerBase
     /// Constructor
     /// </summary>
     /// <param name="userTypeService"></param>
-    public UserTypesController(IUserTypeService userTypeService)
+	/// <param name="utilizerService"></param>
+    public UserTypesController(IUserTypeService userTypeService, IUtilizerService utilizerService)
     {
-        this.userTypeService = userTypeService;
+        this._userTypeService = userTypeService;
+		this._utilizerService = utilizerService;
     }
 	
     #endregion
@@ -48,7 +52,7 @@ public class UserTypesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<UserType>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var userType = await this.userTypeService.GetAsync(membershipId, id);
+		var userType = await this._userTypeService.GetAsync(membershipId, id);
 		if (userType != null)
 		{
 			return this.Ok(userType);
@@ -68,7 +72,7 @@ public class UserTypesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<UserType>> GetFieldInfoOwnerRelations([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var relations = await this.userTypeService.GetFieldInfoOwnerRelationsAsync(membershipId, id, cancellationToken: cancellationToken);
+		var relations = await this._userTypeService.GetFieldInfoOwnerRelationsAsync(membershipId, id, cancellationToken: cancellationToken);
 		if (relations != null)
 		{
 			return this.Ok(relations);
@@ -87,10 +91,10 @@ public class UserTypesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
-		this.ExtractPaginationParameters(out int? skip, out int? limit, out bool withCount);
-		this.ExtractSortingParameters(out string orderBy, out SortDirection? sortDirection);
+		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		var userTypes = await this.userTypeService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		var userTypes = await this._userTypeService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return this.Ok(userTypes);
 	}
 	
@@ -102,11 +106,11 @@ public class UserTypesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> GetAll([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
-		var userTypes = await this.userTypeService.GetAsync(membershipId, null, null, false, null, null, cancellationToken: cancellationToken);
+		var userTypes = await this._userTypeService.GetAsync(membershipId, null, null, false, null, null, cancellationToken: cancellationToken);
 		var allUserTypes = new List<UserType>();
 		allUserTypes.AddRange(userTypes.Items);
 		
-		var originUserType = await this.userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG, cancellationToken: cancellationToken);
+		var originUserType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG, cancellationToken: cancellationToken);
 		if (originUserType != null)
 		{
 			allUserTypes.Add(originUserType);	
@@ -137,7 +141,7 @@ public class UserTypesController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this.userTypeService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._userTypeService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -158,8 +162,8 @@ public class UserTypesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] UserType model, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
-		var userType = await this.userTypeService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var userType = await this._userTypeService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{userType.Id}", userType);
 	}
 	
@@ -173,8 +177,9 @@ public class UserTypesController : QueryControllerBase
 	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UserType model, CancellationToken cancellationToken = default)
 	{
 		model.Id = id;
-		var utilizer = this.GetUtilizer();
-		var userType = await this.userTypeService.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var userType = await this._userTypeService.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 		return this.Ok(userType);
 	}
 	
@@ -187,8 +192,8 @@ public class UserTypesController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Delete)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
-		if (await this.userTypeService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		if (await this._userTypeService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}

@@ -6,6 +6,6 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj" />
     </ItemGroup>
 </Project>

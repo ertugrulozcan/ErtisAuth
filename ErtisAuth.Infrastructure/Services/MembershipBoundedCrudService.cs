@@ -1,19 +1,16 @@
-using Ertis.Data.Models;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models;
-using ErtisAuth.Events.EventArgs;
-using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public abstract class MembershipBoundedCrudService<TModel, TDto> : 
-	MembershipBoundedService<TModel, TDto>, 
+public abstract class MembershipBoundedCrudService<TModel> : 
+	MembershipBoundedService<TModel>, 
 	IMembershipBoundedCrudService<TModel> 
 	where TModel : class, IHasMembership, IHasIdentifier
-	where TDto : class, IEntity<string>, Dto.Models.IHasMembership
 {
 	#region Constructors
 	
@@ -22,7 +19,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 	/// </summary>
 	/// <param name="membershipService"></param>
 	/// <param name="repository"></param>
-	protected MembershipBoundedCrudService(IMembershipService membershipService, IMongoRepository<TDto> repository) : base(membershipService, repository)
+	protected MembershipBoundedCrudService(IMembershipService membershipService, IMongoRepository<TModel> repository) : base(membershipService, repository)
 	{
 		membershipService.RegisterService(this);
 	}
@@ -77,7 +74,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 	public virtual TModel Create(Utilizer utilizer, string membershipId, TModel model)
 	{
 		// Check membership
-		var membership = this.membershipService.Get(membershipId);
+		var membership = this._membershipService.Get(membershipId);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -103,9 +100,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 		}
 		
 		// Insert to database
-		var dto = Mapper.Current.Map<TModel, TDto>(model);
-		var insertedDto = this.repository.Insert(dto);
-		var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
+		var inserted = this._repository.Insert(model);
 		
 		this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(utilizer, inserted, membershipId));
 		
@@ -115,7 +110,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 	public virtual async ValueTask<TModel> CreateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
 	{
 		// Check membership
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -141,9 +136,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 		}
 		
 		// Insert to database
-		var dto = Mapper.Current.Map<TModel, TDto>(model);
-		var insertedDto = await this.repository.InsertAsync(dto, cancellationToken: cancellationToken);
-		var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
+		var inserted = await this._repository.InsertAsync(model, cancellationToken: cancellationToken);
 		
 		this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(utilizer, inserted, membershipId));
 		
@@ -157,7 +150,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 	public virtual TModel Update(Utilizer utilizer, string membershipId, TModel model)
 	{
 		// Check membership
-		var membership = this.membershipService.Get(membershipId);
+		var membership = this._membershipService.Get(membershipId);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -192,9 +185,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 		}
 		
 		model.MembershipId = membershipId;
-		var dto = Mapper.Current.Map<TModel, TDto>(model);
-		var updatedDto = this.repository.Update(dto);
-		var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
+		var updated = this._repository.Update(model);
 		
 		this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated, membershipId));
 		
@@ -204,7 +195,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 	public virtual async ValueTask<TModel> UpdateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
 	{
 		// Check membership
-		var membership = await this.membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
 			throw ErtisAuthException.MembershipNotFound(membershipId);
@@ -239,9 +230,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 		}
 		
 		model.MembershipId = membershipId;
-		var dto = Mapper.Current.Map<TModel, TDto>(model);
-		var updatedDto = await this.repository.UpdateAsync(dto, cancellationToken: cancellationToken);
-		var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
+		var updated = await this._repository.UpdateAsync(model, cancellationToken: cancellationToken);
 		
 		this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated, membershipId));
 		
@@ -301,7 +290,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 		var current = this.Get(membershipId, id);
 		if (current != null)
 		{
-			var isDeleted = this.repository.Delete(id);
+			var isDeleted = this._repository.Delete(id);
 			if (isDeleted)
 			{
 				this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current, membershipId));		
@@ -320,7 +309,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 		var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 		if (current != null)
 		{
-			var isDeleted = await this.repository.DeleteAsync(id, cancellationToken: cancellationToken);
+			var isDeleted = await this._repository.DeleteAsync(id, cancellationToken: cancellationToken);
 			if (isDeleted)
 			{
 				this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current, membershipId));
@@ -344,7 +333,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 			var current = this.Get(membershipId, id);
 			if (current != null)
 			{
-				var isDeleted = this.repository.Delete(id);
+				var isDeleted = this._repository.Delete(id);
 				if (isDeleted)
 				{
 					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current, membershipId));		
@@ -379,7 +368,7 @@ public abstract class MembershipBoundedCrudService<TModel, TDto> :
 			var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 			if (current != null)
 			{
-				var isDeleted = await this.repository.DeleteAsync(id, cancellationToken: cancellationToken);
+				var isDeleted = await this._repository.DeleteAsync(id, cancellationToken: cancellationToken);
 				if (isDeleted)
 				{
 					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current, membershipId));		

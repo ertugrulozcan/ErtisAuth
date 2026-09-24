@@ -109,12 +109,12 @@ public static class QueryHelper
 			
         	return jArray.ToString();
         }
-        catch (Exception ex)
-        {
-        	Console.WriteLine("InjectMembershipIdToAggregation method occured an error: " + ex.Message);
-        }
+		catch
+		{
+			// NOP
+		}
 		
-        return query;
+		return query;
     }
 	
     #endregion

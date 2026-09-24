@@ -2,10 +2,11 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Identity.Attributes;
-using ErtisAuth.Extensions.Authorization.Annotations;
+using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Integrations.OAuth.Core;
-using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.WebAPI.Models.Providers;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,7 +20,8 @@ public class ProvidersController : ControllerBase
 {
 	#region Services
 	
-	private readonly IProviderService providerService;
+	private readonly IProviderService _providerService;
+	private readonly IUtilizerService _utilizerService;
 	
 	#endregion
 	
@@ -29,9 +31,11 @@ public class ProvidersController : ControllerBase
 	/// Constructor
 	/// </summary>
 	/// <param name="providerService"></param>
-	public ProvidersController(IProviderService providerService)
+	/// <param name="utilizerService"></param>
+	public ProvidersController(IProviderService providerService, IUtilizerService utilizerService)
 	{
-		this.providerService = providerService;
+		this._providerService = providerService;
+		this._utilizerService = utilizerService;
 	}
 	
 	#endregion
@@ -46,7 +50,7 @@ public class ProvidersController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
-		return this.Ok(await this.providerService.GetProvidersAsync(membershipId, cancellationToken: cancellationToken));
+		return this.Ok(await this._providerService.GetProvidersAsync(membershipId, cancellationToken: cancellationToken));
 	}
 	
 	#endregion
@@ -81,8 +85,8 @@ public class ProvidersController : ControllerBase
 				MembershipId = membershipId
 			};
 			
-			var utilizer = this.GetUtilizer();
-			var providerInstance = await this.providerService.UpdateAsync(utilizer, membershipId, providerModel, cancellationToken: cancellationToken);
+			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+			var providerInstance = await this._providerService.UpdateAsync(utilizer, membershipId, providerModel, cancellationToken: cancellationToken);
 			return this.Ok(providerInstance);
 		}
 		else
@@ -100,8 +104,8 @@ public class ProvidersController : ControllerBase
 	[RbacAction(Rbac.CrudActions.Delete)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var utilizer = this.GetUtilizer();
-		if (await this.providerService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		if (await this._providerService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}

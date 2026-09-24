@@ -1,22 +1,19 @@
 using Ertis.Core.Collections;
-using Ertis.Data.Models;
 using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Repository;
+using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
-using ErtisAuth.Events.EventArgs;
-using ErtisAuth.Infrastructure.Mapping;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public abstract class GenericCrudService<TModel, TDto> : 
+public abstract class GenericCrudService<TModel> : 
 	IGenericCrudService<TModel>
 	where TModel : class, Core.Models.IHasIdentifier
-	where TDto : class, IEntity<string>
 {
 	#region Services
 	
-	protected readonly IMongoRepository<TDto> repository;
+	protected readonly IMongoRepository<TModel> _repository;
 	
 	#endregion
 	
@@ -26,9 +23,9 @@ public abstract class GenericCrudService<TModel, TDto> :
 	/// Constructor
 	/// </summary>
 	/// <param name="repository"></param>
-	protected GenericCrudService(IMongoRepository<TDto> repository)
+	protected GenericCrudService(IMongoRepository<TModel> repository)
 	{
-		this.repository = repository;
+		this._repository = repository;
 	}
 	
 	#endregion
@@ -68,8 +65,7 @@ public abstract class GenericCrudService<TModel, TDto> :
 			return null;
 		}
 		
-		var dto = this.repository.FindOne(id);
-		return dto == null ? null : Mapper.Current.Map<TDto, TModel>(dto);
+		return this._repository.FindOne(id);
 	}
 	
 	public virtual async ValueTask<TModel?> GetAsync(string id, CancellationToken cancellationToken = default)
@@ -79,28 +75,28 @@ public abstract class GenericCrudService<TModel, TDto> :
 			return null;
 		}
 		
-		var dto = await this.repository.FindOneAsync(id, cancellationToken: cancellationToken);
-		return dto == null ? null : Mapper.Current.Map<TDto, TModel>(dto);
+		return await this._repository.FindOneAsync(id, cancellationToken: cancellationToken);
 	}
 	
-	public virtual IPaginationCollection<TModel> Get(int? skip = null, int? limit = null, bool withCount = false, string? orderBy = null, SortDirection? sortDirection = null)
+	public virtual IPaginationCollection<TModel> Get(
+		int? skip = null, 
+		int? limit = null, 
+		bool withCount = false, 
+		string? orderBy = null, 
+		SortDirection? sortDirection = null)
 	{
-		var paginatedDtoCollection = this.repository.Find(skip, limit, withCount, orderBy, sortDirection);
-		return new PaginationCollection<TModel>
-		{
-			Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
-			Count = paginatedDtoCollection.Count
-		};
+		return this._repository.Find(skip, limit, withCount, orderBy, sortDirection);
 	}
 	
-	public virtual async ValueTask<IPaginationCollection<TModel>> GetAsync(int? skip = null, int? limit = null, bool withCount = false, string? orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default)
+	public virtual async ValueTask<IPaginationCollection<TModel>> GetAsync(
+		int? skip = null, 
+		int? limit = null, 
+		bool withCount = false, 
+		string? orderBy = null, 
+		SortDirection? sortDirection = null, 
+		CancellationToken cancellationToken = default)
 	{
-		var paginatedDtoCollection = await this.repository.FindAsync(skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
-		return new PaginationCollection<TModel>
-		{
-			Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
-			Count = paginatedDtoCollection.Count
-		};
+		return await this._repository.FindAsync(skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
 	
 	public virtual async Task<IPaginationCollection<dynamic>> QueryAsync(
@@ -113,7 +109,7 @@ public abstract class GenericCrudService<TModel, TDto> :
 		IDictionary<string, bool>? selectFields = null, 
 		CancellationToken cancellationToken = default)
 	{
-		return await this.repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
+		return await this._repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -129,12 +125,7 @@ public abstract class GenericCrudService<TModel, TDto> :
 		string? sortField = null,
 		SortDirection? sortDirection = null)
 	{
-		var paginatedDtoCollection = this.repository.Search(keyword, options, skip, limit, withCount, sortField, sortDirection);
-		return new PaginationCollection<TModel>
-		{
-			Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
-			Count = paginatedDtoCollection.Count
-		};
+		return this._repository.Search(keyword, options, skip, limit, withCount, sortField, sortDirection);
 	}
 	
 	public async ValueTask<IPaginationCollection<TModel>> SearchAsync(
@@ -147,12 +138,7 @@ public abstract class GenericCrudService<TModel, TDto> :
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default)
 	{
-		var paginatedDtoCollection = await this.repository.SearchAsync(keyword, options, skip, limit, withCount, sortField, sortDirection, cancellationToken: cancellationToken);
-		return new PaginationCollection<TModel>
-		{
-			Items = paginatedDtoCollection.Items.Select(x => Mapper.Current.Map<TDto, TModel>(x)),
-			Count = paginatedDtoCollection.Count
-		};
+		return await this._repository.SearchAsync(keyword, options, skip, limit, withCount, sortField, sortDirection, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -176,9 +162,7 @@ public abstract class GenericCrudService<TModel, TDto> :
 			}
 			
 			// Insert to database
-			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var insertedDto = this.repository.Insert(dto);
-			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
+			var inserted = this._repository.Insert(model);
 			
 			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(inserted));
 			
@@ -191,12 +175,6 @@ public abstract class GenericCrudService<TModel, TDto> :
 				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
 			}
             
-			Console.WriteLine(ex);
-			throw;
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine(ex);
 			throw;
 		}
 	}
@@ -218,9 +196,7 @@ public abstract class GenericCrudService<TModel, TDto> :
 			}
 			
 			// Insert to database
-			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var insertedDto = await this.repository.InsertAsync(dto, cancellationToken: cancellationToken);
-			var inserted = Mapper.Current.Map<TDto, TModel>(insertedDto);
+			var inserted = await this._repository.InsertAsync(model, cancellationToken: cancellationToken);
 			
 			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(inserted));
 			
@@ -233,12 +209,6 @@ public abstract class GenericCrudService<TModel, TDto> :
 				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
 			}
             
-			Console.WriteLine(ex);
-			throw;
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine(ex);
 			throw;
 		}
 	}
@@ -272,9 +242,7 @@ public abstract class GenericCrudService<TModel, TDto> :
 				throw this.GetAlreadyExistError(model);
 			}
 			
-			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var updatedDto = this.repository.Update(dto);
-			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
+			var updated = this._repository.Update(model);
 			
 			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(current, updated));
 			
@@ -287,12 +255,6 @@ public abstract class GenericCrudService<TModel, TDto> :
 				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
 			}
             
-			Console.WriteLine(ex);
-			throw;
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine(ex);
 			throw;
 		}
 	}
@@ -322,9 +284,7 @@ public abstract class GenericCrudService<TModel, TDto> :
 				throw this.GetAlreadyExistError(model);
 			}
 			
-			var dto = Mapper.Current.Map<TModel, TDto>(model);
-			var updatedDto = await this.repository.UpdateAsync(dto, cancellationToken: cancellationToken);
-			var updated = Mapper.Current.Map<TDto, TModel>(updatedDto);
+			var updated = await this._repository.UpdateAsync(model, cancellationToken: cancellationToken);
 			
 			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(current, updated));
 			
@@ -337,12 +297,6 @@ public abstract class GenericCrudService<TModel, TDto> :
 				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
 			}
             
-			Console.WriteLine(ex);
-			throw;
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine(ex);
 			throw;
 		}
 	}
@@ -356,7 +310,7 @@ public abstract class GenericCrudService<TModel, TDto> :
 		var current = this.Get(id);
 		if (current != null)
 		{
-			var isDeleted = this.repository.Delete(id);
+			var isDeleted = this._repository.Delete(id);
 			if (isDeleted)
 			{
 				this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(current));	
@@ -375,7 +329,7 @@ public abstract class GenericCrudService<TModel, TDto> :
 		var current = await this.GetAsync(id, cancellationToken: cancellationToken);
 		if (current != null)
 		{
-			var isDeleted = await this.repository.DeleteAsync(id, cancellationToken: cancellationToken);
+			var isDeleted = await this._repository.DeleteAsync(id, cancellationToken: cancellationToken);
 			if (isDeleted)
 			{
 				this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(current));	
