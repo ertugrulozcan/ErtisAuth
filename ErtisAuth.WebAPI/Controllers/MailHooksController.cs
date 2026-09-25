@@ -134,26 +134,6 @@ public class MailHooksController : QueryControllerBase
 		}
 	}
 	
-	[HttpGet("search")]
-	[RbacAction(Rbac.CrudActions.Read)]
-	[ProducesResponseType(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status403Forbidden)]
-	public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword, CancellationToken cancellationToken = default)
-	{
-		if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(keyword.Trim()))
-		{
-			return this.SearchKeywordRequired();
-		}
-		
-		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
-		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
-		
-		return this.Ok(await this._mailHookService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
-	}
-	
 	#endregion
 	
 	#region Update Methods

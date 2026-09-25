@@ -85,6 +85,7 @@ public abstract class GenericCrudService<TModel> :
 		string? orderBy = null, 
 		SortDirection? sortDirection = null)
 	{
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return this._repository.Find(skip, limit, withCount, orderBy, sortDirection);
 	}
 	
@@ -96,6 +97,7 @@ public abstract class GenericCrudService<TModel> :
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default)
 	{
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return await this._repository.FindAsync(skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
 	
@@ -109,6 +111,7 @@ public abstract class GenericCrudService<TModel> :
 		IDictionary<string, bool>? selectFields = null, 
 		CancellationToken cancellationToken = default)
 	{
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return await this._repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 	}
 	
@@ -125,6 +128,7 @@ public abstract class GenericCrudService<TModel> :
 		string? sortField = null,
 		SortDirection? sortDirection = null)
 	{
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return this._repository.Search(keyword, options, skip, limit, withCount, sortField, sortDirection);
 	}
 	
@@ -138,6 +142,7 @@ public abstract class GenericCrudService<TModel> :
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default)
 	{
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return await this._repository.SearchAsync(keyword, options, skip, limit, withCount, sortField, sortDirection, cancellationToken: cancellationToken);
 	}
 	

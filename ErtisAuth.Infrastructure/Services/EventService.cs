@@ -135,6 +135,7 @@ public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventServ
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return await this._repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
 	

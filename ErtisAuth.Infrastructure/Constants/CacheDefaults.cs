@@ -2,7 +2,7 @@ namespace ErtisAuth.Infrastructure.Constants;
 
 public static class CacheDefaults
 {
-    #region Properties
+    #region Constants
     
     public static readonly TimeSpan MembershipsCacheTTL = TimeSpan.FromHours(1);
     

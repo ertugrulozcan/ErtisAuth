@@ -57,6 +57,7 @@ public class DynamicObjectCrudService : IDynamicObjectCrudService
         CancellationToken cancellationToken = default)
     {
         var query = QueryBuilder.Where(queries);
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
         var paginatedCollection = await this._repository.FindAsync(query.ToString(), skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
         return new PaginationCollection<DynamicObject>
         {
@@ -78,6 +79,7 @@ public class DynamicObjectCrudService : IDynamicObjectCrudService
     {
         Locale? locale = Enum.TryParse<Locale>(language, out var locale_) ? locale_ : null;
         var collationOptions = locale != null ? new CollationOptions { Locale = locale } : null;
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
         var paginatedCollection = await this._repository.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, null, collationOptions, cancellationToken: cancellationToken);
         return new PaginationCollection<DynamicObject>
         {

@@ -45,6 +45,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		SortDirection? sortDirection = null, 
 		IDictionary<string, bool>? selectFields = null)
 	{
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return this._repository.Query(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 	}
 	
@@ -60,6 +61,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		CancellationToken cancellationToken = default)
 	{
 		query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId);
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return await this._repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 	}
 	
@@ -121,6 +123,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return this._repository.Find(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
 	}
 	
@@ -139,6 +142,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return await this._repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
 	
@@ -161,6 +165,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		SortDirection? sortDirection) 
 		where T : class, Core.Models.IHasMembership
 	{
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return (IPaginationCollection<T>) this.Get(membershipId, skip, limit, withCount, orderBy, sortDirection);
 	}
 	
@@ -174,6 +179,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		CancellationToken cancellationToken = default)
 		where T : class, Core.Models.IHasMembership
 	{
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return (IPaginationCollection<T>) await this.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
 	
@@ -209,6 +215,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 			IsDiacriticSensitive = false
 		};
 		
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return this._repository.Search(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection);
 	}
 	
@@ -241,6 +248,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 			IsDiacriticSensitive = false
 		};
 		
+		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return await this._repository.SearchAsync(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection, cancellationToken: cancellationToken);
 	}
 	
