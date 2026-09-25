@@ -6,7 +6,6 @@ using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
-using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
@@ -34,6 +33,12 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	private readonly IEventService _eventService;
 	private readonly IMemoryCache _memoryCache;
 	private readonly ILogger<ProviderService> _logger;
+	
+	#endregion
+	
+	#region Properties
+	
+	private bool IsInitialized { get; set; }
 	
 	#endregion
 	
@@ -112,7 +117,48 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#endregion
 	
-	#region Base Methods
+	#region Methods
+	
+	private async ValueTask InitializeAsync(string membershipId, CancellationToken cancellationToken = default)
+	{
+		if (this.IsInitialized)
+		{
+			return;
+		}
+		
+		try
+		{
+			var utilizer = Utilizer.GetSystemUtilizer(membershipId);
+			
+			var providers = await this.GetAsync(membershipId, null, null, cancellationToken: cancellationToken);
+			var providerTypes = Enum.GetValues<KnownProviders>().Where(x => x != KnownProviders.ErtisAuth);
+			foreach (var providerType in providerTypes)
+			{
+				try
+				{
+					if (providers.Items.All(x => !string.IsNullOrEmpty(x.Name) && x.Name != providerType.ToString()))
+					{
+						await this.CreateAsync(utilizer, membershipId, new Provider(providerType)
+						{
+							MembershipId = membershipId,
+							IsActive = false
+						}, cancellationToken: cancellationToken);
+					}
+				}
+				catch (Exception ex)
+				{
+					this._logger.LogError(ex, "ProviderService.InitializeAsync occured an error when creating {ProviderType} provider", providerType.ToString());
+				}
+			}
+			
+			this.IsInitialized = true;
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "ProviderService.InitializeAsync occured an error");
+			this.IsInitialized = false;
+		}
+	}
 	
 	protected override bool ValidateModel(Provider model, out IEnumerable<string> errors)
 	{
@@ -127,7 +173,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 			errorList.Add("membership_id is a required field");
 		}
 		
-		if (model.IsActive != null && model.IsActive.Value)
+		if (model.IsActive)
 		{
 			if (string.IsNullOrEmpty(model.AppClientId))
 			{
@@ -176,6 +222,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	{
 		destination.Id = source.Id;
 		destination.MembershipId = source.MembershipId;
+		destination.IsActive = source.IsActive;
 		destination.Sys = source.Sys;
 		
 		if (this.IsIdentical(destination, source))
@@ -188,7 +235,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		destination.TenantId ??= source.TenantId;
 		destination.DefaultRole ??= source.DefaultRole;
 		destination.DefaultUserType ??= source.DefaultUserType;
-		destination.IsActive ??= source.IsActive;
 	}
 	
 	protected override bool IsAlreadyExist(Provider model, string membershipId, Provider? exclude = null)
@@ -276,60 +322,17 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	public async Task<IEnumerable<Provider>> GetProvidersAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
+		await this.InitializeAsync(membershipId, cancellationToken: cancellationToken);
+		
 		var cacheKey = GetCacheKey(membershipId);
 		if (this._memoryCache.TryGetValue<IEnumerable<Provider>>(cacheKey, out var cacheResults))
 		{
 			return cacheResults ?? Enumerable.Empty<Provider>();
 		}
 		
-		var providerList = new List<Provider>();
 		var providers = await this.GetAsync(membershipId, null, null, cancellationToken: cancellationToken);
-		
-		var utilizer = new Utilizer
-		{
-			Id = "system",
-			Username = "system",
-			Role = ReservedRoles.Administrator,
-			Type = Utilizer.UtilizerType.System,
-			MembershipId = membershipId
-		};
-		
-		var providerTypes = Enum.GetValues<KnownProviders>();
-		foreach (var providerType in providerTypes)
-		{
-			if (providerType == KnownProviders.ErtisAuth)
-			{
-				continue;
-			}
-			
-			try
-			{
-				if (providers.Items.All(x => x.Name != providerType.ToString()))
-				{
-					var provider = await this.CreateAsync(utilizer, membershipId, new Provider(providerType)
-					{
-						MembershipId = membershipId,
-						Description = null,
-						AppClientId = null,
-						TenantId = null,
-						DefaultRole = null,
-						DefaultUserType = null,
-						IsActive = false
-					}, cancellationToken: cancellationToken);
-					
-					providerList.Add(provider);
-				}
-			}
-			catch (Exception ex)
-			{
-				this._logger.LogError(ex, "ProviderService.GetProvidersAsync occured an error");
-			}
-		}
-		
-		providerList.AddRange(providers.Items.Where(x => x.Name != KnownProviders.ErtisAuth.ToString()));
-		
-		this._memoryCache.Set(cacheKey, providerList, GetCacheTTL());
-		return providerList;
+		this._memoryCache.Set(cacheKey, providers.Items, GetCacheTTL());
+		return providers.Items;
 	}
 	
 	#endregion
@@ -403,21 +406,12 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		var provider = await this.GetAsync(membershipId, x => x.MembershipId == membershipId && x.Name == request.Provider.ToString(), cancellationToken: cancellationToken);
 		if (provider != null)
 		{
-			if (provider.IsActive != null && provider.IsActive.Value)
+			if (provider.IsActive)
 			{
 				var providerAuthenticator = provider.GetAuthenticator();
 				var isVerified = await providerAuthenticator.VerifyTokenAsync(request, provider, cancellationToken: cancellationToken);
 				if (isVerified)
 				{
-					var utilizer = new Utilizer
-					{
-						Id = "system",
-						Username = "system",
-						Role = ReservedRoles.Administrator,
-						Type = Utilizer.UtilizerType.System,
-						MembershipId = membershipId
-					};
-					
 					var user = await this.FindUserAsync(request, provider, membershipId, cancellationToken: cancellationToken);
 					var isNewUser = user == null;
 					if (isNewUser)
@@ -435,6 +429,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 					var dynamicUser = new DynamicObject(user!);
 					this.SetAvatar(dynamicUser, request, userType);
 					
+					var utilizer = Utilizer.GetSystemUtilizer(membershipId);
 					var upsertedUser = isNewUser ?
 						await this._userService.CreateAsync(utilizer, membershipId, dynamicUser, cancellationToken: cancellationToken) :
 						await this._userService.UpdateAsync(utilizer, membershipId, user!.Id, dynamicUser, false, cancellationToken: cancellationToken);
@@ -471,7 +466,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 					if (!string.IsNullOrEmpty(accountInfo.Token))
 					{
 						var provider = await this.GetAsync(user.MembershipId, x => x.MembershipId == user.MembershipId && x.Name == accountInfo.Provider, cancellationToken: cancellationToken);
-						if (provider is { IsActive: not null } && provider.IsActive.Value)
+						if (provider is { IsActive: true })
 						{
 							var providerAuthenticator = provider.GetAuthenticator();
 							await providerAuthenticator.RevokeTokenAsync(accountInfo.Token, provider, cancellationToken: cancellationToken);
@@ -498,17 +493,10 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 				
 				if (needUserUpdate)
 				{
-					var utilizer = new Utilizer
-					{
-						Id = "system",
-						Username = "system",
-						Role = ReservedRoles.Administrator,
-						Type = Utilizer.UtilizerType.System,
-						MembershipId = user.MembershipId
-					};
-					
 					user.ConnectedAccounts = connectedAccounts.ToArray();
 					var dynamicUser = new DynamicObject(user);
+					
+					var utilizer = Utilizer.GetSystemUtilizer(user.MembershipId);
 					await this._userService.UpdateAsync(utilizer, user.MembershipId, user.Id, dynamicUser, false, cancellationToken: cancellationToken);	
 				}
 			}

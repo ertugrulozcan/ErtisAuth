@@ -36,7 +36,7 @@ public class ProviderInfoController : ControllerBase
 	public async Task<IActionResult> Get([FromRoute] string membershipId)
 	{
 		var providers = await this._providerService.GetProvidersAsync(membershipId);
-		var activeProviders = providers.Where(x => x.IsActive != null && x.IsActive.Value);
+		var activeProviders = providers.Where(x => x.IsActive);
 		return this.Ok(activeProviders.Select(x => new
 		{
 			_id = x.Id,

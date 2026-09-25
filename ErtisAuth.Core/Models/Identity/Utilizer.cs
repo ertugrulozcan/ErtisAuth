@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
 using MongoDB.Bson;
@@ -118,6 +119,18 @@ public struct Utilizer
 		}
 		
 		return UtilizerType.None;
+	}
+	
+	public static Utilizer GetSystemUtilizer(string membershipId)
+	{
+		return new Utilizer
+		{
+			Id = "system",
+			Username = "system",
+			Role = ReservedRoles.Administrator,
+			Type = UtilizerType.System,
+			MembershipId = membershipId
+		};
 	}
 	
 	#endregion

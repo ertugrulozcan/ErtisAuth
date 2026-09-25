@@ -308,6 +308,7 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is required", "UserTypeRequired");
 	}
 	
+	// ReSharper disable once UnusedParameter.Global
 	public static ErtisAuthException UserTypeImmutable(IReadOnlyDictionary<string, object?>? extras = null)
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is an immutable field. It's cannot be updated.", "UserTypeImmutable");

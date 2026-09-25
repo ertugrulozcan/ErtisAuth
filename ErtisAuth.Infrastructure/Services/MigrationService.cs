@@ -76,14 +76,7 @@ public class MigrationService : IMigrationService
 		});
 		
 		// Utilizer
-		var utilizer = new Utilizer
-		{
-			Id = "system",
-			Username = "migration",
-			Role = ReservedRoles.Administrator,
-			Type = Utilizer.UtilizerType.System,
-			MembershipId = membership.Id
-		};
+		var utilizer = Utilizer.GetSystemUtilizer(membership.Id);
 		
 		// 2. Role
 		var adminRole = await this._roleService.GetBySlugAsync(ReservedRoles.Administrator, membership.Id);

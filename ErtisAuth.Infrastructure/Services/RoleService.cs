@@ -66,18 +66,10 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		var memberships = await this._membershipService.GetAsync();
 		foreach (var membership in memberships.Items)
 		{
-			var utilizer = new Utilizer
-			{
-				Id = "system",
-				Username = "system",
-				Role = ReservedRoles.Administrator,
-				Type = Utilizer.UtilizerType.System,
-				MembershipId = membership.Id
-			};
-			
 			var adminRole = await this.GetBySlugAsync(ReservedRoles.Administrator, membership.Id);
 			if (adminRole == null)
 			{
+				var utilizer = Utilizer.GetSystemUtilizer(membership.Id);
 				await this.CreateAdministratorRoleAsync(membership, utilizer);
 			}
 		}

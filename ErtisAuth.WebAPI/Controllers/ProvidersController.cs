@@ -42,6 +42,22 @@ public class ProvidersController : ControllerBase
 	
 	#region Read Methods
 	
+	[HttpGet("{id}")]
+	[RbacObject("{id}")]
+	[RbacAction(Rbac.CrudActions.Read)]
+	public async Task<ActionResult<Provider>> Get([FromRoute] string membershipId, [FromRoute] string id)
+	{
+		var provider = await this._providerService.GetAsync(membershipId, id);
+		if (provider != null)
+		{
+			return this.Ok(provider);
+		}
+		else
+		{
+			return this.ApplicationNotFound(id);
+		}
+	}
+	
 	[HttpGet]
 	[RbacAction(Rbac.CrudActions.Read)]
 	[ProducesResponseType(StatusCodes.Status200OK)]
@@ -81,7 +97,7 @@ public class ProvidersController : ControllerBase
 				PrivateKey = model.PrivateKey,
 				PrivateKeyId = model.PrivateKeyId,
 				RedirectUri = model.RedirectUri,
-				IsActive = model.IsActive,
+				IsActive = model.IsActive ?? false,
 				MembershipId = membershipId
 			};
 			

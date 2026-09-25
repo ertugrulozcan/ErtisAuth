@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using Ertis.Schema.Serialization;
-using ErtisAuth.Core;
 using ErtisAuth.Extensions.ApplicationInsights;
 using ErtisAuth.Extensions.Database;
 using ErtisAuth.Extensions.Prometheus;
@@ -49,13 +48,6 @@ builder.Services.AddResponseCompression(options =>
 
 // OpenAPI
 builder.Services.AddOpenApi();
-
-// Logging
-builder.Logging.AddJsonConsole(options =>
-{
-	options.IncludeScopes = false;
-	options.TimestampFormat = "HH:mm:ss";
-});
 
 builder.Services
 	.AddControllers()

@@ -34,10 +34,12 @@ public class MailHook : MembershipBoundedResource, IHasSysInfo
         }
         set => field = Slugifier.Slugify(value, Slugifier.Options.Ignore('_'));
     }
-	
-    [JsonProperty("description")]
+    
     [JsonPropertyName("description")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonProperty("description", NullValueHandling = NullValueHandling.Ignore)]
     [BsonElement("description")]
+    [BsonIgnoreIfNull]
     public string? Description { get; set; }
 	
     [JsonProperty("event")]
@@ -113,9 +115,11 @@ public class MailHook : MembershipBoundedResource, IHasSysInfo
     [BsonElement("mailProvider")]
     public string? MailProvider { get; set; }
     
-    [JsonProperty("variables")]
     [JsonPropertyName("variables")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonProperty("variables", NullValueHandling = NullValueHandling.Ignore)]
     [BsonElement("variables")]
+    [BsonIgnoreIfNull]
     public MailHookVariable[]? Variables { get; set; }
     
     [JsonProperty("sys")]
