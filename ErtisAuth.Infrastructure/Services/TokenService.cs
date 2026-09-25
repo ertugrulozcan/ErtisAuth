@@ -299,14 +299,7 @@ public class TokenService : ITokenService
 		
 		if (fireEvent)
 		{
-			var e = new ErtisAuthEvent(user, new { user, token = bearerToken })
-			{
-				EventType = ErtisAuthEventType.TokenGenerated,
-				UtilizerId = user.Id,
-				MembershipId = membership.Id
-			};
-			
-			await this._eventService.FireEventAsync(this, e, cancellationToken: cancellationToken);	
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenGenerated, user, membership.Id, new { user, token = bearerToken }, cancellationToken: cancellationToken);
 		}
 		
 		return bearerToken;
@@ -395,14 +388,7 @@ public class TokenService : ITokenService
 					
 					if (fireEvent)
 					{
-						var e = new ErtisAuthEvent(user, new { token })
-						{
-							EventType = ErtisAuthEventType.TokenVerified,
-							UtilizerId = user.Id,
-							MembershipId = user.MembershipId
-						};
-						
-						await this._eventService.FireEventAsync(this, e, cancellationToken: cancellationToken);	
+						await this._eventService.FireEventAsync(ErtisAuthEventType.TokenVerified, user, user.MembershipId, new { token }, cancellationToken: cancellationToken);	
 					}
 					
 					if (this.TryExtractClaimValue(securityToken, "scope", out var scopeClaim) && !string.IsNullOrEmpty(scopeClaim))
@@ -479,14 +465,7 @@ public class TokenService : ITokenService
 		
 		if (fireEvent)
 		{
-			var e = new ErtisAuthEvent(application, new { basicToken })
-			{
-				EventType = ErtisAuthEventType.TokenVerified, 
-				UtilizerId = applicationId,
-				MembershipId = membership.Id
-			};
-			
-			await this._eventService.FireEventAsync(this, e, cancellationToken: cancellationToken);	
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenVerified, application, membership.Id, new { basicToken }, cancellationToken: cancellationToken);	
 		}
 		
 		return new BasicTokenValidationResult(true, basicToken, application);
@@ -537,14 +516,7 @@ public class TokenService : ITokenService
 									
 									if (fireEvent)
 									{
-										var e = new ErtisAuthEvent(user, token, new { refreshToken })
-										{
-											EventType = ErtisAuthEventType.TokenRefreshed, 
-											UtilizerId = userId,
-											MembershipId = membershipId
-										};
-										
-										await this._eventService.FireEventAsync(this, e, cancellationToken: cancellationToken);	
+										await this._eventService.FireEventAsync(ErtisAuthEventType.TokenRefreshed, user, membershipId, token, new { refreshToken }, cancellationToken: cancellationToken);	
 									}
 									
 									return token;
@@ -658,14 +630,7 @@ public class TokenService : ITokenService
 					}				
 				}
 				
-				var e = new ErtisAuthEvent(user, new { activeToken.AccessToken })
-				{
-					EventType = ErtisAuthEventType.TokenRevoked,
-					UtilizerId = user.Id,
-					MembershipId = membership.Id
-				};
-				
-				await this._eventService.FireEventAsync(this, e, cancellationToken: cancellationToken);
+				await this._eventService.FireEventAsync(ErtisAuthEventType.TokenRevoked, user, membership.Id, new { activeToken.AccessToken }, cancellationToken: cancellationToken);
 			}
 			
 			await this._activeTokenService.BulkDeleteAsync(filteredActiveTokens, cancellationToken: cancellationToken);
@@ -734,14 +699,7 @@ public class TokenService : ITokenService
 					}				
 				}
 				
-				var e = new ErtisAuthEvent(user, new { activeToken.AccessToken })
-				{
-					EventType = ErtisAuthEventType.TokenRevoked,
-					UtilizerId = userId,
-					MembershipId = membership.Id
-				};
-				
-				await this._eventService.FireEventAsync(this, e, cancellationToken: cancellationToken);
+				await this._eventService.FireEventAsync(ErtisAuthEventType.TokenRevoked, user, membership.Id, new { activeToken.AccessToken }, cancellationToken: cancellationToken);
 			}
 			
 			await this._activeTokenService.BulkDeleteAsync(activeTokens, cancellationToken: cancellationToken);

@@ -11,7 +11,7 @@
     
     <ItemGroup>
         <PackageReference Include="Ertis.Core" Version="10.0.2" />
-        <PackageReference Include="Ertis.MongoDB" Version="10.0.3" />
+        <PackageReference Include="Ertis.MongoDB" Version="10.0.6" />
         <PackageReference Include="Ertis.Net" Version="10.0.2" />
         <PackageReference Include="Ertis.Schema" Version="10.1.7" />
     </ItemGroup>

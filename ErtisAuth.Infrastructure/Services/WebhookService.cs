@@ -1,8 +1,10 @@
+using System.Net;
 using System.Text.Json;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Models.Events;
@@ -45,7 +47,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		this._restHandler = restHandler;
 		this._logger = logger;
 		
-		this._eventService.EventFired += EventServiceOnEventFired;
+		this._eventService.OnEventFired += this.OnEventFired;
 		
 		this.OnCreated += this.WebhookCreatedEventHandler;
 		this.OnUpdated += this.WebhookUpdatedEventHandler;
@@ -56,7 +58,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	
 	#region Event Handlers
 	
-	private void EventServiceOnEventFired(object? sender, ErtisAuthEvent ertisAuthEvent)
+	private void OnEventFired(object? _, ErtisAuthEvent ertisAuthEvent)
 	{
 		try
 		{
@@ -89,13 +91,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	{
 		try
 		{
-			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-			{
-				EventType = ErtisAuthEventType.WebhookCreated,
-				UtilizerId = eventArgs.Utilizer.Id,
-				Document = eventArgs.Resource,
-				MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-			});
+			await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
 		}
 		catch (Exception ex)
 		{
@@ -107,14 +103,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	{
 		try
 		{
-			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-			{
-				EventType = ErtisAuthEventType.WebhookUpdated,
-				UtilizerId = eventArgs.Utilizer.Id,
-				Document = eventArgs.Updated,
-				Prior = eventArgs.Prior,
-				MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-			});
+			await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
 		}
 		catch (Exception ex)
 		{
@@ -126,13 +115,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	{
 		try
 		{
-			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-			{
-				EventType = ErtisAuthEventType.WebhookDeleted,
-				UtilizerId = eventArgs.Utilizer.Id,
-				Document = eventArgs.Resource,
-				MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-			});
+			await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
 		}
 		catch (Exception ex)
 		{
@@ -144,7 +127,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	
 	#region Methods
 	
-	private async void ExecuteWebhookAsync(Webhook webhook, string utilizerId, string membershipId, object document, object prior)
+	private async void ExecuteWebhookAsync(Webhook webhook, string utilizerId, string membershipId, object? document, object? prior)
 	{
 		try
 		{
@@ -170,7 +153,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		}
 	}
 	
-	private async void ExecuteWebhookRequestAsync(Webhook webhook, string utilizerId, string membershipId, object document, object prior, int tryCount)
+	private async void ExecuteWebhookRequestAsync(Webhook webhook, string utilizerId, string membershipId, object? document, object? prior, int tryCount)
 	{
 		try
 		{
@@ -179,39 +162,47 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 				return;
 			}
 			
+			var data = DynamicObject.Parse(JsonSerializer.Serialize(new { document, prior })).ToDynamic();
+			var formatter = new Ertis.TemplateEngine.Formatter();
 			var httpMethod = new HttpMethod(webhook.Request.Method);
-			var url = webhook.Request.Url;
+			var url = formatter.Format(webhook.Request.Url, data);
 			var headers = HeaderCollection.Create();
 			if (webhook.Request.Headers != null)
 			{
 				foreach (var webhookRequestHeader in webhook.Request.Headers)
 				{
-					if (!string.IsNullOrEmpty(webhookRequestHeader.Key) && webhookRequestHeader.Value != null &&
-						!string.IsNullOrEmpty(webhookRequestHeader.Value.ToString()))
+					var headerValue = webhookRequestHeader.Value;
+					if (!string.IsNullOrEmpty(webhookRequestHeader.Key) && !string.IsNullOrEmpty(headerValue))
 					{
-						headers = headers.Add(webhookRequestHeader);
+						var trustedHeaderValue = Uri.EscapeDataString(WebUtility.HtmlEncode(formatter.Format(headerValue, data)));
+						headers = headers.Add(webhookRequestHeader.Key, trustedHeaderValue);
 					}
 				}
 			}
 			
-			IRequestBody body = new JsonRequestBody(new
-			{
-				document,
-				prior,
-				payload = webhook.Request.Body
-			});
+			var jsonBody = webhook.Request.Body?.ToJson();
+			jsonBody = jsonBody != null ? formatter.Format(jsonBody, data) : null;
+			var webhookBody = jsonBody != null ? DynamicObject.Parse(jsonBody) : null;
+			
+			IRequestBody body = webhook.Request.UncoveredBody ?
+				new SystemJsonRequestBody(webhookBody != null ? webhookBody.ToDictionary() : new {}) :
+				new SystemJsonRequestBody(new
+				{
+					document,
+					prior,
+					payload = webhookBody?.ToDictionary()
+				});
 			
 			var webhookRequest = new WebhookRequest
 			{
 				Method = webhook.Request.Method,
 				Url = webhook.Request.Url,
 				Headers = webhook.Request.Headers,
-				Body = new
-				{
+				Body = new DynamicObject(new {
 					document,
 					prior,
-					payload = webhook.Request.Body
-				}
+					payload = webhookBody
+				})
 			};
 			
 			for (var i = 0; i < tryCount; i++)
@@ -232,28 +223,12 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 					
 					if (response.IsSuccess)
 					{
-						var e = new ErtisAuthEvent
-						{
-							EventType = ErtisAuthEventType.WebhookRequestSent,
-							UtilizerId = utilizerId,
-							MembershipId = membershipId,
-							Document = webhookExecutionResult
-						};
-						
-						await this._eventService.FireEventAsync(this, e);
+						await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestSent, utilizerId, membershipId, webhookExecutionResult);
 						break;
 					}
 					else
 					{
-						var e = new ErtisAuthEvent
-						{
-							EventType = ErtisAuthEventType.WebhookRequestFailed,
-							UtilizerId = utilizerId,
-							MembershipId = membershipId,
-							Document = webhookExecutionResult
-						};
-						
-						await this._eventService.FireEventAsync(this, e);
+						await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestFailed, utilizerId, membershipId, webhookExecutionResult);
 					}
 				}
 				catch (Exception ex)
@@ -268,15 +243,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 						Request = webhookRequest
 					};
 					
-					var e = new ErtisAuthEvent
-					{
-						EventType = ErtisAuthEventType.WebhookRequestFailed,
-						UtilizerId = utilizerId,
-						MembershipId = membershipId,
-						Document = webhookExecutionResult
-					};
-					
-					await this._eventService.FireEventAsync(this, e);
+					await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestFailed, utilizerId, membershipId, webhookExecutionResult);
 				}
 			}
 		}

@@ -55,36 +55,17 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 	
     private void OnCreatedEventHandler(object? sender, CreateResourceEventArgs<TokenCodePolicy> eventArgs)
     {
-	    this._eventService.FireEventAsync(this, new ErtisAuthEvent
-	    {
-		    EventType = ErtisAuthEventType.TokenCodePolicyCreated,
-		    UtilizerId = eventArgs.Utilizer.Id,
-		    Document = eventArgs.Resource,
-		    MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-	    });
+		this._eventService.FireEventAsync(ErtisAuthEventType.TokenCodePolicyCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
     }
 	
     private void OnUpdatedEventHandler(object? sender, UpdateResourceEventArgs<TokenCodePolicy> eventArgs)
     {
-	    this._eventService.FireEventAsync(this, new ErtisAuthEvent
-	    {
-		    EventType = ErtisAuthEventType.TokenCodePolicyUpdated,
-		    UtilizerId = eventArgs.Utilizer.Id,
-		    Document = eventArgs.Updated,
-		    Prior = eventArgs.Prior,
-		    MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-	    });
+		this._eventService.FireEventAsync(ErtisAuthEventType.TokenCodePolicyUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
     }
 	
     private void OnDeletedEventHandler(object? sender, DeleteResourceEventArgs<TokenCodePolicy> eventArgs)
     {
-	    this._eventService.FireEventAsync(this, new ErtisAuthEvent
-	    {
-		    EventType = ErtisAuthEventType.TokenCodePolicyDeleted,
-		    UtilizerId = eventArgs.Utilizer.Id,
-		    Document = eventArgs.Resource,
-		    MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-	    });
+		this._eventService.FireEventAsync(ErtisAuthEventType.TokenCodePolicyDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
     }
 	
     #endregion

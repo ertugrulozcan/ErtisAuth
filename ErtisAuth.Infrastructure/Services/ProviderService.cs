@@ -83,36 +83,17 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	private void ProviderCreatedEventHandler(object? sender, CreateResourceEventArgs<Provider> eventArgs)
 	{
-		this._eventService.FireEventAsync(this, new ErtisAuthEvent
-		{
-			EventType = ErtisAuthEventType.ProviderCreated,
-			UtilizerId = eventArgs.Utilizer.Id,
-			Document = eventArgs.Resource,
-			MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-		});
+		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
 	}
 	
 	private void ProviderUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Provider> eventArgs)
 	{
-		this._eventService.FireEventAsync(this, new ErtisAuthEvent
-		{
-			EventType = ErtisAuthEventType.ProviderUpdated,
-			UtilizerId = eventArgs.Utilizer.Id,
-			Document = eventArgs.Updated,
-			Prior = eventArgs.Prior,
-			MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-		});
+		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
 	}
 	
 	private void ProviderDeletedEventHandler(object? sender, DeleteResourceEventArgs<Provider> eventArgs)
 	{
-		this._eventService.FireEventAsync(this, new ErtisAuthEvent
-		{
-			EventType = ErtisAuthEventType.ProviderDeleted,
-			UtilizerId = eventArgs.Utilizer.Id,
-			Document = eventArgs.Resource,
-			MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-		});
+		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
 	}
 	
 	#endregion

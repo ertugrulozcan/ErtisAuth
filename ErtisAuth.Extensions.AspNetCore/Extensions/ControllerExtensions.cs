@@ -232,10 +232,5 @@ public static class ControllerExtensions
 		return controller.Ok(ErtisAuthException.BulkDeletePartial().Error);
 	}
 	
-	public static BadRequestObjectResult CommandRequired(this ControllerBase controller)
-	{
-		return controller.BadRequest(ErtisAuthException.CommandRequired().Error);
-	}
-	
 	#endregion
 }

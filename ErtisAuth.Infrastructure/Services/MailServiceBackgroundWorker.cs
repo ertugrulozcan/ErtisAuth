@@ -7,6 +7,7 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using Microsoft.Extensions.Logging;
 
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Infrastructure.Services;
 
 public class MailServiceBackgroundWorker : IMailServiceBackgroundWorker
@@ -123,29 +124,14 @@ public class MailServiceBackgroundWorker : IMailServiceBackgroundWorker
 					arguments,
 					cancellationToken: cancellationToken);
 				
-				var e = new ErtisAuthEvent
-				{
-					EventType = ErtisAuthEventType.MailhookMailSent,
-					UtilizerId = args.UserId!,
-					MembershipId = args.MembershipId ?? string.Empty,
-					Document = new { recipients }
-				};
-				
-				await this._eventService.FireEventAsync(this, e, cancellationToken: cancellationToken);
+				await this._eventService.FireEventAsync(ErtisAuthEventType.MailhookMailSent, args.UserId!, args.MembershipId, new { recipients }, cancellationToken: cancellationToken);
 				
 				this._logger.LogInformation("The hook mail sent");
 			}
 			catch (Exception ex)
 			{
-				var e = new ErtisAuthEvent
-				{
-					EventType = ErtisAuthEventType.MailhookMailFailed,
-					UtilizerId = args.UserId!,
-					MembershipId = args.MembershipId ?? string.Empty,
-					Document = new { recipients, error = ex.Message }
-				};
+				await this._eventService.FireEventAsync(ErtisAuthEventType.MailhookMailFailed, args.UserId!, args.MembershipId, new { recipients, error = ex.Message }, cancellationToken: cancellationToken);
 				
-				await this._eventService.FireEventAsync(this, e, cancellationToken: cancellationToken);
 				this._logger.LogError(ex, "The hook mail could not be sent!");
 			}
 		}

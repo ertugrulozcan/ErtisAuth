@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
+using Ertis.MongoDB.Serialization;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
@@ -57,7 +58,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		this._mailServiceBackgroundWorker = mailServiceBackgroundWorker;
 		this._logger = logger;
 		
-		this._eventService.EventFired += EventServiceOnEventFired;
+		this._eventService.OnEventFired += this.OnEventFired;
 		
 		this.OnCreated += this.MailhookCreatedEventHandler;
 		this.OnUpdated += this.MailhookUpdatedEventHandler;
@@ -68,7 +69,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	
 	#region Event Handlers
 	
-	private void EventServiceOnEventFired(object? sender, ErtisAuthEvent ertisAuthEvent)
+	private void OnEventFired(object? _, ErtisAuthEvent ertisAuthEvent)
 	{
 		try
 		{
@@ -81,7 +82,15 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			
 			var query = QueryBuilder.Where(expressions);
 			var mailHooksDynamicCollection = this.Query(ertisAuthEvent.MembershipId, query.ToString());
-			var json = JsonSerializer.Serialize(mailHooksDynamicCollection);
+			var json = JsonSerializer.Serialize(mailHooksDynamicCollection, new JsonSerializerOptions
+			{
+				WriteIndented = false,
+				Converters =
+				{
+					new ObjectIdConverter()
+				}
+			});
+			
 			var mailHooks = JsonSerializer.Deserialize<PaginationCollection<MailHook>>(json);
 			if (mailHooks != null)
 			{
@@ -104,13 +113,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	{
 		try
 		{
-			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-			{
-				EventType = ErtisAuthEventType.MailhookCreated,
-				UtilizerId = eventArgs.Utilizer.Id,
-				Document = eventArgs.Resource,
-				MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-			});
+			await this._eventService.FireEventAsync(ErtisAuthEventType.MailhookCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
 		}
 		catch (Exception ex)
 		{
@@ -122,14 +125,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	{
 		try
 		{
-			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-			{
-				EventType = ErtisAuthEventType.MailhookUpdated,
-				UtilizerId = eventArgs.Utilizer.Id,
-				Document = eventArgs.Updated,
-				Prior = eventArgs.Prior,
-				MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-			});
+			await this._eventService.FireEventAsync(ErtisAuthEventType.MailhookUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
 		}
 		catch (Exception ex)
 		{
@@ -141,13 +137,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	{
 		try
 		{
-			await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-			{
-				EventType = ErtisAuthEventType.MailhookDeleted,
-				UtilizerId = eventArgs.Utilizer.Id,
-				Document = eventArgs.Resource,
-				MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-			});
+			await this._eventService.FireEventAsync(ErtisAuthEventType.MailhookDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
 		}
 		catch (Exception ex)
 		{

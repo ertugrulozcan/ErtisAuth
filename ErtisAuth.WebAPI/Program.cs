@@ -49,15 +49,8 @@ builder.Services.AddResponseCompression(options =>
 // OpenAPI
 builder.Services.AddOpenApi();
 
-builder.Services
-	.AddControllers()
-	.AddJsonOptions(options =>
-	{
-		options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-		options.JsonSerializerOptions.MaxDepth = 0;
-		options.JsonSerializerOptions.Converters.Add(new DynamicObjectJsonConverter());
-		options.JsonSerializerOptions.Converters.Add(new FieldInfoJsonConverter());
-	});
+// Controllers & Json Options
+builder.Services.AddControllers().AddJsonSerialization();
 
 // Graceful shutdown
 builder.ConfigureShutdown();

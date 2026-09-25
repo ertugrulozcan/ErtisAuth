@@ -96,47 +96,20 @@ public class UserService : DynamicObjectCrudService, IUserService
     #region Event Methods
 	
     private async Task FireOnCreatedEvent(string membershipId, Utilizer utilizer, DynamicObject inserted)
-    {
-		await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-		{
-			Document = inserted.ToDynamic(),
-			Prior = null,
-			EventTime = DateTime.Now,
-			EventType = ErtisAuthEventType.UserCreated,
-			MembershipId = membershipId,
-			UtilizerId = utilizer.Id
-		});
-        
+	{
+		await this._eventService.FireEventAsync(ErtisAuthEventType.UserCreated, utilizer, membershipId, inserted);
         this.OnCreated?.Invoke(this, new CreateResourceEventArgs<DynamicObject>(utilizer, inserted, membershipId));
     }
 	
     private async Task FireOnUpdatedEvent(string membershipId, Utilizer utilizer, DynamicObject prior, DynamicObject updated)
     {
-		await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-		{
-			Document = updated.ToDynamic(),
-			Prior = prior.ToDynamic(),
-			EventTime = DateTime.Now,
-			EventType = ErtisAuthEventType.UserUpdated,
-			MembershipId = membershipId,
-			UtilizerId = utilizer.Id
-		});
-        
+		await this._eventService.FireEventAsync(ErtisAuthEventType.UserUpdated, utilizer, membershipId, updated, prior);
         this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<DynamicObject>(utilizer, prior, updated, membershipId));
     }
 	
     private async Task FireOnDeletedEvent(string membershipId, Utilizer utilizer, DynamicObject deleted)
     {
-		await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-		{
-			Document = null,
-			Prior = deleted.ToDynamic(),
-			EventTime = DateTime.Now,
-			EventType = ErtisAuthEventType.UserDeleted,
-			MembershipId = membershipId,
-			UtilizerId = utilizer.Id
-		});	
-        
+		await this._eventService.FireEventAsync(ErtisAuthEventType.UserDeleted, utilizer, membershipId, null, deleted);
         this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<DynamicObject>(utilizer, deleted, membershipId));
     }
 	
@@ -634,14 +607,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 		user.SetValue("password_hash", passwordHash, true);
 		
 		var updatedUser = await base.UpdateAsync(userId, user, cancellationToken: cancellationToken);
-		await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-		{
-			EventType = ErtisAuthEventType.UserPasswordChanged,
-			UtilizerId = userId,
-			Document = updatedUser,
-			Prior = prior,
-			MembershipId = membershipId
-		}, cancellationToken: cancellationToken);
+		await this._eventService.FireEventAsync(ErtisAuthEventType.UserPasswordChanged, userId, membershipId, updatedUser, prior, cancellationToken: cancellationToken);
 		
 		return updatedUser!;
 	}
@@ -678,13 +644,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 			membership
 		};
 		
-		await this._eventService.FireEventAsync(this, new ErtisAuthEvent
-		{
-			EventType = ErtisAuthEventType.UserPasswordReset,
-			UtilizerId = user.Id,
-			Document = eventPayload,
-			MembershipId = membershipId
-		}, cancellationToken: cancellationToken);
+		await this._eventService.FireEventAsync(ErtisAuthEventType.UserPasswordReset, user, membershipId, eventPayload, cancellationToken: cancellationToken);
 		
 		await this.SendResetPasswordMailAsync(resetPasswordToken, membership, user, host, cancellationToken: cancellationToken);
 		

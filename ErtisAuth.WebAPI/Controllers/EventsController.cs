@@ -44,7 +44,7 @@ public class EventsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<ActionResult<ErtisAuthEvent>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var ertisAuthEvent = await this._eventService.GetDynamicAsync(membershipId, id);
+		var ertisAuthEvent = await this._eventService.GetAsync(membershipId, id);
 		if (ertisAuthEvent != null)
 		{
 			return this.Ok(ertisAuthEvent);
@@ -62,7 +62,7 @@ public class EventsController : QueryControllerBase
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		var events = await this._eventService.GetDynamicAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		var events = await this._eventService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return this.Ok(events);
 	}
 	

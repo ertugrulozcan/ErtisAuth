@@ -271,36 +271,17 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
     private void UserTypeCreatedEventHandler(object? sender, CreateResourceEventArgs<UserType> eventArgs)
     {
-        this._eventService.FireEventAsync(this, new ErtisAuthEvent
-        {
-	        EventType = ErtisAuthEventType.UserTypeCreated,
-	        UtilizerId = eventArgs.Utilizer.Id,
-	        Document = eventArgs.Resource,
-	        MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-        });
+		this._eventService.FireEventAsync(ErtisAuthEventType.UserTypeCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
     }
 	
     private void UserTypeUpdatedEventHandler(object? sender, UpdateResourceEventArgs<UserType> eventArgs)
     {
-        this._eventService.FireEventAsync(this, new ErtisAuthEvent
-        {
-	        EventType = ErtisAuthEventType.UserTypeUpdated,
-	        UtilizerId = eventArgs.Utilizer.Id,
-	        Document = eventArgs.Updated,
-	        Prior = eventArgs.Prior,
-	        MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-        });
+		this._eventService.FireEventAsync(ErtisAuthEventType.UserTypeUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
     }
 	
     private void UserTypeDeletedEventHandler(object? sender, DeleteResourceEventArgs<UserType> eventArgs)
     {
-        this._eventService.FireEventAsync(this, new ErtisAuthEvent
-        {
-	        EventType = ErtisAuthEventType.UserTypeDeleted,
-	        UtilizerId = eventArgs.Utilizer.Id,
-	        Document = eventArgs.Resource,
-	        MembershipId = eventArgs.MembershipId ?? eventArgs.Utilizer.MembershipId ?? string.Empty
-        });
+		this._eventService.FireEventAsync(ErtisAuthEventType.UserTypeDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
     }
 	
     #endregion
