@@ -17,7 +17,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("applications")]
-[Route("memberships/{membershipId}/[controller]")]
+[Route("memberships/{membershipId}/applications")]
 public class ApplicationsController : QueryControllerBase
 {
 	#region Services

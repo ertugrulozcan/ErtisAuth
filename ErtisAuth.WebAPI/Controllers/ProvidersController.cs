@@ -15,7 +15,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("providers")]
-[Route("memberships/{membershipId}/[controller]")]
+[Route("memberships/{membershipId}/providers")]
 public class ProvidersController : ControllerBase
 {
 	#region Services
@@ -67,6 +67,26 @@ public class ProvidersController : ControllerBase
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
 		return this.Ok(await this._providerService.GetProvidersAsync(membershipId, cancellationToken: cancellationToken));
+	}
+	
+	[HttpGet("active-providers")]
+	[Unauthorized]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	public async Task<IActionResult> GetActiveProviders([FromRoute] string membershipId)
+	{
+		var providers = await this._providerService.GetProvidersAsync(membershipId);
+		var activeProviders = providers.Where(x => x.IsActive);
+		return this.Ok(activeProviders.Select(x => new
+		{
+			_id = x.Id,
+			name = x.Name,
+			appClientId = x.AppClientId,
+			tenantId = x.TenantId,
+			membership_id = x.MembershipId
+		}));
 	}
 	
 	#endregion
