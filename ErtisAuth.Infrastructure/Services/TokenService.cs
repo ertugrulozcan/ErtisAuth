@@ -225,13 +225,15 @@ public class TokenService : ITokenService
 				{
 					if (Rbac.TryParse(scope, out var rbac))
 					{
-						if (!role.HasPermission(rbac!))
+						// A token can only be narrowed: with an already scoped token, the requested scope must be covered by its scopes
+						if (verifyResult.Scopes is { Length: > 0 } && !verifyResult.Scopes.CoversScope(rbac!))
 						{
 							throw ErtisAuthException.UserHasNoPermissionForThisScope(scope);
 						}
 						
-						var verifiedForUser = verifyResult.User.HasPermission(rbac!);
-						if (verifiedForUser != null && verifiedForUser.Value)
+						// Same precedence as AccessControlService: a matching UBAC entry is decisive, otherwise the role decides
+						var isPermitted = verifyResult.User.HasPermission(rbac!) ?? role.HasPermission(rbac!);
+						if (!isPermitted)
 						{
 							throw ErtisAuthException.UserHasNoPermissionForThisScope(scope);
 						}
@@ -322,6 +324,17 @@ public class TokenService : ITokenService
 			isRefreshableToken;
 	}
 	
+	private string[]? ExtractScopes(JsonWebToken securityToken)
+	{
+		if (this.TryExtractClaimValue(securityToken, "scope", out var scopeClaim) && !string.IsNullOrEmpty(scopeClaim))
+		{
+			var scopes = scopeClaim.Split(' ').Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+			return scopes.Length > 0 ? scopes : null;
+		}
+		
+		return null;
+	}
+	
 	private bool TryExtractClaimValue(JsonWebToken securityToken, string key, out string? value)
 	{
 		var claim = securityToken.Claims.FirstOrDefault(x => x.Type == key);
@@ -395,20 +408,10 @@ public class TokenService : ITokenService
 			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenVerified, user, user.MembershipId, new { token }, cancellationToken: cancellationToken);	
 		}
 		
-		var isRefreshToken = this.IsRefreshToken(securityToken);
-		if (this.TryExtractClaimValue(securityToken, "scope", out var scopeClaim) && !string.IsNullOrEmpty(scopeClaim))
+		return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, this.IsRefreshToken(securityToken))
 		{
-			var scopes = scopeClaim.Split(' ').Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-			if (scopes.Length > 0)
-			{
-				return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, isRefreshToken)
-				{
-					Scopes = scopes
-				};
-			}
-		}
-		
-		return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, isRefreshToken);
+			Scopes = this.ExtractScopes(securityToken)
+		};
 	}
 	
 	/// <summary>
@@ -531,8 +534,10 @@ public class TokenService : ITokenService
 			throw ErtisAuthException.UserInactive(user.Id);
 		}
 		
+		// A refreshed token keeps the scopes of the original token (never broader, RFC 6749 section 6)
+		var scopes = this.ExtractScopes(securityToken);
 		var originalActiveToken = await this._activeTokenService.GetByRefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
-		var token = await this.GenerateBearerTokenAsync(user, membership, null, originalActiveToken?.ClientInfo?.IPAddress, originalActiveToken?.ClientInfo?.UserAgent, cancellationToken: cancellationToken);
+		var token = await this.GenerateBearerTokenAsync(user, membership, scopes, originalActiveToken?.ClientInfo?.IPAddress, originalActiveToken?.ClientInfo?.UserAgent, cancellationToken: cancellationToken);
 		
 		if (revokeBefore)
 		{

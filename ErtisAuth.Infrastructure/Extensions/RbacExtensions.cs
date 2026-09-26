@@ -9,29 +9,36 @@ public static class RbacExtensions
 	
 	public static bool HasPermission(this Role role, Rbac rbac)
 	{
-		bool isPermittedFilter(string permission)
+		return !role.IsForbidden(rbac) && (role.Permissions?.Any(x => IsMatch(x, rbac)) ?? false);
+	}
+	
+	public static bool IsForbidden(this Role role, Rbac rbac)
+	{
+		return role.Forbidden?.Any(x => IsMatch(x, rbac)) ?? false;
+	}
+	
+	/// <summary>
+	/// Returns whether any of the given token scopes covers the rbac.
+	/// Scopes use the same format ([subject].[resource].[action].[object], 1 to 4 segments) and the same matching as role permissions.
+	/// </summary>
+	public static bool CoversScope(this IEnumerable<string>? scopes, Rbac rbac)
+	{
+		return scopes?.Any(x => IsMatch(x, rbac)) ?? false;
+	}
+	
+	private static bool IsMatch(string permission, Rbac rbac)
+	{
+		if (Rbac.TryParse(permission, out var roleRbac) && roleRbac != null)
 		{
-			if (Rbac.TryParse(permission, out var userRbac) && userRbac != null)
-			{
-				var isSubjectPermitted = userRbac.Subject.IsAll() || userRbac.Subject.Equals(rbac.Subject);
-				var isResourcePermitted = userRbac.Resource.IsAll() || userRbac.Resource.Equals(rbac.Resource, StringComparison.CurrentCultureIgnoreCase);
-				var isActionPermitted = userRbac.Action.IsAll() || userRbac.Action.Equals(rbac.Action, StringComparison.CurrentCultureIgnoreCase);
-				var isObjectPermitted = userRbac.Object.IsAll() || userRbac.Object.Equals(rbac.Object);
-				
-				var isPermitted = isSubjectPermitted && isResourcePermitted && isActionPermitted && isObjectPermitted;
-				if (isPermitted)
-				{
-					return true;
-				}
-			}
+			var isSubjectPermitted = roleRbac.Subject.IsAll() || roleRbac.Subject.Equals(rbac.Subject);
+			var isResourcePermitted = roleRbac.Resource.IsAll() || roleRbac.Resource.Equals(rbac.Resource, StringComparison.CurrentCultureIgnoreCase);
+			var isActionPermitted = roleRbac.Action.IsAll() || roleRbac.Action.Equals(rbac.Action, StringComparison.CurrentCultureIgnoreCase);
+			var isObjectPermitted = roleRbac.Object.IsAll() || roleRbac.Object.Equals(rbac.Object);
 			
-			return false;
+			return isSubjectPermitted && isResourcePermitted && isActionPermitted && isObjectPermitted;
 		}
 		
-		var matchedPermissions = role.Permissions?.Where(isPermittedFilter) ?? Array.Empty<string>();
-		var matchedForbiddens = role.Forbidden?.Where(isPermittedFilter) ?? Array.Empty<string>();
-		
-		return !matchedForbiddens.Any() && matchedPermissions.Any();
+		return false;
 	}
 	
 	public static bool HasOwnUpdatePermission(this Role _, Rbac rbac, Utilizer utilizer)

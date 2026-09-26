@@ -78,31 +78,5 @@ public static class UbacExtensions
 		}
 	}
 	
-	public static bool HasPermission(this IEnumerable<string>? scopes, Rbac rbac)
-	{
-		var matchedPermissions = scopes?.Where(isPermittedFilter) ?? Array.Empty<string>();
-		var permissions = matchedPermissions as string[] ?? matchedPermissions.ToArray();
-		return permissions.Any();
-		
-		bool isPermittedFilter(string permission)
-		{
-			if (Ubac.TryParse(permission, out var userUbac) && userUbac != null)
-			{
-				var isResourcePermitted = userUbac.Resource.IsAll() || userUbac.Resource.Equals(rbac.Resource, StringComparison.CurrentCultureIgnoreCase);
-				var isActionPermitted = userUbac.Action.IsAll() || userUbac.Action.Equals(rbac.Action, StringComparison.CurrentCultureIgnoreCase);
-				var isObjectPermitted = userUbac.Object.IsAll() || userUbac.Object.Equals(rbac.Object);
-				
-				var isPermitted = isResourcePermitted && isActionPermitted && isObjectPermitted;
-				
-				if (isPermitted)
-				{
-					return true;
-				}
-			}
-			
-			return false;
-		}
-	}
-	
 	#endregion
 }

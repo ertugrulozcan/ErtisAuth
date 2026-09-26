@@ -955,6 +955,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
         
         this.EnsureEmailAddress(model);
+		this.EnsureServerManagedProperties(model, utilizer);
         var activationMailHook = await this.EnsureUserActivationAsync(membership, cancellationToken: cancellationToken);
         model.SetValue("is_active", membership.UserActivation != Status.Active, true);
 		
@@ -1196,10 +1197,11 @@ public class UserService : DynamicObjectCrudService, IUserService
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
         this.EnsureEmailAddress(model);
         this.EnsureUser(membershipId, userId, out var current);
+		this.EnsureServerManagedProperties(model, utilizer);
         var userType = await this.GetUserTypeAsync(model, current, membershipId, cancellationToken: cancellationToken);
         this.EnsureManagedProperties(model, membershipId);
         model = this.SyncModel(current, model);
-        await this.CheckRoleUpdatePermissionAsync(utilizer, membershipId, model, current, cancellationToken: cancellationToken);
+		await this.CheckPrivilegedPropertiesAsync(utilizer, userId, model, current, cancellationToken: cancellationToken);
         this.EnsurePasswordHash(model, current);
         await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current, cancellationToken: cancellationToken);
         var updated = await base.UpdateAsync(userId, model, cancellationToken: cancellationToken);
@@ -1228,29 +1230,81 @@ public class UserService : DynamicObjectCrudService, IUserService
         return model;
     }
 	
-    private async Task CheckRoleUpdatePermissionAsync(Utilizer utilizer, string membershipId, DynamicObject model, DynamicObject current, CancellationToken cancellationToken = default)
-    {
-        // Is role changed?
-        var role = await this.EnsureRoleAsync(current, membershipId, cancellationToken: cancellationToken);
-        model.TryGetValue<string>("role", out var roleName);
-        if (!string.IsNullOrEmpty(roleName) && roleName != role.Slug && !string.IsNullOrEmpty(utilizer.Role))
-        {
-	        var utilizerRole = await this._roleService.GetBySlugAsync(utilizer.Role, utilizer.MembershipId, cancellationToken: cancellationToken);
-	        if (utilizerRole != null)
-	        {
-		        // Is authorized for user update
-		        if (!this._accessControlService.HasPermission(utilizerRole, new Rbac(new RbacSegment(utilizer.Id), new RbacSegment("users"), Rbac.CrudActionSegments.Update, new RbacSegment(utilizer.Id))))
-		        {
-			        throw ErtisAuthException.Unauthorized("You are not authorized for this action");
-		        }   
-	        }
-	        else
-	        {
-		        throw ErtisAuthException.Unauthorized("Utilizer role not found");
-	        }
-        }
-    }
+	/// <summary>
+	/// Properties that only the auth api itself (system utilizer, e.g. provider logins) may write.
+	/// Values sent by callers are ignored: on update the current values are kept, on create the defaults are used.
+	/// </summary>
+	private static readonly string[] ServerManagedProperties = ["source_provider", "connected_accounts"];
 	
+	/// <summary>
+	/// Properties whose change requires a real users.update permission on the target user (granted by role or UBAC).
+	/// The own-update exception (a user updating its own profile) does not cover them.
+	/// </summary>
+	private static readonly string[] PrivilegedProperties = ["role", "permissions", "forbidden", "is_active", "user_type"];
+	
+	private void EnsureServerManagedProperties(DynamicObject model, Utilizer utilizer)
+	{
+		if (utilizer.Type == Utilizer.UtilizerType.System)
+		{
+			return;
+		}
+		
+		foreach (var property in ServerManagedProperties)
+		{
+			model.RemoveProperty(property);
+		}
+	}
+	
+	private async Task CheckPrivilegedPropertiesAsync(Utilizer utilizer, string userId, DynamicObject model, DynamicObject current, CancellationToken cancellationToken = default)
+	{
+		if (utilizer.Type == Utilizer.UtilizerType.System)
+		{
+			return;
+		}
+		
+		var changedProperties = PrivilegedProperties.Where(x => !IsUnchanged(current, model, x)).ToArray();
+		if (changedProperties.Length == 0)
+		{
+			return;
+		}
+		
+		var utilizerRole = string.IsNullOrEmpty(utilizer.Role) ? null : await this._roleService.GetBySlugAsync(utilizer.Role, utilizer.MembershipId, cancellationToken: cancellationToken);
+		var rbac = new Rbac(new RbacSegment(utilizer.Id), new RbacSegment("users"), Rbac.CrudActionSegments.Update, new RbacSegment(userId));
+		if (!this._accessControlService.HasGrantedPermission(utilizerRole, rbac, utilizer))
+		{
+			throw ErtisAuthException.AccessDenied($"You are not authorized to change the following fields: {string.Join(", ", changedProperties)}");
+		}
+	}
+	
+	private static bool IsUnchanged(DynamicObject current, DynamicObject model, string property)
+	{
+		switch (property)
+		{
+			case "permissions":
+			case "forbidden":
+				return GetStringSet(current, property).SetEquals(GetStringSet(model, property));
+			case "is_active":
+				return GetBoolean(current, property) == GetBoolean(model, property);
+			default:
+				return GetString(current, property) == GetString(model, property);
+		}
+	}
+	
+	private static HashSet<string> GetStringSet(DynamicObject model, string property)
+	{
+		return model.TryGetValue(property, out string[]? values, out _) && values != null ? values.ToHashSet() : [];
+	}
+	
+	private static bool? GetBoolean(DynamicObject model, string property)
+	{
+		return model.TryGetValue<bool>(property, out var value, out _) ? value : null;
+	}
+	
+	private static string? GetString(DynamicObject model, string property)
+	{
+		return model.TryGetValue<string>(property, out var value, out _) ? value : null;
+	}
+		
     #endregion
     
     #region Delete Methods

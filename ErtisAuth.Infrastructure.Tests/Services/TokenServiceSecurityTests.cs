@@ -2,6 +2,7 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
+using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.Infrastructure.Tests.Helpers;
@@ -33,6 +34,8 @@ public class TokenServiceSecurityTests
 	
 	private readonly IRevokedTokenService _revokedTokenService = Substitute.For<IRevokedTokenService>();
 	
+	private readonly IRoleService _roleService = Substitute.For<IRoleService>();
+	
 	private readonly JwtService _jwtService = new();
 	
 	#endregion
@@ -45,7 +48,7 @@ public class TokenServiceSecurityTests
 			this._membershipService,
 			this._userService,
 			Substitute.For<IApplicationService>(),
-			Substitute.For<IRoleService>(),
+			this._roleService,
 			this._jwtService,
 			Substitute.For<IEventService>(),
 			this._activeTokenService,
@@ -73,6 +76,17 @@ public class TokenServiceSecurityTests
 		this._userService.GetUserWithPasswordAsync(membership.Id, user.Username, user.Username, Arg.Any<CancellationToken>()).Returns(user);
 		this._userService.VerifyPassword(membership, "P@ssw0rd!", user.PasswordHash).Returns(true);
 		return (membership, user);
+	}
+	
+	private void SetupRole(Membership membership, User user, params string[] permissions)
+	{
+		this._roleService.GetBySlugAsync(user.Role, membership.Id, Arg.Any<CancellationToken>()).Returns(new Role
+		{
+			Id = "role-id",
+			Name = user.Role,
+			MembershipId = membership.Id,
+			Permissions = permissions
+		});
 	}
 	
 	private async Task<BearerToken> GenerateTokenAsync(TokenService tokenService, Membership membership)
@@ -267,6 +281,101 @@ public class TokenServiceSecurityTests
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.VerifyBearerTokenAsync(token.AccessToken, cancellationToken: TestContext.Current.CancellationToken));
 		
 		Assert.Equal("TokenWasRevoked", exception.ErrorCode);
+	}
+	
+	
+	[Fact]
+	public async Task GenerateScopedTokenAsync_WithScopeExplicitlyPermittedByUbac_ReturnsScopedToken()
+	{
+		var (membership, user) = this.Setup();
+		user.Permissions = ["users.read"];
+		this._roleService.GetBySlugAsync(user.Role, membership.Id, Arg.Any<CancellationToken>()).Returns(new Role
+		{
+			Id = "role-id",
+			Name = user.Role,
+			MembershipId = membership.Id,
+			Permissions = ["users.*"]
+		});
+		
+		var tokenService = this.CreateTokenService();
+		var token = await this.GenerateTokenAsync(tokenService, membership);
+		
+		var scopedToken = await tokenService.GenerateTokenAsync(token.AccessToken, ["users.read"], membership.Id, TestContext.Current.CancellationToken);
+		
+		Assert.NotNull(scopedToken.AccessToken);
+	}
+	
+	
+	#endregion
+	
+	#region Scoped Tokens
+	
+	[Fact]
+	public async Task RefreshTokenAsync_WithStoredRefreshTokenOfScopedToken_KeepsTheScopes()
+	{
+		var (membership, user) = this.Setup();
+		this.SetupRole(membership, user, "*");
+		var tokenService = this.CreateTokenService();
+		var token = await this.GenerateTokenAsync(tokenService, membership);
+		
+		// Scoped tokens are returned without their refresh token, but one is still issued and stored with the active token.
+		BearerToken? issuedScopedToken = null;
+		await this._activeTokenService.CreateAsync(Arg.Do<BearerToken>(x => issuedScopedToken = x), Arg.Any<User>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
+		await tokenService.GenerateTokenAsync(token.AccessToken, ["users.read", "roles.read"], membership.Id, TestContext.Current.CancellationToken);
+		Assert.NotNull(issuedScopedToken?.RefreshToken);
+		
+		var refreshed = await tokenService.RefreshTokenAsync(issuedScopedToken.RefreshToken, revokeBefore: false, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		
+		var result = await tokenService.VerifyBearerTokenAsync(refreshed.AccessToken, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		Assert.NotNull(result.Scopes);
+		Assert.Equal(["users.read", "roles.read"], result.Scopes);
+	}
+	
+	[Fact]
+	public async Task RefreshTokenAsync_WithRefreshTokenOfUnscopedToken_ReturnsUnscopedToken()
+	{
+		var (membership, _) = this.Setup();
+		var tokenService = this.CreateTokenService();
+		var token = await this.GenerateTokenAsync(tokenService, membership);
+		
+		var refreshed = await tokenService.RefreshTokenAsync(token.RefreshToken!, revokeBefore: false, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		
+		var result = await tokenService.VerifyBearerTokenAsync(refreshed.AccessToken, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		Assert.Null(result.Scopes);
+	}
+	
+	[Theory]
+	[InlineData("users.*")]
+	[InlineData("roles.read")]
+	[InlineData("*")]
+	public async Task GenerateScopedTokenAsync_WithScopedTokenRequestingBroaderScope_IsRejected(string requestedScope)
+	{
+		var (membership, user) = this.Setup();
+		this.SetupRole(membership, user, "*");
+		var tokenService = this.CreateTokenService();
+		var token = await this.GenerateTokenAsync(tokenService, membership);
+		var scopedToken = await tokenService.GenerateTokenAsync(token.AccessToken, ["users.read"], membership.Id, TestContext.Current.CancellationToken);
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.GenerateTokenAsync(scopedToken.AccessToken, [requestedScope], membership.Id, TestContext.Current.CancellationToken));
+		
+		Assert.Equal("UserHasNoPermissionForThisScope", exception.ErrorCode);
+	}
+	
+	[Theory]
+	[InlineData("users.read")]
+	[InlineData("users.read.some-user-id")]
+	[InlineData("*.users.read.*")]
+	public async Task GenerateScopedTokenAsync_WithScopedTokenRequestingNarrowerOrEqualScope_Succeeds(string requestedScope)
+	{
+		var (membership, user) = this.Setup();
+		this.SetupRole(membership, user, "*");
+		var tokenService = this.CreateTokenService();
+		var token = await this.GenerateTokenAsync(tokenService, membership);
+		var scopedToken = await tokenService.GenerateTokenAsync(token.AccessToken, ["users.read"], membership.Id, TestContext.Current.CancellationToken);
+		
+		var narrowedToken = await tokenService.GenerateTokenAsync(scopedToken.AccessToken, [requestedScope], membership.Id, TestContext.Current.CancellationToken);
+		
+		Assert.NotNull(narrowedToken.AccessToken);
 	}
 	
 	#endregion

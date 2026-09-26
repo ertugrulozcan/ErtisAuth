@@ -153,7 +153,7 @@ public class ErtisAuthAuthenticationHandlerTests
 		var result = await this.AuthenticateAsync($"Bearer {Token}", OtherMembershipId, membershipRoute: true);
 		
 		Assert.False(result.Succeeded);
-		Assert.Equal("The token does not belong to the membership of the requested resource", result.Failure?.Message);
+		Assert.Equal("You do not have access to the resources of this membership", result.Failure?.Message);
 	}
 	
 	[Fact]
@@ -174,7 +174,7 @@ public class ErtisAuthAuthenticationHandlerTests
 		var result = await this.AuthenticateAsync($"Basic {BasicToken}", OtherMembershipId, membershipRoute: true);
 		
 		Assert.False(result.Succeeded);
-		Assert.Equal("The token does not belong to the membership of the requested resource", result.Failure?.Message);
+		Assert.Equal("You do not have access to the resources of this membership", result.Failure?.Message);
 	}
 	
 	[Fact]

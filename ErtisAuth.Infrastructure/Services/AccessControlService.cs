@@ -120,6 +120,20 @@ public class AccessControlService : IAccessControlService
 		return this.CheckPermission(utilizer.Role, utilizer.MembershipId, Rbac.Parse(rbac), owner);
 	}
 	
+	/// <summary>
+	/// Returns whether the given role or the utilizer's own permissions (UBAC) grant the permission specified in the given rbac expression.
+	/// Unlike HasPermission, the own-update exception (a user updating itself) is not taken into account,
+	/// so this is the check for changes that require a real update permission (e.g. role, permissions, forbidden).
+	/// </summary>
+	/// <param name="role"></param>
+	/// <param name="rbac"></param>
+	/// <param name="utilizer"></param>
+	/// <returns></returns>
+	public bool HasGrantedPermission(Role? role, Rbac rbac, Utilizer utilizer)
+	{
+		return Evaluate(role, rbac, utilizer.HasPermission(rbac), () => false, utilizer.Scopes);
+	}
+	
 	private bool CheckPermission(string roleSlug, string membershipId, Rbac rbac, IUtilizer? utilizer = null)
 	{
 		var hasUbacPermission = utilizer?.HasPermission(rbac);
@@ -144,7 +158,7 @@ public class AccessControlService : IAccessControlService
 		var hasUbacPermission = utilizer.HasPermission(rbac);
 		if (hasUbacPermission != null)
 		{
-			return hasUbacPermission.Value;
+			return Evaluate(null, rbac, hasUbacPermission, () => false, utilizer.Scopes);
 		}
 		
 		var role = this._roleService.GetBySlug(roleSlug, membershipId);
@@ -160,53 +174,44 @@ public class AccessControlService : IAccessControlService
 	
 	private static bool CheckPermission(Role role, Rbac rbac, IUtilizer? utilizer = null)
 	{
-		var hasUbacPermission = utilizer?.HasPermission(rbac);
-		if (hasUbacPermission != null)
-		{
-			return hasUbacPermission.Value;
-		}
-		
-		if (role.HasPermission(rbac))
-		{
-			return true;
-		}
-		else if (utilizer != null && role.HasOwnUpdatePermission(rbac, utilizer))
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}	
+		return Evaluate(role, rbac, utilizer?.HasPermission(rbac), () => utilizer != null && role.HasOwnUpdatePermission(rbac, utilizer), null);
 	}
 	
 	private static bool CheckPermission(Role role, Rbac rbac, Utilizer utilizer)
 	{
-		var hasUbacPermission = utilizer.HasPermission(rbac);
-		if (hasUbacPermission != null)
+		return Evaluate(role, rbac, utilizer.HasPermission(rbac), () => role.HasOwnUpdatePermission(rbac, utilizer), utilizer.Scopes);
+	}
+	
+	/// <summary>
+	/// The single authorization decision:
+	/// 1. A matching UBAC entry (user permissions/forbidden) is decisive,
+	/// 2. otherwise the role permissions (role forbidden wins),
+	/// 3. otherwise the own-update exception, unless the role forbids the update,
+	/// and finally the token scopes (if any) must cover the request, whichever rule granted it.
+	/// </summary>
+	private static bool Evaluate(Role? role, Rbac rbac, bool? ubacDecision, Func<bool> isOwnUpdate, IEnumerable<string>? scopes)
+	{
+		bool isPermitted;
+		if (ubacDecision != null)
 		{
-			return hasUbacPermission.Value;
+			isPermitted = ubacDecision.Value;
 		}
-		
-		if (role.HasPermission(rbac))
+		else if (role == null)
 		{
-			if (utilizer.Scopes != null && utilizer.Scopes.Any(x => !string.IsNullOrWhiteSpace(x)))
-			{
-				return utilizer.Scopes.HasPermission(rbac);
-			}
-			else
-			{
-				return true;
-			}
-		}
-		else if (role.HasOwnUpdatePermission(rbac, utilizer))
-		{
-			return true;
+			isPermitted = false;
 		}
 		else
 		{
-			return false;
+			isPermitted = role.HasPermission(rbac) || (!role.IsForbidden(rbac) && isOwnUpdate());
 		}
+		
+		var scopeList = scopes?.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+		if (isPermitted && scopeList is { Length: > 0 })
+		{
+			return scopeList.CoversScope(rbac);
+		}
+		
+		return isPermitted;
 	}
 	
 	#endregion

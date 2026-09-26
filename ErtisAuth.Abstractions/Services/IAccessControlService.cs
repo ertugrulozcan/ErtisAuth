@@ -73,4 +73,14 @@ public interface IAccessControlService
 	/// <param name="owner"></param>
 	/// <returns></returns>
 	bool HasPermission(IUtilizer utilizer, string rbac, Utilizer owner);
+	
+	/// <summary>
+	/// Returns whether the given role or the utilizer's own permissions (UBAC) grant the permission specified in the given rbac expression.
+	/// Unlike HasPermission, the own-update exception (a user updating itself) is not taken into account.
+	/// </summary>
+	/// <param name="role"></param>
+	/// <param name="rbac"></param>
+	/// <param name="utilizer"></param>
+	/// <returns></returns>
+	bool HasGrantedPermission(Role? role, Rbac rbac, Utilizer utilizer);
 }
