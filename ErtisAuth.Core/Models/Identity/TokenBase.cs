@@ -45,7 +45,7 @@ public abstract class TokenBase
 	[JsonIgnore]
 	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public bool IsExpired => DateTime.Now > this.CreatedAt.Add(this.ExpiresIn);
+	public bool IsExpired => DateTime.UtcNow > this.CreatedAt.Add(this.ExpiresIn);
 	
 	#endregion
 	

@@ -46,7 +46,7 @@ public class ScopedBearerToken : TokenBase
 	{
 		this.AccessToken = token;
 		this.ExpiresIn = expiresIn;
-		this.CreatedAt = DateTime.Now;
+		this.CreatedAt = DateTime.UtcNow;
 	}
 	
 	public ScopedBearerToken(BearerToken bearerToken, string[] scopes)
@@ -66,7 +66,7 @@ public class ScopedBearerToken : TokenBase
 		return new ScopedBearerToken
 		{
 			AccessToken = token,
-			CreatedAt = DateTime.Now
+			CreatedAt = DateTime.UtcNow
 		};
 	}
 	

@@ -40,7 +40,7 @@ public class ActivationToken
 	[JsonIgnore]
 	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public bool IsExpired => DateTime.Now > this.CreatedAt.Add(this.ExpiresIn);
+	public bool IsExpired => DateTime.UtcNow > this.CreatedAt.Add(this.ExpiresIn);
 	
 	#endregion
 	
@@ -55,7 +55,7 @@ public class ActivationToken
 	{
 		this.Token = token;
 		this.ExpiresIn = expiresIn;
-		this.CreatedAt = DateTime.Now;
+		this.CreatedAt = DateTime.UtcNow;
 	}
 	
 	#endregion

@@ -98,7 +98,7 @@ public class ActiveTokenService : MembershipBoundedService<ActiveToken>, IActive
 	{
 		try
 		{
-			var expiredActiveTokensResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.Now, sorting: null, cancellationToken: cancellationToken);
+			var expiredActiveTokensResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.UtcNow, sorting: null, cancellationToken: cancellationToken);
 			var expiredActiveTokens = expiredActiveTokensResult.Items.ToArray();
 			if (expiredActiveTokens.Any())
 			{

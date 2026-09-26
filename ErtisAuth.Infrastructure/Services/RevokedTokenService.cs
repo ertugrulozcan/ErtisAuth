@@ -80,7 +80,7 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken>, IRevo
 		var revokedToken = new RevokedToken
 		{
 			Token = activeToken.AccessToken,
-			RevokedAt = DateTime.Now,
+			RevokedAt = DateTime.UtcNow,
 			UserId = user.Id,
 			UserName = user.Username,
 			EmailAddress = user.EmailAddress,
@@ -99,7 +99,7 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken>, IRevo
 	{
 		try
 		{
-			var revokedTokensResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.RevokedAt < DateTime.Now.AddHours(24), sorting: null, cancellationToken: cancellationToken);
+			var revokedTokensResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.RevokedAt < DateTime.UtcNow.AddHours(24), sorting: null, cancellationToken: cancellationToken);
 			var revokedTokens = revokedTokensResult.Items.ToArray();
 			if (revokedTokens.Any())
 			{

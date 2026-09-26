@@ -72,7 +72,7 @@ public class ResetPasswordToken
 	{
 		this.Token = token;
 		this.ExpiresIn = expiresIn;
-		this.CreatedAt = createdAt ?? DateTime.Now;
+		this.CreatedAt = createdAt ?? DateTime.UtcNow;
 	}
 	
 	#endregion

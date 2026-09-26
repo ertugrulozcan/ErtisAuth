@@ -30,7 +30,7 @@ public class BasicToken : TokenBase
 	{
 		this.AccessToken = token;
 		this.ExpiresIn = TimeSpan.MaxValue;
-		this.CreatedAt = DateTime.Now;
+		this.CreatedAt = DateTime.UtcNow;
 	}
 	
 	#endregion

@@ -356,7 +356,7 @@ public class TokenService : ITokenService
 		
 		if (this._jwtService.TryDecodeToken(token, out var securityToken) && securityToken != null)
 		{
-			var expireTime = securityToken.ValidTo.ToLocalTime();
+			var expireTime = securityToken.ValidTo;
 			if (DateTime.UtcNow <= expireTime)
 			{
 				var user = await this.GetTokenOwnerAsync(securityToken, cancellationToken: cancellationToken);
@@ -396,19 +396,19 @@ public class TokenService : ITokenService
 						var scopes = scopeClaim.Split(' ').Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
 						if (scopes.Length > 0)
 						{
-							return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken))
+							return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, this.IsRefreshToken(securityToken))
 							{
 								Scopes = scopes
 							};
 						}
 						else
 						{
-							return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
+							return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, this.IsRefreshToken(securityToken));
 						}
 					}
 					else
 					{
-						return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.Now, this.IsRefreshToken(securityToken));
+						return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, this.IsRefreshToken(securityToken));
 					}
 				}
 				else
@@ -487,8 +487,8 @@ public class TokenService : ITokenService
 		{
 			if (this.IsRefreshToken(securityToken))
 			{
-				var expireTime = securityToken.ValidTo.ToLocalTime();
-				if (DateTime.Now <= expireTime)
+				var expireTime = securityToken.ValidTo;
+				if (DateTime.UtcNow <= expireTime)
 				{
 					if (this.TryExtractClaimValue(securityToken, JwtRegisteredClaimNames.Prn, out var membershipId) && !string.IsNullOrEmpty(membershipId))
 					{

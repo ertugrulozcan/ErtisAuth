@@ -59,7 +59,7 @@ public class BearerToken : TokenBase, IRefreshableToken
 		this.ExpiresIn = expiresIn;
 		this.RefreshToken = refreshToken;
 		this.RefreshExpiresIn = refreshExpiresIn;
-		this.CreatedAt = DateTime.Now;
+		this.CreatedAt = DateTime.UtcNow;
 	}
 	
 	#endregion
@@ -71,7 +71,7 @@ public class BearerToken : TokenBase, IRefreshableToken
 		return new BearerToken
 		{
 			AccessToken = token,
-			CreatedAt = DateTime.Now
+			CreatedAt = DateTime.UtcNow
 		};
 	}
 	

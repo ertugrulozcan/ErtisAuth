@@ -97,7 +97,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 		{
 			Code = code,
 			ExpiresIn = policy.ExpiresIn,
-			CreatedAt = DateTime.Now,
+			CreatedAt = DateTime.UtcNow,
 			MembershipId = membershipId
 		}, cancellationToken: cancellationToken);
 	}
@@ -149,7 +149,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 			throw ErtisAuthException.InvalidTokenCode();
 		}
 		
-		if (tokenCode.ExpireTime < DateTime.Now)
+		if (tokenCode.ExpireTime < DateTime.UtcNow)
 		{
 			throw ErtisAuthException.TokenCodeExpired();
 		}
@@ -195,7 +195,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 	{
 		try
 		{
-			var expiredTokenCodesResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.Now, sorting: null, cancellationToken: cancellationToken);
+			var expiredTokenCodesResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.UtcNow, sorting: null, cancellationToken: cancellationToken);
 			var expiredTokenCodes = expiredTokenCodesResult.Items.ToArray();
 			if (expiredTokenCodes.Length > 0)
 			{

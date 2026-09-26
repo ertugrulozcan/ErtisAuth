@@ -437,7 +437,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
     private void EnsureSys(DynamicObject model, Utilizer utilizer)
     {
-        var now = DateTime.Now.ToLocalTime().Add(TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow));
+        var now = DateTime.UtcNow;
         var utilizerName = utilizer.Username;
         if (utilizer.Type == Utilizer.UtilizerType.System)
         {
@@ -746,8 +746,8 @@ public class UserService : DynamicObjectCrudService, IUserService
 						{
 							if (this._jwtService.TryDecodeToken(resetPasswordToken, out var securityToken) && securityToken != null)
 							{
-								var expireTime = securityToken.ValidTo.ToLocalTime();
-								if (DateTime.Now > expireTime)
+								var expireTime = securityToken.ValidTo;
+								if (DateTime.UtcNow > expireTime)
 								{
 									// Token was expired!
 									throw ErtisAuthException.TokenWasExpired();	
@@ -1146,8 +1146,8 @@ public class UserService : DynamicObjectCrudService, IUserService
 			        {
 				        if (this._jwtService.TryDecodeToken(activationToken, out var securityToken) && securityToken != null)
 				        {
-					        var expireTime = securityToken.ValidTo.ToLocalTime();
-					        if (DateTime.Now > expireTime)
+					        var expireTime = securityToken.ValidTo;
+					        if (DateTime.UtcNow > expireTime)
 					        {
 						        // Token was expired!
 						        throw ErtisAuthException.TokenWasExpired();	
