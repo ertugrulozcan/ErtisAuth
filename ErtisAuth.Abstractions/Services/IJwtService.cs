@@ -1,5 +1,6 @@
 using System.Text;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Memberships;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
@@ -10,6 +11,8 @@ public interface IJwtService
 	string GenerateToken(TokenClaims tokenClaims, DateTime? generationTime = null, TimeSpan? expiresIn = null, Encoding? encoding = null);
 	
 	Task<TokenValidationResult> ValidateTokenAsync(string token, TokenClaims claims, SymmetricSecurityKey secretKey);
+	
+	Task<TokenValidationResult> ValidateTokenAsync(string token, Membership membership);
 	
 	JsonWebToken DecodeToken(string token);
 	

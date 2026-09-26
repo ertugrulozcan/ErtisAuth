@@ -1,6 +1,7 @@
 using System.Text;
 using System.Security.Claims;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Abstractions.Services;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -111,13 +112,24 @@ public class JwtService : IJwtService
     
     public async Task<TokenValidationResult> ValidateTokenAsync(string token, TokenClaims claims, SymmetricSecurityKey secretKey)
     {
+        return await this.ValidateTokenAsync(token, claims.Issuer, claims.Audience, secretKey);
+    }
+	
+	public async Task<TokenValidationResult> ValidateTokenAsync(string token, Membership membership)
+	{
+		var secretKey = new SymmetricSecurityKey(membership.GetEncoding().GetBytes(membership.SecretKey));
+		return await this.ValidateTokenAsync(token, membership.Name, membership.Slug, secretKey);
+	}
+	
+    private async Task<TokenValidationResult> ValidateTokenAsync(string token, string issuer, string audience, SymmetricSecurityKey secretKey)
+    {
         var validationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
             ValidateIssuer = true,
             ValidateAudience = true,
-            ValidIssuer = claims.Issuer,
-            ValidAudience = claims.Audience,
+            ValidIssuer = issuer,
+            ValidAudience = audience,
             IssuerSigningKey = secretKey,
             RequireExpirationTime = true,
             RequireSignedTokens = true,

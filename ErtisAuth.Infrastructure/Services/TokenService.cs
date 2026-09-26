@@ -79,7 +79,12 @@ public class TokenService : ITokenService
 	
 	public async Task<User?> WhoAmIAsync(BearerToken bearerToken, CancellationToken cancellationToken = default)
 	{
-		await this.VerifyBearerTokenAsync(bearerToken.AccessToken, false, cancellationToken: cancellationToken);
+		var verifyResult = await this.VerifyBearerTokenAsync(bearerToken.AccessToken, false, cancellationToken: cancellationToken);
+		if (verifyResult.IsRefreshToken)
+		{
+			throw ErtisAuthException.InvalidToken("Refresh tokens can not be used as access tokens");
+		}
+
 		return await this.GetTokenOwnerUserAsync(bearerToken.AccessToken, cancellationToken: cancellationToken);
 	}
 	
@@ -196,6 +201,11 @@ public class TokenService : ITokenService
 		}
 		
 		var verifyResult = await this.VerifyBearerTokenAsync(token, cancellationToken: cancellationToken);
+		if (verifyResult.IsRefreshToken)
+		{
+			throw ErtisAuthException.InvalidToken("Refresh tokens can not be used as access tokens");
+		}
+		
 		if (verifyResult is { IsValidated: true, User: not null })
 		{
 			if (membershipId != verifyResult.User.MembershipId)
@@ -288,7 +298,7 @@ public class TokenService : ITokenService
 		};
 		
 		var encoding = membership.GetEncoding();
-		var accessToken = this._jwtService.GenerateToken(tokenClaims);
+		var accessToken = this._jwtService.GenerateToken(tokenClaims, encoding: encoding);
 		var refreshExpiresIn = TimeSpan.FromSeconds(membership.RefreshTokenExpiresIn);
 		var refreshToken = this._jwtService.GenerateToken(tokenClaims.AddClaim(REFRESH_TOKEN_CLAIM, true), expiresIn: refreshExpiresIn, encoding: encoding);
 		var bearerToken = new BearerToken(accessToken, tokenClaims.ExpiresIn, refreshToken, refreshExpiresIn);
@@ -353,80 +363,81 @@ public class TokenService : ITokenService
 			throw ErtisAuthException.TokenWasRevoked();
 		}
 		
-		if (this._jwtService.TryDecodeToken(token, out var securityToken) && securityToken != null)
-		{
-			var expireTime = securityToken.ValidTo;
-			if (DateTime.UtcNow <= expireTime)
-			{
-				var user = await this.GetTokenOwnerAsync(securityToken, cancellationToken: cancellationToken);
-				if (user != null)
-				{
-					if (!user.IsActive)
-					{
-						throw ErtisAuthException.UserInactive(user.Id);
-					}
-					
-					var membership = await this._membershipService.GetAsync(user.MembershipId, cancellationToken: cancellationToken);
-					if (membership != null)
-					{
-						var encoding = membership.GetEncoding();
-						var secretSecurityKey = new SymmetricSecurityKey(encoding.GetBytes(membership.SecretKey));
-						var tokenClaims = new TokenClaims(null, user, membership);
-						var validation = await this._jwtService.ValidateTokenAsync(token, tokenClaims, secretSecurityKey);
-						if (!validation.IsValid)
-						{
-							// Token signature not verified!
-							throw ErtisAuthException.InvalidToken("Token signature could not verified!");
-						}
-					}
-					else
-					{
-						// Membership not found!
-						throw ErtisAuthException.MembershipNotFound(user.MembershipId);
-					}
-					
-					if (fireEvent)
-					{
-						await this._eventService.FireEventAsync(ErtisAuthEventType.TokenVerified, user, user.MembershipId, new { token }, cancellationToken: cancellationToken);	
-					}
-					
-					if (this.TryExtractClaimValue(securityToken, "scope", out var scopeClaim) && !string.IsNullOrEmpty(scopeClaim))
-					{
-						var scopes = scopeClaim.Split(' ').Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-						if (scopes.Length > 0)
-						{
-							return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, this.IsRefreshToken(securityToken))
-							{
-								Scopes = scopes
-							};
-						}
-						else
-						{
-							return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, this.IsRefreshToken(securityToken));
-						}
-					}
-					else
-					{
-						return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, this.IsRefreshToken(securityToken));
-					}
-				}
-				else
-				{
-					// User not found!
-					throw ErtisAuthException.UserNotFound(securityToken.Subject, "_id");
-				}
-			}
-			else
-			{
-				// Token was expired!
-				throw ErtisAuthException.TokenWasExpired();
-			}
-		}
-		else
+		if (!this._jwtService.TryDecodeToken(token, out var securityToken) || securityToken == null)
 		{
 			// Token couldn't be decoded!
 			throw ErtisAuthException.InvalidToken();
 		}
+		
+		var expireTime = securityToken.ValidTo;
+		if (DateTime.UtcNow > expireTime)
+		{
+			// Token was expired!
+			throw ErtisAuthException.TokenWasExpired();
+		}
+		
+		// The signature is verified before any user lookup, so that forged tokens reveal nothing about accounts
+		await this.VerifyTokenSignatureAsync(token, securityToken, cancellationToken: cancellationToken);
+		
+		var user = await this.GetTokenOwnerAsync(securityToken, cancellationToken: cancellationToken);
+		if (user == null)
+		{
+			// User not found!
+			throw ErtisAuthException.UserNotFound(securityToken.Subject, "_id");
+		}
+		
+		if (!user.IsActive)
+		{
+			throw ErtisAuthException.UserInactive(user.Id);
+		}
+		
+		if (fireEvent)
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenVerified, user, user.MembershipId, new { token }, cancellationToken: cancellationToken);	
+		}
+		
+		var isRefreshToken = this.IsRefreshToken(securityToken);
+		if (this.TryExtractClaimValue(securityToken, "scope", out var scopeClaim) && !string.IsNullOrEmpty(scopeClaim))
+		{
+			var scopes = scopeClaim.Split(' ').Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+			if (scopes.Length > 0)
+			{
+				return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, isRefreshToken)
+				{
+					Scopes = scopes
+				};
+			}
+		}
+		
+		return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, isRefreshToken);
+	}
+	
+	/// <summary>
+	/// Verifies the token signature with the secret key of the membership in its 'prn' claim.
+	/// Unknown memberships are reported as an invalid token, so that membership ids can not be probed.
+	/// </summary>
+	private async Task<Membership> VerifyTokenSignatureAsync(string token, JsonWebToken securityToken, CancellationToken cancellationToken = default)
+	{
+		if (!this.TryExtractClaimValue(securityToken, JwtRegisteredClaimNames.Prn, out var membershipId) || string.IsNullOrEmpty(membershipId))
+		{
+			// MembershipId could not find in token claims!
+			throw ErtisAuthException.InvalidToken();
+		}
+		
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		if (membership == null)
+		{
+			throw ErtisAuthException.InvalidToken();
+		}
+		
+		var validation = await this._jwtService.ValidateTokenAsync(token, membership);
+		if (!validation.IsValid)
+		{
+			// Token signature not verified!
+			throw ErtisAuthException.InvalidToken("Token signature could not verified!");
+		}
+		
+		return membership;
 	}
 	
 	public async Task<BasicTokenValidationResult> VerifyBasicTokenAsync(string basicToken, bool fireEvent = true, CancellationToken cancellationToken = default)
@@ -482,85 +493,59 @@ public class TokenService : ITokenService
 			throw ErtisAuthException.RefreshTokenWasRevoked();
 		}
 		
-		if (this._jwtService.TryDecodeToken(refreshToken, out var securityToken) && securityToken != null)
-		{
-			if (this.IsRefreshToken(securityToken))
-			{
-				var expireTime = securityToken.ValidTo;
-				if (DateTime.UtcNow <= expireTime)
-				{
-					if (this.TryExtractClaimValue(securityToken, JwtRegisteredClaimNames.Prn, out var membershipId) && !string.IsNullOrEmpty(membershipId))
-					{
-						var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-						if (membership != null)
-						{
-							var userId = securityToken.Subject;
-							if (!string.IsNullOrEmpty(userId))
-							{
-								var user = await this._userService.GetUserAsync(membershipId, userId, cancellationToken: cancellationToken);
-								if (user != null)
-								{
-									if (!user.IsActive)
-									{
-										throw ErtisAuthException.UserInactive(user.Id);
-									}
-									
-									var originalActiveToken = await this._activeTokenService.GetByRefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
-									var token = await this.GenerateBearerTokenAsync(user, membership, null, originalActiveToken?.ClientInfo?.IPAddress, originalActiveToken?.ClientInfo?.UserAgent, cancellationToken: cancellationToken);
-									
-									if (revokeBefore)
-									{
-										await this.RevokeTokenAsync(refreshToken, cancellationToken: cancellationToken);
-									}
-									
-									if (fireEvent)
-									{
-										await this._eventService.FireEventAsync(ErtisAuthEventType.TokenRefreshed, user, membershipId, token, new { refreshToken }, cancellationToken: cancellationToken);	
-									}
-									
-									return token;
-								}
-								else
-								{
-									// User not found!
-									throw ErtisAuthException.UserNotFound(userId, "_id");
-								}
-							}
-							else
-							{
-								// UserId could not find in token claims!
-								throw ErtisAuthException.InvalidToken();
-							}
-						}
-						else
-						{
-							// Membership not found!
-							throw ErtisAuthException.MembershipNotFound(membershipId);
-						}	
-					}
-					else
-					{
-						// MembershipId could not find in token claims!
-						throw ErtisAuthException.InvalidToken();
-					}
-				}
-				else
-				{
-					// Token was expired!
-					throw ErtisAuthException.RefreshTokenWasExpired();
-				}
-			}
-			else
-			{
-				// This is not a refresh token!
-				throw ErtisAuthException.TokenIsNotRefreshable();
-			}
-		}
-		else
+		if (!this._jwtService.TryDecodeToken(refreshToken, out var securityToken) || securityToken == null)
 		{
 			// Token couldn't be decoded!
 			throw ErtisAuthException.InvalidToken();
 		}
+		
+		if (!this.IsRefreshToken(securityToken))
+		{
+			// This is not a refresh token!
+			throw ErtisAuthException.TokenIsNotRefreshable();
+		}
+		
+		if (DateTime.UtcNow > securityToken.ValidTo)
+		{
+			// Token was expired!
+			throw ErtisAuthException.RefreshTokenWasExpired();
+		}
+		
+		var membership = await this.VerifyTokenSignatureAsync(refreshToken, securityToken, cancellationToken: cancellationToken);
+		
+		var userId = securityToken.Subject;
+		if (string.IsNullOrEmpty(userId))
+		{
+			// UserId could not find in token claims!
+			throw ErtisAuthException.InvalidToken();
+		}
+		
+		var user = await this._userService.GetUserAsync(membership.Id, userId, cancellationToken: cancellationToken);
+		if (user == null)
+		{
+			// User not found!
+			throw ErtisAuthException.UserNotFound(userId, "_id");
+		}
+		
+		if (!user.IsActive)
+		{
+			throw ErtisAuthException.UserInactive(user.Id);
+		}
+		
+		var originalActiveToken = await this._activeTokenService.GetByRefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
+		var token = await this.GenerateBearerTokenAsync(user, membership, null, originalActiveToken?.ClientInfo?.IPAddress, originalActiveToken?.ClientInfo?.UserAgent, cancellationToken: cancellationToken);
+		
+		if (revokeBefore)
+		{
+			await this.RevokeTokenAsync(refreshToken, cancellationToken: cancellationToken);
+		}
+		
+		if (fireEvent)
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenRefreshed, user, membership.Id, token, new { refreshToken }, cancellationToken: cancellationToken);	
+		}
+		
+		return token;
 	}
 	
 	#endregion

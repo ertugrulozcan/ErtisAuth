@@ -194,7 +194,12 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				{
 					throw ErtisAuthException.InvalidToken();
 				}
-				
+
+				if (verifyTokenResult.IsRefreshToken)
+				{
+					throw ErtisAuthException.InvalidToken("Refresh tokens can not be used as access tokens");
+				}
+
 				var user = verifyTokenResult.User;
 				if (user == null)
 				{
