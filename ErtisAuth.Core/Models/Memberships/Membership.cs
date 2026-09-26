@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
 using Ertis.Core.Models.Resources;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Cryptography;
 using ErtisAuth.Core.Models.Identity;
@@ -137,17 +138,30 @@ public class Membership : ResourceBase, IHasSysInfo
 	
 	public HashAlgorithms GetHashAlgorithm()
 	{
+		if (!this.TryGetHashAlgorithm(out var algorithm))
+		{
+			throw ErtisAuthException.MembershipHashAlgorithmInvalid(this.Id, this.HashAlgorithm);
+		}
+
+		return algorithm;
+	}
+
+	public bool TryGetHashAlgorithm(out HashAlgorithms algorithm)
+	{
 		if (string.IsNullOrEmpty(this.HashAlgorithm))
 		{
-			return Constants.Defaults.DEFAULT_HASH_ALGORITHM;
+			algorithm = default;
+			return false;
 		}
-		
-		if (!HashParser.TryParseHashAlgorithm(this.HashAlgorithm, out var algorithm, out _, out _))
-		{
-			algorithm = Constants.Defaults.DEFAULT_HASH_ALGORITHM;
-		}
-		
-		return algorithm;
+
+		return HashParser.TryParseHashAlgorithm(this.HashAlgorithm, out algorithm, out _, out _);
+	}
+
+	public bool IsEncodingValid()
+	{
+		return
+			string.IsNullOrEmpty(this.DefaultEncoding) ||
+			Encoding.GetEncodings().Any(x => x.Name.Equals(this.DefaultEncoding, StringComparison.InvariantCultureIgnoreCase));
 	}
 	
 	public Encoding GetEncoding()

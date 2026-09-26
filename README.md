@@ -18,7 +18,7 @@ For developer guide and API documentation, please visit [wiki page](https://gith
 
 ### Standalone Build & Installation on Linux, Windows or Mac OS
 
-* Install the latest .NET 7 SDK
+* Install the latest .NET 10 SDK
 * Install Git
 * Clone this repo
 * Install MongoDB

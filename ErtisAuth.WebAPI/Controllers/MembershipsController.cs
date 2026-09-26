@@ -160,7 +160,7 @@ public class MembershipsController : QueryControllerBase
 			}).ToArray(),
 			defaultEncoding = Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName,
 			hashAlgorithms = Enum.GetNames<HashAlgorithms>().Select(x => x.Replace('_', '-')).ToArray(),
-			defaultHashAlgorithm = Core.Constants.Defaults.DEFAULT_HASH_ALGORITHM.ToString().Replace('_', '-'),
+			defaultHashAlgorithm = Core.Constants.Defaults.RECOMMENDED_HASH_ALGORITHM.ToString().Replace('_', '-'),
 			dbLocales = TextSearchLanguage.All.ToArray(),
 			defaultDbLocale = TextSearchLanguage.None.ISO6391Code
 		});
@@ -197,7 +197,7 @@ public class MembershipsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public IActionResult GetDefaultHashAlgorithm()
 	{
-		return this.Ok(Core.Constants.Defaults.DEFAULT_HASH_ALGORITHM.ToString().Replace('_', '-'));
+		return this.Ok(Core.Constants.Defaults.RECOMMENDED_HASH_ALGORITHM.ToString().Replace('_', '-'));
 	}
 	
 	[HttpGet("settings/db-locales")]

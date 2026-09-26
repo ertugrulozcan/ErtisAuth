@@ -76,7 +76,21 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		{
 			errorList.Add("secret_key is a required field");
 		}
-		
+
+		if (string.IsNullOrEmpty(model.HashAlgorithm))
+		{
+			errorList.Add(ErtisAuthException.HashAlgorithmRequired().Message);
+		}
+		else if (!model.TryGetHashAlgorithm(out _))
+		{
+			errorList.Add(ErtisAuthException.UnsupportedHashAlgorithm(model.HashAlgorithm).Message);
+		}
+
+		if (!model.IsEncodingValid())
+		{
+			errorList.Add(ErtisAuthException.UnsupportedEncoding(model.DefaultEncoding!).Message);
+		}
+
 		var current = this.GetBySlug(model.Slug);
 		if (current != null && current.Id != model.Id)
 		{

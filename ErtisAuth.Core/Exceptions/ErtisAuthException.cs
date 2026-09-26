@@ -194,6 +194,26 @@ public class ErtisAuthException : ErtisException
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"This membership is already using by some membership related resources, it's could not be deleted ({membershipId})", "MembershipCouldNotDeleted");
 	}
+
+	public static ErtisAuthException MembershipHashAlgorithmInvalid(string membershipId, string? hashAlgorithm)
+	{
+		return new ErtisAuthException(HttpStatusCode.InternalServerError, $"The membership has no valid hash algorithm configured ({membershipId}: '{hashAlgorithm}')", "MembershipHashAlgorithmInvalid");
+	}
+
+	public static ErtisAuthException HashAlgorithmRequired()
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, "hash_algorithm is a required field", "HashAlgorithmRequired");
+	}
+
+	public static ErtisAuthException UnsupportedHashAlgorithm(string hashAlgorithm)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, $"Unsupported hash algorithm ({hashAlgorithm})", "UnsupportedHashAlgorithm");
+	}
+
+	public static ErtisAuthException UnsupportedEncoding(string encoding)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, $"Unsupported encoding ({encoding})", "UnsupportedEncoding");
+	}
 	
 	public static ErtisAuthException UserAlreadyActive()
 	{

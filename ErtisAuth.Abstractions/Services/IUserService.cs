@@ -63,7 +63,9 @@ public interface IUserService : IDeletableMembershipBoundedService
     Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string membershipId, string username, string email, CancellationToken cancellationToken = default);
     
     string CalculatePasswordHash(Membership membership, string password);
-    
+
+    bool VerifyPassword(Membership membership, string password, string? passwordHash);
+
     Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default);
     
     Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default);

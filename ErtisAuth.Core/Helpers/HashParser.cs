@@ -165,6 +165,21 @@ public static class HashParser
 				outputBitSize = 0;
 				stateSize = 0;
 				return false;
+			case "ARGON2ID" when segments.Length == 1:
+				algorithm = HashAlgorithms.ARGON2ID;
+				outputBitSize = 256;
+				stateSize = 0;
+				return true;
+			case "PBKDF2" when segments.Length == 2 && segments[1] == "SHA256":
+				algorithm = HashAlgorithms.PBKDF2_SHA256;
+				outputBitSize = 256;
+				stateSize = 0;
+				return true;
+			case "PBKDF2" when segments.Length == 2 && segments[1] == "SHA512":
+				algorithm = HashAlgorithms.PBKDF2_SHA512;
+				outputBitSize = 512;
+				stateSize = 0;
+				return true;
 			default:
 				algorithm = default;
 				outputBitSize = 0;

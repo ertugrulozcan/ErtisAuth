@@ -1,8 +1,5 @@
 using System.Net;
 using System.Text;
-using System.Security.Cryptography;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Digests;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Resources;
 using Ertis.MongoDB.Queries;
@@ -20,7 +17,6 @@ using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models;
-using ErtisAuth.Core.Models.Cryptography;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Mailing;
@@ -522,8 +518,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 			throw ErtisAuthException.UserNotFound(utilizer.Id, "_id");
 		}
 		
-		var passwordHash = this.CalculatePasswordHash(membership, password);
-		return !string.IsNullOrEmpty(passwordHash.Trim()) && !string.IsNullOrEmpty(user.PasswordHash?.Trim()) && user.PasswordHash == passwordHash;
+		return this.VerifyPassword(membership, password, user.PasswordHash);
 	}
 	
 	public string CalculatePasswordHash(Membership membership, string password)
@@ -533,41 +528,17 @@ public class UserService : DynamicObjectCrudService, IUserService
 			return password;
 		}
 		
-		var algorithm = membership.GetHashAlgorithm();
-		var encoding = membership.GetEncoding();
-		var passwordHash = GenerateHash(password, algorithm, encoding);
-		return passwordHash;
+		return PasswordHasher.HashPassword(password, membership.GetHashAlgorithm(), membership.GetEncoding());
 	}
 	
-	private static string GenerateHash(string message, HashAlgorithms algorithm, Encoding encoding)
+	public bool VerifyPassword(Membership membership, string password, string? passwordHash)
 	{
-		var data = encoding.GetBytes(message);
-		var bytes = algorithm switch
+		if (string.IsNullOrEmpty(password) || string.IsNullOrWhiteSpace(passwordHash))
 		{
-			HashAlgorithms.MD5 => MD5.HashData(data),
-			HashAlgorithms.SHA1 => SHA1.HashData(data),
-			HashAlgorithms.SHA2_224 => ComputeDigest(new Sha224Digest(), data),
-			HashAlgorithms.SHA2_256 => SHA256.HashData(data),
-			HashAlgorithms.SHA2_384 => SHA384.HashData(data),
-			HashAlgorithms.SHA2_512 => SHA512.HashData(data),
-			HashAlgorithms.SHA2_512_224 => ComputeDigest(new Sha512tDigest(224), data),
-			HashAlgorithms.SHA2_512_256 => ComputeDigest(new Sha512tDigest(256), data),
-			HashAlgorithms.SHA3_224 => ComputeDigest(new Sha3Digest(224), data),
-			HashAlgorithms.SHA3_256 => SHA3_256.IsSupported ? SHA3_256.HashData(data) : ComputeDigest(new Sha3Digest(256), data),
-			HashAlgorithms.SHA3_384 => SHA3_384.IsSupported ? SHA3_384.HashData(data) : ComputeDigest(new Sha3Digest(384), data),
-			HashAlgorithms.SHA3_512 => SHA3_512.IsSupported ? SHA3_512.HashData(data) : ComputeDigest(new Sha3Digest(512), data),
-			_ => throw new NotSupportedException($"Not supported hash algorithm: {algorithm}")
-		};
+			return false;
+		}
 		
-		return Convert.ToHexStringLower(bytes);
-	}
-	
-	private static byte[] ComputeDigest(IDigest digest, byte[] data)
-	{
-		digest.BlockUpdate(data, 0, data.Length);
-		var output = new byte[digest.GetDigestSize()];
-		digest.DoFinal(output, 0);
-		return output;
+		return PasswordHasher.VerifyPassword(password, passwordHash, membership.GetHashAlgorithm(), membership.GetEncoding());
 	}
 	
     #endregion

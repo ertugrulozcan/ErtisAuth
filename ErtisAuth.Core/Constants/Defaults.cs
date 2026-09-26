@@ -7,7 +7,10 @@ public static class Defaults
 {
 	#region Constants
 	
-	public const HashAlgorithms DEFAULT_HASH_ALGORITHM = HashAlgorithms.SHA2_256;
+	/// <summary>
+	/// Suggested algorithm for new memberships. It is never applied implicitly; memberships must declare their own hash algorithm.
+	/// </summary>
+	public const HashAlgorithms RECOMMENDED_HASH_ALGORITHM = HashAlgorithms.ARGON2ID;
 	
 	public static readonly Encoding DEFAULT_ENCODING = Encoding.UTF8;
 	

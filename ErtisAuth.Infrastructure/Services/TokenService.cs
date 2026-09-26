@@ -165,24 +165,23 @@ public class TokenService : ITokenService
 		var user = await this._userService.GetUserWithPasswordAsync(membership.Id, username, username, cancellationToken: cancellationToken);
 		if (user == null)
 		{
+			// Spend a comparable hashing cost so that response times do not reveal whether the user exists
+			this._userService.CalculatePasswordHash(membership, password);
 			throw ErtisAuthException.InvalidCredentials();
 		}
-		
+
+		// Check password before the account status, so that the status is not revealed to callers without valid credentials
+		if (!this._userService.VerifyPassword(membership, password, user.PasswordHash))
+		{
+			throw ErtisAuthException.InvalidCredentials();
+		}
+
 		if (!user.IsActive)
 		{
 			throw ErtisAuthException.UserInactive(user.Id);
 		}
-		
-		// Check password
-		var passwordHash = this._userService.CalculatePasswordHash(membership, password);
-		if (string.IsNullOrEmpty(passwordHash.Trim()) || string.IsNullOrEmpty(user.PasswordHash?.Trim()) || passwordHash != user.PasswordHash)
-		{
-			throw ErtisAuthException.InvalidCredentials();
-		}
-		else
-		{
-			return await this.GenerateBearerTokenAsync(user, membership, null, ipAddress, userAgent, cancellationToken: cancellationToken);
-		}
+
+		return await this.GenerateBearerTokenAsync(user, membership, null, ipAddress, userAgent, cancellationToken: cancellationToken);
 	}
 	
 	public async Task<ScopedBearerToken> GenerateTokenAsync(
