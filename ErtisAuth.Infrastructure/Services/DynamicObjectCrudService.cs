@@ -90,7 +90,7 @@ public class DynamicObjectCrudService : IDynamicObjectCrudService
     
     #endregion
 	
-	#region Crate Methods
+	#region Create Methods
 	
 	public virtual async Task<DynamicObject> CreateAsync(DynamicObject model, CancellationToken cancellationToken = default)
 	{
