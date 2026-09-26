@@ -54,6 +54,16 @@ public class QueryHelperTests
 	[InlineData("{ \"where\": [] }")]
 	[InlineData("{ \"where\": { \"membership_id\": \"membership-b\" } }")]
 	[InlineData("{ \"$where\": \"true\" }")]
+	// The caller's own membership: redundant but harmless, results are unchanged
+	[InlineData("{ \"membership_id\": \"membership-a\" }")]
+	// membership_id conditions at inner levels or with operators
+	[InlineData("{ \"membership_id\": { \"$in\": [ \"membership-a\", \"membership-b\" ] } }")]
+	[InlineData("{ \"membership_id\": { \"$ne\": \"membership-a\" } }")]
+	[InlineData("{ \"membership_id\": { \"$regex\": \".*\" } }")]
+	[InlineData("{ \"membership_id\": { \"$exists\": false } }")]
+	[InlineData("{ \"$nor\": [ { \"membership_id\": \"membership-a\" } ] }")]
+	[InlineData("{ \"$expr\": { \"$eq\": [ \"$membership_id\", \"membership-b\" ] } }")]
+	[InlineData("{ \"$and\": [ { \"$or\": [ { \"membership_id\": \"membership-b\" }, { \"$and\": [ { \"membership_id\": { \"$exists\": false } } ] } ] } ] }")]
 	public void InjectMembershipIdToQuery_AlwaysAndsTheMembershipConditionWithTheUntouchedCallerFilter(string query)
 	{
 		AssertScopedQuery(ScopeQuery(query), BsonDocument.Parse(query));
@@ -100,6 +110,14 @@ public class QueryHelperTests
 	[InlineData("[ { \"$match\": { \"membership_id\": \"membership-b\" } } ]")]
 	[InlineData("[ { \"$addFields\": { \"membership_id\": \"membership-a\" } }, { \"$match\": { } } ]")]
 	[InlineData("[ { \"$group\": { \"_id\": \"$membership_id\", \"count\": { \"$sum\": 1 } } }, { \"$match\": { } } ]")]
+	// The caller's own membership: redundant but harmless, results are unchanged
+	[InlineData("[ { \"$match\": { \"membership_id\": \"membership-a\" } } ]")]
+	// membership_id conditions at inner levels or with operators
+	[InlineData("[ { \"$match\": { \"$or\": [ { \"membership_id\": \"membership-b\" }, { \"gender\": \"female\" } ] } } ]")]
+	[InlineData("[ { \"$match\": { \"membership_id\": { \"$in\": [ \"membership-a\", \"membership-b\" ] } } } ]")]
+	[InlineData("[ { \"$match\": { \"$expr\": { \"$ne\": [ \"$membership_id\", \"membership-a\" ] } } } ]")]
+	[InlineData("[ { \"$facet\": { \"other\": [ { \"$match\": { \"membership_id\": \"membership-b\" } } ] } } ]")]
+	[InlineData("[ { \"$set\": { \"membership_id\": \"membership-b\" } }, { \"$match\": { \"membership_id\": \"membership-b\" } } ]")]
 	public void InjectMembershipIdToAggregation_AlwaysPrependsTheMembershipMatchAndKeepsCallerStages(string pipeline)
 	{
 		var stages = ScopePipeline(pipeline);
