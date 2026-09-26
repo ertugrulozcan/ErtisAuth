@@ -698,7 +698,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 		var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, resetPasswordTokenTTL);
 		tokenClaims.AddClaim("token_type", "reset_token");
 		
-		var resetToken = this._jwtService.GenerateToken(tokenClaims, Encoding.UTF8);
+		var resetToken = this._jwtService.GenerateToken(tokenClaims);
 		if (asBase64)
 		{
 			resetToken = ConvertToBase64ResetPasswordToken(resetToken, membership.Id);
@@ -1118,7 +1118,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         
         var tokenClaims = new TokenClaims(user.Id, user, membership, TTLs.ACTIVATION_TOKEN_TTL);
         tokenClaims.AddClaim("token_type", "activation_token");
-        var token = this._jwtService.GenerateToken(tokenClaims, Encoding.UTF8);
+        var token = this._jwtService.GenerateToken(tokenClaims);
         var activationToken = new ActivationToken(token, TTLs.ACTIVATION_TOKEN_TTL);
 		
         return activationToken;

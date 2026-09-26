@@ -35,144 +35,72 @@ public class JwtService : IJwtService
     
     #region Methods
     
-    public string GenerateToken(TokenClaims tokenClaims, Encoding encoding, TimeSpan? expiresIn = null)
+    public string GenerateToken(TokenClaims tokenClaims, DateTime? generationTime = null, TimeSpan? expiresIn = null, Encoding? encoding = null)
     {
-        return this.GenerateToken(
-            encoding,
-            DateTime.Now, 
-            tokenClaims.SecretKey,
-            tokenClaims.Issuer,
-            tokenClaims.Audience,
-            expiresIn ?? tokenClaims.ExpiresIn,
-            tokenClaims.Subject,
-            tokenClaims.TokenId,
-            tokenClaims.Principal,
-            tokenClaims.FirstName,
-            tokenClaims.LastName,
-			tokenClaims.Username,
-            tokenClaims.EmailAddress,
-            tokenClaims.Scope,
-            tokenClaims.AdditionalClaims);
-    }
-    
-    public string GenerateToken(TokenClaims tokenClaims, DateTime tokenGenerationTime, Encoding encoding)
-    {
-        return this.GenerateToken(
-            encoding,
-            tokenGenerationTime, 
-            tokenClaims.SecretKey,
-            tokenClaims.Issuer,
-            tokenClaims.Audience,
-            tokenClaims.ExpiresIn,
-            tokenClaims.Subject,
-            tokenClaims.TokenId,
-            tokenClaims.Principal,
-            tokenClaims.FirstName,
-            tokenClaims.LastName,
-            tokenClaims.Username,
-			tokenClaims.EmailAddress,
-            tokenClaims.Scope,
-            tokenClaims.AdditionalClaims);
-    }
-    
-    private string GenerateToken(
-        Encoding encoding,
-        DateTime tokenGenerationTime,
-        string secretKey, 
-        string issuer, 
-        string audience, 
-        TimeSpan expirationTime,
-        string? subject = null,
-        string? tokenId = null,
-        string? principal = null,
-        string? firstName = null,
-        string? lastName = null,
-        string? username = null,
-        string? email = null,
-        string? scope = null,
-        IDictionary<string, object>? additionalClaims = null)
-    {
-        if (string.IsNullOrEmpty(secretKey))
-        {
-            throw new ArgumentException("SecretKey is required field!");
-        }
-        
-        if (string.IsNullOrEmpty(issuer))
-        {
-            throw new ArgumentException("Issuer is required field!");
-        }
-        
-        if (string.IsNullOrEmpty(audience))
-        {
-            throw new ArgumentException("Audience is required field!");
-        }
-        
-        var expireTime = tokenGenerationTime.Add(expirationTime);
-        var timestamp = new DateTimeOffset(tokenGenerationTime).ToUnixTimeSeconds();
-        var securityKey = new SymmetricSecurityKey(encoding.GetBytes(secretKey));
+        var generatedAt = generationTime ?? DateTime.UtcNow;
+        var expireTime = generatedAt.Add(expiresIn ?? tokenClaims.ExpiresIn);
+        var timestamp = new DateTimeOffset(generatedAt).ToUnixTimeSeconds();
+        var securityKey = new SymmetricSecurityKey((encoding ?? Encoding.UTF8).GetBytes(tokenClaims.SecretKey));
         var credentials = new SigningCredentials(securityKey, SigningHashAlgorithm);
         
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Azp, audience),
+            new(JwtRegisteredClaimNames.Azp, tokenClaims.Audience),
             new(JwtRegisteredClaimNames.Iat, timestamp.ToString())
         };
         
-        if (!string.IsNullOrEmpty(subject))
+        if (!string.IsNullOrEmpty(tokenClaims.Subject))
         {
-            claims.Add(new Claim(JwtRegisteredClaimNames.Sub, subject));
+            claims.Add(new Claim(JwtRegisteredClaimNames.Sub, tokenClaims.Subject));
         }
         
-        if (!string.IsNullOrEmpty(tokenId))
+        if (!string.IsNullOrEmpty(tokenClaims.TokenId))
         {
-            claims.Add(new Claim(JwtRegisteredClaimNames.Jti, tokenId));
+            claims.Add(new Claim(JwtRegisteredClaimNames.Jti, tokenClaims.TokenId));
         }
         
-        if (!string.IsNullOrEmpty(principal))
+        if (!string.IsNullOrEmpty(tokenClaims.Principal))
         {
-            claims.Add(new Claim(JwtRegisteredClaimNames.Prn, principal));
+            claims.Add(new Claim(JwtRegisteredClaimNames.Prn, tokenClaims.Principal));
         }
         
-        if (!string.IsNullOrEmpty(firstName))
+        if (!string.IsNullOrEmpty(tokenClaims.FirstName))
         {
-            claims.Add(new Claim(JwtRegisteredClaimNames.GivenName, firstName));
+            claims.Add(new Claim(JwtRegisteredClaimNames.GivenName, tokenClaims.FirstName));
         }
         
-        if (!string.IsNullOrEmpty(lastName))
+        if (!string.IsNullOrEmpty(tokenClaims.LastName))
         {
-            claims.Add(new Claim(JwtRegisteredClaimNames.FamilyName, lastName));
+            claims.Add(new Claim(JwtRegisteredClaimNames.FamilyName, tokenClaims.LastName));
         }
         
-        if (!string.IsNullOrEmpty(username))
+        if (!string.IsNullOrEmpty(tokenClaims.Username))
         {
-            claims.Add(new Claim(JwtRegisteredClaimNames.UniqueName, username));
+            claims.Add(new Claim(JwtRegisteredClaimNames.UniqueName, tokenClaims.Username));
         }
         
-		if (!string.IsNullOrEmpty(email))
+		if (!string.IsNullOrEmpty(tokenClaims.EmailAddress))
 		{
-			claims.Add(new Claim(JwtRegisteredClaimNames.Email, email));
+			claims.Add(new Claim(JwtRegisteredClaimNames.Email, tokenClaims.EmailAddress));
 		}
         
-        if (!string.IsNullOrEmpty(scope))
+        if (!string.IsNullOrEmpty(tokenClaims.Scope))
         {
-            claims.Add(new Claim("scope", scope));
+            claims.Add(new Claim("scope", tokenClaims.Scope));
         }
         
-        if (additionalClaims != null)
+        foreach (var additionalClaim in tokenClaims.AdditionalClaims)
         {
-            foreach (var additionalClaim in additionalClaims)
+            if (!claims.Exists(x => x.Type == additionalClaim.Key) && additionalClaim.Value != null)
             {
-                if (!claims.Exists(x => x.Type == additionalClaim.Key) && additionalClaim.Value != null)
-                {
-                    claims.Add(new Claim(additionalClaim.Key, additionalClaim.Value.ToString() ?? string.Empty));
-                }
+                claims.Add(new Claim(additionalClaim.Key, additionalClaim.Value.ToString() ?? string.Empty));
             }
         }
         
         var descriptor = new SecurityTokenDescriptor
         {
-            Issuer = issuer,
-            Audience = audience,
+            Issuer = tokenClaims.Issuer,
+            Audience = tokenClaims.Audience,
             Subject = new ClaimsIdentity(claims),
             Expires = expireTime,
             SigningCredentials = credentials

@@ -7,9 +7,7 @@ namespace ErtisAuth.Abstractions.Services;
 
 public interface IJwtService
 {
-	string GenerateToken(TokenClaims tokenClaims, Encoding encoding, TimeSpan? expiresIn = null);
-	
-	string GenerateToken(TokenClaims tokenClaims, DateTime tokenGenerationTime, Encoding encoding);
+	string GenerateToken(TokenClaims tokenClaims, DateTime? generationTime = null, TimeSpan? expiresIn = null, Encoding? encoding = null);
 	
 	Task<TokenValidationResult> ValidateTokenAsync(string token, TokenClaims claims, SymmetricSecurityKey secretKey);
 	

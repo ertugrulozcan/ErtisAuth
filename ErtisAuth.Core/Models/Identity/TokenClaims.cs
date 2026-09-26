@@ -52,7 +52,7 @@ public class TokenClaims
 	{
 		this.SecretKey = membership.SecretKey;
 		this.Issuer = membership.Name;
-		this.Audience = user.Id;
+		this.Audience = membership.Slug;
 		this.Subject = user.Id;
 		this.TokenId = tokenId;
 		this.Principal = membership.Id;

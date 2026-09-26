@@ -289,9 +289,9 @@ public class TokenService : ITokenService
 		};
 		
 		var encoding = membership.GetEncoding();
-		var accessToken = this._jwtService.GenerateToken(tokenClaims, encoding);
+		var accessToken = this._jwtService.GenerateToken(tokenClaims);
 		var refreshExpiresIn = TimeSpan.FromSeconds(membership.RefreshTokenExpiresIn);
-		var refreshToken = this._jwtService.GenerateToken(tokenClaims.AddClaim(REFRESH_TOKEN_CLAIM, true), encoding, refreshExpiresIn);
+		var refreshToken = this._jwtService.GenerateToken(tokenClaims.AddClaim(REFRESH_TOKEN_CLAIM, true), expiresIn: refreshExpiresIn, encoding: encoding);
 		var bearerToken = new BearerToken(accessToken, tokenClaims.ExpiresIn, refreshToken, refreshExpiresIn);
 		
 		// Save to active tokens collection
@@ -357,7 +357,7 @@ public class TokenService : ITokenService
 		if (this._jwtService.TryDecodeToken(token, out var securityToken) && securityToken != null)
 		{
 			var expireTime = securityToken.ValidTo.ToLocalTime();
-			if (DateTime.Now <= expireTime)
+			if (DateTime.UtcNow <= expireTime)
 			{
 				var user = await this.GetTokenOwnerAsync(securityToken, cancellationToken: cancellationToken);
 				if (user != null)
@@ -652,7 +652,7 @@ public class TokenService : ITokenService
 			{
 				var tokenClaims = new TokenClaims(tokenId, user, membership);
 				var encoding = membership.GetEncoding();
-				var refreshToken = this._jwtService.GenerateToken(tokenClaims.AddClaim(REFRESH_TOKEN_CLAIM, true), securityToken.IssuedAt, encoding);
+				var refreshToken = this._jwtService.GenerateToken(tokenClaims.AddClaim(REFRESH_TOKEN_CLAIM, true), generationTime: securityToken.IssuedAt, encoding: encoding);
 				if (!string.IsNullOrEmpty(refreshToken))
 				{
 					return refreshToken;
