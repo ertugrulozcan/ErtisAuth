@@ -1,8 +1,11 @@
 using System.Text.Json;
 using Ertis.Core.Collections;
+using Ertis.Schema.Dynamics;
 using Ertis.MongoDB.Queries;
 using Ertis.MongoDB.Serialization;
+using Ertis.Net.Rest;
 using ErtisAuth.Core.Models.Events;
+using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
@@ -30,9 +33,10 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
     #endregion
     
     #region Services
-    
+	
+	private readonly ISystemRestHandler _restHandler;
     private readonly IEventService _eventService;
-    private readonly IMailServiceBackgroundWorker _mailServiceBackgroundWorker;
+	private readonly IUserRepository _userRepository;
 	private readonly ILogger<MailHookService> _logger;
 	
     #endregion
@@ -43,19 +47,22 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	/// Constructor
 	/// </summary>
 	/// <param name="membershipService"></param>
+	/// <param name="restHandler"></param>
 	/// <param name="eventService"></param>
-	/// <param name="mailServiceBackgroundWorker"></param>
 	/// <param name="mailHookRepository"></param>
+	/// <param name="userRepository"></param>
 	/// <param name="logger"></param>
 	public MailHookService(
-		IMembershipService membershipService, 
+		IMembershipService membershipService,
+		ISystemRestHandler restHandler,
 		IEventService eventService,
-		IMailServiceBackgroundWorker mailServiceBackgroundWorker, 
 		IMailHookRepository mailHookRepository,
+		IUserRepository userRepository,
 		ILogger<MailHookService> logger) : base(membershipService, mailHookRepository)
 	{
+		this._restHandler = restHandler;
 		this._eventService = eventService;
-		this._mailServiceBackgroundWorker = mailServiceBackgroundWorker;
+		this._userRepository = userRepository;
 		this._logger = logger;
 		
 		this._eventService.OnEventFired += this.OnEventFired;
@@ -98,7 +105,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 				{
 					if (PredefinedAutonomouslyMailHooks.All(x => x != mailHook.Slug))
 					{
-						this.SendHookMail(mailHook, ertisAuthEvent);	
+						this.SendHookMail(mailHook, ertisAuthEvent);
 					}
 				}	
 			}
@@ -159,33 +166,151 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			cancellationToken: cancellationToken);
 	}
 	
-	public async void SendHookMailAsync(MailHook mailHook, string userId, string membershipId, object payload, CancellationToken cancellationToken = default)
+	public async void SendHookMailAsync(MailHook mailhook, string userId, string membershipId, object? payload, CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			if (mailHook.IsActive)
+			if (mailhook.IsActive)
 			{
-				var membership = await this._membershipService.GetAsync(mailHook.MembershipId, cancellationToken: cancellationToken);
-				var mailProvider = membership?.MailProviders?.FirstOrDefault(x => x.Slug == mailHook.MailProvider);
+				var membership = await this._membershipService.GetAsync(mailhook.MembershipId, cancellationToken: cancellationToken);
+				var mailProvider = membership?.MailProviders?.FirstOrDefault(x => x.Slug == mailhook.MailProvider);
 				if (mailProvider != null)
 				{
-					/*
-					await this._mailServiceBackgroundWorker.StartAsync(new MailServiceBackgroundWorkerArgs
-					{
-						Mailhook = mailHook,
-						MailProvider = mailProvider,
-						UserId = userId,
-						MembershipId = membershipId,
-						Payload = payload,
-						Variables = mailHook.Variables
-					});
-					*/
+					await this.SendMailAsync(mailhook, mailProvider, userId, membershipId, payload, cancellationToken: cancellationToken);
 				}
 			}
 		}
 		catch (Exception ex)
 		{
 			this._logger.LogError(ex, "MailhookService.SendHookMailAsync occured an error");
+		}
+	}
+	
+	private async Task SendMailAsync(MailHook mailhook, IMailProvider mailProvider, string userId, string membershipId, object? payload, CancellationToken cancellationToken = default)
+	{
+		var recipients = new List<Recipient>();
+		if (mailhook.SendToUtilizer)
+		{
+			var model = await this._userRepository.FindOneAsync(userId, cancellationToken: cancellationToken);
+			var dynamicObject = model == null ? null : new DynamicObject(model);
+			var user = dynamicObject?.Deserialize<User>();
+			if (user != null)
+			{
+				if (string.IsNullOrEmpty(user.EmailAddress))
+				{
+					throw ErtisAuthException.InvalidUtilizer("The utilizer does not have an email address");
+				}
+				
+				recipients.Add(new Recipient
+				{
+					DisplayName = $"{user.FirstName} {user.LastName}",
+					EmailAddress = user.EmailAddress
+				});	
+			}
+		}
+		
+		var formatter = new Ertis.TemplateEngine.Formatter();
+		if (mailhook.Recipients != null)
+		{
+			recipients.AddRange(mailhook.Recipients.Select(x => new Recipient
+			{
+				DisplayName = formatter.Format(x.DisplayName, payload),
+				EmailAddress = formatter.Format(x.EmailAddress, payload)
+			}));
+		}
+		
+		recipients = recipients.DistinctBy(x => x.EmailAddress).ToList();
+		if (recipients.Any())
+		{
+			try
+			{
+				IDictionary<string, string> arguments = new Dictionary<string, string>();
+				if (payload != null)
+				{
+					// ReSharper disable once MergeIntoPattern
+					if (mailhook.Variables != null)
+					{
+						foreach (var pair in mailhook.Variables)
+						{
+							if (!string.IsNullOrEmpty(pair.Key))
+							{
+								if (!string.IsNullOrEmpty(pair.Value))
+								{
+									if (!arguments.ContainsKey(pair.Key))
+									{
+										arguments.Add(pair.Key, formatter.Format(pair.Value, payload));
+									}
+								}
+								else
+								{
+									arguments.Add(pair.Key, string.Empty);
+								}
+							}
+						}
+					}
+				}
+				
+				var mailBody = formatter.Format(mailhook.MailTemplate ?? string.Empty, payload);
+				var mailSubject = formatter.Format(mailhook.MailSubject ?? string.Empty, payload);
+				await this.SendMailAsync(
+					mailProvider,
+					mailhook.FromName ?? string.Empty,
+					mailhook.FromAddress ?? string.Empty,
+					recipients,
+					mailSubject,
+					mailBody, 
+					mailhook.MailTemplate ?? string.Empty,
+					arguments,
+					cancellationToken: cancellationToken);
+				
+				await this._eventService.FireEventAsync(ErtisAuthEventType.MailhookMailSent, userId, membershipId, new { recipients }, cancellationToken: cancellationToken);
+				
+				this._logger.LogInformation("The hook mail sent");
+			}
+			catch (Exception ex)
+			{
+				await this._eventService.FireEventAsync(ErtisAuthEventType.MailhookMailFailed, userId, membershipId, new { recipients, error = ex.Message }, cancellationToken: cancellationToken);
+				
+				this._logger.LogError(ex, "The hook mail could not be sent!");
+			}
+		}
+	}
+	
+	private async Task SendMailAsync(
+		IMailProvider mailProvider,
+		string fromName,
+		string fromAddress,
+		IEnumerable<Recipient> recipients,
+		string subject,
+		string htmlBody,
+		string templateId,
+		IDictionary<string, string> arguments,
+		CancellationToken cancellationToken = default)
+	{
+		switch (mailProvider.DeliveryMode)
+		{
+			case DeliveryMode.Default:
+			case DeliveryMode.Raw:
+				await mailProvider.SendMailAsync(
+					this._restHandler, 
+					fromName,
+					fromAddress,
+					recipients,
+					subject,
+					htmlBody,
+					cancellationToken: cancellationToken);
+			break;
+			case DeliveryMode.Template:
+				await mailProvider.SendMailWithTemplateAsync(
+					this._restHandler, 
+					fromName,
+					fromAddress,
+					recipients,
+					subject,
+					templateId,
+					arguments,
+					cancellationToken: cancellationToken);
+			break;
 		}
 	}
 	

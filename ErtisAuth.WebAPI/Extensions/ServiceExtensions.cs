@@ -31,7 +31,6 @@ public static class ServiceExtensions
 		services.AddSingleton<IProviderService, ProviderService>();
 		services.AddSingleton<IWebhookService, WebhookService>();
 		services.AddSingleton<IMailHookService, MailHookService>();
-		services.AddSingleton<IMailServiceBackgroundWorker, MailServiceBackgroundWorker>();
 		services.AddSingleton<IMigrationService, MigrationService>();
 		services.AddSingleton<IUtilizerService, UtilizerService>();
 		services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();

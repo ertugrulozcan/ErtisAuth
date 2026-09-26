@@ -11,5 +11,6 @@
     
     <ItemGroup>
         <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Extensions.Mailing\ErtisAuth.Extensions.Mailing.csproj" />
     </ItemGroup>
 </Project>

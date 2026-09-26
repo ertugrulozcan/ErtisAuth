@@ -1,13 +1,17 @@
 using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
+using Ertis.Net.Rest;
+using ErtisAuth.Core.Models.Mailing;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 using JsonConverter = System.Text.Json.Serialization.JsonConverterAttribute;
 using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
 using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
-namespace ErtisAuth.Core.Models.Mailing;
+namespace ErtisAuth.Extensions.Mailing.SendGrid;
 
 public class SendGridProvider : IMailProvider
 {
@@ -62,31 +66,8 @@ public class SendGridProvider : IMailProvider
 	
 	#region Methods
 	
-	public Task SendMailAsync(
-		string fromName,
-		string fromAddress,
-		IEnumerable<Recipient> recipients,
-		string subject,
-		string htmlBody,
-		CancellationToken cancellationToken = default)
-	{
-		throw new NotImplementedException();
-	}
-	
-	public Task SendMailWithTemplateAsync(
-		string fromName,
-		string fromAddress,
-		IEnumerable<Recipient> recipients,
-		string subject,
-		string templateId,
-		IDictionary<string, string> arguments,
-		CancellationToken cancellationToken = default)
-	{
-		throw new NotImplementedException();
-	}
-	
-	/*
 	public async Task SendMailAsync(
+		ISystemRestHandler restHandler,
 		string fromName,
 		string fromAddress,
 		IEnumerable<Recipient> recipients,
@@ -112,17 +93,17 @@ public class SendGridProvider : IMailProvider
 	}
 	
 	public Task SendMailWithTemplateAsync(
-		string fromName, 
-		string fromAddress, 
-		IEnumerable<Recipient> recipients, 
-		string subject, 
-		string templateId, 
-		IDictionary<string, string> arguments, 
+		ISystemRestHandler restHandler,
+		string fromName,
+		string fromAddress,
+		IEnumerable<Recipient> recipients,
+		string subject,
+		string templateId,
+		IDictionary<string, string> arguments,
 		CancellationToken cancellationToken = default)
 	{
 		throw new NotImplementedException("This provider is not supported with template mailing");
 	}
-	*/
 	
 	#endregion
 }

@@ -1,6 +1,9 @@
-using ErtisAuth.Core.Models.Mailing;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
+using ErtisAuth.Core.Models.Mailing;
+using ErtisAuth.Extensions.Mailing.SmtpServer;
+using ErtisAuth.Extensions.Mailing.SendGrid;
+using ErtisAuth.Extensions.Mailing.MailChimp;
 
 namespace ErtisAuth.Dao.Serialization;
 

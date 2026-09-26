@@ -50,6 +50,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Core", "ErtisAuth
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Authorization", "ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj", "{AD8D0D6E-9FBC-4589-A951-0E3C33A4B5C1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Mailing", "ErtisAuth.Extensions.Mailing\ErtisAuth.Extensions.Mailing.csproj", "{38128EDF-7BBD-4803-832A-6E556CF3FA6D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -128,6 +130,10 @@ Global
 		{AD8D0D6E-9FBC-4589-A951-0E3C33A4B5C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD8D0D6E-9FBC-4589-A951-0E3C33A4B5C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD8D0D6E-9FBC-4589-A951-0E3C33A4B5C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38128EDF-7BBD-4803-832A-6E556CF3FA6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38128EDF-7BBD-4803-832A-6E556CF3FA6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38128EDF-7BBD-4803-832A-6E556CF3FA6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38128EDF-7BBD-4803-832A-6E556CF3FA6D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{47AE4554-C608-40D3-B9F9-86617B6EE760} = {9F94F615-8602-4C69-BC7E-A8A8B3746357}
@@ -148,5 +154,6 @@ Global
 		{F6303E4F-C478-440C-AE18-A32A8F7C70D4} = {3A129582-7BF4-4B18-8618-AEAFF1AACC5F}
 		{1E475A59-C5A4-4DB2-91CA-E660F59BCCF4} = {3A129582-7BF4-4B18-8618-AEAFF1AACC5F}
 		{AD8D0D6E-9FBC-4589-A951-0E3C33A4B5C1} = {3B34CC76-82E6-44B9-9389-84CAEA06897E}
+		{38128EDF-7BBD-4803-832A-6E556CF3FA6D} = {3B34CC76-82E6-44B9-9389-84CAEA06897E}
 	EndGlobalSection
 EndGlobal

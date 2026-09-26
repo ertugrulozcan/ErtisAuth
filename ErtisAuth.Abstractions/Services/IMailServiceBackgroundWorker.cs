@@ -1,3 +1,0 @@
-namespace ErtisAuth.Abstractions.Services;
-
-public interface IMailServiceBackgroundWorker;

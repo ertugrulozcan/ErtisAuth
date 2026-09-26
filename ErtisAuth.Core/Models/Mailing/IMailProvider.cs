@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Ertis.Net.Rest;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
@@ -47,6 +48,7 @@ public interface IMailProvider
 	#region Methods
 	
 	Task SendMailAsync(
+		ISystemRestHandler restHandler, 
 		string fromName,
 		string fromAddress,
 		IEnumerable<Recipient> recipients,
@@ -55,6 +57,7 @@ public interface IMailProvider
 		CancellationToken cancellationToken = default);
 	
 	Task SendMailWithTemplateAsync(
+		ISystemRestHandler restHandler,
 		string fromName,
 		string fromAddress,
 		IEnumerable<Recipient> recipients,
