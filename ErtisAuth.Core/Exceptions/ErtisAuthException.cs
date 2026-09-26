@@ -195,6 +195,16 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"This membership is already using by some membership related resources, it's could not be deleted ({membershipId})", "MembershipCouldNotDeleted");
 	}
 
+	public static ErtisAuthException InvalidQuery(string message)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, message, "InvalidQuery");
+	}
+
+	public static ErtisAuthException UnsupportedAggregationStage(string stage)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, $"The aggregation stage is not supported ({stage})", "UnsupportedAggregationStage");
+	}
+
 	public static ErtisAuthException MembershipHashAlgorithmInvalid(string membershipId, string? hashAlgorithm)
 	{
 		return new ErtisAuthException(HttpStatusCode.InternalServerError, $"The membership has no valid hash algorithm configured ({membershipId}: '{hashAlgorithm}')", "MembershipHashAlgorithmInvalid");

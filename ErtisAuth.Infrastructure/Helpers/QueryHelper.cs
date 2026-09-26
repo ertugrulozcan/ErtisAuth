@@ -1,121 +1,155 @@
-using MongoDB.Driver;
-using Newtonsoft.Json.Linq;
+using ErtisAuth.Core.Exceptions;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 
 namespace ErtisAuth.Infrastructure.Helpers;
 
+/// <summary>
+/// Scopes caller supplied queries and aggregation pipelines to a membership before they reach the database.
+/// Inputs are parsed with MongoDB.Bson, the same parser the driver uses for JsonFilterDefinition,
+/// so that what is checked here is exactly what MongoDB executes. Anything that can not be scoped is rejected (fail closed).
+/// </summary>
 public static class QueryHelper
 {
-    #region Methods
+	#region Constants
 	
-    private static string InjectValueToQuery<TDto>(string query, string key, string value)
-    {
-        var filterDefinition = new JsonFilterDefinition<TDto>(query);
-        var queryJObject = JObject.Parse(filterDefinition.Json);
-        if (queryJObject.TryGetValue("where", out var whereClause))
-        {
-            if (whereClause is JObject whereClauseNode)
-            {
-                if (whereClauseNode.ContainsKey(key))
-                {
-                    whereClauseNode[key] = value;
-                }
-                else
-                {
-                    whereClauseNode.Add(key, value);
-                }
-				
-                return queryJObject.ToString();
-            }
-        }
-        else
-        {
-            if (queryJObject.ContainsKey(key))
-            {
-                queryJObject[key] = value;
-            }
-            else
-            {
-                queryJObject.Add(key, value);
-            }
-			
-            return queryJObject.ToString();
-        }
-		
-        return query;
-    }
-    
-    public static string InjectMembershipIdToQuery<TDto>(string query, string membershipId)
-    {
-        return InjectValueToQuery<TDto>(query, "membership_id", membershipId);
-    }
+	private const string MembershipIdField = "membership_id";
 	
-    public static string InjectMembershipIdToAggregation(string query, string membershipId)
-    {
-        try
-        {
-        	var jArray = JArray.Parse(query);
-			
-        	var hasMatchToken = false;
-        	foreach (var jToken in jArray)
-        	{
-        		if (jToken is JObject jObject)
-        		{
-        			if (jObject.ContainsKey("$match") && jObject["$match"] is JObject)
-        			{
-        				hasMatchToken = true;
-        			}
-        		}
-        	}
-			
-        	if (hasMatchToken)
-        	{
-        		foreach (var jToken in jArray)
-        		{
-        			if (jToken is JObject jObject)
-        			{
-        				if (jObject.ContainsKey("$match") && jObject["$match"] is JObject matchTokenObject)
-        				{
-        					if (matchTokenObject.ContainsKey("membership_id") && matchTokenObject["membership_id"] != null)
-        					{
-        						if (matchTokenObject["membership_id"]?.Value<string>() == membershipId)
-        						{
-        							return query;
-        						}
-        						else
-        						{
-        							matchTokenObject["membership_id"] = new JValue(membershipId);
-        							break;
-        						}
-        					}
-        					else
-        					{
-        						matchTokenObject.AddFirst(new JProperty("membership_id", new JValue(membershipId)));
-        						break;
-        					}
-        				}
-        			}
-        		}
-        	}
-        	else
-        	{
-        		var membershipIdToken = new JProperty("membership_id", new JValue(membershipId));
-        		var matchToken = new JObject
-        		{
-        			["$match"] = new JObject(membershipIdToken)
-        		};
-				
-        		jArray.AddFirst(matchToken);	
-        	}
-			
-        	return jArray.ToString();
-        }
-		catch
+	/// <summary>
+	/// Pipeline stages that only transform the documents flowing through the pipeline.
+	/// Stages reading from or writing to other collections ($lookup, $graphLookup, $unionWith, $out, $merge, ...)
+	/// or reading server state would escape the membership filter, so everything else is rejected.
+	/// </summary>
+	private static readonly HashSet<string> AllowedAggregationStages =
+	[
+		"$match",
+		"$project",
+		"$addFields",
+		"$set",
+		"$unset",
+		"$group",
+		"$sort",
+		"$limit",
+		"$skip",
+		"$count",
+		"$unwind",
+		"$bucket",
+		"$bucketAuto",
+		"$sortByCount",
+		"$replaceRoot",
+		"$replaceWith",
+		"$sample",
+		"$setWindowFields",
+		"$facet"
+	];
+	
+	#endregion
+	
+	#region Methods
+	
+	/// <summary>
+	/// Returns the query as <c>{ "$and": [ { "membership_id": membershipId }, query ] }</c>.
+	/// The caller's filter is kept as is; whatever it contains, only documents of the membership can match.
+	/// </summary>
+	// ReSharper disable once UnusedTypeParameter
+	public static string InjectMembershipIdToQuery<TDto>(string query, string membershipId)
+	{
+		var filter = ParseQuery(query);
+		var scopedFilter = new BsonDocument("$and", new BsonArray
 		{
-			// NOP
+			new BsonDocument(MembershipIdField, membershipId),
+			filter
+		});
+		
+		return scopedFilter.ToJson();
+	}
+	
+	/// <summary>
+	/// Validates the pipeline stages against the allowlist and prepends <c>{ "$match": { "membership_id": membershipId } }</c>
+	/// as the first stage, so that every following stage only sees documents of the membership.
+	/// </summary>
+	public static string InjectMembershipIdToAggregation(string pipeline, string membershipId)
+	{
+		var stages = ParsePipeline(pipeline);
+		ValidateStages(stages);
+		
+		stages.Insert(0, new BsonDocument("$match", new BsonDocument(MembershipIdField, membershipId)));
+		return stages.ToJson();
+	}
+	
+	private static BsonDocument ParseQuery(string query)
+	{
+		if (string.IsNullOrWhiteSpace(query))
+		{
+			return new BsonDocument();
 		}
 		
-		return query;
-    }
+		try
+		{
+			return BsonDocument.Parse(query);
+		}
+		catch (Exception ex)
+		{
+			throw ErtisAuthException.InvalidQuery($"The query could not be parsed ({ex.Message})");
+		}
+	}
 	
-    #endregion
+	private static BsonArray ParsePipeline(string pipeline)
+	{
+		if (string.IsNullOrWhiteSpace(pipeline))
+		{
+			throw ErtisAuthException.InvalidQuery("The aggregation pipeline is empty");
+		}
+		
+		try
+		{
+			return BsonSerializer.Deserialize<BsonArray>(pipeline);
+		}
+		catch (Exception ex)
+		{
+			throw ErtisAuthException.InvalidQuery($"The aggregation pipeline could not be parsed ({ex.Message})");
+		}
+	}
+	
+	private static void ValidateStages(BsonArray stages)
+	{
+		foreach (var stage in stages)
+		{
+			if (stage is not BsonDocument { ElementCount: 1 } stageDocument)
+			{
+				throw ErtisAuthException.InvalidQuery("Each aggregation stage must be an object with a single stage operator");
+			}
+			
+			var stageElement = stageDocument.GetElement(0);
+			if (!AllowedAggregationStages.Contains(stageElement.Name))
+			{
+				throw ErtisAuthException.UnsupportedAggregationStage(stageElement.Name);
+			}
+			
+			if (stageElement.Name == "$facet")
+			{
+				ValidateFacet(stageElement.Value);
+			}
+		}
+	}
+	
+	private static void ValidateFacet(BsonValue facet)
+	{
+		if (facet is not BsonDocument facetDocument)
+		{
+			throw ErtisAuthException.InvalidQuery("The $facet stage must be an object of sub-pipelines");
+		}
+		
+		foreach (var subPipeline in facetDocument)
+		{
+			if (subPipeline.Value is not BsonArray subStages)
+			{
+				throw ErtisAuthException.InvalidQuery("The $facet stage must be an object of sub-pipelines");
+			}
+			
+			ValidateStages(subStages);
+		}
+	}
+	
+	#endregion
 }
