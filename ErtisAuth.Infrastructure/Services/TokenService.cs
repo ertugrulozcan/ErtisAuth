@@ -77,7 +77,7 @@ public class TokenService : ITokenService
 	
 	#region WhoAmI
 	
-	public async ValueTask<User?> WhoAmIAsync(BearerToken bearerToken, CancellationToken cancellationToken = default)
+	public async Task<User?> WhoAmIAsync(BearerToken bearerToken, CancellationToken cancellationToken = default)
 	{
 		await this.VerifyBearerTokenAsync(bearerToken.AccessToken, false, cancellationToken: cancellationToken);
 		return await this.GetTokenOwnerUserAsync(bearerToken.AccessToken, cancellationToken: cancellationToken);
@@ -95,7 +95,7 @@ public class TokenService : ITokenService
 		}
 	}
 	
-	public async ValueTask<Application?> WhoAmIAsync(BasicToken basicToken, CancellationToken cancellationToken = default)
+	public async Task<Application?> WhoAmIAsync(BasicToken basicToken, CancellationToken cancellationToken = default)
 	{
 		await this.VerifyBasicTokenAsync(basicToken.AccessToken, false, cancellationToken: cancellationToken);
 		return await this.GetTokenOwnerApplicationAsync(basicToken.AccessToken, cancellationToken: cancellationToken);
@@ -145,7 +145,7 @@ public class TokenService : ITokenService
 	
 	#region Generate Token
 	
-	public async ValueTask<BearerToken> GenerateTokenAsync(
+	public async Task<BearerToken> GenerateTokenAsync(
 		string username, 
 		string password, 
 		string membershipId, 
@@ -185,7 +185,7 @@ public class TokenService : ITokenService
 		}
 	}
 	
-	public async ValueTask<ScopedBearerToken> GenerateTokenAsync(
+	public async Task<ScopedBearerToken> GenerateTokenAsync(
 		string token, 
 		string[]? scopes, 
 		string membershipId,
@@ -248,7 +248,7 @@ public class TokenService : ITokenService
 		}
 	}
 	
-	public async ValueTask<BearerToken> GenerateTokenAsync(User user, string membershipId, string? ipAddress = null, string? userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default)
+	public async Task<BearerToken> GenerateTokenAsync(User user, string membershipId, string? ipAddress = null, string? userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default)
 	{
 		// Check membership
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
@@ -333,7 +333,7 @@ public class TokenService : ITokenService
 	
 	#region Verify Token
 	
-	public async ValueTask<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true, CancellationToken cancellationToken = default)
+	public async Task<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true, CancellationToken cancellationToken = default)
 	{
 		switch (tokenType)
 		{
@@ -346,7 +346,7 @@ public class TokenService : ITokenService
 		}
 	}
 	
-	public async ValueTask<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true, CancellationToken cancellationToken = default)
+	public async Task<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true, CancellationToken cancellationToken = default)
 	{
 		var revokedToken = await this._revokedTokenService.GetByAccessTokenAsync(token, cancellationToken: cancellationToken);
 		if (revokedToken != null)
@@ -430,7 +430,7 @@ public class TokenService : ITokenService
 		}
 	}
 	
-	public async ValueTask<BasicTokenValidationResult> VerifyBasicTokenAsync(string basicToken, bool fireEvent = true, CancellationToken cancellationToken = default)
+	public async Task<BasicTokenValidationResult> VerifyBasicTokenAsync(string basicToken, bool fireEvent = true, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(basicToken))
 		{
@@ -475,7 +475,7 @@ public class TokenService : ITokenService
 	
 	#region Refresh Token
 	
-	public async ValueTask<BearerToken> RefreshTokenAsync(string refreshToken, bool revokeBefore = true, bool fireEvent = true, CancellationToken cancellationToken = default)
+	public async Task<BearerToken> RefreshTokenAsync(string refreshToken, bool revokeBefore = true, bool fireEvent = true, CancellationToken cancellationToken = default)
 	{
 		var revokedToken = await this._revokedTokenService.GetByAccessTokenAsync(refreshToken, cancellationToken: cancellationToken);
 		if (revokedToken != null)
@@ -568,7 +568,7 @@ public class TokenService : ITokenService
 	
 	#region Revoke Token
 	
-	public async ValueTask<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true, CancellationToken cancellationToken = default)
+	public async Task<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true, CancellationToken cancellationToken = default)
 	{
 		User? user;
 		
@@ -663,7 +663,7 @@ public class TokenService : ITokenService
 		return null;
 	}
 	
-	public async ValueTask RevokeAllAsync(string membershipId, string userId, bool fireEvent = true, CancellationToken cancellationToken = default)
+	public async Task RevokeAllAsync(string membershipId, string userId, bool fireEvent = true, CancellationToken cancellationToken = default)
 	{
 		var activeTokens = (await this._activeTokenService.GetActiveTokensByUser(userId, membershipId, cancellationToken: cancellationToken)).ToArray();
 		if (activeTokens.Any())
@@ -710,12 +710,12 @@ public class TokenService : ITokenService
 	
 	#region Cleaning
 	
-	public async ValueTask ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default)
+	public async Task ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default)
 	{
 		await this._activeTokenService.ClearExpiredActiveTokens(membershipId, cancellationToken: cancellationToken);
 	}
 	
-	public async ValueTask ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default)
+	public async Task ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default)
 	{
 		await this._revokedTokenService.ClearRevokedTokens(membershipId, cancellationToken: cancellationToken);
 	}

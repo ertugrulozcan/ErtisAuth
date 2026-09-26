@@ -191,7 +191,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 		return tokenCode.Token;
 	}
 	
-	public async ValueTask ClearExpiredTokenCodes(string membershipId, CancellationToken cancellationToken = default)
+	public async Task ClearExpiredTokenCodes(string membershipId, CancellationToken cancellationToken = default)
 	{
 		try
 		{

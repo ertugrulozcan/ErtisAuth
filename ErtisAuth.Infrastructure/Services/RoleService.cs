@@ -58,10 +58,10 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	private void Initialize()
 	{
-		this.InitializeAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+		this.InitializeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 	}
 	
-	private async ValueTask InitializeAsync()
+	private async Task InitializeAsync()
 	{
 		var memberships = await this._membershipService.GetAsync();
 		foreach (var membership in memberships.Items)
@@ -315,7 +315,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		return role ?? base.Get(membershipId, id);
 	}
 	
-	public override async ValueTask<Role?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<Role?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var role = this.GetFromCacheById(membershipId, id);
 		return role ?? await base.GetAsync(membershipId, id, cancellationToken: cancellationToken);
@@ -359,7 +359,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		return created;
 	}
 	
-	public override async ValueTask<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
+	public override async Task<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
 	{
 		if (model.Slug is ReservedRoles.Administrator && utilizer.Type != Utilizer.UtilizerType.System)
 		{
@@ -382,7 +382,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		return updated;
 	}
 	
-	public override async ValueTask<Role> UpdateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
+	public override async Task<Role> UpdateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
 	{
 		var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
 		await this.RefreshCacheAsync(membershipId);
@@ -404,7 +404,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		return isDeleted;
 	}
 	
-	public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
 		if (isDeleted)

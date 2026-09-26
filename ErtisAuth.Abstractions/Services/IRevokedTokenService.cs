@@ -9,5 +9,5 @@ public interface IRevokedTokenService : IMembershipBoundedService<RevokedToken>
 	
 	Task<RevokedToken?> GetByAccessTokenAsync(string accessToken, CancellationToken cancellationToken = default);
 	
-	ValueTask ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default);
+	Task ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default);
 }

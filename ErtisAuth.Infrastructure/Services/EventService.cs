@@ -92,7 +92,7 @@ public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventServ
 		return this._repository.FindOne(x => x.Id == id && x.MembershipId == membershipId);
 	}
 	
-	public override async ValueTask<ErtisAuthEvent?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<ErtisAuthEvent?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
@@ -120,7 +120,7 @@ public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventServ
 		return this._repository.Find(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
 	}
 	
-	public override async ValueTask<IPaginationCollection<ErtisAuthEvent>> GetAsync(
+	public override async Task<IPaginationCollection<ErtisAuthEvent>> GetAsync(
 		string membershipId, 
 		int? skip = null, 
 		int? limit = null, 

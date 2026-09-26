@@ -94,7 +94,7 @@ public class ActiveTokenService : MembershipBoundedService<ActiveToken>, IActive
 		await this._repository.BulkDeleteAsync(activeTokens, cancellationToken: cancellationToken);
 	}
 	
-	public async ValueTask ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default)
+	public async Task ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default)
 	{
 		try
 		{

@@ -10,7 +10,7 @@ public interface IMembershipBoundedService
 {
 	TModel? Get<TModel>(string membershipId, string id) where TModel : class, IHasMembership;
 	
-	ValueTask<TModel?> GetAsync<TModel>(string membershipId, string id, CancellationToken cancellationToken = default) where TModel : class, IHasMembership;
+	Task<TModel?> GetAsync<TModel>(string membershipId, string id, CancellationToken cancellationToken = default) where TModel : class, IHasMembership;
 	
 	IPaginationCollection<TModel> Get<TModel>(
 		string membershipId, 
@@ -21,7 +21,7 @@ public interface IMembershipBoundedService
 		SortDirection? sortDirection) 
 		where TModel : class, IHasMembership;
 	
-	ValueTask<IPaginationCollection<TModel>> GetAsync<TModel>(
+	Task<IPaginationCollection<TModel>> GetAsync<TModel>(
 		string membershipId, 
 		int? skip, 
 		int? limit, 
@@ -44,7 +44,7 @@ public interface IMembershipBoundedService<TModel> : IMembershipBoundedService w
 		SortDirection? sortDirection = null,
 		IDictionary<string, bool>? selectFields = null);
 	
-	ValueTask<IPaginationCollection<dynamic>> QueryAsync(
+	Task<IPaginationCollection<dynamic>> QueryAsync(
 		string membershipId, 
 		string query, 
 		int? skip = null, 
@@ -57,11 +57,11 @@ public interface IMembershipBoundedService<TModel> : IMembershipBoundedService w
 	
 	TModel? Get(string membershipId, string id);
 	
-	ValueTask<TModel?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default);
+	Task<TModel?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default);
 	
 	IPaginationCollection<TModel> Get(string membershipId, int? skip, int? limit, bool withCount, string orderBy, SortDirection? sortDirection);
 	
-	ValueTask<IPaginationCollection<TModel>> GetAsync(
+	Task<IPaginationCollection<TModel>> GetAsync(
 		string membershipId, 
 		int? skip, 
 		int? limit, 
@@ -79,7 +79,7 @@ public interface IMembershipBoundedService<TModel> : IMembershipBoundedService w
 		string? sortField = null, 
 		SortDirection? sortDirection = null);
 	
-	ValueTask<IPaginationCollection<TModel>> SearchAsync(
+	Task<IPaginationCollection<TModel>> SearchAsync(
 		string membershipId, 
 		string keyword, 
 		int? skip = null, 

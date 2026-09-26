@@ -22,7 +22,7 @@ public interface IGenericCrudService<T>
 	
 	T? Get(string id);
 	
-	ValueTask<T?> GetAsync(string id, CancellationToken cancellationToken = default);
+	Task<T?> GetAsync(string id, CancellationToken cancellationToken = default);
 	
 	IPaginationCollection<T> Get(
 		int? skip = null, 
@@ -31,7 +31,7 @@ public interface IGenericCrudService<T>
 		string? orderBy = null, 
 		SortDirection? sortDirection = null);
 	
-	ValueTask<IPaginationCollection<T>> GetAsync(
+	Task<IPaginationCollection<T>> GetAsync(
 		int? skip = null, 
 		int? limit = null, 
 		bool withCount = false, 
@@ -48,7 +48,7 @@ public interface IGenericCrudService<T>
 		string? sortField = null, 
 		SortDirection? sortDirection = null);
 	
-	ValueTask<IPaginationCollection<T>> SearchAsync(
+	Task<IPaginationCollection<T>> SearchAsync(
 		string keyword, 
 		TextSearchOptions? options = null,
 		int? skip = null, 
@@ -60,15 +60,15 @@ public interface IGenericCrudService<T>
 	
 	T Create(T model);
 	
-	ValueTask<T> CreateAsync(T model, CancellationToken cancellationToken = default);
+	Task<T> CreateAsync(T model, CancellationToken cancellationToken = default);
 	
 	T Update(T model);
 	
-	ValueTask<T> UpdateAsync(T model, CancellationToken cancellationToken = default);
+	Task<T> UpdateAsync(T model, CancellationToken cancellationToken = default);
 	
 	bool Delete(string id);
 	
-	ValueTask<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
+	Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
 	
 	#endregion
 }

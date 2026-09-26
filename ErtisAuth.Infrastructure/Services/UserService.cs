@@ -1287,7 +1287,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     public bool Delete(Utilizer utilizer, string membershipId, string id) =>
         this.DeleteAsync(utilizer, membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
     
-    public async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
     {
         var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
         if (current == null)
@@ -1309,7 +1309,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     public bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids) =>
 		this.BulkDeleteAsync(utilizer, membershipId, ids).ConfigureAwait(false).GetAwaiter().GetResult();
     
-    public async ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
+    public async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
     {
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
 		

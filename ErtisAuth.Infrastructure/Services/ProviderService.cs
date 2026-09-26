@@ -327,7 +327,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		return created;
 	}
 	
-	public override async ValueTask<Provider> CreateAsync(Utilizer utilizer, string membershipId, Provider model, CancellationToken cancellationToken = default)
+	public override async Task<Provider> CreateAsync(Utilizer utilizer, string membershipId, Provider model, CancellationToken cancellationToken = default)
 	{
 		var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
 		this.PurgeAllCache(membershipId);
@@ -345,7 +345,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		return updated;
 	}
 	
-	public override async ValueTask<Provider> UpdateAsync(Utilizer utilizer, string membershipId, Provider model, CancellationToken cancellationToken = default)
+	public override async Task<Provider> UpdateAsync(Utilizer utilizer, string membershipId, Provider model, CancellationToken cancellationToken = default)
 	{
 		var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
 		this.PurgeAllCache(membershipId);
@@ -367,7 +367,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		return isDeleted;
 	}
 	
-	public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
 		if (isDeleted)
@@ -382,7 +382,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Authentication Methods
 	
-	public async ValueTask<BearerToken> LoginAsync(IProviderLoginRequest request, string membershipId, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default)
+	public async Task<BearerToken> LoginAsync(IProviderLoginRequest request, string membershipId, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default)
 	{
 		var provider = await this.GetAsync(membershipId, x => x.MembershipId == membershipId && x.Name == request.Provider.ToString(), cancellationToken: cancellationToken);
 		if (provider != null)

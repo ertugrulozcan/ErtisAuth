@@ -7,5 +7,5 @@ public interface ITokenCodePolicyService : IMembershipBoundedCrudService<TokenCo
 {
     TokenCodePolicy? GetBySlug(string slug, string membershipId);
     
-    ValueTask<TokenCodePolicy?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default);
+    Task<TokenCodePolicy?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default);
 }

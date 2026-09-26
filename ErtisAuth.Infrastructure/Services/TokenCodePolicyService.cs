@@ -44,7 +44,7 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 	    return this._repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
     }
 	
-    public async ValueTask<TokenCodePolicy?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
+    public async Task<TokenCodePolicy?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
     {
 	    return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
     }

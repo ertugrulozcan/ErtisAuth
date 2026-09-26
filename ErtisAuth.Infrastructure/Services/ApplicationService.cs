@@ -236,7 +236,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	private void PurgeAllCache(string membershipId) => this.PurgeAllCacheAsync(membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
 	
-	private async ValueTask PurgeAllCacheAsync(string membershipId, CancellationToken cancellationToken = default)
+	private async Task PurgeAllCacheAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
 		var applications = await this.GetAsync(
 			membershipId, 
@@ -274,7 +274,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		return application;
 	}
 	
-	public override async ValueTask<Application?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<Application?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var cacheKey = GetCacheKey(membershipId, id);
 		if (!this._memoryCache.TryGetValue<Application>(cacheKey, out var application))
@@ -346,7 +346,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		return created;
 	}
 	
-	public override async ValueTask<Application> CreateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
+	public override async Task<Application> CreateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
 	{
 		var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
 		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
@@ -364,7 +364,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		return updated;
 	}
 	
-	public override async ValueTask<Application> UpdateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
+	public override async Task<Application> UpdateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
 	{
 		var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
 		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
@@ -386,7 +386,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		return isDeleted;
 	}
 	
-	public override async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
 		if (isDeleted)

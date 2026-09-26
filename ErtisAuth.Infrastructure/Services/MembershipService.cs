@@ -187,7 +187,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	private async Task<IEnumerable<MembershipBoundedResource>> GetMembershipBoundedResourcesAsync(string membershipId, int limit = 10, CancellationToken cancellationToken = default)
 	{
 		var tasks = this.MembershipBoundedServiceCollection.Select(service => 
-			service.GetAsync<MembershipBoundedResource>(membershipId, 0, limit, false, null, null, cancellationToken: cancellationToken).AsTask())
+			service.GetAsync<MembershipBoundedResource>(membershipId, 0, limit, false, null, null, cancellationToken: cancellationToken))
 			.ToArray();
 		
 		await Task.WhenAll(tasks);
@@ -218,7 +218,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	private void PurgeAllCache() => this.PurgeAllCacheAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 	
-	private async ValueTask PurgeAllCacheAsync(CancellationToken cancellationToken = default)
+	private async Task PurgeAllCacheAsync(CancellationToken cancellationToken = default)
 	{
 		var memberships = await this.GetAsync(cancellationToken: cancellationToken);
 		foreach (var membership in memberships.Items)
@@ -255,7 +255,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		return membership;
 	}
 	
-	public override async ValueTask<Membership?> GetAsync(string id, CancellationToken cancellationToken = default)
+	public override async Task<Membership?> GetAsync(string id, CancellationToken cancellationToken = default)
 	{
 		var cacheKey = GetCacheKey(id);
 		if (!this._memoryCache.TryGetValue<Membership>(cacheKey, out var membership))
@@ -322,7 +322,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		return created;
 	}
 	
-	public override async ValueTask<Membership> CreateAsync(Membership model, CancellationToken cancellationToken = default)
+	public override async Task<Membership> CreateAsync(Membership model, CancellationToken cancellationToken = default)
 	{
 		var created = await base.CreateAsync(model, cancellationToken: cancellationToken);
 		await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
@@ -340,7 +340,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		return updated;
 	}
 	
-	public override async ValueTask<Membership> UpdateAsync(Membership model, CancellationToken cancellationToken = default)
+	public override async Task<Membership> UpdateAsync(Membership model, CancellationToken cancellationToken = default)
 	{
 		var updated = await base.UpdateAsync(model, cancellationToken: cancellationToken);
 		await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
@@ -368,7 +368,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		return isDeleted;
 	}
 	
-	public override async ValueTask<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
+	public override async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
 	{
 		var membershipBoundedResources = await this.GetMembershipBoundedResourcesAsync(id, cancellationToken: cancellationToken);
 		if (membershipBoundedResources.Any())

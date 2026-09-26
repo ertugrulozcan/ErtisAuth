@@ -10,5 +10,5 @@ public interface ITokenCodeService : IMembershipBoundedService<TokenCode>
     
     Task<BearerToken> GenerateTokenAsync(string code, string membershipId, CancellationToken cancellationToken = default);
     
-    ValueTask ClearExpiredTokenCodes(string membershipId, CancellationToken cancellationToken = default);
+    Task ClearExpiredTokenCodes(string membershipId, CancellationToken cancellationToken = default);
 }

@@ -42,7 +42,7 @@ public class MailServiceBackgroundWorker : IMailServiceBackgroundWorker
 	
 	#region Methods
 	
-	private async ValueTask ExecuteAsync(MailServiceBackgroundWorkerArgs? args = null, CancellationToken cancellationToken = default)
+	private async Task ExecuteAsync(MailServiceBackgroundWorkerArgs? args = null, CancellationToken cancellationToken = default)
 	{
 		if (args?.Mailhook == null || args.MailProvider == null)
 		{

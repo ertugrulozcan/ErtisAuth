@@ -49,7 +49,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		return this._repository.Query(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 	}
 	
-	public async ValueTask<IPaginationCollection<dynamic>> QueryAsync(
+	public async Task<IPaginationCollection<dynamic>> QueryAsync(
 		string membershipId, 
 		string query, 
 		int? skip = null, 
@@ -80,7 +80,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		return this._repository.FindOne(x => x.Id == id && x.MembershipId == membershipId);
 	}
 	
-	public virtual async ValueTask<TModel?> GetAsync(
+	public virtual async Task<TModel?> GetAsync(
 		string membershipId, 
 		string id, 
 		CancellationToken cancellationToken = default)
@@ -94,7 +94,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		return await this._repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 	}
 	
-	protected async ValueTask<TModel?> GetAsync(
+	protected async Task<TModel?> GetAsync(
 		string membershipId, 
 		Expression<Func<TModel, bool>> expression, 
 		CancellationToken cancellationToken = default)
@@ -127,7 +127,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		return this._repository.Find(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
 	}
 	
-	public virtual async ValueTask<IPaginationCollection<TModel>> GetAsync(
+	public virtual async Task<IPaginationCollection<TModel>> GetAsync(
 		string membershipId, 
 		int? skip = null, 
 		int? limit = null, 
@@ -151,7 +151,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		return this.Get(membershipId, id) as T;
 	}
 	
-	public async ValueTask<T?> GetAsync<T>(string membershipId, string id, CancellationToken cancellationToken = default) where T : class, Core.Models.IHasMembership
+	public async Task<T?> GetAsync<T>(string membershipId, string id, CancellationToken cancellationToken = default) where T : class, Core.Models.IHasMembership
 	{
 		return await this.GetAsync(membershipId, id, cancellationToken: cancellationToken) as T;
 	}
@@ -169,7 +169,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		return (IPaginationCollection<T>) this.Get(membershipId, skip, limit, withCount, orderBy, sortDirection);
 	}
 	
-	public async ValueTask<IPaginationCollection<T>> GetAsync<T>(
+	public async Task<IPaginationCollection<T>> GetAsync<T>(
 		string membershipId, 
 		int? skip,
 		int? limit, 
@@ -219,7 +219,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		return this._repository.Search(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection);
 	}
 	
-	public async ValueTask<IPaginationCollection<TModel>> SearchAsync(
+	public async Task<IPaginationCollection<TModel>> SearchAsync(
 		string membershipId, 
 		string keyword,
 		int? skip = null,

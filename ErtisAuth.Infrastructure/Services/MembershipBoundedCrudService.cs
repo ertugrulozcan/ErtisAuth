@@ -107,7 +107,7 @@ public abstract class MembershipBoundedCrudService<TModel> :
 		return inserted;
 	}
 	
-	public virtual async ValueTask<TModel> CreateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
+	public virtual async Task<TModel> CreateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
 	{
 		// Check membership
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
@@ -192,7 +192,7 @@ public abstract class MembershipBoundedCrudService<TModel> :
 		return updated;
 	}
 	
-	public virtual async ValueTask<TModel> UpdateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
+	public virtual async Task<TModel> UpdateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
 	{
 		// Check membership
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
@@ -304,7 +304,7 @@ public abstract class MembershipBoundedCrudService<TModel> :
 		}
 	}
 	
-	public virtual async ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	public virtual async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 		if (current != null)
@@ -358,7 +358,7 @@ public abstract class MembershipBoundedCrudService<TModel> :
 		}
 	}
 	
-	public virtual async ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
+	public virtual async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
 	{
 		var isAllDeleted = true;
 		var isAllFailed = true;

@@ -95,7 +95,7 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken>, IRevo
 		this._memoryCache.Set(cacheKey, revokedToken, GetCacheTTL());
 	}
 	
-	public async ValueTask ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default)
+	public async Task ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default)
 	{
 		try
 		{

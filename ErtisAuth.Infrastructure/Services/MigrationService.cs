@@ -55,7 +55,7 @@ public class MigrationService : IMigrationService
 	
 	#region Methods
 	
-	public async ValueTask<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPassword _user, Application? _application)
+	public async Task<dynamic> MigrateAsync(string connectionString, Membership _membership, UserWithPassword _user, Application? _application)
 	{
 		// Validation
 		if (connectionString != this._databaseSettings.ConnectionString)

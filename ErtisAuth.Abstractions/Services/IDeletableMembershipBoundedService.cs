@@ -8,9 +8,9 @@ public interface IDeletableMembershipBoundedService
 {
     bool Delete(Utilizer utilizer, string membershipId, string id);
     
-    ValueTask<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default);
     
     bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids);
     
-    ValueTask<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default);
+    Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default);
 }

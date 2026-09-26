@@ -68,7 +68,7 @@ public abstract class GenericCrudService<TModel> :
 		return this._repository.FindOne(id);
 	}
 	
-	public virtual async ValueTask<TModel?> GetAsync(string id, CancellationToken cancellationToken = default)
+	public virtual async Task<TModel?> GetAsync(string id, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(id))
 		{
@@ -89,7 +89,7 @@ public abstract class GenericCrudService<TModel> :
 		return this._repository.Find(skip, limit, withCount, orderBy, sortDirection);
 	}
 	
-	public virtual async ValueTask<IPaginationCollection<TModel>> GetAsync(
+	public virtual async Task<IPaginationCollection<TModel>> GetAsync(
 		int? skip = null, 
 		int? limit = null, 
 		bool withCount = false, 
@@ -132,7 +132,7 @@ public abstract class GenericCrudService<TModel> :
 		return this._repository.Search(keyword, options, skip, limit, withCount, sortField, sortDirection);
 	}
 	
-	public async ValueTask<IPaginationCollection<TModel>> SearchAsync(
+	public async Task<IPaginationCollection<TModel>> SearchAsync(
 		string keyword,
 		TextSearchOptions? options = null,
 		int? skip = null,
@@ -184,7 +184,7 @@ public abstract class GenericCrudService<TModel> :
 		}
 	}
 	
-	public virtual async ValueTask<TModel> CreateAsync(TModel model, CancellationToken cancellationToken = default)
+	public virtual async Task<TModel> CreateAsync(TModel model, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -264,7 +264,7 @@ public abstract class GenericCrudService<TModel> :
 		}
 	}
 	
-	public virtual async ValueTask<TModel> UpdateAsync(TModel model, CancellationToken cancellationToken = default)
+	public virtual async Task<TModel> UpdateAsync(TModel model, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -329,7 +329,7 @@ public abstract class GenericCrudService<TModel> :
 		}
 	}
 	
-	public virtual async ValueTask<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
+	public virtual async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
 	{
 		var current = await this.GetAsync(id, cancellationToken: cancellationToken);
 		if (current != null)

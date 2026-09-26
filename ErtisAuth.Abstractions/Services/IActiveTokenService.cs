@@ -29,5 +29,5 @@ public interface IActiveTokenService : IMembershipBoundedService<ActiveToken>
 	
 	Task BulkDeleteAsync(IEnumerable<ActiveToken> activeTokens, CancellationToken cancellationToken = default);
 	
-	ValueTask ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default);
+	Task ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default);
 }

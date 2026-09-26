@@ -8,5 +8,5 @@ public interface IUserTypeService : IMembershipBoundedCrudService<UserType>
 	
 	Task<bool> IsInheritFromAsync(string membershipId, string childUserTypeName, string parentUserTypeName, CancellationToken cancellationToken = default);
 	
-	ValueTask<Dictionary<string, List<string>>?> GetFieldInfoOwnerRelationsAsync(string membershipId, string id, CancellationToken cancellationToken = default);
+	Task<Dictionary<string, List<string>>?> GetFieldInfoOwnerRelationsAsync(string membershipId, string id, CancellationToken cancellationToken = default);
 }
