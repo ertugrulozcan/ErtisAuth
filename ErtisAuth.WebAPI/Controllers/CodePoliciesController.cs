@@ -9,6 +9,7 @@ using ErtisAuth.Core.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -16,7 +17,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("code-policies")]
-[Route("memberships/{membershipId}/code-policies")]
+[MembershipRoute("code-policies")]
 public class CodePoliciesController : QueryControllerBase
 {
     #region Services

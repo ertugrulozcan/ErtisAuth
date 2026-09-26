@@ -8,6 +8,7 @@ using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -15,7 +16,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("events")]
-[Route("memberships/{membershipId}/events")]
+[MembershipRoute("events")]
 public class EventsController : QueryControllerBase
 {
 	#region Services

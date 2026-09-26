@@ -8,6 +8,7 @@ using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.WebAPI.Models.Providers;
+using ErtisAuth.Extensions.AspNetCore.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -15,7 +16,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("providers")]
-[Route("memberships/{membershipId}/providers")]
+[MembershipRoute("providers")]
 public class ProvidersController : ControllerBase
 {
 	#region Services

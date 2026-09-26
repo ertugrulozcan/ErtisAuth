@@ -4,6 +4,7 @@ using System.Text.Json;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Extensions.AspNetCore.Attributes;
 using Microsoft.AspNetCore.Authentication;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.Authorization.Attributes;
@@ -96,6 +97,8 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 			}
 			
 			var utilizer = await this.CheckAuthorizationAsync();
+			this.CheckMembershipScope(endpoint, utilizer);
+			
 			var identity = utilizer.ToClaimsIdentity();
 			this.Context.User.AddIdentity(identity);
 			var principal = new ClaimsPrincipal(identity);
@@ -238,6 +241,23 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				return userUtilizer;
 			default:
 				throw ErtisAuthException.UnsupportedTokenType();
+		}
+	}
+	
+	/// <summary>
+	/// Membership bounded endpoints (routed with MembershipRouteAttribute) are only accessible with a token of the same membership.
+	/// </summary>
+	private void CheckMembershipScope(Endpoint? endpoint, Utilizer utilizer)
+	{
+		if (endpoint?.Metadata.GetMetadata<MembershipRouteAttribute>() == null)
+		{
+			return;
+		}
+		
+		var routeMembershipId = this.Context.Request.RouteValues[MembershipRouteAttribute.ParameterName] as string;
+		if (string.IsNullOrEmpty(routeMembershipId) || routeMembershipId != utilizer.MembershipId)
+		{
+			throw ErtisAuthException.AccessDenied("You do not have access to the resources of this membership");
 		}
 	}
 	

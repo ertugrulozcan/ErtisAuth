@@ -6,6 +6,7 @@ using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Core.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Services;
+using ErtisAuth.Extensions.AspNetCore.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -13,7 +14,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("tokens")]
-[Route("memberships/{membershipId}/codes")]
+[MembershipRoute("codes")]
 public class TokenCodesController : ControllerBase
 {
     #region Services

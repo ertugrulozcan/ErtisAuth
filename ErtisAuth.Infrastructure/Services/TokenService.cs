@@ -10,7 +10,6 @@ using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Infrastructure.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace ErtisAuth.Infrastructure.Services;

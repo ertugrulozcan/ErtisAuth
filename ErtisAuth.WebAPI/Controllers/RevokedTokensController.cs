@@ -6,6 +6,7 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Core.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -13,7 +14,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("tokens")]
-[Route("memberships/{membershipId}/revoked-tokens")]
+[MembershipRoute("revoked-tokens")]
 public class RevokedTokensController : QueryControllerBase
 {
 	#region Services

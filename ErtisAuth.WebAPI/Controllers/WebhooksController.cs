@@ -10,6 +10,7 @@ using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.WebAPI.Models.Webhooks;
+using ErtisAuth.Extensions.AspNetCore.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -17,7 +18,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 [ApiController]
 [Authorized]
 [RbacResource("webhooks")]
-[Route("memberships/{membershipId}/webhooks")]
+[MembershipRoute("webhooks")]
 public class WebhooksController : QueryControllerBase
 {
 	#region Services
