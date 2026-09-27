@@ -397,7 +397,7 @@ public class TokenService : ITokenService
 		await this.VerifyTokenSignatureAsync(token, securityToken, cancellationToken: cancellationToken);
 		
 		// Reset password and activation tokens are signed with the same key, but they are not bearer tokens
-		if (this.TryExtractClaimValue(securityToken, PurposeTokens.TokenTypeClaim, out var purposeTokenType) && !string.IsNullOrEmpty(purposeTokenType))
+		if (this.TryExtractClaimValue(securityToken, ActionTokens.TokenTypeClaim, out var actionTokenType) && !string.IsNullOrEmpty(actionTokenType))
 		{
 			throw ErtisAuthException.InvalidToken("Reset password and activation tokens can not be used as bearer tokens");
 		}

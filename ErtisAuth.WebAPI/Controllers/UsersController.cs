@@ -24,6 +24,7 @@ public class UsersController : QueryControllerBase
 	#region Services
 	
 	private readonly IUserService _userService;
+	private readonly IPasswordResetService _passwordResetService;
 	private readonly ITokenService _tokenService;
 	private readonly IOneTimePasswordService _oneTimePasswordService;
 	private readonly IUtilizerService _utilizerService;
@@ -36,16 +37,19 @@ public class UsersController : QueryControllerBase
 	/// Constructor
 	/// </summary>
 	/// <param name="userService"></param>
+	/// <param name="passwordResetService"></param>
 	/// <param name="tokenService"></param>
 	/// <param name="oneTimePasswordService"></param>
 	/// <param name="utilizerService"></param>
 	public UsersController(
 		IUserService userService, 
+		IPasswordResetService passwordResetService,
 		ITokenService tokenService, 
 		IOneTimePasswordService oneTimePasswordService,
 		IUtilizerService utilizerService)
 	{
 		this._userService = userService;
+		this._passwordResetService = passwordResetService;
 		this._tokenService = tokenService;
 		this._oneTimePasswordService = oneTimePasswordService;
 		this._utilizerService = utilizerService;
@@ -363,7 +367,7 @@ public class UsersController : QueryControllerBase
 			return this.EmailAddressRequired();
 		}
 		
-		var resetPasswordToken = await this._userService.ResetPasswordAsync(utilizer, membershipId, model.EmailAddress, host, cancellationToken: cancellationToken);
+		var resetPasswordToken = await this._passwordResetService.ResetPasswordAsync(utilizer, membershipId, model.EmailAddress, host, cancellationToken: cancellationToken);
 		return this.Ok(new
 		{
 			message = "Reset token generated",
@@ -380,7 +384,7 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> VerifyResetToken([FromRoute] string membershipId, [FromQuery] string token, CancellationToken cancellationToken = default)
 	{
-		var user = await this._userService.VerifyResetTokenAsync(membershipId, token, cancellationToken: cancellationToken);
+		var user = await this._passwordResetService.VerifyResetTokenAsync(membershipId, token, cancellationToken: cancellationToken);
 		return this.Ok(new
 		{
 			email_address = user.EmailAddress
@@ -412,7 +416,7 @@ public class UsersController : QueryControllerBase
 		}
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		await this._userService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password, cancellationToken: cancellationToken);
+		await this._passwordResetService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password, cancellationToken: cancellationToken);
 		await this._oneTimePasswordService.RevokeResetPasswordTokenAsync(utilizer, membershipId, model.ResetToken, cancellationToken: cancellationToken);
 		return this.Ok();
 	}

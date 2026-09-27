@@ -14,6 +14,12 @@ public interface IJwtService
 	
 	Task<TokenValidationResult> ValidateTokenAsync(string token, Membership membership);
 	
+	/// <summary>
+	/// Validates a reset password or activation token: signed with the membership key, not expired, of the expected type,
+	/// issued for the membership and for a subject. Throws InvalidToken (TokenWasExpired when expired).
+	/// </summary>
+	Task<JsonWebToken> ValidateActionTokenAsync(string token, Membership membership, string expectedTokenType);
+	
 	JsonWebToken DecodeToken(string token);
 	
 	bool TryDecodeToken(string token, out JsonWebToken? securityToken);

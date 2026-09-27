@@ -1,5 +1,7 @@
 using System.Text;
 using System.Security.Claims;
+using ErtisAuth.Core.Constants;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Abstractions.Services;
@@ -144,6 +146,30 @@ public class JwtService : IJwtService
         return await this._tokenHandler.ValidateTokenAsync(token, validationParameters);
     }
     
+	public async Task<JsonWebToken> ValidateActionTokenAsync(string token, Membership membership, string expectedTokenType)
+	{
+		var validation = await this.ValidateTokenAsync(token, membership);
+		if (!validation.IsValid)
+		{
+			if (validation.Exception is SecurityTokenExpiredException)
+			{
+				throw ErtisAuthException.TokenWasExpired();
+			}
+			
+			throw ErtisAuthException.InvalidToken();
+		}
+		
+		if (validation.SecurityToken is not JsonWebToken securityToken ||
+			securityToken.Claims.FirstOrDefault(x => x.Type == ActionTokens.TokenTypeClaim)?.Value != expectedTokenType ||
+			securityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Prn)?.Value != membership.Id ||
+			string.IsNullOrEmpty(securityToken.Subject))
+		{
+			throw ErtisAuthException.InvalidToken();
+		}
+		
+		return securityToken;
+	}
+	
     public JsonWebToken DecodeToken(string token)
     {
         return this._tokenHandler.ReadJsonWebToken(token);

@@ -24,6 +24,7 @@ public static class ServiceExtensions
 		services.AddSingleton<IEventService, EventService>();
 		services.AddSingleton<IUserTypeService, UserTypeService>();
 		services.AddSingleton<IUserService, UserService>();
+		services.AddSingleton<IPasswordResetService, PasswordResetService>();
 		services.AddSingleton<IApplicationService, ApplicationService>();
 		services.AddSingleton<IRoleService, RoleService>();
 		services.AddSingleton<ITokenCodeService, TokenCodeService>();

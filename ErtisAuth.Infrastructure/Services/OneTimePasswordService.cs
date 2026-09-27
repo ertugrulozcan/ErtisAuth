@@ -23,6 +23,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	#region Services
 	
 	private readonly IUserService _userService;
+	private readonly IPasswordResetService _passwordResetService;
 	private readonly ILogger<OneTimePasswordService> _logger;
 	
 	#endregion
@@ -34,15 +35,18 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	/// </summary>
 	/// <param name="membershipService"></param>
 	/// <param name="userService"></param>
+	/// <param name="passwordResetService"></param>
 	/// <param name="repository"></param>
 	/// <param name="logger"></param>
 	public OneTimePasswordService(
 		IMembershipService membershipService,
 		IUserService userService, 
+		IPasswordResetService passwordResetService,
 		IOneTimePasswordRepository repository,
 		ILogger<OneTimePasswordService> logger) : base(membershipService, repository)
 	{
 		this._userService = userService;
+		this._passwordResetService = passwordResetService;
 		this._logger = logger;
 	}
 	
@@ -164,7 +168,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			}
 		}
 		
-		var resetPasswordToken = await this._userService.GenerateResetPasswordTokenAsync(user, membership, true, ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword, cancellationToken: cancellationToken);
+		var resetPasswordToken = await this._passwordResetService.GenerateResetPasswordTokenAsync(user, membership, true, ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword, cancellationToken: cancellationToken);
 		var model = new OneTimePassword
 		{
 			UserId = user.Id,

@@ -1,10 +1,11 @@
 namespace ErtisAuth.Core.Constants;
 
 /// <summary>
-/// Single-purpose tokens (password reset, user activation) are JWTs signed with the membership key like access tokens,
+/// Action tokens authorize a single action (resetting the password, activating the user) instead of opening a session,
+/// the same concept as Keycloak's action tokens. They are JWTs signed with the membership key like access tokens,
 /// so they carry a token type claim and are never accepted where another type of token is expected.
 /// </summary>
-public static class PurposeTokens
+public static class ActionTokens
 {
 	#region Constants
 	

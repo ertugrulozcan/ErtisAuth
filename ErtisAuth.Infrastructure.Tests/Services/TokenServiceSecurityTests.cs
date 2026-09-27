@@ -382,28 +382,28 @@ public class TokenServiceSecurityTests
 	
 	#endregion
 	
-	#region Purpose Tokens
+	#region Action Tokens
 	
 	/// <summary>
 	/// A reset password or activation token: signed with the membership key like an access token, but typed.
 	/// </summary>
-	private string CreatePurposeToken(Membership membership, User user, string tokenType)
+	private string CreateActionToken(Membership membership, User user, string tokenType)
 	{
 		var claims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, TimeSpan.FromHours(1));
-		claims.AddClaim(PurposeTokens.TokenTypeClaim, tokenType);
+		claims.AddClaim(ActionTokens.TokenTypeClaim, tokenType);
 		return this._jwtService.GenerateToken(claims, encoding: membership.GetEncoding());
 	}
 	
 	[Theory]
-	[InlineData(PurposeTokens.ResetPasswordTokenType)]
-	[InlineData(PurposeTokens.ActivationTokenType)]
-	public async Task VerifyBearerTokenAsync_WithPurposeToken_IsRejected(string tokenType)
+	[InlineData(ActionTokens.ResetPasswordTokenType)]
+	[InlineData(ActionTokens.ActivationTokenType)]
+	public async Task VerifyBearerTokenAsync_WithActionToken_IsRejected(string tokenType)
 	{
 		var (membership, user) = this.Setup();
-		var purposeToken = this.CreatePurposeToken(membership, user, tokenType);
+		var actionToken = this.CreateActionToken(membership, user, tokenType);
 		var tokenService = this.CreateTokenService();
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.VerifyBearerTokenAsync(purposeToken, cancellationToken: TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.VerifyBearerTokenAsync(actionToken, cancellationToken: TestContext.Current.CancellationToken));
 		
 		Assert.Equal("InvalidToken", exception.ErrorCode);
 	}
@@ -412,7 +412,7 @@ public class TokenServiceSecurityTests
 	public async Task WhoAmIAsync_WithResetToken_IsRejected()
 	{
 		var (membership, user) = this.Setup();
-		var resetToken = this.CreatePurposeToken(membership, user, PurposeTokens.ResetPasswordTokenType);
+		var resetToken = this.CreateActionToken(membership, user, ActionTokens.ResetPasswordTokenType);
 		var tokenService = this.CreateTokenService();
 		
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.WhoAmIAsync(new BearerToken(resetToken, TimeSpan.FromHours(1), null, TimeSpan.Zero), TestContext.Current.CancellationToken));
