@@ -2,15 +2,15 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.Authorization.Extensions;
 using ErtisAuth.Sdk.Configuration;
-using ErtisAuth.Sdk.Helpers;
-using ErtisAuth.Sdk.Models;
+using ErtisAuth.Sdk.AspNetCore.Helpers;
+using ErtisAuth.Sdk.AspNetCore.Models;
 using ErtisAuth.Sdk.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Local
-namespace ErtisAuth.Sdk.Middleware;
+namespace ErtisAuth.Sdk.AspNetCore.Middleware;
 
 internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 {

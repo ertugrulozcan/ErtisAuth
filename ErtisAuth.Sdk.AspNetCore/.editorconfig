@@ -1,0 +1,5 @@
+# The SDK is a library used by any kind of client (ASP.NET Core, worker, desktop, mobile).
+# Awaits must not capture the caller's synchronization context (ConfigureAwait(false)),
+# otherwise a client blocking on an SDK call from a UI thread could deadlock.
+[*.cs]
+dotnet_diagnostic.CA2007.severity = warning

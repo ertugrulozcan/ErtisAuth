@@ -1,9 +1,9 @@
 using System.Text.Json;
 using Ertis.Core.Models.Response;
 
-namespace ErtisAuth.Sdk.Helpers;
+namespace ErtisAuth.Sdk.AspNetCore.Helpers;
 
-public static class ResponseHelper
+internal static class ResponseHelper
 {
 	#region Methods
 	

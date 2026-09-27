@@ -7,7 +7,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
-namespace ErtisAuth.Sdk.Extensions;
+namespace ErtisAuth.Sdk.AspNetCore.Extensions;
 
 public static class ControllerExtensions
 {

@@ -1,7 +1,7 @@
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 
-namespace ErtisAuth.Sdk.Models;
+namespace ErtisAuth.Sdk.AspNetCore.Models;
 
 public class AuthorizationResult
 {

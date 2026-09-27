@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Sdk.Attributes;
 
 [AttributeUsage(AttributeTargets.Interface)]

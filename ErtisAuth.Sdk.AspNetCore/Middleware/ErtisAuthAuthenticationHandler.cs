@@ -5,14 +5,14 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Extensions.Authorization.Extensions;
-using ErtisAuth.Sdk.Extensions;
+using ErtisAuth.Sdk.AspNetCore.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace ErtisAuth.Sdk.Middleware;
+namespace ErtisAuth.Sdk.AspNetCore.Middleware;
 
 public class ErtisAuthAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {

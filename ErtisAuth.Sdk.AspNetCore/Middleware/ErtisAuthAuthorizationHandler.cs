@@ -1,7 +1,7 @@
 using ErtisAuth.Extensions.Authorization.Extensions;
 using Microsoft.AspNetCore.Authorization;
 
-namespace ErtisAuth.Sdk.Middleware;
+namespace ErtisAuth.Sdk.AspNetCore.Middleware;
 
 public class ErtisAuthAuthorizationRequirement : IAuthorizationRequirement;
 
