@@ -40,7 +40,7 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 	
 	public async Task<Utilizer> CheckAuthenticationAsync(BearerToken token)
 	{
-		var meResponse = await this._authenticationService.WhoAmIAsync(token);
+		var meResponse = await this._authenticationService.WhoAmIAsync(token).ConfigureAwait(false);
 		if (meResponse is { IsSuccess: true, Data: not null })
 		{
 			Utilizer utilizer = meResponse.Data;
@@ -74,7 +74,7 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 	
 	public async Task<AuthorizationResult> CheckAuthorizationAsync(BearerToken token, HttpContext context)
 	{
-		var meResponse = await this._authenticationService.WhoAmIAsync(token);
+		var meResponse = await this._authenticationService.WhoAmIAsync(token).ConfigureAwait(false);
 		if (meResponse is { IsSuccess: true, Data: not null })
 		{
 			var rbacDefinition = context.GetRbacDefinition(meResponse.Data.Id);
@@ -84,7 +84,7 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 			}
 			
 			var rbac = rbacDefinition.ToString();
-			var isPermittedForAction = await this._roleService.CheckPermissionAsync(rbac, token);
+			var isPermittedForAction = await this._roleService.CheckPermissionAsync(rbac, token).ConfigureAwait(false);
 			if (!isPermittedForAction)
 			{
 				throw ErtisAuthException.AccessDenied($"You don't have permission to perform this action. Rbac: {rbac} (Error Code: 4033)");

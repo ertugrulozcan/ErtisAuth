@@ -36,9 +36,6 @@ public class MembershipService : BaseRestService, IMembershipService
 	
 	#region Create Methods
 	
-	public IResponseResult<Membership> CreateMembership(Membership membership, TokenBase token) =>
-		this.CreateMembershipAsync(membership, token).ConfigureAwait(false).GetAwaiter().GetResult();
-	
 	public async Task<IResponseResult<Membership>> CreateMembershipAsync(Membership membership, TokenBase token, CancellationToken cancellationToken = default)
 	{
 		return await this.ExecuteRequestAsync<Membership>(
@@ -47,15 +44,12 @@ public class MembershipService : BaseRestService, IMembershipService
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(membership),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion
 	
 	#region Read Methods
-	
-	public IResponseResult<Membership> GetMembership(string membershipId, TokenBase token) =>
-		this.GetMembershipAsync(membershipId, token).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<Membership>> GetMembershipAsync(string membershipId, TokenBase token, CancellationToken cancellationToken = default)
 	{
@@ -64,26 +58,8 @@ public class MembershipService : BaseRestService, IMembershipService
 			$"{this.AuthApiBaseUrl}/memberships/{membershipId}", 
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()), 
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
-	
-	public IResponseResult<IPaginationCollection<Membership>> GetMemberships(
-		TokenBase token, 
-		int? skip = null, 
-		int? limit = null, 
-		bool? withCount = null, 
-		string? orderBy = null, 
-		SortDirection? sortDirection = null, 
-		string? searchKeyword = null) =>
-		this.GetMembershipsAsync(
-			token,
-			skip,
-			limit,
-			withCount,
-			orderBy,
-			sortDirection,
-			searchKeyword)
-			.ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<IPaginationCollection<Membership>>> GetMembershipsAsync(
 		TokenBase token,
@@ -102,7 +78,7 @@ public class MembershipService : BaseRestService, IMembershipService
 				$"{this.AuthApiBaseUrl}/memberships", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				cancellationToken: cancellationToken);	
+				cancellationToken: cancellationToken).ConfigureAwait(false);	
 		}
 		else
 		{
@@ -111,31 +87,13 @@ public class MembershipService : BaseRestService, IMembershipService
 				$"{this.AuthApiBaseUrl}/memberships/search", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection).Add("keyword", searchKeyword), 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				cancellationToken: cancellationToken);
+				cancellationToken: cancellationToken).ConfigureAwait(false);
 		}
 	}
 	
 	#endregion
 	
 	#region Query Methods
-	
-	public IResponseResult<IPaginationCollection<Membership>> QueryMemberships(
-		TokenBase token, 
-		string query, 
-		int? skip = null, 
-		int? limit = null, 
-		bool? withCount = null, 
-		string? orderBy = null, 
-		SortDirection? sortDirection = null) =>
-		this.QueryMembershipsAsync(
-			token,
-			query,
-			skip,
-			limit,
-			withCount,
-			orderBy,
-			sortDirection)
-			.ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<IPaginationCollection<Membership>>> QueryMembershipsAsync(
 		TokenBase token,
@@ -153,15 +111,12 @@ public class MembershipService : BaseRestService, IMembershipService
 			QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(query),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion
 	
 	#region Update Methods
-	
-	public IResponseResult<Membership> UpdateMembership(Membership membership, TokenBase token) =>
-		this.UpdateMembershipAsync(membership, token).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<Membership>> UpdateMembershipAsync(Membership membership, TokenBase token, CancellationToken cancellationToken = default)
 	{
@@ -176,15 +131,12 @@ public class MembershipService : BaseRestService, IMembershipService
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(membership),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion
 	
 	#region Delete Methods
-	
-	public IResponseResult DeleteMembership(string membershipId, TokenBase token) =>
-		this.DeleteMembershipAsync(membershipId, token).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult> DeleteMembershipAsync(string membershipId, TokenBase token, CancellationToken cancellationToken = default)
 	{
@@ -193,7 +145,7 @@ public class MembershipService : BaseRestService, IMembershipService
 			$"{this.AuthApiBaseUrl}/memberships/{membershipId}", 
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion

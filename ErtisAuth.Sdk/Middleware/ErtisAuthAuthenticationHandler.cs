@@ -92,7 +92,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				}
 				else if (isSelfAuthorizedEndpoint)
 				{
-					var selfIdentity = await this.GetClaimsIdentityAsync(passAuthorization: true);
+					var selfIdentity = await this.GetClaimsIdentityAsync(passAuthorization: true).ConfigureAwait(false);
 					this.Context.User.AddIdentity(selfIdentity);
 					var selfPrincipal = new ClaimsPrincipal(selfIdentity);
 					return AuthenticateResult.Success(new AuthenticationTicket(selfPrincipal, this.Scheme.Name));
@@ -103,7 +103,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				}
 			}
 			
-			var identity = await this.GetClaimsIdentityAsync();
+			var identity = await this.GetClaimsIdentityAsync().ConfigureAwait(false);
 			this.Context.User.AddIdentity(identity);
 			var principal = new ClaimsPrincipal(identity);
 			return AuthenticateResult.Success(new AuthenticationTicket(principal, this.Scheme.Name));
@@ -124,12 +124,12 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				}
 				else
 				{
-					await this.Context.Response.WriteAsync(ex.Message);
+					await this.Context.Response.WriteAsync(ex.Message).ConfigureAwait(false);
 				}
 			}
 			catch
 			{
-				await this.Context.Response.WriteAsync(ex.Message);
+				await this.Context.Response.WriteAsync(ex.Message).ConfigureAwait(false);
 			}
 			
 			return AuthenticateResult.Fail(ex.Error.Message);
@@ -143,7 +143,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 	
 	private async Task<ClaimsIdentity> GetClaimsIdentityAsync(bool passAuthorization = false)
 	{
-		var utilizer = passAuthorization ? await this.CheckAuthenticationAsync() : await this.CheckAuthorizationAsync();
+		var utilizer = passAuthorization ? await this.CheckAuthenticationAsync().ConfigureAwait(false) : await this.CheckAuthorizationAsync().ConfigureAwait(false);
 		return utilizer.ToClaimsIdentity();
 	}
 	
@@ -167,7 +167,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 			case SupportedTokenTypes.Basic:
 			{
 				var basicToken = new BasicToken(token);
-				var authorizationResult = await this._basicAuthorizationHandler.CheckAuthorizationAsync(basicToken, this.Context);
+				var authorizationResult = await this._basicAuthorizationHandler.CheckAuthorizationAsync(basicToken, this.Context).ConfigureAwait(false);
 				if (authorizationResult.IsAuthorized)
 				{
 					return authorizationResult.Utilizer;
@@ -180,7 +180,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 			case SupportedTokenTypes.Bearer:
 			{
 				var bearerToken = BearerToken.CreateTemp(token);
-				var authorizationResult = await this._bearerAuthorizationHandler.CheckAuthorizationAsync(bearerToken, this.Context);
+				var authorizationResult = await this._bearerAuthorizationHandler.CheckAuthorizationAsync(bearerToken, this.Context).ConfigureAwait(false);
 				if (authorizationResult.IsAuthorized)
 				{
 					return authorizationResult.Utilizer;
@@ -215,12 +215,12 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 			case SupportedTokenTypes.Basic:
 			{
 				var basicToken = new BasicToken(token);
-				return await this._basicAuthorizationHandler.CheckAuthenticationAsync(basicToken);
+				return await this._basicAuthorizationHandler.CheckAuthenticationAsync(basicToken).ConfigureAwait(false);
 			}
 			case SupportedTokenTypes.Bearer:
 			{
 				var bearerToken = BearerToken.CreateTemp(token);
-				return await this._bearerAuthorizationHandler.CheckAuthenticationAsync(bearerToken);
+				return await this._bearerAuthorizationHandler.CheckAuthenticationAsync(bearerToken).ConfigureAwait(false);
 			}
 			default:
 				throw ErtisAuthException.UnsupportedTokenType();

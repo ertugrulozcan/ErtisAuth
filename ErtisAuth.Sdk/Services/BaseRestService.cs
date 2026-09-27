@@ -28,15 +28,6 @@ public abstract class BaseRestService
 	
 	#region Methods
 	
-	public IResponseResult<TResult> ExecuteRequest<TResult>(
-		HttpMethod method,
-		string url,
-		IHeaderCollection? headers = null,
-		IRequestBody? body = null)
-	{
-		return this.restHandler.ExecuteRequest<TResult>(method, url, headers, body);
-	}
-    
 	public async Task<IResponseResult<TResult>> ExecuteRequestAsync<TResult>(
 		HttpMethod method,
 		string url,
@@ -44,17 +35,7 @@ public abstract class BaseRestService
 		IRequestBody? body = null, 
 		CancellationToken cancellationToken = default)
 	{
-		return await this.restHandler.ExecuteRequestAsync<TResult>(method, url, headers, body, cancellationToken: cancellationToken);
-	}
-	
-	protected IResponseResult<TResult> ExecuteRequest<TResult>(
-		HttpMethod method,
-		string baseUrl,
-		IQueryString? queryString = null,
-		IHeaderCollection? headers = null,
-		IRequestBody? body = null)
-	{
-		return this.restHandler.ExecuteRequest<TResult>(method, baseUrl, queryString, headers, body);
+		return await this.restHandler.ExecuteRequestAsync<TResult>(method, url, headers, body, cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	protected async Task<IResponseResult<TResult>> ExecuteRequestAsync<TResult>(
@@ -65,16 +46,7 @@ public abstract class BaseRestService
 		IRequestBody? body = null, 
 		CancellationToken cancellationToken = default)
 	{
-		return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken);
-	}
-    
-	public IResponseResult ExecuteRequest(
-		HttpMethod method,
-		string url,
-		IHeaderCollection? headers = null,
-		IRequestBody? body = null)
-	{
-		return this.restHandler.ExecuteRequest(method, url, headers, body);
+		return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
     
 	public async Task<IResponseResult> ExecuteRequestAsync(
@@ -84,17 +56,7 @@ public abstract class BaseRestService
 		IRequestBody? body = null, 
 		CancellationToken cancellationToken = default)
 	{
-		return await this.restHandler.ExecuteRequestAsync(method, url, headers, body, cancellationToken: cancellationToken);
-	}
-	
-	protected IResponseResult ExecuteRequest(
-		HttpMethod method,
-		string baseUrl,
-		IQueryString? queryString = null,
-		IHeaderCollection? headers = null,
-		IRequestBody? body = null)
-	{
-		return this.restHandler.ExecuteRequest(method, baseUrl, queryString, headers, body);
+		return await this.restHandler.ExecuteRequestAsync(method, url, headers, body, cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	protected async Task<IResponseResult> ExecuteRequestAsync(
@@ -105,7 +67,7 @@ public abstract class BaseRestService
 		IRequestBody? body = null, 
 		CancellationToken cancellationToken = default)
 	{
-		return await this.restHandler.ExecuteRequestAsync(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken);
+		return await this.restHandler.ExecuteRequestAsync(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion

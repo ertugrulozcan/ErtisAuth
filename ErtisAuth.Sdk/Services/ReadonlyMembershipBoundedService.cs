@@ -35,8 +35,6 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
     
     #region Read Methods
 	
-	public IResponseResult<T> Get(string modelId, TokenBase token) => this.GetAsync(modelId, token).ConfigureAwait(false).GetAwaiter().GetResult();
-	
 	public async Task<IResponseResult<T>> GetAsync(string modelId, TokenBase token, CancellationToken cancellationToken = default)
 	{
 		return await this.ExecuteRequestAsync<T>(
@@ -44,10 +42,8 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/{modelId}", 
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
-	
-	public IResponseResult<TReturn> Get<TReturn>(string modelId, TokenBase token) where TReturn : T => this.GetAsync<TReturn>(modelId, token).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<TReturn>> GetAsync<TReturn>(string modelId, TokenBase token, CancellationToken cancellationToken = default) where TReturn : T
 	{
@@ -56,16 +52,8 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/{modelId}", 
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
-	
-	public IResponseResult<IPaginationCollection<T>> Get(
-		TokenBase token,
-		int? skip = null,
-		int? limit = null,
-		bool? withCount = null,
-		Sorting? sorting = null,
-		string? searchKeyword = null) => this.GetAsync(token, skip, limit, withCount, sorting, searchKeyword).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<IPaginationCollection<T>>> GetAsync(
 		TokenBase token,
@@ -83,7 +71,7 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}",
 				QueryStringHelper.GetQueryString(skip, limit, withCount, sorting),
 				HeaderCollection.Add("Authorization", token.ToString()),
-				cancellationToken: cancellationToken);
+				cancellationToken: cancellationToken).ConfigureAwait(false);
 		}
 		else
 		{
@@ -92,18 +80,9 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/search",
 				QueryStringHelper.GetQueryString(skip, limit, withCount, sorting).Add("keyword", searchKeyword),
 				HeaderCollection.Add("Authorization", token.ToString()),
-				cancellationToken: cancellationToken);
+				cancellationToken: cancellationToken).ConfigureAwait(false);
 		}
 	}
-	
-	public IResponseResult<IPaginationCollection<T>> Get(
-		TokenBase token, 
-		int? skip = null, 
-		int? limit = null, 
-		bool? withCount = null, 
-		string? orderBy = null, 
-		SortDirection? sortDirection = null,
-		string? searchKeyword = null) => this.GetAsync(token, skip, limit, withCount, orderBy, sortDirection, searchKeyword).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<IPaginationCollection<T>>> GetAsync(
 		TokenBase token, 
@@ -122,7 +101,7 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				cancellationToken: cancellationToken);
+				cancellationToken: cancellationToken).ConfigureAwait(false);
 		}
 		else
 		{
@@ -131,29 +110,13 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
 				$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/search", 
 				QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection).Add("keyword", searchKeyword), 
 				HeaderCollection.Add("Authorization", token.ToString()),
-				cancellationToken: cancellationToken);
+				cancellationToken: cancellationToken).ConfigureAwait(false);
 		}
 	}
 	
 	#endregion
 	
 	#region Query Methods
-	
-	public IResponseResult<IPaginationCollection<T>> Query(
-		TokenBase token, 
-		string query, 
-		int? skip = null, 
-		int? limit = null, 
-		bool? withCount = null, 
-		Sorting? sorting = null) =>
-		this.QueryAsync(
-			token,
-			query,
-			skip,
-			limit,
-			withCount,
-			sorting)
-			.ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<IPaginationCollection<T>>> QueryAsync(
 		TokenBase token,
@@ -170,26 +133,8 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
 			QueryStringHelper.GetQueryString(skip, limit, withCount, sorting),
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(query),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
-	
-	public IResponseResult<IPaginationCollection<T>> Query(
-		TokenBase token,
-		string query,
-		int? skip = null,
-		int? limit = null,
-		bool? withCount = null,
-		string? orderBy = null,
-		SortDirection? sortDirection = null) =>
-		this.QueryAsync(
-				token,
-				query,
-				skip,
-				limit,
-				withCount,
-				orderBy,
-				sortDirection)
-			.ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<IPaginationCollection<T>>> QueryAsync(
 		TokenBase token,
@@ -207,7 +152,7 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
 			QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(query),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion

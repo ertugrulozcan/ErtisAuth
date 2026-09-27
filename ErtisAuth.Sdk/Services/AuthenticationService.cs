@@ -29,30 +29,6 @@ public class AuthenticationService : MembershipBoundedService, IAuthenticationSe
 	
 	#region Methods
 	
-	public IResponseResult<BearerToken> GetToken(string username, string password, string? ipAddress = null, string? userAgent = null)
-	{
-		var url = $"{this.BaseUrl}/generate-token";
-		var headers = HeaderCollection.Add("Membership", this.MembershipId);
-		if (!string.IsNullOrEmpty(ipAddress))
-		{
-			headers.Add("X-IpAddress", ipAddress);
-		}
-		
-		if (!string.IsNullOrEmpty(userAgent))
-		{
-			headers.Add("X-UserAgent", userAgent);
-		}
-		
-		var body = new
-		{
-			username,
-			password
-		};
-		
-		var response = this.ExecuteRequest(HttpMethod.Post, url, null, headers, new JsonRequestBody(body));
-		return ConvertToBearerTokenResponse(response);
-	}
-	
 	public async Task<IResponseResult<BearerToken>> GetTokenAsync(string username, string password, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default)
 	{
 		var url = $"{this.BaseUrl}/generate-token";
@@ -73,20 +49,7 @@ public class AuthenticationService : MembershipBoundedService, IAuthenticationSe
 			password
 		};
 		
-		var response = await this.ExecuteRequestAsync(HttpMethod.Post, url, null, headers, new JsonRequestBody(body), cancellationToken: cancellationToken);
-		return ConvertToBearerTokenResponse(response);
-	}
-	
-	public IResponseResult<BearerToken> RefreshToken(BearerToken bearerToken)
-	{
-		if (string.IsNullOrEmpty(bearerToken.RefreshToken))
-		{
-			throw ErtisAuthException.TokenIsNotRefreshable("Refresh token was missing");
-		}
-		
-		var url = $"{this.BaseUrl}/refresh-token";
-		var headers = HeaderCollection.Add("Authorization", bearerToken.RefreshToken);
-		var response = this.ExecuteRequest(HttpMethod.Get, url, null, headers);
+		var response = await this.ExecuteRequestAsync(HttpMethod.Post, url, null, headers, new JsonRequestBody(body), cancellationToken: cancellationToken).ConfigureAwait(false);
 		return ConvertToBearerTokenResponse(response);
 	}
 	
@@ -99,15 +62,7 @@ public class AuthenticationService : MembershipBoundedService, IAuthenticationSe
 		
 		var url = $"{this.BaseUrl}/refresh-token";
 		var headers = HeaderCollection.Add("Authorization", bearerToken.RefreshToken);
-		var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);
-		return ConvertToBearerTokenResponse(response);
-	}
-	
-	public IResponseResult<BearerToken> RefreshToken(string refreshToken)
-	{
-		var url = $"{this.BaseUrl}/refresh-token";
-		var headers = HeaderCollection.Add("Authorization", $"Bearer {refreshToken}");
-		var response = this.ExecuteRequest(HttpMethod.Get, url, null, headers);
+		var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken).ConfigureAwait(false);
 		return ConvertToBearerTokenResponse(response);
 	}
 	
@@ -115,41 +70,21 @@ public class AuthenticationService : MembershipBoundedService, IAuthenticationSe
 	{
 		var url = $"{this.BaseUrl}/refresh-token";
 		var headers = HeaderCollection.Add("Authorization", $"Bearer {refreshToken}");
-		var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);
+		var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken).ConfigureAwait(false);
 		return ConvertToBearerTokenResponse(response);
-	}
-	
-	public IResponseResult<ITokenValidationResult> VerifyToken(BearerToken token)
-	{
-		var url = $"{this.BaseUrl}/verify-token";
-		var headers = HeaderCollection.Add("Authorization", token.ToString());
-		return (IResponseResult<ITokenValidationResult>) this.ExecuteRequest<BearerTokenValidationResult>(HttpMethod.Get, url, null, headers);
 	}
 	
 	public async Task<IResponseResult<ITokenValidationResult>> VerifyTokenAsync(BearerToken token, CancellationToken cancellationToken = default)
 	{
 		var url = $"{this.BaseUrl}/verify-token";
 		var headers = HeaderCollection.Add("Authorization", token.ToString());
-		var response = await this.ExecuteRequestAsync<BearerTokenValidationResult>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);
+		var response = await this.ExecuteRequestAsync<BearerTokenValidationResult>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken).ConfigureAwait(false);
 		return (IResponseResult<ITokenValidationResult>) response;
-	}
-	
-	public IResponseResult<ITokenValidationResult> VerifyToken(string accessToken)
-	{
-		return this.VerifyToken(BearerToken.CreateTemp(accessToken));
 	}
 	
 	public async Task<IResponseResult<ITokenValidationResult>> VerifyTokenAsync(string accessToken, CancellationToken cancellationToken = default)
 	{
-		return await this.VerifyTokenAsync(BearerToken.CreateTemp(accessToken), cancellationToken: cancellationToken);
-	}
-	
-	public IResponseResult RevokeToken(BearerToken token, bool logoutFromAllDevices = false)
-	{
-		var url = $"{this.BaseUrl}/revoke-token";
-		var headers = HeaderCollection.Add("Authorization", token.ToString());
-		var queryString = logoutFromAllDevices ? QueryString.Add("logout-all", true) : QueryString.Empty;
-		return this.ExecuteRequest(HttpMethod.Get, url, queryString, headers);
+		return await this.VerifyTokenAsync(BearerToken.CreateTemp(accessToken), cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	public async Task<IResponseResult> RevokeTokenAsync(BearerToken token, bool logoutFromAllDevices = false, CancellationToken cancellationToken = default)
@@ -157,87 +92,47 @@ public class AuthenticationService : MembershipBoundedService, IAuthenticationSe
 		var url = $"{this.BaseUrl}/revoke-token";
 		var headers = HeaderCollection.Add("Authorization", token.ToString());
 		var queryString = logoutFromAllDevices ? QueryString.Add("logout-all", true) : QueryString.Empty;
-		return await this.ExecuteRequestAsync(HttpMethod.Get, url, queryString, headers, cancellationToken: cancellationToken);
-	}
-	
-	public IResponseResult RevokeToken(string accessToken, bool logoutFromAllDevices = false)
-	{
-		return this.RevokeToken(BearerToken.CreateTemp(accessToken), logoutFromAllDevices);
+		return await this.ExecuteRequestAsync(HttpMethod.Get, url, queryString, headers, cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	public async Task<IResponseResult> RevokeTokenAsync(string accessToken, bool logoutFromAllDevices = false, CancellationToken cancellationToken = default)
 	{
-		return await this.RevokeTokenAsync(BearerToken.CreateTemp(accessToken), logoutFromAllDevices, cancellationToken: cancellationToken);
-	}
-	
-	public IResponseResult<User> Me(BearerToken bearerToken)
-	{
-		var url = $"{this.BaseUrl}/me";
-		var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
-		return this.ExecuteRequest<User>(HttpMethod.Get, url, null, headers);
-	}
-	
-	public IResponseResult<T> Me<T>(BearerToken bearerToken) where T : class
-	{
-		var url = $"{this.BaseUrl}/me";
-		var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
-		return this.ExecuteRequest<T>(HttpMethod.Get, url, null, headers);
+		return await this.RevokeTokenAsync(BearerToken.CreateTemp(accessToken), logoutFromAllDevices, cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	public async Task<IResponseResult<User>> MeAsync(BearerToken bearerToken, CancellationToken cancellationToken = default)
 	{
 		var url = $"{this.BaseUrl}/me";
 		var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
-		return await this.ExecuteRequestAsync<User>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);
+		return await this.ExecuteRequestAsync<User>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	public async Task<IResponseResult<T>> MeAsync<T>(BearerToken bearerToken, CancellationToken cancellationToken = default) where T : class
 	{
 		var url = $"{this.BaseUrl}/me";
 		var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
-		return await this.ExecuteRequestAsync<T>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);
-	}
-	
-	public IResponseResult<User> WhoAmI(BearerToken bearerToken)
-	{
-		var url = $"{this.BaseUrl}/whoami";
-		var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
-		return this.ExecuteRequest<User>(HttpMethod.Get, url, null, headers);	
-	}
-	
-	public IResponseResult<T> WhoAmI<T>(BearerToken bearerToken) where T : class
-	{
-		var url = $"{this.BaseUrl}/whoami";
-		var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
-		return this.ExecuteRequest<T>(HttpMethod.Get, url, null, headers);
+		return await this.ExecuteRequestAsync<T>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	public async Task<IResponseResult<User>> WhoAmIAsync(BearerToken bearerToken, CancellationToken cancellationToken = default)
 	{
 		var url = $"{this.BaseUrl}/whoami";
 		var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
-		return await this.ExecuteRequestAsync<User>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);	
+		return await this.ExecuteRequestAsync<User>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken).ConfigureAwait(false);	
 	}
 	
 	public async Task<IResponseResult<T>> WhoAmIAsync<T>(BearerToken bearerToken, CancellationToken cancellationToken = default) where T : class
 	{
 		var url = $"{this.BaseUrl}/whoami";
 		var headers = HeaderCollection.Add("Authorization", bearerToken.ToString());
-		return await this.ExecuteRequestAsync<T>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);
-	}
-	
-	public IResponseResult<Application> WhoAmI(BasicToken basicToken)
-	{
-		var url = $"{this.BaseUrl}/whoami";
-		var headers = HeaderCollection.Add("Authorization", basicToken.ToString());
-		return this.ExecuteRequest<Application>(HttpMethod.Get, url, null, headers);	
+		return await this.ExecuteRequestAsync<T>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	public async Task<IResponseResult<Application>> WhoAmIAsync(BasicToken basicToken, CancellationToken cancellationToken = default)
 	{
 		var url = $"{this.BaseUrl}/whoami";
 		var headers = HeaderCollection.Add("Authorization", basicToken.ToString());
-		return await this.ExecuteRequestAsync<Application>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken);
+		return await this.ExecuteRequestAsync<Application>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	private static IResponseResult<BearerToken> ConvertToBearerTokenResponse(IResponseResult response)

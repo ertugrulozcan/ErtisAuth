@@ -55,7 +55,7 @@ public class UserService : MembershipBoundedService<User>, IUserService
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}",
 			queryString,
 			HeaderCollection.Add("Authorization", token.ToString()),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	public async Task<IResponseResult<IPaginationCollection<T>>> QueryAsync<T>(
@@ -73,22 +73,12 @@ public class UserService : MembershipBoundedService<User>, IUserService
 			QueryStringHelper.GetQueryString(skip, limit, withCount, sorting),
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(query),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion
 	
 	#region Active Tokens
-	
-	public IResponseResult<IPaginationCollection<ActiveToken>> GetActiveTokens(
-		string userId, 
-		TokenBase token,
-		int? skip = null, 
-		int? limit = null, 
-		bool? withCount = null, 
-		string? orderBy = null, 
-		SortDirection? sortDirection = null) =>
-		this.GetActiveTokensAsync(userId, token, skip, limit, withCount, orderBy, sortDirection).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<IPaginationCollection<ActiveToken>>> GetActiveTokensAsync(
 		string userId, 
@@ -107,22 +97,12 @@ public class UserService : MembershipBoundedService<User>, IUserService
 			QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(query),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion
 	
 	#region Revoked Tokens
-	
-	public IResponseResult<IPaginationCollection<RevokedToken>> GetRevokedTokens(
-		string userId, 
-		TokenBase token,
-		int? skip = null, 
-		int? limit = null, 
-		bool? withCount = null, 
-		string? orderBy = null, 
-		SortDirection? sortDirection = null) =>
-		this.GetRevokedTokensAsync(userId, token, skip, limit, withCount, orderBy, sortDirection).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<IPaginationCollection<RevokedToken>>> GetRevokedTokensAsync(
 		string userId, 
@@ -141,7 +121,7 @@ public class UserService : MembershipBoundedService<User>, IUserService
 			QueryStringHelper.GetQueryString(skip, limit, withCount, orderBy, sortDirection), 
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(query),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion

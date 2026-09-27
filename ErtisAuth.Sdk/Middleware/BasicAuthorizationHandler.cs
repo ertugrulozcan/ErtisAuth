@@ -55,7 +55,7 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 	public async Task<Utilizer> CheckAuthenticationAsync(BasicToken token)
 	{
 		var applicationId = token.AccessToken.Split(':')[0];
-		var getApplicationResponse = await this._applicationService.GetAsync(applicationId, token);
+		var getApplicationResponse = await this._applicationService.GetAsync(applicationId, token).ConfigureAwait(false);
 		if (getApplicationResponse is { IsSuccess: true, Data: not null })
 		{
 			Utilizer utilizer = getApplicationResponse.Data;
@@ -104,10 +104,10 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 		}
 		else
 		{
-			var getApplicationResponse = await this._applicationService.GetAsync(applicationId, token);
+			var getApplicationResponse = await this._applicationService.GetAsync(applicationId, token).ConfigureAwait(false);
 			if (getApplicationResponse is { IsSuccess: true, Data: not null })
 			{
-				var isPermittedForAction = await this._roleService.CheckPermissionAsync(rbac, token);
+				var isPermittedForAction = await this._roleService.CheckPermissionAsync(rbac, token).ConfigureAwait(false);
 				Utilizer utilizer = getApplicationResponse.Data;
 				utilizer.Token = token.AccessToken;
 				utilizer.TokenType = SupportedTokenTypes.Basic;

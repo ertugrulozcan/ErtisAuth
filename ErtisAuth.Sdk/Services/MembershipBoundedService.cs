@@ -63,9 +63,6 @@ public abstract class MembershipBoundedService<T> : ReadonlyMembershipBoundedSer
 	
 	#region Create Methods
 	
-	public IResponseResult<T> Create<TCreateModel>(TCreateModel model, TokenBase token) where TCreateModel : T =>
-		this.CreateAsync(model, token).ConfigureAwait(false).GetAwaiter().GetResult();
-	
 	public async Task<IResponseResult<T>> CreateAsync<TCreateModel>(TCreateModel model, TokenBase token, CancellationToken cancellationToken = default) where TCreateModel : T
 	{
 		return await this.ExecuteRequestAsync<T>(
@@ -74,15 +71,12 @@ public abstract class MembershipBoundedService<T> : ReadonlyMembershipBoundedSer
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(model),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion
 	
 	#region Update Methods
-	
-	public IResponseResult<T> Update(T model, TokenBase token) =>
-		this.UpdateAsync(model, token).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<T>> UpdateAsync(T model, TokenBase token, CancellationToken cancellationToken = default)
 	{
@@ -97,15 +91,12 @@ public abstract class MembershipBoundedService<T> : ReadonlyMembershipBoundedSer
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(model),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion
 	
 	#region Delete Methods
-	
-	public IResponseResult Delete(string modelId, TokenBase token) =>
-		this.DeleteAsync(modelId, token).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult> DeleteAsync(string modelId, TokenBase token, CancellationToken cancellationToken = default)
 	{
@@ -114,11 +105,8 @@ public abstract class MembershipBoundedService<T> : ReadonlyMembershipBoundedSer
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/{modelId}", 
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
-	
-	public IResponseResult BulkDelete(IEnumerable<string> modelIds, TokenBase token) =>
-		this.BulkDeleteAsync(modelIds, token).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult> BulkDeleteAsync(IEnumerable<string> modelIds, TokenBase token, CancellationToken cancellationToken = default)
 	{
@@ -128,7 +116,7 @@ public abstract class MembershipBoundedService<T> : ReadonlyMembershipBoundedSer
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(modelIds),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion

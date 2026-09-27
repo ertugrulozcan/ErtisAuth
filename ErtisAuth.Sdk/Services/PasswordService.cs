@@ -26,8 +26,6 @@ public class PasswordService : MembershipBoundedService, IPasswordService
 	
 	#region Methods
 	
-	public IResponseResult ChangePassword(string userId, string newPassword, TokenBase token) => this.ChangePasswordAsync(userId, newPassword, token).ConfigureAwait(false).GetAwaiter().GetResult();
-	
 	public async Task<IResponseResult> ChangePasswordAsync(string userId, string newPassword, TokenBase token, CancellationToken cancellationToken = default)
 	{
 		return await this.ExecuteRequestAsync(
@@ -36,10 +34,8 @@ public class PasswordService : MembershipBoundedService, IPasswordService
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(new { password = newPassword }),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
-	
-	public IResponseResult<ResetPasswordToken> ResetPassword(string emailAddress, string server, string host, TokenBase token) => this.ResetPasswordAsync(emailAddress, server, host, token).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress, string server, string host, TokenBase token, CancellationToken cancellationToken = default)
 	{
@@ -54,10 +50,8 @@ public class PasswordService : MembershipBoundedService, IPasswordService
 				server,
 				host
 			}),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
-	
-	public IResponseResult SetPassword(string email, string password, string resetToken, TokenBase token) => this.SetPasswordAsync(email, password, resetToken, token).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	public async Task<IResponseResult> SetPasswordAsync(string email, string password, string resetToken, TokenBase token, CancellationToken cancellationToken = default)
 	{
@@ -67,7 +61,7 @@ public class PasswordService : MembershipBoundedService, IPasswordService
 			null, 
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(new { email_address = email, reset_token = resetToken, password }),
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
 	#endregion
