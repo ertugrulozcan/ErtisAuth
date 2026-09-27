@@ -43,6 +43,15 @@ public class RevokedToken : MembershipBoundedResource
 	[BsonElement("token_type")]
 	public string? TokenType { get; set; }
 	
+	/// <summary>
+	/// The expiry of the revoked token itself; the revocation is needed until then.
+	/// The TTL index of the collection deletes the record after this time.
+	/// </summary>
+	[JsonProperty("retain_until")]
+	[JsonPropertyName("retain_until")]
+	[BsonElement("retain_until")]
+	public DateTime RetainUntil { get; set; }
+	
 	[JsonProperty("revoked_at")]
 	[JsonPropertyName("revoked_at")]
 	[BsonElement("revoked_at")]

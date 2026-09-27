@@ -1,3 +1,4 @@
+using Ertis.Core.Collections;
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
@@ -18,7 +19,8 @@ public class ActiveTokensRepository : RepositoryBase<ActiveToken>, IActiveTokens
 		new SingleIndexDefinition("email_address"),
 		new SingleIndexDefinition("membership_id"),
 		new CompoundIndexDefinition("user_id", "membership_id"),
-		new CompoundIndexDefinition("expire_time", "membership_id")
+		new CompoundIndexDefinition("expire_time", "membership_id"),
+		new TTLIndexDefinition("retain_until", SortDirection.Ascending, TTLGracePeriod)
 	};
 	
 	#endregion

@@ -29,9 +29,5 @@ public interface ITokenService
 	
 	Task RevokeAllAsync(string membershipId, string userId, bool fireEvent = true, CancellationToken cancellationToken = default);
 	
-	Task ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default);
-	
-	Task ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default);
-	
 	Task<User?> GetTokenOwnerUserAsync(string bearerToken, CancellationToken cancellationToken = default);
 }

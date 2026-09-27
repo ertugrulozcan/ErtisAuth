@@ -267,21 +267,6 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		return null;
 	}
 	
-	public async Task ClearExpiredPasswordsAsync(string membershipId, CancellationToken cancellationToken = default)
-	{
-		var expiredOtpList = new List<OneTimePassword>();
-		var results = await this.GetAsync(membershipId, cancellationToken: cancellationToken);
-		foreach (var oneTimePassword in results.Items)
-		{
-			if (oneTimePassword.Token is { IsExpired: true })
-			{
-				expiredOtpList.Add(oneTimePassword);
-			}
-		}
-		
-		await this._repository.BulkDeleteAsync(expiredOtpList, cancellationToken: cancellationToken);
-	}
-	
 	public async Task RevokeResetPasswordTokenAsync(Utilizer utilizer, string membershipId, string resetToken, CancellationToken cancellationToken = default)
 	{
 		try

@@ -643,31 +643,17 @@ public class TokenService : ITokenService
 		
 		foreach (var activeToken in activeTokens)
 		{
-			await this._revokedTokenService.RevokeAsync(activeToken.AccessToken, user, false, cancellationToken: cancellationToken);
+			await this._revokedTokenService.RevokeAsync(activeToken.AccessToken, user, false, activeToken.ExpireTime, cancellationToken: cancellationToken);
 			
 			if (!string.IsNullOrEmpty(activeToken.RefreshToken))
 			{
-				await this._revokedTokenService.RevokeAsync(activeToken.RefreshToken, user, true, cancellationToken: cancellationToken);
+				await this._revokedTokenService.RevokeAsync(activeToken.RefreshToken, user, true, activeToken.RefreshTokenExpireTime, cancellationToken: cancellationToken);
 			}
 			
 			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenRevoked, user, membership.Id, new { activeToken.AccessToken }, cancellationToken: cancellationToken);
 		}
 		
 		await this._activeTokenService.BulkDeleteAsync(activeTokens, cancellationToken: cancellationToken);
-	}
-	
-	#endregion
-	
-	#region Cleaning
-	
-	public async Task ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default)
-	{
-		await this._activeTokenService.ClearExpiredActiveTokens(membershipId, cancellationToken: cancellationToken);
-	}
-	
-	public async Task ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default)
-	{
-		await this._revokedTokenService.ClearRevokedTokens(membershipId, cancellationToken: cancellationToken);
 	}
 	
 	#endregion

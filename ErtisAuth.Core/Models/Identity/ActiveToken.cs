@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
+using JsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
+using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
 namespace ErtisAuth.Core.Models.Identity;
 
@@ -67,6 +69,20 @@ public class ActiveToken : MembershipBoundedResource
 	[JsonPropertyName("expire_time")]
 	[BsonElement("expire_time")]
 	public DateTime ExpireTime => this.CreatedAt.Add(TimeSpan.FromSeconds(this.ExpiresIn));
+	
+	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
+	[BsonIgnore]
+	public DateTime RefreshTokenExpireTime => this.CreatedAt.Add(TimeSpan.FromSeconds(this.RefreshTokenExpiresIn));
+	
+	/// <summary>
+	/// The record is needed until both tokens of the pair have expired: revoking either of them looks the record up
+	/// (expire_time only covers the access token). The TTL index of the collection deletes the record after this time.
+	/// </summary>
+	[JsonProperty("retain_until")]
+	[JsonPropertyName("retain_until")]
+	[BsonElement("retain_until")]
+	public DateTime RetainUntil => this.ExpireTime > this.RefreshTokenExpireTime ? this.ExpireTime : this.RefreshTokenExpireTime;
 	
 	[JsonProperty("client_info")]
 	[JsonPropertyName("client_info")]

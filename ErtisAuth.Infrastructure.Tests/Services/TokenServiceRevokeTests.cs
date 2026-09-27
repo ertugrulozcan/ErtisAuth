@@ -78,6 +78,9 @@ public class TokenServiceRevokeTests
 					Id = Guid.NewGuid().ToString(),
 					AccessToken = bearerToken.AccessToken,
 					RefreshToken = bearerToken.RefreshToken,
+					ExpiresIn = bearerToken.ExpiresInTimeStamp,
+					RefreshTokenExpiresIn = bearerToken.RefreshTokenExpiresInTimeStamp,
+					CreatedAt = bearerToken.CreatedAt,
 					UserId = callInfo.ArgAt<User>(1).Id,
 					MembershipId = callInfo.ArgAt<string>(2)
 				};
@@ -99,7 +102,7 @@ public class TokenServiceRevokeTests
 			});
 		
 		this._revokedTokenService
-			.When(x => x.RevokeAsync(Arg.Any<string>(), Arg.Any<User>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()))
+			.When(x => x.RevokeAsync(Arg.Any<string>(), Arg.Any<User>(), Arg.Any<bool>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()))
 			.Do(callInfo =>
 			{
 				var token = callInfo.ArgAt<string>(0);
@@ -108,7 +111,8 @@ public class TokenServiceRevokeTests
 					Id = Guid.NewGuid().ToString(),
 					Token = token,
 					MembershipId = callInfo.ArgAt<User>(1).MembershipId,
-					TokenType = callInfo.ArgAt<bool>(2) ? "refresh_token" : "bearer_token"
+					TokenType = callInfo.ArgAt<bool>(2) ? "refresh_token" : "bearer_token",
+					RetainUntil = callInfo.ArgAt<DateTime>(3)
 				};
 			});
 		
@@ -236,6 +240,24 @@ public class TokenServiceRevokeTests
 		
 		this.AssertRevoked(token);
 		this.AssertRevoked(otherToken);
+	}
+	
+	#endregion
+	
+	#region Retention
+	
+	[Fact]
+	public async Task RevokeTokenAsync_KeepsEachRevocationUntilItsTokenExpires()
+	{
+		var tokenService = this.CreateTokenService();
+		var token = await this.GenerateTokenAsync(tokenService);
+		var activeToken = this._activeTokens.Single(x => x.AccessToken == token.AccessToken);
+		
+		await tokenService.RevokeTokenAsync(token.AccessToken, cancellationToken: TestContext.Current.CancellationToken);
+		
+		// The test membership: access tokens live 1 hour, refresh tokens 2 hours
+		Assert.Equal(activeToken.CreatedAt.AddSeconds(3600), this._revokedTokens[token.AccessToken].RetainUntil);
+		Assert.Equal(activeToken.CreatedAt.AddSeconds(7200), this._revokedTokens[token.RefreshToken!].RetainUntil);
 	}
 	
 	#endregion

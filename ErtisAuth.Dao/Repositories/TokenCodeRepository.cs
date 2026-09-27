@@ -1,3 +1,4 @@
+using Ertis.Core.Collections;
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
@@ -17,7 +18,8 @@ public class TokenCodeRepository : RepositoryBase<TokenCode>, ITokenCodeReposito
         new SingleIndexDefinition("code"),
         new SingleIndexDefinition("membership_id"),
         new CompoundIndexDefinition("user_id", "membership_id"),
-        new CompoundIndexDefinition("code", "membership_id")
+        new CompoundIndexDefinition("code", "membership_id"),
+        new TTLIndexDefinition("expire_time", SortDirection.Ascending, TTLGracePeriod)
     };
     
     #endregion

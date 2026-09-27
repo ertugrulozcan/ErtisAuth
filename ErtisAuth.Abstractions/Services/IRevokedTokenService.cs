@@ -5,9 +5,13 @@ namespace ErtisAuth.Abstractions.Services;
 
 public interface IRevokedTokenService : IMembershipBoundedService<RevokedToken>
 {
-	Task RevokeAsync(string token, User user, bool isRefreshToken, CancellationToken cancellationToken = default);
+	/// <param name="token"></param>
+	/// <param name="user"></param>
+	/// <param name="isRefreshToken"></param>
+	/// <param name="retainUntil">The expiry of the revoked token; the revocation record is kept until then</param>
+	/// <param name="cancellationToken"></param>
+	Task RevokeAsync(string token, User user, bool isRefreshToken, DateTime retainUntil, CancellationToken cancellationToken = default);
 	
 	Task<RevokedToken?> GetByAccessTokenAsync(string accessToken, CancellationToken cancellationToken = default);
-	
-	Task ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default);
+
 }

@@ -1,3 +1,4 @@
+using Ertis.Core.Collections;
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
@@ -13,7 +14,8 @@ public class RevokedTokensRepository : RepositoryBase<RevokedToken>, IRevokedTok
     
 	protected override IIndexDefinition[] Indexes => new IIndexDefinition[]
 	{
-		new SingleIndexDefinition("token.access_token")
+		new SingleIndexDefinition("token"),
+		new TTLIndexDefinition("retain_until", SortDirection.Ascending, TTLGracePeriod)
 	};
 	
 	#endregion

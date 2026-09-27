@@ -94,26 +94,5 @@ public class ActiveTokenService : MembershipBoundedService<ActiveToken>, IActive
 		await this._repository.BulkDeleteAsync(activeTokens, cancellationToken: cancellationToken);
 	}
 	
-	public async Task ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default)
-	{
-		try
-		{
-			var expiredActiveTokensResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.UtcNow, sorting: null, cancellationToken: cancellationToken);
-			var expiredActiveTokens = expiredActiveTokensResult.Items.ToArray();
-			if (expiredActiveTokens.Any())
-			{
-				var isDeleted = await this._repository.BulkDeleteAsync(expiredActiveTokens, cancellationToken: cancellationToken);
-				if (isDeleted)
-				{
-					this._logger.LogInformation("{Count} expired active token cleared", expiredActiveTokens.Length);
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			this._logger.LogError(ex, "ActiveTokenService.ClearExpiredActiveTokens occured an error");
-		}
-	}
-	
 	#endregion
 }

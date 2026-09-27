@@ -191,26 +191,5 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 		return tokenCode.Token;
 	}
 	
-	public async Task ClearExpiredTokenCodes(string membershipId, CancellationToken cancellationToken = default)
-	{
-		try
-		{
-			var expiredTokenCodesResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.ExpireTime < DateTime.UtcNow, sorting: null, cancellationToken: cancellationToken);
-			var expiredTokenCodes = expiredTokenCodesResult.Items.ToArray();
-			if (expiredTokenCodes.Length > 0)
-			{
-				var isDeleted = await this._repository.BulkDeleteAsync(expiredTokenCodes, cancellationToken: cancellationToken);
-				if (isDeleted)
-				{
-					this._logger.LogInformation("{Count} expired token code cleared", expiredTokenCodes.Length);
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			this._logger.LogError(ex, "TokenCodeService.ClearExpiredTokenCodes occured an error");
-		}
-	}
-	
 	#endregion
 }

@@ -20,6 +20,13 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 	
 	protected virtual IIndexDefinition[] Indexes => Array.Empty<IIndexDefinition>();
 	
+	/// <summary>
+	/// TTL indexes delete documents this long after the time in their field, as a margin over clock differences
+	/// (the same as the default clock skew of JWT validation). Expiry is always checked by the application itself;
+	/// TTL indexes only keep the collections from growing.
+	/// </summary>
+	protected static readonly TimeSpan TTLGracePeriod = TimeSpan.FromMinutes(5);
+	
 	#endregion
     
 	#region Constructors

@@ -75,12 +75,13 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken>, IRevo
 		return revokedToken;
 	}
 	
-	public async Task RevokeAsync(string token, User user, bool isRefreshToken, CancellationToken cancellationToken = default)
+	public async Task RevokeAsync(string token, User user, bool isRefreshToken, DateTime retainUntil, CancellationToken cancellationToken = default)
 	{
 		var revokedToken = new RevokedToken
 		{
 			Token = token,
 			RevokedAt = DateTime.UtcNow,
+			RetainUntil = retainUntil,
 			UserId = user.Id,
 			UserName = user.Username,
 			EmailAddress = user.EmailAddress,
@@ -93,33 +94,6 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken>, IRevo
 		await this._repository.InsertAsync(revokedToken, cancellationToken: cancellationToken);
 		var cacheKey = GetCacheKey(token);
 		this._memoryCache.Set(cacheKey, revokedToken, GetCacheTTL());
-	}
-	
-	public async Task ClearRevokedTokens(string membershipId, CancellationToken cancellationToken = default)
-	{
-		try
-		{
-			var revokedTokensResult = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.RevokedAt < DateTime.UtcNow.AddHours(24), sorting: null, cancellationToken: cancellationToken);
-			var revokedTokens = revokedTokensResult.Items.ToArray();
-			if (revokedTokens.Any())
-			{
-				var isDeleted = await this._repository.BulkDeleteAsync(revokedTokens, cancellationToken: cancellationToken);
-				if (isDeleted)
-				{
-					this._logger.LogInformation("{Count} revoked token cleared", revokedTokens.Length);
-				}
-				
-				foreach (var revokedToken in revokedTokens)
-				{
-					var cacheKey = GetCacheKey(revokedToken.Token!);
-					this._memoryCache.Remove(cacheKey);	
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			this._logger.LogError(ex, "RevokedTokenService.ClearRevokedTokens occured an error");
-		}
 	}
 	
 	#endregion

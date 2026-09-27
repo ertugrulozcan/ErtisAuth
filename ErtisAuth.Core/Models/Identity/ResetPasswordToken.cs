@@ -56,7 +56,16 @@ public class ResetPasswordToken
 	[JsonIgnore]
 	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public bool IsExpired => DateTime.UtcNow > this.CreatedAt.Add(this.ExpiresIn);
+	public bool IsExpired => DateTime.UtcNow > this.ExpireTime;
+	
+	/// <summary>
+	/// Stored for the TTL index of one time passwords (the lifetime differs per membership, so it must be an absolute time).
+	/// Not serialized to clients.
+	/// </summary>
+	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
+	[BsonElement("expire_time")]
+	public DateTime ExpireTime => this.CreatedAt.Add(this.ExpiresIn);
 	
 	#endregion
 	

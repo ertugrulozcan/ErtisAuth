@@ -28,6 +28,4 @@ public interface IActiveTokenService : IMembershipBoundedService<ActiveToken>
 		CancellationToken cancellationToken = default);
 	
 	Task BulkDeleteAsync(IEnumerable<ActiveToken> activeTokens, CancellationToken cancellationToken = default);
-	
-	Task ClearExpiredActiveTokens(string membershipId, CancellationToken cancellationToken = default);
 }

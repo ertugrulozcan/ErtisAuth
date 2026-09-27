@@ -1,3 +1,4 @@
+using Ertis.Core.Collections;
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
@@ -14,7 +15,8 @@ public class OneTimePasswordRepository : RepositoryBase<OneTimePassword>, IOneTi
     protected override IIndexDefinition[] Indexes => new IIndexDefinition[]
     {
         new SingleIndexDefinition("user_id"),
-        new CompoundIndexDefinition("email_address", "password", "membership_id")
+        new CompoundIndexDefinition("email_address", "password", "membership_id"),
+        new TTLIndexDefinition("token.expire_time", SortDirection.Ascending, TTLGracePeriod)
     };
     
     #endregion
