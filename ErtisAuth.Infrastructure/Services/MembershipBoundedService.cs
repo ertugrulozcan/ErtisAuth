@@ -35,7 +35,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	
 	#region Query Methods
 	
-	public IPaginationCollection<dynamic> Query(
+	public virtual IPaginationCollection<dynamic> Query(
 		string membershipId, 
 		string query, 
 		int? skip = null, 
@@ -45,11 +45,12 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		SortDirection? sortDirection = null, 
 		IDictionary<string, bool>? selectFields = null)
 	{
+		query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId);
 		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return this._repository.Query(query, skip, limit, withCount, sortField, sortDirection, selectFields);
 	}
 	
-	public async Task<IPaginationCollection<dynamic>> QueryAsync(
+	public virtual async Task<IPaginationCollection<dynamic>> QueryAsync(
 		string membershipId, 
 		string query, 
 		int? skip = null, 

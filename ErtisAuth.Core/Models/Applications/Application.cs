@@ -50,6 +50,15 @@ public class Application : MembershipBoundedResource, IUtilizer, IHasSysInfo
 	[BsonElement("forbidden")]
 	public IEnumerable<string>? Forbidden { get; set; }
 	
+	/// <summary>
+	/// SHA-256 hash of the application secret used in Basic tokens. Server-managed and never serialized to clients.
+	/// </summary>
+	[NewtonsoftJsonIgnore]
+	[JsonIgnore]
+	[BsonElement("secret_hash")]
+	[BsonIgnoreIfNull]
+	public string? SecretHash { get; set; }
+	
 	[JsonProperty("sys")]
 	[JsonPropertyName("sys")]
 	[BsonElement("sys")]

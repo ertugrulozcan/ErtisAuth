@@ -70,7 +70,7 @@ public class ApplicationsController : QueryControllerBase
 		};
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var app = await this._applicationService.CreateAsync(utilizer, membershipId, applicationModel, cancellationToken: cancellationToken);
+		var app = await this._applicationService.CreateWithSecretAsync(utilizer, membershipId, applicationModel, cancellationToken: cancellationToken);
 		
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{app.Id}", app);
 	}
@@ -165,6 +165,24 @@ public class ApplicationsController : QueryControllerBase
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var app = await this._applicationService.UpdateAsync(utilizer, membershipId, applicationModel, cancellationToken: cancellationToken);
+		return this.Ok(app);
+	}
+	
+	/// <summary>
+	/// Generates a new secret for the application and revokes the previous one immediately.
+	/// The plain secret is only returned in this response.
+	/// </summary>
+	[HttpPost("{id}/secret")]
+	[RbacObject("{id}")]
+	[RbacAction(Rbac.CrudActions.Update)]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> RotateSecret([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+	{
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var app = await this._applicationService.RotateSecretAsync(utilizer, membershipId, id, cancellationToken: cancellationToken);
 		return this.Ok(app);
 	}
 	

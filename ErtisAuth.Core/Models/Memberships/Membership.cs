@@ -126,6 +126,18 @@ public class Membership : ResourceBase, IHasSysInfo
 	[BsonIgnoreIfNull]
 	public OtpSettings? OtpSettings { get; set; }
 	
+	// LEGACY-APP-SECRET: temporary switch, remove after all applications are migrated to their own secrets
+	/// <summary>
+	/// Allows applications without their own secret to authenticate with the membership secret key.
+	/// Missing (null) on memberships created before application secrets existed, which is treated as allowed.
+	/// </summary>
+	[JsonProperty("allow_membership_secret_for_applications")]
+	[JsonPropertyName("allow_membership_secret_for_applications")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	[BsonElement("allow_membership_secret_for_applications")]
+	[BsonIgnoreIfNull]
+	public bool? AllowMembershipSecretForApplications { get; set; }
+	
 	[JsonProperty("sys")]
 	[JsonPropertyName("sys")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

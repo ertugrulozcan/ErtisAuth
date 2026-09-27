@@ -124,6 +124,8 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 			destination.SecretKey = source.SecretKey;
 		}
 		
+		destination.AllowMembershipSecretForApplications ??= source.AllowMembershipSecretForApplications; // LEGACY-APP-SECRET
+		
 		if (string.IsNullOrEmpty(destination.HashAlgorithm))
 		{
 			destination.HashAlgorithm = source.HashAlgorithm;
@@ -331,6 +333,9 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	public override Membership Create(Membership model)
 	{
+		// LEGACY-APP-SECRET: new memberships have no legacy applications
+		model.AllowMembershipSecretForApplications = false;
+		
 		var created = base.Create(model);
 		this.PurgeAllCache();
 		return created;
@@ -338,6 +343,9 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	public override async Task<Membership> CreateAsync(Membership model, CancellationToken cancellationToken = default)
 	{
+		// LEGACY-APP-SECRET: new memberships have no legacy applications
+		model.AllowMembershipSecretForApplications = false;
+		
 		var created = await base.CreateAsync(model, cancellationToken: cancellationToken);
 		await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
 		return created;

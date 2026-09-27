@@ -69,6 +69,7 @@ public class TokenServicePasswordLoginTests
 			Substitute.For<IEventService>(),
 			this._activeTokenService,
 			Substitute.For<IRevokedTokenService>(),
+			TestServiceFactory.CreateLegacyApplicationSecretVerifier(),
 			NullLogger<TokenService>.Instance);
 	}
 	

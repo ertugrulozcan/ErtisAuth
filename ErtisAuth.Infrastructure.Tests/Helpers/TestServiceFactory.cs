@@ -2,6 +2,7 @@
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
@@ -23,6 +24,12 @@ internal static class TestServiceFactory
 			Substitute.For<IMailHookService>(),
 			repository ?? Substitute.For<IUserRepository>(),
 			NullLogger<UserService>.Instance);
+	}
+	
+	// LEGACY-APP-SECRET
+	public static LegacyApplicationSecretVerifier CreateLegacyApplicationSecretVerifier()
+	{
+		return new LegacyApplicationSecretVerifier(new MemoryCache(new MemoryCacheOptions()), NullLogger<LegacyApplicationSecretVerifier>.Instance);
 	}
 	
 	public static Membership CreateMembership(string? hashAlgorithm = null, string? defaultEncoding = null)

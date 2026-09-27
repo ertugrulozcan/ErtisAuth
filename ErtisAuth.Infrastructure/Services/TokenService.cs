@@ -1,6 +1,4 @@
 using System.Net;
-using System.Security.Cryptography;
-using System.Text;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Constants;
 using ErtisAuth.Core.Models.Events;
@@ -11,6 +9,7 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Infrastructure.Extensions;
+using ErtisAuth.Infrastructure.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 
@@ -34,6 +33,7 @@ public class TokenService : ITokenService
 	private readonly IEventService _eventService;
 	private readonly IActiveTokenService _activeTokenService;
 	private readonly IRevokedTokenService _revokedTokenService;
+	private readonly LegacyApplicationSecretVerifier _legacyApplicationSecretVerifier; // LEGACY-APP-SECRET
 	private readonly ILogger<TokenService> _logger;
 	
 	#endregion
@@ -51,6 +51,7 @@ public class TokenService : ITokenService
 	/// <param name="eventService"></param>
 	/// <param name="activeTokenService"></param>
 	/// <param name="revokedTokenService"></param>
+	/// <param name="legacyApplicationSecretVerifier"></param>
 	/// <param name="logger"></param>
 	public TokenService(
 		IMembershipService membershipService, 
@@ -61,6 +62,7 @@ public class TokenService : ITokenService
 		IEventService eventService,
 		IActiveTokenService activeTokenService,
 		IRevokedTokenService revokedTokenService,
+		LegacyApplicationSecretVerifier legacyApplicationSecretVerifier, // LEGACY-APP-SECRET
 		ILogger<TokenService> logger)
 	{
 		this._membershipService = membershipService;
@@ -71,6 +73,7 @@ public class TokenService : ITokenService
 		this._eventService = eventService;
 		this._activeTokenService = activeTokenService;
 		this._revokedTokenService = revokedTokenService;
+		this._legacyApplicationSecretVerifier = legacyApplicationSecretVerifier; // LEGACY-APP-SECRET
 		this._logger = logger;
 	}
 	
@@ -474,8 +477,12 @@ public class TokenService : ITokenService
 			throw ErtisAuthException.InvalidToken();
 		}
 		
-		// Constant-time comparison, so that the secret can not be guessed from response times
-		if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(membership.SecretKey), Encoding.UTF8.GetBytes(secret)))
+		// An application with its own secret only accepts that secret
+		var isVerified = !string.IsNullOrEmpty(application.SecretHash)
+			? ApplicationSecretHelper.VerifySecret(secret, application.SecretHash)
+			: this._legacyApplicationSecretVerifier.Verify(application, membership, secret); // LEGACY-APP-SECRET: replace with false after migration
+		
+		if (!isVerified)
 		{
 			throw ErtisAuthException.InvalidToken();
 		}

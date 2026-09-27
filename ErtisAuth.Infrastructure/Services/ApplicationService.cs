@@ -7,6 +7,9 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
+using ErtisAuth.Infrastructure.Helpers;
+using Ertis.Core.Collections;
+using Ertis.MongoDB.Queries;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services;
@@ -16,6 +19,8 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	#region Constants
 	
 	private const string CACHE_KEY = "applications";
+	
+	private const string SECRET_HASH_FIELD = "secret_hash";
 	
 	#endregion
 	
@@ -151,6 +156,9 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		destination.MembershipId = source.MembershipId;
 		destination.Sys = source.Sys;
 		
+		// The secret is server-managed; it can only be changed by rotation
+		destination.SecretHash = source.SecretHash;
+		
 		if (this.IsIdentical(destination, source))
 		{
 			throw ErtisAuthException.IdenticalDocument();
@@ -248,9 +256,72 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		
 		foreach (var application in applications.Items)
 		{
-			var cacheKey = GetCacheKey(membershipId, application.Id);
-			this._memoryCache.Remove(cacheKey);
+			this.PurgeCache(membershipId, application.Id);
 		}
+	}
+	
+	/// <summary>
+	/// Removes both cache entries of the application; the membership-less one is used by Basic token verification.
+	/// </summary>
+	private void PurgeCache(string membershipId, string applicationId)
+	{
+		this._memoryCache.Remove(GetCacheKey(membershipId, applicationId));
+		this._memoryCache.Remove(GetCacheKey("*", applicationId));
+	}
+	
+	#endregion
+	
+	#region Query Methods
+	
+	public override IPaginationCollection<dynamic> Query(
+		string membershipId, 
+		string query, 
+		int? skip = null, 
+		int? limit = null, 
+		bool? withCount = null, 
+		string? sortField = null,
+		SortDirection? sortDirection = null, 
+		IDictionary<string, bool>? selectFields = null)
+	{
+		return base.Query(membershipId, query, skip, limit, withCount, sortField, sortDirection, ExcludeSecretHash(selectFields));
+	}
+	
+	public override async Task<IPaginationCollection<dynamic>> QueryAsync(
+		string membershipId, 
+		string query, 
+		int? skip = null, 
+		int? limit = null, 
+		bool? withCount = null, 
+		string? sortField = null,
+		SortDirection? sortDirection = null, 
+		IDictionary<string, bool>? selectFields = null, 
+		CancellationToken cancellationToken = default)
+	{
+		return await base.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, ExcludeSecretHash(selectFields), cancellationToken: cancellationToken);
+	}
+	
+	/// <summary>
+	/// Query results are raw documents, so the secret hash is excluded by projection (JsonIgnore does not apply to them).
+	/// An inclusion projection returns only the listed fields, so it is enough to drop the hash from it;
+	/// otherwise the hash is excluded explicitly (MongoDB does not allow mixing inclusion and exclusion).
+	/// </summary>
+	private static IDictionary<string, bool> ExcludeSecretHash(IDictionary<string, bool>? selectFields)
+	{
+		var fields = selectFields != null ? new Dictionary<string, bool>(selectFields) : new Dictionary<string, bool>();
+		var isInclusion = fields.Any(x => x.Key != "_id" && x.Value);
+		if (isInclusion)
+		{
+			foreach (var key in fields.Keys.Where(x => x == SECRET_HASH_FIELD || x.StartsWith($"{SECRET_HASH_FIELD}.")).ToArray())
+			{
+				fields.Remove(key);
+			}
+		}
+		else
+		{
+			fields[SECRET_HASH_FIELD] = false;
+		}
+		
+		return fields;
 	}
 	
 	#endregion
@@ -353,6 +424,14 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		return created;
 	}
 	
+	public async Task<ApplicationWithSecret> CreateWithSecretAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
+	{
+		var secret = ApplicationSecretHelper.GenerateSecret();
+		model.SecretHash = ApplicationSecretHelper.HashSecret(secret);
+		var created = await this.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		return new ApplicationWithSecret(created, secret);
+	}
+	
 	#endregion
 	
 	#region Update Methods
@@ -360,6 +439,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	public override Application Update(Utilizer utilizer, string membershipId, Application model)
 	{
 		var updated = base.Update(utilizer, membershipId, model);
+		this.PurgeCache(membershipId, model.Id);
 		this.PurgeAllCache(membershipId);
 		return updated;
 	}
@@ -371,6 +451,44 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		return updated;
 	}
 	
+	public async Task<ApplicationWithSecret> RotateSecretAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	{
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		if (membership == null)
+		{
+			throw ErtisAuthException.MembershipNotFound(membershipId);
+		}
+		
+		// Read from the database, not the cache, so that a cached instance is never modified
+		var current = await this._repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId, cancellationToken: cancellationToken);
+		if (current == null)
+		{
+			throw this.GetNotFoundError(id);
+		}
+		
+		var secret = ApplicationSecretHelper.GenerateSecret();
+		var model = new Application
+		{
+			Id = current.Id,
+			MembershipId = current.MembershipId,
+			Name = current.Name,
+			Slug = current.Slug,
+			Role = current.Role,
+			Permissions = current.Permissions,
+			Forbidden = current.Forbidden,
+			Sys = current.Sys,
+			SecretHash = ApplicationSecretHelper.HashSecret(secret)
+		};
+		
+		var updated = await this._repository.UpdateAsync(model, cancellationToken: cancellationToken);
+		this.PurgeCache(membershipId, id);
+		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+		
+		await this._eventService.FireEventAsync(ErtisAuthEventType.ApplicationUpdated, utilizer, membershipId, updated, current, cancellationToken: cancellationToken);
+		
+		return new ApplicationWithSecret(updated, secret);
+	}
+	
 	#endregion
 	
 	#region Delete Methods
@@ -380,6 +498,8 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		var isDeleted = base.Delete(utilizer, membershipId, id);
 		if (isDeleted)
 		{
+			// The deleted application is no longer listed by PurgeAllCache, so its own entries are removed explicitly
+			this.PurgeCache(membershipId, id);
 			this.PurgeAllCache(membershipId);	
 		}
 		
@@ -391,10 +511,36 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
 		if (isDeleted)
 		{
+			// The deleted application is no longer listed by PurgeAllCacheAsync, so its own entries are removed explicitly
+			this.PurgeCache(membershipId, id);
 			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);	
 		}
 		
 		return isDeleted;
+	}
+	
+	public override bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids)
+	{
+		var result = base.BulkDelete(utilizer, membershipId, ids);
+		foreach (var id in ids)
+		{
+			this.PurgeCache(membershipId, id);
+		}
+		
+		this.PurgeAllCache(membershipId);
+		return result;
+	}
+	
+	public override async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
+	{
+		var result = await base.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken: cancellationToken);
+		foreach (var id in ids)
+		{
+			this.PurgeCache(membershipId, id);
+		}
+		
+		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+		return result;
 	}
 	
 	#endregion

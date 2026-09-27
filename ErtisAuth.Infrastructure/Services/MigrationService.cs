@@ -113,7 +113,7 @@ public class MigrationService : IMigrationService
 		// 5. Application
 		if (_application != null)
 		{
-			var application = await this._applicationService.CreateAsync(utilizer, membership.Id, new Application
+			var application = await this._applicationService.CreateWithSecretAsync(utilizer, membership.Id, new Application
 			{
 				Name = _application.Name,
 				Slug = _application.Slug,

@@ -15,6 +15,7 @@ public static class ServiceExtensions
 	{
 		services.AddSingleton<ISystemRestHandler, SystemRestHandler>();
 		services.AddSingleton<IJwtService, JwtService>();
+		services.AddSingleton<LegacyApplicationSecretVerifier>(); // LEGACY-APP-SECRET
 		services.AddSingleton<ITokenService, TokenService>();
 		services.AddSingleton<IActiveTokenService, ActiveTokenService>();
 		services.AddSingleton<IRevokedTokenService, RevokedTokenService>();
