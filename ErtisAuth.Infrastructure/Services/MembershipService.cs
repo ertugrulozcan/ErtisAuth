@@ -222,9 +222,15 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	#region Cache Methods
 	
+	// Ids and secret keys are kept under separate prefixes, so that a lookup by one can never hit an entry of the other
 	private static string GetCacheKey(string membershipId)
 	{
-		return $"{CACHE_KEY}.{membershipId}";
+		return $"{CACHE_KEY}.id.{membershipId}";
+	}
+	
+	private static string GetSecretKeyCacheKey(string secretKey)
+	{
+		return $"{CACHE_KEY}.secret-key.{secretKey}";
 	}
 	
 	private static MemoryCacheEntryOptions GetCacheTTL()
@@ -239,14 +245,21 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		var memberships = await this.GetAsync(cancellationToken: cancellationToken);
 		foreach (var membership in memberships.Items)
 		{
-			var cacheKey1 = GetCacheKey(membership.Id);
-			this._memoryCache.Remove(cacheKey1);
-			
-			if (!string.IsNullOrEmpty(membership.SecretKey))
-			{
-				var cacheKey2 = GetCacheKey(membership.SecretKey);
-				this._memoryCache.Remove(cacheKey2);
-			}
+			this.PurgeCache(membership);
+		}
+	}
+	
+	private void PurgeCache(Membership? membership)
+	{
+		if (membership == null)
+		{
+			return;
+		}
+		
+		this._memoryCache.Remove(GetCacheKey(membership.Id));
+		if (!string.IsNullOrEmpty(membership.SecretKey))
+		{
+			this._memoryCache.Remove(GetSecretKeyCacheKey(membership.SecretKey));
 		}
 	}
 	
@@ -295,7 +308,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	public Membership? GetBySecretKey(string secretKey)
 	{
-		var cacheKey = GetCacheKey(secretKey);
+		var cacheKey = GetSecretKeyCacheKey(secretKey);
 		if (!this._memoryCache.TryGetValue<Membership>(cacheKey, out var membership))
 		{
 			membership = this._repository.FindOne(x => x.SecretKey == secretKey);
@@ -312,7 +325,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	public async Task<Membership?> GetBySecretKeyAsync(string secretKey, CancellationToken cancellationToken = default)
 	{
-		var cacheKey = GetCacheKey(secretKey);
+		var cacheKey = GetSecretKeyCacheKey(secretKey);
 		if (!this._memoryCache.TryGetValue<Membership>(cacheKey, out var membership))
 		{
 			membership = await this._repository.FindOneAsync(x => x.SecretKey == secretKey, cancellationToken: cancellationToken);
@@ -357,14 +370,20 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	public override Membership Update(Membership model)
 	{
+		// The secret key may change, so the entries of the prior version are removed explicitly (read from the database, not the cache)
+		var prior = base.Get(model.Id);
 		var updated = base.Update(model);
+		this.PurgeCache(prior);
 		this.PurgeAllCache();
 		return updated;
 	}
 	
 	public override async Task<Membership> UpdateAsync(Membership model, CancellationToken cancellationToken = default)
 	{
+		// The secret key may change, so the entries of the prior version are removed explicitly (read from the database, not the cache)
+		var prior = await base.GetAsync(model.Id, cancellationToken: cancellationToken);
 		var updated = await base.UpdateAsync(model, cancellationToken: cancellationToken);
+		this.PurgeCache(prior);
 		await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
 		return updated;
 	}
@@ -381,9 +400,12 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 			throw ErtisAuthException.MembershipCouldNotDeleted(id);
 		}
 		
+		// The deleted membership is no longer listed by PurgeAllCache, so its own entries are removed explicitly
+		var prior = base.Get(id);
 		var isDeleted = base.Delete(id);
 		if (isDeleted)
 		{
+			this.PurgeCache(prior);
 			this.PurgeAllCache();	
 		}
 		
@@ -398,9 +420,12 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 			throw ErtisAuthException.MembershipCouldNotDeleted(id);
 		}
 		
+		// The deleted membership is no longer listed by PurgeAllCacheAsync, so its own entries are removed explicitly
+		var prior = await base.GetAsync(id, cancellationToken: cancellationToken);
 		var isDeleted = await base.DeleteAsync(id, cancellationToken: cancellationToken);
 		if (isDeleted)
 		{
+			this.PurgeCache(prior);
 			await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);	
 		}
 		

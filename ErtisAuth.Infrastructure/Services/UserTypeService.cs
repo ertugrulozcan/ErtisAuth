@@ -572,37 +572,6 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		return ErtisAuthException.UserTypeNotFound(id, "id");
 	}
 	
-	// ReSharper disable once OutParameterValueIsAlwaysDiscarded.Local
-	private bool IsDeletable(string id, string membershipId, out IEnumerable<string>? errors)
-	{
-		if (id == OriginUserType.Id)
-		{
-			errors = new [] { "Origin user-type is immutable, you can not delete it." };
-			return false;
-		}
-		
-		var userType = this.GetAsync(membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
-		if (userType == null)
-		{
-			throw ErtisAuthException.UserTypeNotFound(id, "_id");
-		}
-		
-		var query = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("base_type", userType.Slug));
-		var inheritedUserTypes = this.QueryAsync(membershipId, query.ToString()).ConfigureAwait(false).GetAwaiter().GetResult();
-		if (inheritedUserTypes.Items.Any())
-		{
-			errors = new[]
-			{
-				$"This user type is currently using as the base type of some other user types. ({string.Join(", ", inheritedUserTypes.Items.Select(x => x["title"]))})"
-			};
-			
-			return false;	
-		}
-		
-		errors = null;
-		return true;
-	}
-	
 	#endregion
 	
 	#region Create Methods
@@ -627,14 +596,20 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
 	public override UserType Update(Utilizer utilizer, string membershipId, UserType model)
 	{
+		// The name or slug may change, so the entries of the prior version are removed explicitly
+		var prior = this.Get(membershipId, model.Id);
 		var updated = base.Update(utilizer, membershipId, model);
+		this.PurgeCache(membershipId, prior);
 		this.PurgeAllCache(membershipId);
 		return updated;
 	}
 	
 	public override async Task<UserType> UpdateAsync(Utilizer utilizer, string membershipId, UserType model, CancellationToken cancellationToken = default)
 	{
+		// The name or slug may change, so the entries of the prior version are removed explicitly
+		var prior = await this.GetAsync(membershipId, model.Id, cancellationToken: cancellationToken);
 		var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
+		this.PurgeCache(membershipId, prior);
 		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
 		return updated;
 	}
@@ -651,7 +626,10 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 			throw ErtisAuthException.UserTypeCanNotBeDelete();
 		}
 		
+		// The deleted user type is no longer listed by PurgeAllCache, so its own entries are removed explicitly
+		var prior = this.Get(membershipId, id);
 		var isDeleted = base.Delete(utilizer, membershipId, id);
+		this.PurgeCache(membershipId, prior);
 		this.PurgeAllCache(membershipId);
 		return isDeleted;
 	}
@@ -664,9 +642,42 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 			throw ErtisAuthException.UserTypeCanNotBeDelete();
 		}
 		
+		// The deleted user type is no longer listed by PurgeAllCacheAsync, so its own entries are removed explicitly
+		var prior = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 		var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+		this.PurgeCache(membershipId, prior);
 		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
 		return isDeleted;
+	}
+	
+	private bool IsDeletable(string id, string membershipId, out IEnumerable<string>? errors)
+	{
+		if (id == OriginUserType.Id)
+		{
+			errors = new [] { "Origin user-type is immutable, you can not delete it." };
+			return false;
+		}
+		
+		var userType = this.GetAsync(membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
+		if (userType == null)
+		{
+			throw ErtisAuthException.UserTypeNotFound(id, "_id");
+		}
+		
+		var query = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("base_type", userType.Slug));
+		var inheritedUserTypes = this.QueryAsync(membershipId, query.ToString()).ConfigureAwait(false).GetAwaiter().GetResult();
+		if (inheritedUserTypes.Items.Any())
+		{
+			errors = new[]
+			{
+				$"This user type is currently using as the base type of some other user types. ({string.Join(", ", inheritedUserTypes.Items.Select(x => x["title"]))})"
+			};
+			
+			return false;
+		}
+		
+		errors = null;
+		return true;
 	}
 	
 	#endregion
@@ -690,12 +701,22 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		var userTypes = await this.GetAsync(membershipId, null, null, cancellationToken: cancellationToken);
 		foreach (var userType in userTypes.Items)
 		{
-			var cacheKey1 = GetCacheKey(membershipId, userType.Name);
-			this._memoryCache.Remove(cacheKey1);
-			
-			var cacheKey2 = GetCacheKey(membershipId, userType.Slug);
-			this._memoryCache.Remove(cacheKey2);
+			this.PurgeCache(membershipId, userType);
 		}
+	}
+	
+	/// <summary>
+	/// User types are cached by both name and slug.
+	/// </summary>
+	private void PurgeCache(string membershipId, UserType? userType)
+	{
+		if (userType == null)
+		{
+			return;
+		}
+		
+		this._memoryCache.Remove(GetCacheKey(membershipId, userType.Name));
+		this._memoryCache.Remove(GetCacheKey(membershipId, userType.Slug));
 	}
 	
 	#endregion

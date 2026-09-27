@@ -415,5 +415,19 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		return isDeleted;
 	}
 	
+	public override bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids)
+	{
+		var result = base.BulkDelete(utilizer, membershipId, ids);
+		this.RefreshCache(membershipId);
+		return result;
+	}
+	
+	public override async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
+	{
+		var result = await base.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken: cancellationToken);
+		await this.RefreshCacheAsync(membershipId);
+		return result;
+	}
+	
 	#endregion
 }
