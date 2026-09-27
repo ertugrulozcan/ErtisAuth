@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using Ertis.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
-using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Events;
@@ -66,11 +65,11 @@ public class ApplicationServiceSecretTests
 			.Returns(callInfo => this.Find(x => x.Id == callInfo.ArgAt<string>(0)));
 		
 		this._repository
-			.InsertAsync(default!)
+			.InsertAsync(null!)
 			.ReturnsForAnyArgs(callInfo => this.Store(callInfo.ArgAt<Application>(0)));
 		
 		this._repository
-			.UpdateAsync(default!)
+			.UpdateAsync(null!)
 			.ReturnsForAnyArgs(callInfo => this.Store(callInfo.ArgAt<Application>(0)));
 	}
 	

@@ -85,11 +85,11 @@ public class UserServiceUserTypeTests
 		};
 		
 		this._repository
-			.FindAsync(default(string)!, default, default, default, default(Sorting), default)
+			.FindAsync(default(string)!, null, null, null, default(Sorting))
 			.ReturnsForAnyArgs(collection);
 		
 		this._repository
-			.FindAsync(default(string)!, default, default, default, default(Sorting), default, default, default)
+			.FindAsync(default(string)!, null, null, null, null, null, null, null)
 			.ReturnsForAnyArgs(collection);
 		
 		this._repository
@@ -97,7 +97,7 @@ public class UserServiceUserTypeTests
 			.Returns(_ => CreateStoredUser());
 		
 		this._repository
-			.UpdateAsync(default!, default!, default, default)
+			.UpdateAsync(null!)
 			.ReturnsForAnyArgs(x =>
 			{
 				this._persistedDocument = x.ArgAt<BsonDocument>(0);
@@ -105,7 +105,7 @@ public class UserServiceUserTypeTests
 			});
 		
 		this._repository
-			.InsertAsync(default!)
+			.InsertAsync(null!)
 			.ReturnsForAnyArgs(x =>
 			{
 				this._persistedDocument = x.ArgAt<BsonDocument>(0);

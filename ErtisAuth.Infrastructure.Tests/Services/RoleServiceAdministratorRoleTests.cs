@@ -39,7 +39,7 @@ public class RoleServiceAdministratorRoleTests
 		this.AddMembership("membership-2");
 		
 		this._membershipService
-			.GetAsync(default(int?), default)
+			.GetAsync()
 			.ReturnsForAnyArgs(_ => new PaginationCollection<Membership> { Count = this._memberships.Count, Items = this._memberships });
 	}
 	

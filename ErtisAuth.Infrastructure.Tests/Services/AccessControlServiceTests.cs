@@ -1,8 +1,6 @@
-using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Infrastructure.Services;
-using NSubstitute;
 
 namespace ErtisAuth.Infrastructure.Tests.Services;
 

@@ -122,7 +122,7 @@ public class TokenServicePasswordLoginTests
 		
 		Assert.Equal("jwt-token", token.AccessToken);
 		Assert.Equal("jwt-token", token.RefreshToken);
-		await this._activeTokenService.ReceivedWithAnyArgs(1).CreateAsync(default!, default!, default!, default, default, TestContext.Current.CancellationToken);
+		await this._activeTokenService.ReceivedWithAnyArgs(1).CreateAsync(null!, null!, null!, null, null, TestContext.Current.CancellationToken);
 	}
 	
 	#endregion

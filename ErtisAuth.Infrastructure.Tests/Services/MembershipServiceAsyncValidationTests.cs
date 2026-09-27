@@ -18,6 +18,7 @@ public class MembershipServiceAsyncValidationTests
 	
 	private readonly IMembershipRepository _repository = Substitute.For<IMembershipRepository>();
 	
+	// ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
 	private readonly Membership _existing;
 	
 	#endregion

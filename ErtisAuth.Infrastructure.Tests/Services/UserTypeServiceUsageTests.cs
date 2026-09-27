@@ -58,7 +58,7 @@ public class UserTypeServiceUsageTests
 		this._userTypes.Add(this.NewUserType("Customer"));
 		
 		this._repository
-			.QueryAsync(default(string)!, orderBy: default)
+			.QueryAsync(default(string)!, orderBy: null)
 			.ReturnsForAnyArgs(_ => new PaginationCollection<dynamic> { Count = this._inheritedUserTypes.Count(), Items = this._inheritedUserTypes });
 		
 		// Only users of this membership with the slug of the user type are counted

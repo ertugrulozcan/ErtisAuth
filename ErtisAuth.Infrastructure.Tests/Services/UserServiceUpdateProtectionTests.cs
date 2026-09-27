@@ -105,15 +105,15 @@ public class UserServiceUpdateProtectionTests
 		};
 		
 		this._repository
-			.FindAsync(default(string)!, default, default, default, default(Sorting), default)
+			.FindAsync(default(string)!, null, null, null, default(Sorting))
 			.ReturnsForAnyArgs(collection);
 			
 		this._repository
-			.FindAsync(default(string)!, default, default, default, default(Sorting), default, default, default)
+			.FindAsync(default(string)!, null, null, null, null, null, null, null)
 			.ReturnsForAnyArgs(collection);
 			
 		this._repository
-			.UpdateAsync(default!, default!, default, default)
+			.UpdateAsync(null!)
 			.ReturnsForAnyArgs(x =>
 			{
 				this._persistedDocument = x.ArgAt<BsonDocument>(0);
@@ -201,7 +201,7 @@ public class UserServiceUpdateProtectionTests
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.UpdateAsync(utilizer, model));
 		
 		Assert.Equal("AccessDenied", exception.ErrorCode);
-		await this._repository.DidNotReceiveWithAnyArgs().UpdateAsync(default!, default!, default, TestContext.Current.CancellationToken);
+		await this._repository.DidNotReceiveWithAnyArgs().UpdateAsync(null!, null!, null, TestContext.Current.CancellationToken);
 	}
 	
 	#endregion

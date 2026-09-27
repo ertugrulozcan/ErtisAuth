@@ -152,7 +152,7 @@ public class TokenServiceSecurityTests
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.VerifyBearerTokenAsync(forgedToken, cancellationToken: TestContext.Current.CancellationToken));
 		
 		Assert.Equal("InvalidToken", exception.ErrorCode);
-		await this._userService.DidNotReceiveWithAnyArgs().GetUserAsync(default!, default!, TestContext.Current.CancellationToken);
+		await this._userService.DidNotReceiveWithAnyArgs().GetUserAsync(null!, null!, TestContext.Current.CancellationToken);
 	}
 	
 	#endregion
@@ -396,7 +396,7 @@ public class TokenServiceSecurityTests
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.VerifyBearerTokenAsync(token, cancellationToken: TestContext.Current.CancellationToken));
 		
 		Assert.Equal("InvalidToken", exception.ErrorCode);
-		await this._userService.DidNotReceiveWithAnyArgs().GetUserAsync(default!, default!, TestContext.Current.CancellationToken);
+		await this._userService.DidNotReceiveWithAnyArgs().GetUserAsync(null!, null!, TestContext.Current.CancellationToken);
 	}
 	
 	[Fact]

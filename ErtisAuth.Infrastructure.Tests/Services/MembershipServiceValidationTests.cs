@@ -27,6 +27,7 @@ public class MembershipServiceValidationTests
 		return new MembershipService(this._repository, new MemoryCache(new MemoryCacheOptions()));
 	}
 	
+	// ReSharper disable once UnusedMethodReturnValue.Local
 	private static async Task<ValidationException> AssertValidationErrorAsync(Func<Task> action, string expectedError)
 	{
 		var exception = await Assert.ThrowsAsync<ValidationException>(action);
@@ -49,7 +50,7 @@ public class MembershipServiceValidationTests
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
 		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, TestContext.Current.CancellationToken), "hash_algorithm is a required field");
-		await this._repository.DidNotReceiveWithAnyArgs().InsertAsync(default!);
+		await this._repository.DidNotReceiveWithAnyArgs().InsertAsync(null!, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	[Theory]
@@ -63,7 +64,7 @@ public class MembershipServiceValidationTests
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
 		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, TestContext.Current.CancellationToken), $"Unsupported hash algorithm ({hashAlgorithm})");
-		await this._repository.DidNotReceiveWithAnyArgs().InsertAsync(default!);
+		await this._repository.DidNotReceiveWithAnyArgs().InsertAsync(null!, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	[Theory]

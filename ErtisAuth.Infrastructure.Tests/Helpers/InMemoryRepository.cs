@@ -37,27 +37,27 @@ internal static class InMemoryRepository
 			.Returns(callInfo => store.FirstOrDefault(callInfo.ArgAt<Expression<Func<TModel, bool>>>(0).Compile()));
 		
 		repository
-			.FindAsync(default(Expression<Func<TModel, bool>>)!, orderBy: default)
+			.FindAsync(default(Expression<Func<TModel, bool>>)!, orderBy: null)
 			.ReturnsForAnyArgs(callInfo => ToCollection(store.Where(callInfo.ArgAt<Expression<Func<TModel, bool>>>(0).Compile())));
 		
 		repository
-			.FindAsync(default(Expression<Func<TModel, bool>>)!, sorting: default)
+			.FindAsync(default(Expression<Func<TModel, bool>>)!, sorting: null)
 			.ReturnsForAnyArgs(callInfo => ToCollection(store.Where(callInfo.ArgAt<Expression<Func<TModel, bool>>>(0).Compile())));
 		
 		repository
-			.Find(default(Expression<Func<TModel, bool>>)!, orderBy: default)
+			.Find(default(Expression<Func<TModel, bool>>)!, orderBy: null)
 			.ReturnsForAnyArgs(callInfo => ToCollection(store.Where(callInfo.ArgAt<Expression<Func<TModel, bool>>>(0).Compile())));
 		
 		repository
-			.FindAsync(orderBy: default)
+			.FindAsync(orderBy: null)
 			.ReturnsForAnyArgs(_ => ToCollection(store));
 		
 		repository
-			.Find(orderBy: default)
+			.Find(orderBy: null)
 			.ReturnsForAnyArgs(_ => ToCollection(store));
 		
 		repository
-			.InsertAsync(default!)
+			.InsertAsync(null!)
 			.ReturnsForAnyArgs(callInfo =>
 			{
 				var model = callInfo.ArgAt<TModel>(0);
@@ -66,19 +66,19 @@ internal static class InMemoryRepository
 			});
 		
 		repository
-			.UpdateAsync(default!)
+			.UpdateAsync(null!)
 			.ReturnsForAnyArgs(callInfo => Store(store, callInfo.ArgAt<TModel>(0)));
 		
 		repository
-			.Update(default!)
+			.Update(null!)
 			.ReturnsForAnyArgs(callInfo => Store(store, callInfo.ArgAt<TModel>(0)));
 		
 		repository
-			.DeleteAsync(default(string)!)
+			.DeleteAsync(null!)
 			.ReturnsForAnyArgs(callInfo => store.RemoveAll(x => x.Id == callInfo.ArgAt<string>(0)) > 0);
 		
 		repository
-			.Delete(default(string)!)
+			.Delete(null!)
 			.ReturnsForAnyArgs(callInfo => store.RemoveAll(x => x.Id == callInfo.ArgAt<string>(0)) > 0);
 		
 		return store;

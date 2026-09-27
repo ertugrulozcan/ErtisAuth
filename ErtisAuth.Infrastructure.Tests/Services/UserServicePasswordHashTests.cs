@@ -35,7 +35,7 @@ public class UserServicePasswordHashTests
 		{ "SHA3-224", "13d8f998c8aa48fce61e846549808e432e26bfae11f117f2d704ea2e" },
 		{ "SHA3-256", "a19c7b7f7bb88e4baab4199d6d60efd91b2ce26f3b22b616d6997517e11dfcdc" },
 		{ "SHA3-384", "24e0d2682c3431a9dba62b60c86ec9de79ca784458137fea84dd4a5b481a1b6131bce8c1ff0f2e6457f817e3bdf8feb0" },
-		{ "SHA3-512", "a3cba91b5f7abc3d35e3e0603caba9ff85f36ccae7e3f5901cf6fa58186fe587dada0dc90fdffc35ab5383080d84afa93a47138f9735d1fee4bea1ca4ab74157" },
+		{ "SHA3-512", "a3cba91b5f7abc3d35e3e0603caba9ff85f36ccae7e3f5901cf6fa58186fe587dada0dc90fdffc35ab5383080d84afa93a47138f9735d1fee4bea1ca4ab74157" }
 	};
 	
 	[Theory]

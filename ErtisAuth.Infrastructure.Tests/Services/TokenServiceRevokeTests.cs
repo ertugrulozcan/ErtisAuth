@@ -8,6 +8,7 @@ using ErtisAuth.Infrastructure.Tests.Helpers;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
+// ReSharper disable ParameterOnlyUsedForPreconditionCheck.Local
 namespace ErtisAuth.Infrastructure.Tests.Services;
 
 /// <summary>
@@ -137,7 +138,7 @@ public class TokenServiceRevokeTests
 	
 	private async Task<BearerToken> GenerateTokenAsync(TokenService tokenService)
 	{
-		return await tokenService.GenerateTokenAsync(this._user.Username!, Password, this._membership.Id, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		return await tokenService.GenerateTokenAsync(this._user.Username, Password, this._membership.Id, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	private void AssertRevoked(BearerToken token)

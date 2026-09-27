@@ -29,6 +29,7 @@ public class UserTypeServiceCacheTests
 	
 	private readonly IUserTypeRepository _repository = Substitute.For<IUserTypeRepository>();
 	
+	// ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
 	private readonly List<UserType> _userTypes;
 	
 	private readonly Membership _membership;
@@ -50,7 +51,7 @@ public class UserTypeServiceCacheTests
 		
 		// No user type inherits from another one, so every user type is deletable
 		this._repository
-			.QueryAsync(default(string)!, orderBy: default)
+			.QueryAsync(default(string)!, orderBy: null)
 			.ReturnsForAnyArgs(_ => new PaginationCollection<dynamic> { Count = 0, Items = [] });
 	}
 	
