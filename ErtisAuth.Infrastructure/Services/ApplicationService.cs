@@ -4,6 +4,7 @@ using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
@@ -83,6 +84,21 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	protected override bool ValidateModel(Application model, out IEnumerable<string> errors)
 	{
+		var role = string.IsNullOrEmpty(model.Role) ? null : this._roleService.GetBySlug(model.Role, model.MembershipId);
+		return ValidateModel(model, role, out errors);
+	}
+	
+	protected override async Task<IEnumerable<string>> ValidateModelAsync(Application model, CancellationToken cancellationToken = default)
+	{
+		var role = string.IsNullOrEmpty(model.Role) ? null : await this._roleService.GetBySlugAsync(model.Role, model.MembershipId, cancellationToken: cancellationToken);
+		return ValidateModel(model, role, out var errors) ? [] : errors;
+	}
+	
+	/// <param name="model"></param>
+	/// <param name="role">The role named in the model, read by the caller (null when it does not exist)</param>
+	/// <param name="errors"></param>
+	private static bool ValidateModel(Application model, Role? role, out IEnumerable<string> errors)
+	{
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
 		{
@@ -98,13 +114,9 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		{
 			errorList.Add("role is a required field");
 		}
-		else
+		else if (role == null)
 		{
-			var role = this._roleService.GetBySlug(model.Role, model.MembershipId);
-			if (role == null)
-			{
-				errorList.Add($"Role is invalid. There is no role named '{model.Role}'");
-			}
+			errorList.Add($"Role is invalid. There is no role named '{model.Role}'");
 		}
 		
 		try

@@ -55,6 +55,20 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	protected override bool ValidateModel(Membership model, out IEnumerable<string> errors)
 	{
+		return ValidateModel(model, this.GetBySlug(model.Slug), out errors);
+	}
+	
+	protected override async Task<IEnumerable<string>> ValidateModelAsync(Membership model, CancellationToken cancellationToken = default)
+	{
+		var membershipWithSameSlug = await this.GetBySlugAsync(model.Slug, cancellationToken: cancellationToken);
+		return ValidateModel(model, membershipWithSameSlug, out var errors) ? [] : errors;
+	}
+	
+	/// <param name="model"></param>
+	/// <param name="membershipWithSameSlug">The membership having the slug of the model, read by the caller</param>
+	/// <param name="errors"></param>
+	private static bool ValidateModel(Membership model, Membership? membershipWithSameSlug, out IEnumerable<string> errors)
+	{
 		var errorList = new List<string>();
 		
 		if (string.IsNullOrEmpty(model.Name))
@@ -91,8 +105,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 			errorList.Add(ErtisAuthException.UnsupportedEncoding(model.DefaultEncoding!).Message);
 		}
 
-		var current = this.GetBySlug(model.Slug);
-		if (current != null && current.Id != model.Id)
+		if (membershipWithSameSlug != null && membershipWithSameSlug.Id != model.Id)
 		{
 			errorList.Add(ErtisAuthException.MembershipAlreadyExists(model.Name).Message);
 		}
@@ -304,6 +317,11 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	private Membership? GetBySlug(string slug)
 	{
 		return this._repository.FindOne(x => x.Slug == slug.Trim());
+	}
+	
+	private async Task<Membership?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
+	{
+		return await this._repository.FindOneAsync(x => x.Slug == slug.Trim(), cancellationToken: cancellationToken);
 	}
 	
 	public Membership? GetBySecretKey(string secretKey)

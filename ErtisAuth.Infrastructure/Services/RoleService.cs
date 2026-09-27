@@ -45,8 +45,6 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		this._eventService = eventService;
 		this._memoryCache = memoryCache;
 		
-		this.Initialize();
-		
 		this.OnCreated += this.RoleCreatedEventHandler;
 		this.OnUpdated += this.RoleUpdatedEventHandler;
 		this.OnDeleted += this.RoleDeletedEventHandler;
@@ -54,28 +52,30 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	#endregion
 	
-	#region Initialize Methods
+	#region Administrator Role Methods
 	
-	private void Initialize()
+	public async Task EnsureAdministratorRolesAsync(CancellationToken cancellationToken = default)
 	{
-		this.InitializeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-	}
-	
-	private async Task InitializeAsync()
-	{
-		var memberships = await this._membershipService.GetAsync();
+		var memberships = await this._membershipService.GetAsync(cancellationToken: cancellationToken);
 		foreach (var membership in memberships.Items)
 		{
-			var adminRole = await this.GetBySlugAsync(ReservedRoles.Administrator, membership.Id);
-			if (adminRole == null)
-			{
-				var utilizer = Utilizer.GetSystemUtilizer(membership.Id);
-				await this.CreateAdministratorRoleAsync(membership, utilizer);
-			}
+			await this.EnsureAdministratorRoleAsync(membership, cancellationToken: cancellationToken);
 		}
 	}
 	
-	private async Task CreateAdministratorRoleAsync(Membership membership, Utilizer utilizer, CancellationToken cancellationToken = default)
+	public async Task<Role> EnsureAdministratorRoleAsync(Membership membership, CancellationToken cancellationToken = default)
+	{
+		var adminRole = await this.GetBySlugAsync(ReservedRoles.Administrator, membership.Id, cancellationToken: cancellationToken);
+		if (adminRole != null)
+		{
+			return adminRole;
+		}
+		
+		var utilizer = Utilizer.GetSystemUtilizer(membership.Id);
+		return await this.CreateAdministratorRoleAsync(membership, utilizer, cancellationToken: cancellationToken);
+	}
+	
+	private async Task<Role> CreateAdministratorRoleAsync(Membership membership, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		string[] reservedResources = {
 			"memberships",
@@ -110,7 +110,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 			}
 		}
 		
-		await this.CreateAsync(utilizer, membership.Id, new Role
+		return await this.CreateAsync(utilizer, membership.Id, new Role
 		{
 			Name = "Administrator",
 			Slug = ReservedRoles.Administrator,

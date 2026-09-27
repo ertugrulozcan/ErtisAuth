@@ -14,7 +14,9 @@ internal static class InMemoryRepository
 {
 	#region Methods
 	
-	public static List<TModel> Setup<TModel>(IMongoRepository<TModel> repository) where TModel : class, IHasIdentifier
+	/// <param name="repository"></param>
+	/// <param name="prepareInsert">Applied to inserted models, e.g. to assign the id a database would generate</param>
+	public static List<TModel> Setup<TModel>(IMongoRepository<TModel> repository, Action<TModel>? prepareInsert = null) where TModel : class, IHasIdentifier
 	{
 		var store = new List<TModel>();
 		
@@ -56,7 +58,12 @@ internal static class InMemoryRepository
 		
 		repository
 			.InsertAsync(default!)
-			.ReturnsForAnyArgs(callInfo => Store(store, callInfo.ArgAt<TModel>(0)));
+			.ReturnsForAnyArgs(callInfo =>
+			{
+				var model = callInfo.ArgAt<TModel>(0);
+				prepareInsert?.Invoke(model);
+				return Store(store, model);
+			});
 		
 		repository
 			.UpdateAsync(default!)

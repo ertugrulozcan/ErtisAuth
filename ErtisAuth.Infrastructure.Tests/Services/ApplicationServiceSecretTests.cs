@@ -47,12 +47,15 @@ public class ApplicationServiceSecretTests
 		this._membership = TestServiceFactory.CreateMembership("SHA2-256");
 		this._membershipService.Get(this._membership.Id).Returns(this._membership);
 		this._membershipService.GetAsync(this._membership.Id, Arg.Any<CancellationToken>()).Returns(this._membership);
-		this._roleService.GetBySlug("server", this._membership.Id).Returns(new Role
+		var role = new Role
 		{
 			Id = "role-id",
 			Name = "server",
 			MembershipId = this._membership.Id
-		});
+		};
+		
+		this._roleService.GetBySlug("server", this._membership.Id).Returns(role);
+		this._roleService.GetBySlugAsync("server", this._membership.Id, Arg.Any<CancellationToken>()).Returns(role);
 		
 		this._utilizer = Utilizer.GetSystemUtilizer(this._membership.Id);
 		
@@ -171,6 +174,27 @@ public class ApplicationServiceSecretTests
 		var eventCall = this._eventService.ReceivedCalls().Single(x => x.GetArguments().Contains(ErtisAuthEventType.ApplicationCreated));
 		Assert.DoesNotContain(eventCall.GetArguments(), x => x is ApplicationWithSecret);
 		Assert.DoesNotContain(eventCall.GetArguments(), x => x is string value && value == created.Secret);
+	}
+	
+	[Fact]
+	public async Task CreateWithSecretAsync_ValidatesRoleWithoutBlockingCall()
+	{
+		await this.CreateWithSecretAsync(this.CreateApplicationService());
+		
+		await this._roleService.Received().GetBySlugAsync("server", this._membership.Id, Arg.Any<CancellationToken>());
+		this._roleService.DidNotReceiveWithAnyArgs().GetBySlug(default!, default!);
+	}
+	
+	[Fact]
+	public async Task CreateWithSecretAsync_WithUnknownRole_IsRejected()
+	{
+		var model = this.NewApplicationModel();
+		model.Role = "unknown-role";
+		
+		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateApplicationService().CreateWithSecretAsync(this._utilizer, this._membership.Id, model, TestContext.Current.CancellationToken));
+		
+		Assert.NotNull(exception.Errors);
+		Assert.Contains("Role is invalid. There is no role named 'unknown-role'", exception.Errors);
 	}
 	
 	#endregion

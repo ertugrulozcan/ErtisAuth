@@ -915,10 +915,10 @@ public class UserService : DynamicObjectCrudService, IUserService
         );
     }
     
-    private void EnsureUser(string membershipId, string userId, out DynamicObject currentUser)
+    private async Task<DynamicObject> EnsureUserAsync(string membershipId, string userId)
     {
-        var current = this.GetByIdAsync(membershipId, userId).ConfigureAwait(false).GetAwaiter().GetResult();
-        currentUser = current ?? throw ErtisAuthException.UserNotFound(userId, "_id");
+        var current = await this.GetByIdAsync(membershipId, userId);
+        return current ?? throw ErtisAuthException.UserNotFound(userId, "_id");
     }
     
     public async Task<User?> GetByUsernameOrEmailAddressAsync(string membershipId, string usernameOrEmailAddress)
@@ -1210,7 +1210,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     {
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
         this.EnsureEmailAddress(model);
-        this.EnsureUser(membershipId, userId, out var current);
+        var current = await this.EnsureUserAsync(membershipId, userId);
 		this.EnsureServerManagedProperties(model, utilizer);
         var userType = await this.GetUserTypeAsync(model, current, membershipId, cancellationToken: cancellationToken);
         NormalizeUserType(model, userType);

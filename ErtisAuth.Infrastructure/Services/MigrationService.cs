@@ -79,11 +79,8 @@ public class MigrationService : IMigrationService
 		var utilizer = Utilizer.GetSystemUtilizer(membership.Id);
 		
 		// 2. Role
-		var adminRole = await this._roleService.GetBySlugAsync(ReservedRoles.Administrator, membership.Id);
-		if (adminRole == null)
-		{
-			throw ErtisAuthException.RoleNotFound("admin");
-		}
+		// The administrator role used to be created only at startup, so it did not exist yet for a membership created here
+		var adminRole = await this._roleService.EnsureAdministratorRoleAsync(membership);
 		
 		// 3. User Type
 		var userType = await this._userTypeService.CreateAsync(utilizer, membership.Id, new UserType

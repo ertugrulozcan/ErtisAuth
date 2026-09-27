@@ -69,9 +69,9 @@ public static class DatabaseExtensions
 		MailProviderDiscriminatorConvention.Register();
 	}
 	
-	public static void UseMongoDB(this IApplicationBuilder app)
+	public static async Task UseMongoDBAsync(this IApplicationBuilder app)
 	{
-		CheckDatabaseIndexesAsync(app.ApplicationServices).ConfigureAwait(false).GetAwaiter().GetResult();
+		await CheckDatabaseIndexesAsync(app.ApplicationServices);
 	}
 	
 	private static async Task CheckDatabaseIndexesAsync(IServiceProvider serviceProvider)

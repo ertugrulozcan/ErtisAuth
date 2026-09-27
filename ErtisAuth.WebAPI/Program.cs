@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-using Ertis.Schema.Serialization;
 using ErtisAuth.Extensions.ApplicationInsights;
 using ErtisAuth.Extensions.Database;
 using ErtisAuth.Extensions.Prometheus;
@@ -71,7 +69,7 @@ if (app.Environment.IsDevelopment())
 app.UseResponseCompression();
 
 // Database
-app.UseMongoDB();
+await app.UseMongoDBAsync();
 
 // OAuth Providers
 app.UseProviders();

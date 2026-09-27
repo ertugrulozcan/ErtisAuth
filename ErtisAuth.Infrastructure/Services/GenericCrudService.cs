@@ -44,6 +44,15 @@ public abstract class GenericCrudService<TModel> :
 	
 	protected abstract bool ValidateModel(TModel model, out IEnumerable<string> errors);
 	
+	/// <summary>
+	/// Used by the async create and update flows, so that validations reading the database do not block the thread.
+	/// Defaults to the synchronous ValidateModel; override it when the validation needs I/O.
+	/// </summary>
+	protected virtual Task<IEnumerable<string>> ValidateModelAsync(TModel model, CancellationToken cancellationToken = default)
+	{
+		return Task.FromResult(this.ValidateModel(model, out var errors) ? Enumerable.Empty<string>() : errors);
+	}
+	
 	protected abstract void Overwrite(TModel destination, TModel source);
 	
 	protected abstract bool IsAlreadyExist(TModel model, TModel? exclude = null);
@@ -189,7 +198,8 @@ public abstract class GenericCrudService<TModel> :
 		try
 		{
 			// Model validation
-			if (!this.ValidateModel(model, out var errors))
+			var errors = (await this.ValidateModelAsync(model, cancellationToken: cancellationToken)).ToArray();
+			if (errors.Length > 0)
 			{
 				throw ErtisAuthException.ValidationError(errors);
 			}
@@ -278,7 +288,8 @@ public abstract class GenericCrudService<TModel> :
 			this.Overwrite(model, current);
 			
 			// Model validation
-			if (!this.ValidateModel(model, out var errors))
+			var errors = (await this.ValidateModelAsync(model, cancellationToken: cancellationToken)).ToArray();
+			if (errors.Length > 0)
 			{
 				throw ErtisAuthException.ValidationError(errors);
 			}
