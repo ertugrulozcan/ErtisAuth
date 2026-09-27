@@ -396,6 +396,12 @@ public class TokenService : ITokenService
 		// The signature is verified before any user lookup, so that forged tokens reveal nothing about accounts
 		await this.VerifyTokenSignatureAsync(token, securityToken, cancellationToken: cancellationToken);
 		
+		// Reset password and activation tokens are signed with the same key, but they are not bearer tokens
+		if (this.TryExtractClaimValue(securityToken, PurposeTokens.TokenTypeClaim, out var purposeTokenType) && !string.IsNullOrEmpty(purposeTokenType))
+		{
+			throw ErtisAuthException.InvalidToken("Reset password and activation tokens can not be used as bearer tokens");
+		}
+		
 		var user = await this.GetTokenOwnerAsync(securityToken, cancellationToken: cancellationToken);
 		if (user == null)
 		{

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Resources;
@@ -26,6 +27,8 @@ using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.Integrations.OAuth.Core;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -614,7 +617,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 			throw ErtisAuthException.UserNotFound(emailAddress, "email_address");
 		}
 		
-		var resetPasswordToken = this.GenerateResetPasswordToken(user, membership);
+		var resetPasswordToken = await this.GenerateResetPasswordTokenAsync(user, membership, cancellationToken: cancellationToken);
 		var resetPasswordLink = GenerateResetPasswordLink(
 			resetPasswordToken, 
 			membershipId,
@@ -661,8 +664,19 @@ public class UserService : DynamicObjectCrudService, IUserService
 		}, cancellationToken: cancellationToken);
 	}
 	
-	public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false, ResetPasswordToken.ResetPasswordTokenPurpose purpose = ResetPasswordToken.ResetPasswordTokenPurpose.ResetPassword)
+	public async Task<ResetPasswordToken> GenerateResetPasswordTokenAsync(
+		User user, 
+		Membership membership, 
+		bool asBase64 = false, 
+		ResetPasswordToken.ResetPasswordTokenPurpose purpose = ResetPasswordToken.ResetPasswordTokenPurpose.ResetPassword, 
+		CancellationToken cancellationToken = default)
 	{
+		// Reset tokens are only issued for active accounts (inactive or frozen accounts can not recover their password)
+		if (!user.IsActive)
+		{
+			throw ErtisAuthException.UserInactive(user.Id);
+		}
+		
 		var resetPasswordTokenTTL = TTLs.RESET_PASSWORD_TOKEN_TTL;
 		if (purpose == ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword)
 		{
@@ -679,10 +693,16 @@ public class UserService : DynamicObjectCrudService, IUserService
 			}
 		}
 		
-		var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, resetPasswordTokenTTL);
-		tokenClaims.AddClaim("token_type", "reset_token");
+		// The token is bound to the current password, so that it can be used only once (using it changes the password)
+		var passwordHash = user is UserWithPasswordHash userWithPasswordHash
+			? userWithPasswordHash.PasswordHash
+			: (await this.GetUserWithPasswordAsync(membership.Id, user.Id, cancellationToken: cancellationToken))?.PasswordHash;
 		
-		var resetToken = this._jwtService.GenerateToken(tokenClaims);
+		var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, resetPasswordTokenTTL);
+		tokenClaims.AddClaim(PurposeTokens.TokenTypeClaim, PurposeTokens.ResetPasswordTokenType);
+		tokenClaims.AddClaim(PurposeTokens.PasswordFingerprintClaim, GetPasswordFingerprint(passwordHash));
+		
+		var resetToken = this._jwtService.GenerateToken(tokenClaims, encoding: membership.GetEncoding());
 		if (asBase64)
 		{
 			resetToken = ConvertToBase64ResetPasswordToken(resetToken, membership.Id);
@@ -704,54 +724,31 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
 	public async Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default)
 	{
-		try
+		var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+		var token = ExtractPurposeToken(membershipId, resetToken) ?? throw ErtisAuthException.InvalidToken();
+		var securityToken = await this.VerifyPurposeTokenAsync(membership, token, PurposeTokens.ResetPasswordTokenType);
+		
+		var user = await this.GetUserWithPasswordAsync(membershipId, securityToken.Subject, cancellationToken: cancellationToken);
+		if (user == null)
 		{
-			string payload;
-			
-			try
-			{
-				payload = Encoding.UTF8.GetString(Convert.FromBase64String(resetToken));
-			}
-			catch (FormatException)
-			{
-				payload = Microsoft.IdentityModel.Tokens.Base64UrlEncoder.Decode(resetToken);
-			}
-			
-			var parts = payload.Split(':');
-			if (parts.Length > 1)
-			{
-				if (MongoDB.Bson.ObjectId.TryParse(parts[0], out _))
-				{
-					var membershipId_ = parts[0];
-					if (membershipId == membershipId_)
-					{
-						var resetPasswordToken = string.Join(':', parts.Skip(1));
-						if (!string.IsNullOrEmpty(resetPasswordToken))
-						{
-							if (this._jwtService.TryDecodeToken(resetPasswordToken, out var securityToken) && securityToken != null)
-							{
-								var expireTime = securityToken.ValidTo;
-								if (DateTime.UtcNow > expireTime)
-								{
-									// Token was expired!
-									throw ErtisAuthException.TokenWasExpired();	
-								}
-								
-								var user = await this.GetUserAsync(membershipId, securityToken.Subject, cancellationToken: cancellationToken);
-								return user ?? throw ErtisAuthException.UserNotFound(securityToken.Subject, "_id");
-							}
-						}
-					}
-				}
-			}
-			
-			throw ErtisAuthException.InvalidToken();
+			throw ErtisAuthException.UserNotFound(securityToken.Subject, "_id");
 		}
-		catch (FormatException ex)
+		
+		// The account may have been frozen after the token was issued
+		if (!user.IsActive)
 		{
-			this._logger.LogError(ex, "UserService.VerifyResetTokenAsync occured an error");
-			throw ErtisAuthException.InvalidToken();
+			throw ErtisAuthException.UserInactive(user.Id);
 		}
+		
+		// Single use: the token is only valid for the password it was issued for
+		var fingerprint = securityToken.Claims.FirstOrDefault(x => x.Type == PurposeTokens.PasswordFingerprintClaim)?.Value;
+		var currentFingerprint = GetPasswordFingerprint(user.PasswordHash);
+		if (fingerprint == null || !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(fingerprint), Encoding.UTF8.GetBytes(currentFingerprint)))
+		{
+			throw ErtisAuthException.InvalidToken("Reset token was already used or the password has been changed");
+		}
+		
+		return user;
 	}
 	
 	public async Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default)
@@ -770,14 +767,108 @@ public class UserService : DynamicObjectCrudService, IUserService
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
+		var tokenOwner = await this.VerifyResetTokenAsync(membershipId, resetToken, cancellationToken: cancellationToken);
+		
 		var user = await this.GetUserWithPasswordAsync(membershipId, usernameOrEmailAddress, usernameOrEmailAddress, cancellationToken: cancellationToken);
 		if (user == null)
 		{
 			throw ErtisAuthException.UserNotFound(usernameOrEmailAddress, "username or email_address");
 		}
 		
-		await this.VerifyResetTokenAsync(membershipId, resetToken, cancellationToken: cancellationToken);
+		// The reset token only allows setting the password of the user it was issued to
+		if (user.Id != tokenOwner.Id)
+		{
+			throw ErtisAuthException.InvalidToken();
+		}
+		
 		await this.ChangePasswordAsync(utilizer, membershipId, user.Id, password, cancellationToken: cancellationToken);
+	}
+	
+	#endregion
+	
+    #region Purpose Token Methods
+	
+	/// <summary>
+	/// Reset and activation links carry base64("membershipId:token"); returns the token when the membership matches.
+	/// </summary>
+	private static string? ExtractPurposeToken(string membershipId, string code)
+	{
+		string payload;
+		try
+		{
+			try
+			{
+				payload = Encoding.UTF8.GetString(Convert.FromBase64String(code));
+			}
+			catch (FormatException)
+			{
+				payload = Microsoft.IdentityModel.Tokens.Base64UrlEncoder.Decode(code);
+			}
+		}
+		catch (Exception)
+		{
+			return null;
+		}
+		
+		var separatorIndex = payload.IndexOf(':');
+		if (separatorIndex <= 0 || payload[..separatorIndex] != membershipId)
+		{
+			return null;
+		}
+		
+		var token = payload[(separatorIndex + 1)..];
+		return string.IsNullOrEmpty(token) ? null : token;
+	}
+	
+	/// <summary>
+	/// A purpose token is valid only when it is signed with the membership key, not expired, of the expected type,
+	/// and issued for the membership.
+	/// </summary>
+	private async Task<JsonWebToken> VerifyPurposeTokenAsync(Membership membership, string token, string expectedTokenType)
+	{
+		var validation = await this._jwtService.ValidateTokenAsync(token, membership);
+		if (!validation.IsValid)
+		{
+			if (validation.Exception is SecurityTokenExpiredException)
+			{
+				throw ErtisAuthException.TokenWasExpired();
+			}
+			
+			throw ErtisAuthException.InvalidToken();
+		}
+		
+		if (validation.SecurityToken is not JsonWebToken securityToken ||
+			securityToken.Claims.FirstOrDefault(x => x.Type == PurposeTokens.TokenTypeClaim)?.Value != expectedTokenType ||
+			securityToken.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Prn)?.Value != membership.Id ||
+			string.IsNullOrEmpty(securityToken.Subject))
+		{
+			throw ErtisAuthException.InvalidToken();
+		}
+		
+		return securityToken;
+	}
+	
+	private static string GetPasswordFingerprint(string? passwordHash)
+	{
+		return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(passwordHash ?? string.Empty)))[..32];
+	}
+	
+	private static DateTime AsUtc(DateTime dateTime)
+	{
+		return dateTime.Kind switch
+		{
+			DateTimeKind.Local => dateTime.ToUniversalTime(),
+			DateTimeKind.Unspecified => DateTime.SpecifyKind(dateTime, DateTimeKind.Utc),
+			_ => dateTime
+		};
+	}
+	
+	/// <summary>
+	/// JWT times have a precision of seconds.
+	/// </summary>
+	private static DateTime TruncateToSeconds(DateTime dateTime)
+	{
+		return new DateTime(dateTime.Ticks - dateTime.Ticks % TimeSpan.TicksPerSecond, dateTime.Kind);
 	}
 	
 	#endregion
@@ -1103,8 +1194,8 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
         
         var tokenClaims = new TokenClaims(user.Id, user, membership, TTLs.ACTIVATION_TOKEN_TTL);
-        tokenClaims.AddClaim("token_type", "activation_token");
-        var token = this._jwtService.GenerateToken(tokenClaims);
+        tokenClaims.AddClaim(PurposeTokens.TokenTypeClaim, PurposeTokens.ActivationTokenType);
+        var token = this._jwtService.GenerateToken(tokenClaims, encoding: membership.GetEncoding());
         var activationToken = new ActivationToken(token, TTLs.ACTIVATION_TOKEN_TTL);
 		
         return activationToken;
@@ -1118,46 +1209,27 @@ public class UserService : DynamicObjectCrudService, IUserService
     
     public async Task<User?> ActivateUserAsync(Utilizer utilizer, string membershipId, string activationCode, CancellationToken cancellationToken = default)
     {
-        var payload = Encoding.UTF8.GetString(Convert.FromBase64String(activationCode));
-        var parts = payload.Split(':');
-        if (parts.Length > 1)
+        var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+        var token = ExtractPurposeToken(membershipId, activationCode) ?? throw ErtisAuthException.InvalidToken();
+        var securityToken = await this.VerifyPurposeTokenAsync(membership, token, PurposeTokens.ActivationTokenType);
+        
+        var userId = securityToken.Subject;
+        var user = await this.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
+        if (user == null)
         {
-	        if (MongoDB.Bson.ObjectId.TryParse(parts[0], out _))
-	        {
-		        var membershipId_ = parts[0];
-		        if (membershipId == membershipId_)
-		        {
-			        var activationToken = string.Join(':', parts.Skip(1));
-			        if (!string.IsNullOrEmpty(activationToken))
-			        {
-				        if (this._jwtService.TryDecodeToken(activationToken, out var securityToken) && securityToken != null)
-				        {
-					        var expireTime = securityToken.ValidTo;
-					        if (DateTime.UtcNow > expireTime)
-					        {
-						        // Token was expired!
-						        throw ErtisAuthException.TokenWasExpired();	
-					        }
-							
-					        var userId = securityToken.Subject;
-					        var user = await this.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
-					        if (user != null)
-					        {
-						        user.SetValue("is_active", true, true);
-						        var updated = await this.UpdateAsync(utilizer, membershipId, userId, user, false, cancellationToken: cancellationToken);
-						        return updated?.Deserialize<User>();
-					        }
-					        else
-					        {
-						        throw ErtisAuthException.UserNotFound(userId, "_id");
-					        }
-				        }
-			        }
-		        }
-	        }
+	        throw ErtisAuthException.UserNotFound(userId, "_id");
         }
-		
-        throw ErtisAuthException.InvalidToken();
+        
+        // A link issued before the last change of the user (e.g. freezing it, or the activation itself) is no longer valid
+        var modifiedAt = user.Deserialize<User>()?.Sys?.ModifiedAt;
+        if (modifiedAt != null && securityToken.IssuedAt < TruncateToSeconds(AsUtc(modifiedAt.Value)))
+        {
+	        throw ErtisAuthException.InvalidToken("Activation token is no longer valid");
+        }
+        
+        user.SetValue("is_active", true, true);
+        var updated = await this.UpdateAsync(utilizer, membershipId, userId, user, false, cancellationToken: cancellationToken);
+        return updated?.Deserialize<User>();
     }
     
     public async Task<User?> ActivateUserByIdAsync(Utilizer utilizer, string membershipId, string userId, CancellationToken cancellationToken = default)

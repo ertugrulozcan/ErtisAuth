@@ -164,7 +164,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			}
 		}
 		
-		var resetPasswordToken = this._userService.GenerateResetPasswordToken(user, membership, true, ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword);
+		var resetPasswordToken = await this._userService.GenerateResetPasswordTokenAsync(user, membership, true, ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword, cancellationToken: cancellationToken);
 		var model = new OneTimePassword
 		{
 			UserId = user.Id,

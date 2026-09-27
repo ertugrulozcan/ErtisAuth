@@ -103,6 +103,9 @@ public class JwtService : IJwtService
             Issuer = tokenClaims.Issuer,
             Audience = tokenClaims.Audience,
             Subject = new ClaimsIdentity(claims),
+            // Consistent with the iat claim; the handler would otherwise use the current time even for an earlier generation time
+            IssuedAt = generatedAt,
+            NotBefore = generatedAt,
             Expires = expireTime,
             SigningCredentials = credentials
         };

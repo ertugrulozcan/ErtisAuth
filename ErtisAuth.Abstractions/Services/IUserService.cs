@@ -70,7 +70,12 @@ public interface IUserService : IDeletableMembershipBoundedService
     
     Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default);
     
-    ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false, ResetPasswordToken.ResetPasswordTokenPurpose purpose = ResetPasswordToken.ResetPasswordTokenPurpose.ResetPassword);
+    Task<ResetPasswordToken> GenerateResetPasswordTokenAsync(
+	    User user, 
+	    Membership membership, 
+	    bool asBase64 = false, 
+	    ResetPasswordToken.ResetPasswordTokenPurpose purpose = ResetPasswordToken.ResetPasswordTokenPurpose.ResetPassword, 
+	    CancellationToken cancellationToken = default);
     
     Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default);
     
