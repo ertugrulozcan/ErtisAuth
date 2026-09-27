@@ -28,6 +28,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
     #region Services
 	
     private readonly IEventService _eventService;
+    private readonly IUserRepository _userRepository;
     private readonly IMemoryCache _memoryCache;
 	
     #endregion
@@ -249,15 +250,18 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
     /// <param name="membershipService"></param>
     /// <param name="eventService"></param>
     /// <param name="repository"></param>
+    /// <param name="userRepository">Used directly instead of IUserService, which depends on this service</param>
     /// <param name="memoryCache"></param>
     public UserTypeService(
         IMembershipService membershipService,
         IEventService eventService,
         IUserTypeRepository repository,
+        IUserRepository userRepository,
         IMemoryCache memoryCache)
         : base(membershipService, repository)
     {
         this._eventService = eventService;
+        this._userRepository = userRepository;
         this._memoryCache = memoryCache;
         
         this.OnCreated += this.UserTypeCreatedEventHandler;
@@ -598,6 +602,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	{
 		// The name or slug may change, so the entries of the prior version are removed explicitly
 		var prior = this.Get(membershipId, model.Id);
+		this.KeepSlugIfInUseAsync(membershipId, model, prior).ConfigureAwait(false).GetAwaiter().GetResult();
 		var updated = base.Update(utilizer, membershipId, model);
 		this.PurgeCache(membershipId, prior);
 		this.PurgeAllCache(membershipId);
@@ -608,10 +613,30 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	{
 		// The name or slug may change, so the entries of the prior version are removed explicitly
 		var prior = await this.GetAsync(membershipId, model.Id, cancellationToken: cancellationToken);
+		await this.KeepSlugIfInUseAsync(membershipId, model, prior, cancellationToken: cancellationToken);
 		var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
 		this.PurgeCache(membershipId, prior);
 		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
 		return updated;
+	}
+	
+	/// <summary>
+	/// Users (user_type) and inherited user types (base_type) refer to a user type by its slug, so the slug of a user type
+	/// in use can not change; the name still can. A slug which is not sent is derived from the name, so the prior slug
+	/// is kept instead of rejecting the update.
+	/// </summary>
+	private async Task KeepSlugIfInUseAsync(string membershipId, UserType model, UserType? prior, CancellationToken cancellationToken = default)
+	{
+		if (prior == null || model.Slug == prior.Slug)
+		{
+			return;
+		}
+		
+		var usages = await this.CheckUsagesAsync(membershipId, prior, cancellationToken: cancellationToken);
+		if (usages.Count > 0)
+		{
+			model.Slug = prior.Slug;
+		}
 	}
 	
 	#endregion
@@ -637,7 +662,8 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		// Is Deletable?
-		if (!this.IsDeletable(id, membershipId, out _))
+		var errors = await this.CheckDeletableAsync(id, membershipId, cancellationToken: cancellationToken);
+		if (errors != null && errors.Any())
 		{
 			throw ErtisAuthException.UserTypeCanNotBeDelete();
 		}
@@ -652,32 +678,49 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
 	private bool IsDeletable(string id, string membershipId, out IEnumerable<string>? errors)
 	{
+		errors = this.CheckDeletableAsync(id, membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
+		return errors == null || !errors.Any();
+	}
+	
+	private async Task<IEnumerable<string>?> CheckDeletableAsync(string id, string membershipId, CancellationToken cancellationToken = default)
+	{
 		if (id == OriginUserType.Id)
 		{
-			errors = new [] { "Origin user-type is immutable, you can not delete it." };
-			return false;
+			return new [] { "Origin user-type is immutable, you can not delete it." };
 		}
 		
-		var userType = this.GetAsync(membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
+		var userType = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
 		if (userType == null)
 		{
 			throw ErtisAuthException.UserTypeNotFound(id, "_id");
 		}
 		
-		var query = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("base_type", userType.Slug));
-		var inheritedUserTypes = this.QueryAsync(membershipId, query.ToString()).ConfigureAwait(false).GetAwaiter().GetResult();
+		var usages = await this.CheckUsagesAsync(membershipId, userType, cancellationToken: cancellationToken);
+		return usages.Count > 0 ? usages : null;
+	}
+	
+	/// <summary>
+	/// Lists what refers to the user type by its slug: inherited user types (base_type) and users (user_type).
+	/// </summary>
+	private async Task<List<string>> CheckUsagesAsync(string membershipId, UserType userType, CancellationToken cancellationToken = default)
+	{
+		var usages = new List<string>();
+		
+		var inheritedUserTypesQuery = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("base_type", userType.Slug));
+		var inheritedUserTypes = await this.QueryAsync(membershipId, inheritedUserTypesQuery.ToString(), cancellationToken: cancellationToken);
 		if (inheritedUserTypes.Items.Any())
 		{
-			errors = new[]
-			{
-				$"This user type is currently using as the base type of some other user types. ({string.Join(", ", inheritedUserTypes.Items.Select(x => x["title"]))})"
-			};
-			
-			return false;
+			usages.Add($"This user type is currently using as the base type of some other user types. ({string.Join(", ", inheritedUserTypes.Items.Select(x => x["title"]))})");
 		}
 		
-		errors = null;
-		return true;
+		var usersQuery = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("user_type", userType.Slug));
+		var userCount = await this._userRepository.CountAsync(usersQuery.ToString(), cancellationToken: cancellationToken);
+		if (userCount > 0)
+		{
+			usages.Add($"This user type is currently used by {userCount} user(s).");
+		}
+		
+		return usages;
 	}
 	
 	#endregion

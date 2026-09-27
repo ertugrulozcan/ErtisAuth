@@ -179,6 +179,19 @@ public class UserService : DynamicObjectCrudService, IUserService
     }
     
     // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
+    /// <summary>
+    /// The user type can be given by name or slug, but users always store its slug (other records refer to user types by slug).
+    /// On create the resolved user type (possibly the fallback one) is always written; on update only a given value is
+    /// normalized, before any comparison with the stored value, so that the same user type given by name is not seen as a change.
+    /// </summary>
+    private static void NormalizeUserType(DynamicObject model, UserType userType, bool isCreate = false)
+    {
+        if (isCreate || model.ContainsProperty("user_type"))
+        {
+            model.SetValue("user_type", userType.Slug, true);
+        }
+    }
+    
     private async Task EnsureUserTypeAsync(string membershipId, UserType userType, DynamicObject model, string? userId, string? currentUserTypeSlug)
     {
         // Check IsAbstract
@@ -967,6 +980,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
         
         var userType = await this.GetUserTypeAsync(model, null, membershipId, sourceProvider == KnownProviders.ErtisAuth, cancellationToken: cancellationToken);
+        NormalizeUserType(model, userType, isCreate: true);
         this.EnsureManagedProperties(model, membershipId);
         await this.EnsureAndValidateAsync(utilizer, membershipId, null, userType, model, null, cancellationToken: cancellationToken);
         
@@ -1199,6 +1213,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         this.EnsureUser(membershipId, userId, out var current);
 		this.EnsureServerManagedProperties(model, utilizer);
         var userType = await this.GetUserTypeAsync(model, current, membershipId, cancellationToken: cancellationToken);
+        NormalizeUserType(model, userType);
         this.EnsureManagedProperties(model, membershipId);
         model = this.SyncModel(current, model);
 		await this.CheckPrivilegedPropertiesAsync(utilizer, userId, model, current, cancellationToken: cancellationToken);
