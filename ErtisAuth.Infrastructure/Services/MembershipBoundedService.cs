@@ -35,21 +35,6 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	
 	#region Query Methods
 	
-	public virtual IPaginationCollection<dynamic> Query(
-		string membershipId, 
-		string query, 
-		int? skip = null, 
-		int? limit = null, 
-		bool? withCount = null, 
-		string? sortField = null,
-		SortDirection? sortDirection = null, 
-		IDictionary<string, bool>? selectFields = null)
-	{
-		query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId);
-		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
-		return this._repository.Query(query, skip, limit, withCount, sortField, sortDirection, selectFields);
-	}
-	
 	public virtual async Task<IPaginationCollection<dynamic>> QueryAsync(
 		string membershipId, 
 		string query, 
@@ -69,17 +54,6 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	#endregion
 	
 	#region Get Methods
-	
-	public virtual TModel? Get(string membershipId, string id)
-	{
-		var membership = this._membershipService.Get(membershipId);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		
-		return this._repository.FindOne(x => x.Id == id && x.MembershipId == membershipId);
-	}
 	
 	public virtual async Task<TModel?> GetAsync(
 		string membershipId, 
@@ -110,24 +84,6 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		return entities.Items.FirstOrDefault(x => x.MembershipId == membershipId);
 	}
 	
-	public virtual IPaginationCollection<TModel> Get(
-		string membershipId, 
-		int? skip = null, 
-		int? limit = null, 
-		bool withCount = false, 
-		string? orderBy = null, 
-		SortDirection? sortDirection = null)
-	{
-		var membership = this._membershipService.Get(membershipId);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		
-		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
-		return this._repository.Find(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
-	}
-	
 	public virtual async Task<IPaginationCollection<TModel>> GetAsync(
 		string membershipId, 
 		int? skip = null, 
@@ -147,27 +103,9 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		return await this._repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
 	
-	public T? Get<T>(string membershipId, string id) where T : class, Core.Models.IHasMembership
-	{
-		return this.Get(membershipId, id) as T;
-	}
-	
 	public async Task<T?> GetAsync<T>(string membershipId, string id, CancellationToken cancellationToken = default) where T : class, Core.Models.IHasMembership
 	{
 		return await this.GetAsync(membershipId, id, cancellationToken: cancellationToken) as T;
-	}
-	
-	public IPaginationCollection<T> Get<T>(
-		string membershipId, 
-		int? skip, 
-		int? limit, 
-		bool withCount,
-		string? orderBy, 
-		SortDirection? sortDirection) 
-		where T : class, Core.Models.IHasMembership
-	{
-		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
-		return (IPaginationCollection<T>) this.Get(membershipId, skip, limit, withCount, orderBy, sortDirection);
 	}
 	
 	public async Task<IPaginationCollection<T>> GetAsync<T>(
@@ -187,38 +125,6 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	#endregion
 	
 	#region Search Methods
-	
-	public IPaginationCollection<TModel> Search(
-		string membershipId, 
-		string keyword,
-		int? skip = null,
-		int? limit = null,
-		bool? withCount = null,
-		string? sortField = null,
-		SortDirection? sortDirection = null)
-	{
-		var membership = this._membershipService.Get(membershipId);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		
-		var textSearchLanguage = TextSearchLanguage.None;
-		if (!string.IsNullOrEmpty(membership.DefaultLanguage) && TextSearchLanguage.All.Any(x => x.ISO6391Code == membership.DefaultLanguage))
-		{
-			textSearchLanguage = TextSearchLanguage.All.FirstOrDefault(x => x.ISO6391Code == membership.DefaultLanguage);
-		}
-		
-		var textSearchOptions = new TextSearchOptions
-		{
-			Language = textSearchLanguage,
-			IsCaseSensitive = true,
-			IsDiacriticSensitive = false
-		};
-		
-		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
-		return this._repository.Search(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection);
-	}
 	
 	public async Task<IPaginationCollection<TModel>> SearchAsync(
 		string membershipId, 
@@ -256,11 +162,6 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	#endregion
 	
 	#region Aggregation Methods
-	
-	public dynamic Aggregate(string membershipId, string aggregationStagesJson)
-	{
-		return this._repository.Aggregate(QueryHelper.InjectMembershipIdToAggregation(aggregationStagesJson, membershipId));
-	}
 	
 	public async Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default)
 	{

@@ -148,7 +148,7 @@ public class UserServiceUpdateProtectionTests
 			this._userTypeService,
 			this._membershipService,
 			this._roleService,
-			new AccessControlService(this._roleService),
+			new AccessControlService(),
 			Substitute.For<IEventService>(),
 			Substitute.For<IJwtService>(),
 			Substitute.For<IMailHookService>(),
@@ -265,7 +265,7 @@ public class UserServiceUpdateProtectionTests
 	public void UpdateAsync_SelfWhenRoleForbidsUserUpdate_IsDeniedByAuthorization()
 	{
 		// The own-update exception no longer applies when the role forbids users.update.
-		var accessControlService = new AccessControlService(this._roleService);
+		var accessControlService = new AccessControlService();
 		var role = new Role { Id = "role-id", Name = "no-self-update", MembershipId = MembershipId, Forbidden = ["users.update"] };
 		var rbac = new Rbac(new RbacSegment(UserId), new RbacSegment("users"), Rbac.CrudActionSegments.Update, new RbacSegment(UserId));
 		

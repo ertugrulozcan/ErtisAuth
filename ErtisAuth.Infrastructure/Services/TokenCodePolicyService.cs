@@ -72,7 +72,7 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
     
     #region Methods
 	
-	protected override bool ValidateModel(TokenCodePolicy model, out IEnumerable<string> errors)
+	protected override Task<IEnumerable<string>> ValidateModelAsync(TokenCodePolicy model, CancellationToken cancellationToken = default)
 	{
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
@@ -95,8 +95,7 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 			errorList.Add("Expires in must be greater than zero");
 		}
 		
-		errors = errorList;
-		return !errors.Any();
+		return Task.FromResult<IEnumerable<string>>(errorList);
 	}
 	
 	protected override void Overwrite(TokenCodePolicy destination, TokenCodePolicy source)
@@ -120,9 +119,6 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 			destination.Description = source.Description;
 		}
 	}
-	
-	protected override bool IsAlreadyExist(TokenCodePolicy model, string membershipId, TokenCodePolicy? exclude = null) =>
-		this.IsAlreadyExistAsync(model, membershipId, exclude).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	protected override async Task<bool> IsAlreadyExistAsync(TokenCodePolicy model, string membershipId, TokenCodePolicy? exclude = null, CancellationToken cancellationToken = default)
 	{

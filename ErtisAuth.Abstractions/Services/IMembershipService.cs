@@ -19,7 +19,5 @@ public interface IMembershipService : IGenericCrudService<Membership>
 		IDictionary<string, bool>? selectFields = null,
 		CancellationToken cancellationToken = default);
 	
-	Membership? GetBySecretKey(string secretKey);
-	
 	Task<Membership?> GetBySecretKeyAsync(string secretKey, CancellationToken cancellationToken = default);
 }

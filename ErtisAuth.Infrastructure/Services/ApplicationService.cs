@@ -10,7 +10,6 @@ using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using ErtisAuth.Infrastructure.Helpers;
 using Ertis.Core.Collections;
-using Ertis.MongoDB.Queries;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace ErtisAuth.Infrastructure.Services;
@@ -81,12 +80,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	#endregion
 	
 	#region Methods
-	
-	protected override bool ValidateModel(Application model, out IEnumerable<string> errors)
-	{
-		var role = string.IsNullOrEmpty(model.Role) ? null : this._roleService.GetBySlug(model.Role, model.MembershipId);
-		return ValidateModel(model, role, out errors);
-	}
 	
 	protected override async Task<IEnumerable<string>> ValidateModelAsync(Application model, CancellationToken cancellationToken = default)
 	{
@@ -190,26 +183,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		destination.Forbidden ??= source.Forbidden;
 	}
 	
-	protected override bool IsAlreadyExist(Application model, string membershipId, Application? exclude = null)
-	{
-		if (exclude == null)
-		{
-			return this.GetApplicationBySlug(model.Slug, membershipId) != null;	
-		}
-		else
-		{
-			var current = this.GetApplicationBySlug(model.Slug, membershipId);
-			if (current != null)
-			{
-				return current.Id != exclude.Id;	
-			}
-			else
-			{
-				return false;
-			}
-		}
-	}
-	
 	protected override async Task<bool> IsAlreadyExistAsync(Application model, string membershipId, Application? exclude = null, CancellationToken cancellationToken = default)
 	{
 		if (exclude == null)
@@ -254,8 +227,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		return new MemoryCacheEntryOptions().SetAbsoluteExpiration(CacheDefaults.ApplicationsCacheTTL);
 	}
 	
-	private void PurgeAllCache(string membershipId) => this.PurgeAllCacheAsync(membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
-	
 	private async Task PurgeAllCacheAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
 		var applications = await this.GetAsync(
@@ -284,19 +255,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	#endregion
 	
 	#region Query Methods
-	
-	public override IPaginationCollection<dynamic> Query(
-		string membershipId, 
-		string query, 
-		int? skip = null, 
-		int? limit = null, 
-		bool? withCount = null, 
-		string? sortField = null,
-		SortDirection? sortDirection = null, 
-		IDictionary<string, bool>? selectFields = null)
-	{
-		return base.Query(membershipId, query, skip, limit, withCount, sortField, sortDirection, ExcludeSecretHash(selectFields));
-	}
 	
 	public override async Task<IPaginationCollection<dynamic>> QueryAsync(
 		string membershipId, 
@@ -339,23 +297,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	#endregion
 	
 	#region Read Methods
-	
-	public override Application? Get(string membershipId, string id)
-	{
-		var cacheKey = GetCacheKey(membershipId, id);
-		if (!this._memoryCache.TryGetValue<Application>(cacheKey, out var application))
-		{
-			application = base.Get(membershipId, id);
-			if (application == null)
-			{
-				return null;
-			}
-			
-			this._memoryCache.Set(cacheKey, application, GetCacheTTL());
-		}
-		
-		return application;
-	}
 	
 	public override async Task<Application?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 	{
@@ -408,11 +349,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		return application;
 	}
 	
-	private Application? GetApplicationBySlug(string slug, string membershipId)
-	{
-		return this._repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
-	}
-	
 	private async Task<Application?> GetApplicationBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
 	{
 		return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
@@ -421,13 +357,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	#endregion
 	
 	#region Create Methods
-	
-	public override Application Create(Utilizer utilizer, string membershipId, Application model)
-	{
-		var created = base.Create(utilizer, membershipId, model);
-		this.PurgeAllCache(membershipId);
-		return created;
-	}
 	
 	public override async Task<Application> CreateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
 	{
@@ -447,14 +376,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	#endregion
 	
 	#region Update Methods
-	
-	public override Application Update(Utilizer utilizer, string membershipId, Application model)
-	{
-		var updated = base.Update(utilizer, membershipId, model);
-		this.PurgeCache(membershipId, model.Id);
-		this.PurgeAllCache(membershipId);
-		return updated;
-	}
 	
 	public override async Task<Application> UpdateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
 	{
@@ -505,19 +426,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	#region Delete Methods
 	
-	public override bool Delete(Utilizer utilizer, string membershipId, string id)
-	{
-		var isDeleted = base.Delete(utilizer, membershipId, id);
-		if (isDeleted)
-		{
-			// The deleted application is no longer listed by PurgeAllCache, so its own entries are removed explicitly
-			this.PurgeCache(membershipId, id);
-			this.PurgeAllCache(membershipId);	
-		}
-		
-		return isDeleted;
-	}
-	
 	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
@@ -529,18 +437,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		}
 		
 		return isDeleted;
-	}
-	
-	public override bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids)
-	{
-		var result = base.BulkDelete(utilizer, membershipId, ids);
-		foreach (var id in ids)
-		{
-			this.PurgeCache(membershipId, id);
-		}
-		
-		this.PurgeAllCache(membershipId);
-		return result;
 	}
 	
 	public override async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)

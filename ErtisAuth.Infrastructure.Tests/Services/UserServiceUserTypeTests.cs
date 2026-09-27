@@ -139,7 +139,7 @@ public class UserServiceUserTypeTests
 			this._userTypeService,
 			this._membershipService,
 			this._roleService,
-			new AccessControlService(this._roleService),
+			new AccessControlService(),
 			Substitute.For<IEventService>(),
 			Substitute.For<IJwtService>(),
 			Substitute.For<IMailHookService>(),

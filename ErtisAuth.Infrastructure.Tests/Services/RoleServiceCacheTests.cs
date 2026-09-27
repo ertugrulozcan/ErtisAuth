@@ -32,7 +32,6 @@ public class RoleServiceCacheTests
 	public RoleServiceCacheTests()
 	{
 		this._membership = TestServiceFactory.CreateMembership("SHA2-256");
-		this._membershipService.Get(this._membership.Id).Returns(this._membership);
 		this._membershipService.GetAsync(this._membership.Id, Arg.Any<CancellationToken>()).Returns(this._membership);
 		this._utilizer = Utilizer.GetSystemUtilizer(this._membership.Id);
 		InMemoryRepository.Setup(this._repository);
@@ -84,19 +83,6 @@ public class RoleServiceCacheTests
 		Assert.Null(await roleService.GetBySlugAsync("editor", this._membership.Id, TestContext.Current.CancellationToken));
 		Assert.Null(await roleService.GetAsync(this._membership.Id, "role-1", TestContext.Current.CancellationToken));
 		Assert.NotNull(await roleService.GetBySlugAsync("viewer", this._membership.Id, TestContext.Current.CancellationToken));
-	}
-	
-	[Fact]
-	public async Task BulkDelete_RemovesDeletedRolesFromCache()
-	{
-		var roleService = await this.CreateRoleServiceWithCachedRolesAsync();
-		Assert.NotNull(roleService.GetBySlug("editor", this._membership.Id));
-		
-		roleService.BulkDelete(this._utilizer, this._membership.Id, ["role-1"]);
-		
-		Assert.Null(roleService.GetBySlug("editor", this._membership.Id));
-		Assert.Null(roleService.Get(this._membership.Id, "role-1"));
-		Assert.NotNull(roleService.GetBySlug("viewer", this._membership.Id));
 	}
 	
 	[Fact]

@@ -65,7 +65,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	
 	#region Methods
 	
-	protected override bool ValidateModel(OneTimePassword model, out IEnumerable<string> errors)
+	protected override Task<IEnumerable<string>> ValidateModelAsync(OneTimePassword model, CancellationToken cancellationToken = default)
 	{
 		var errorList = new List<string>();
 		
@@ -99,8 +99,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			errorList.Add($"The {nameof(model.Token)} is required.");
 		}
 		
-		errors = errorList;
-		return !errors.Any();
+		return Task.FromResult<IEnumerable<string>>(errorList);
 	}
 	
 	protected override void Overwrite(OneTimePassword destination, OneTimePassword source)
@@ -112,11 +111,6 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		{
 			throw ErtisAuthException.IdenticalDocument();
 		}
-	}
-	
-	protected override bool IsAlreadyExist(OneTimePassword model, string membershipId, OneTimePassword? exclude = null)
-	{
-		return false;
 	}
 	
 	protected override async Task<bool> IsAlreadyExistAsync(OneTimePassword model, string membershipId, OneTimePassword? exclude = null, CancellationToken cancellationToken = default)

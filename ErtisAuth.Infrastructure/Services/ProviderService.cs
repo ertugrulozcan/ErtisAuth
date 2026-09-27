@@ -141,7 +141,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		}
 	}
 	
-	protected override bool ValidateModel(Provider model, out IEnumerable<string> errors)
+	protected override Task<IEnumerable<string>> ValidateModelAsync(Provider model, CancellationToken cancellationToken = default)
 	{
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
@@ -195,8 +195,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 			}
 		}
 		
-		errors = errorList;
-		return !errors.Any();
+		return Task.FromResult<IEnumerable<string>>(errorList);
 	}
 	
 	protected override void Overwrite(Provider destination, Provider source)
@@ -216,26 +215,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		destination.TenantId ??= source.TenantId;
 		destination.DefaultRole ??= source.DefaultRole;
 		destination.DefaultUserType ??= source.DefaultUserType;
-	}
-	
-	protected override bool IsAlreadyExist(Provider model, string membershipId, Provider? exclude = null)
-	{
-		if (exclude == null)
-		{
-			return this.GetByName(model.Name, membershipId) != null;	
-		}
-		else
-		{
-			var current = this.GetByName(model.Name, membershipId);
-			if (current != null)
-			{
-				return current.Id != exclude.Id;
-			}
-			else
-			{
-				return false;
-			}
-		}
 	}
 	
 	protected override async Task<bool> IsAlreadyExistAsync(Provider model, string membershipId, Provider? exclude = null, CancellationToken cancellationToken = default)
@@ -266,11 +245,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	protected override ErtisAuthException GetNotFoundError(string id)
 	{
 		return ErtisAuthException.ProviderNotFound(id);
-	}
-	
-	private Provider? GetByName(string name, string membershipId)
-	{
-		return this._repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
 	}
 	
 	private async Task<Provider?> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
@@ -320,13 +294,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Create Methods
 	
-	public override Provider Create(Utilizer utilizer, string membershipId, Provider model)
-	{
-		var created = base.Create(utilizer, membershipId, model);
-		this.PurgeAllCache(membershipId);
-		return created;
-	}
-	
 	public override async Task<Provider> CreateAsync(Utilizer utilizer, string membershipId, Provider model, CancellationToken cancellationToken = default)
 	{
 		var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
@@ -338,13 +305,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Update Methods
 	
-	public override Provider Update(Utilizer utilizer, string membershipId, Provider model)
-	{
-		var updated = base.Update(utilizer, membershipId, model);
-		this.PurgeAllCache(membershipId);
-		return updated;
-	}
-	
 	public override async Task<Provider> UpdateAsync(Utilizer utilizer, string membershipId, Provider model, CancellationToken cancellationToken = default)
 	{
 		var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
@@ -355,17 +315,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	#endregion
 	
 	#region Delete Methods
-	
-	public override bool Delete(Utilizer utilizer, string membershipId, string id)
-	{
-		var isDeleted = base.Delete(utilizer, membershipId, id);
-		if (isDeleted)
-		{
-			this.PurgeAllCache(membershipId);	
-		}
-		
-		return isDeleted;
-	}
 	
 	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 	{

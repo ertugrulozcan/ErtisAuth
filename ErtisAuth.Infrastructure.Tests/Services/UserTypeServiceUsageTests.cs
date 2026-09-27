@@ -51,7 +51,6 @@ public class UserTypeServiceUsageTests
 	public UserTypeServiceUsageTests()
 	{
 		this._membership = TestServiceFactory.CreateMembership("SHA2-256");
-		this._membershipService.Get(this._membership.Id).Returns(this._membership);
 		this._membershipService.GetAsync(this._membership.Id, Arg.Any<CancellationToken>()).Returns(this._membership);
 		this._utilizer = Utilizer.GetSystemUtilizer(this._membership.Id);
 		
@@ -124,17 +123,6 @@ public class UserTypeServiceUsageTests
 		this._userCount = 3;
 		
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateUserTypeService().DeleteAsync(this._utilizer, this._membership.Id, UserTypeId, TestContext.Current.CancellationToken));
-		
-		Assert.Equal("UserTypeCanNotBeDelete", exception.ErrorCode);
-		Assert.Contains(this._userTypes, x => x.Id == UserTypeId);
-	}
-	
-	[Fact]
-	public void Delete_WhenUsersHaveTheUserType_IsRejected()
-	{
-		this._userCount = 1;
-		
-		var exception = Assert.Throws<ErtisAuthException>(() => this.CreateUserTypeService().Delete(this._utilizer, this._membership.Id, UserTypeId));
 		
 		Assert.Equal("UserTypeCanNotBeDelete", exception.ErrorCode);
 		Assert.Contains(this._userTypes, x => x.Id == UserTypeId);

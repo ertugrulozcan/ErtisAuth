@@ -76,7 +76,16 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	
 	#region Event Handlers
 	
-	private void OnEventFired(object? _, ErtisAuthEvent ertisAuthEvent)
+	/// <summary>
+	/// Raised synchronously by EventService, so the hook lookup must not block the request that fired the event.
+	/// async void is safe here: OnEventFiredAsync catches and logs every exception.
+	/// </summary>
+	private async void OnEventFired(object? _, ErtisAuthEvent ertisAuthEvent)
+	{
+		await this.OnEventFiredAsync(ertisAuthEvent);
+	}
+	
+	private async Task OnEventFiredAsync(ErtisAuthEvent ertisAuthEvent, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -88,7 +97,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			};
 			
 			var query = QueryBuilder.Where(expressions);
-			var mailHooksDynamicCollection = this.Query(ertisAuthEvent.MembershipId, query.ToString());
+			var mailHooksDynamicCollection = await this.QueryAsync(ertisAuthEvent.MembershipId, query.ToString(), cancellationToken: cancellationToken);
 			var json = JsonSerializer.Serialize(mailHooksDynamicCollection, new JsonSerializerOptions
 			{
 				WriteIndented = false,
@@ -105,7 +114,12 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 				{
 					if (PredefinedAutonomouslyMailHooks.All(x => x != mailHook.Slug))
 					{
-						this.SendHookMail(mailHook, ertisAuthEvent);
+						this.SendHookMailAsync(
+							mailHook,
+							ertisAuthEvent.UtilizerId,
+							ertisAuthEvent.MembershipId,
+							ertisAuthEvent,
+							cancellationToken: cancellationToken);
 					}
 				}	
 			}
@@ -155,16 +169,6 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	#endregion
 	
 	#region Methods
-	
-	private void SendHookMail(MailHook mailHook, IErtisAuthEvent ertisAuthEvent, CancellationToken cancellationToken = default)
-	{
-		this.SendHookMailAsync(
-			mailHook, 
-			ertisAuthEvent.UtilizerId, 
-			ertisAuthEvent.MembershipId, 
-			ertisAuthEvent,
-			cancellationToken: cancellationToken);
-	}
 	
 	public async void SendHookMailAsync(MailHook mailhook, string userId, string membershipId, object? payload, CancellationToken cancellationToken = default)
 	{
@@ -334,7 +338,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			cancellationToken: cancellationToken);
 	}
 	
-	protected override bool ValidateModel(MailHook model, out IEnumerable<string> errors)
+	protected override Task<IEnumerable<string>> ValidateModelAsync(MailHook model, CancellationToken cancellationToken = default)
 	{
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
@@ -398,8 +402,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			}	
 		}
 		
-		errors = errorList;
-		return !errors.Any();
+		return Task.FromResult<IEnumerable<string>>(errorList);
 	}
 	
 	protected override void Overwrite(MailHook destination, MailHook source)
@@ -464,26 +467,6 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		}
 	}
 	
-	protected override bool IsAlreadyExist(MailHook model, string membershipId, MailHook? exclude = null)
-	{
-		if (exclude == null)
-		{
-			return this.GetByName(model.Name, membershipId) != null;	
-		}
-		else
-		{
-			var current = this.GetByName(model.Name, membershipId);
-			if (current != null)
-			{
-				return current.Name != exclude.Name;	
-			}
-			else
-			{
-				return false;
-			}
-		}
-	}
-	
 	protected override async Task<bool> IsAlreadyExistAsync(MailHook model, string membershipId, MailHook? exclude = null, CancellationToken cancellationToken = default)
 	{
 		if (exclude == null)
@@ -512,11 +495,6 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	protected override ErtisAuthException GetNotFoundError(string id)
 	{
 		return ErtisAuthException.MailHookNotFound(id);
-	}
-	
-	private MailHook? GetByName(string name, string membershipId)
-	{
-		return this._repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
 	}
 	
 	private async Task<MailHook?> GetByNameAsync(string name, string membershipId)

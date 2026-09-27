@@ -4,6 +4,7 @@ using Ertis.MongoDB.Queries;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedMemberInSuper.Global
+// ReSharper disable EventNeverSubscribedTo.Global
 namespace ErtisAuth.Abstractions.Services;
 
 public interface IGenericCrudService<T>
@@ -20,16 +21,7 @@ public interface IGenericCrudService<T>
 	
 	#region Methods
 	
-	T? Get(string id);
-	
 	Task<T?> GetAsync(string id, CancellationToken cancellationToken = default);
-	
-	IPaginationCollection<T> Get(
-		int? skip = null, 
-		int? limit = null, 
-		bool withCount = false, 
-		string? orderBy = null, 
-		SortDirection? sortDirection = null);
 	
 	Task<IPaginationCollection<T>> GetAsync(
 		int? skip = null, 
@@ -38,15 +30,6 @@ public interface IGenericCrudService<T>
 		string? orderBy = null, 
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default);
-	
-	IPaginationCollection<T> Search(
-		string keyword, 
-		TextSearchOptions? options = null,
-		int? skip = null, 
-		int? limit = null,
-		bool? withCount = null, 
-		string? sortField = null, 
-		SortDirection? sortDirection = null);
 	
 	Task<IPaginationCollection<T>> SearchAsync(
 		string keyword, 
@@ -58,15 +41,9 @@ public interface IGenericCrudService<T>
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default);
 	
-	T Create(T model);
-	
 	Task<T> CreateAsync(T model, CancellationToken cancellationToken = default);
 	
-	T Update(T model);
-	
 	Task<T> UpdateAsync(T model, CancellationToken cancellationToken = default);
-	
-	bool Delete(string id);
 	
 	Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
 	

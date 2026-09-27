@@ -1,4 +1,5 @@
 using Ertis.Core.Exceptions;
+using Ertis.Data.Models;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Services;
@@ -26,9 +27,9 @@ public class MembershipServiceValidationTests
 		return new MembershipService(this._repository, new MemoryCache(new MemoryCacheOptions()));
 	}
 	
-	private static ValidationException AssertValidationError(Action action, string expectedError)
+	private static async Task<ValidationException> AssertValidationErrorAsync(Func<Task> action, string expectedError)
 	{
-		var exception = Assert.Throws<ValidationException>(action);
+		var exception = await Assert.ThrowsAsync<ValidationException>(action);
 		Assert.Equal("ModelValidationError", exception.ErrorCode);
 		Assert.NotNull(exception.Errors);
 		Assert.Contains(expectedError, exception.Errors);
@@ -42,13 +43,13 @@ public class MembershipServiceValidationTests
 	[Theory]
 	[InlineData(null)]
 	[InlineData("")]
-	public void Create_WithoutHashAlgorithm_ThrowsValidationError(string? hashAlgorithm)
+	public async Task CreateAsync_WithoutHashAlgorithm_ThrowsValidationError(string? hashAlgorithm)
 	{
 		var membershipService = this.CreateMembershipService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		AssertValidationError(() => membershipService.Create(membership), "hash_algorithm is a required field");
-		this._repository.DidNotReceiveWithAnyArgs().Insert(default!);
+		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, TestContext.Current.CancellationToken), "hash_algorithm is a required field");
+		await this._repository.DidNotReceiveWithAnyArgs().InsertAsync(default!);
 	}
 	
 	[Theory]
@@ -56,13 +57,13 @@ public class MembershipServiceValidationTests
 	[InlineData("SHA3_512")]
 	[InlineData("ARGON2")]
 	[InlineData("PBKDF2-SHA1")]
-	public void Create_WithUnsupportedHashAlgorithm_ThrowsValidationError(string hashAlgorithm)
+	public async Task CreateAsync_WithUnsupportedHashAlgorithm_ThrowsValidationError(string hashAlgorithm)
 	{
 		var membershipService = this.CreateMembershipService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		AssertValidationError(() => membershipService.Create(membership), $"Unsupported hash algorithm ({hashAlgorithm})");
-		this._repository.DidNotReceiveWithAnyArgs().Insert(default!);
+		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, TestContext.Current.CancellationToken), $"Unsupported hash algorithm ({hashAlgorithm})");
+		await this._repository.DidNotReceiveWithAnyArgs().InsertAsync(default!);
 	}
 	
 	[Theory]
@@ -72,14 +73,14 @@ public class MembershipServiceValidationTests
 	[InlineData("ARGON2ID")]
 	[InlineData("PBKDF2-SHA256")]
 	[InlineData("PBKDF2-SHA512")]
-	public void Create_WithSupportedHashAlgorithm_InsertsMembership(string hashAlgorithm)
+	public async Task CreateAsync_WithSupportedHashAlgorithm_InsertsMembership(string hashAlgorithm)
 	{
 		var membershipService = this.CreateMembershipService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		membershipService.Create(membership);
+		await membershipService.CreateAsync(membership, TestContext.Current.CancellationToken);
 		
-		this._repository.Received(1).Insert(membership);
+		await this._repository.Received(1).InsertAsync(membership, Arg.Any<InsertOptions?>(), Arg.Any<CancellationToken>());
 	}
 	
 	[Fact]
@@ -120,23 +121,23 @@ public class MembershipServiceValidationTests
 	[InlineData("UTF-8")]
 	[InlineData("utf-16")]
 	[InlineData("iso-8859-1")]
-	public void Create_WithEmptyOrKnownEncoding_InsertsMembership(string? defaultEncoding)
+	public async Task CreateAsync_WithEmptyOrKnownEncoding_InsertsMembership(string? defaultEncoding)
 	{
 		var membershipService = this.CreateMembershipService();
 		var membership = TestServiceFactory.CreateMembership("ARGON2ID", defaultEncoding);
 		
-		membershipService.Create(membership);
+		await membershipService.CreateAsync(membership, TestContext.Current.CancellationToken);
 		
-		this._repository.Received(1).Insert(membership);
+		await this._repository.Received(1).InsertAsync(membership, Arg.Any<InsertOptions?>(), Arg.Any<CancellationToken>());
 	}
 	
 	[Fact]
-	public void Create_WithUnknownEncoding_ThrowsValidationError()
+	public async Task CreateAsync_WithUnknownEncoding_ThrowsValidationError()
 	{
 		var membershipService = this.CreateMembershipService();
 		var membership = TestServiceFactory.CreateMembership("ARGON2ID", "unknown-encoding");
 		
-		AssertValidationError(() => membershipService.Create(membership), "Unsupported encoding (unknown-encoding)");
+		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, TestContext.Current.CancellationToken), "Unsupported encoding (unknown-encoding)");
 	}
 	
 	#endregion

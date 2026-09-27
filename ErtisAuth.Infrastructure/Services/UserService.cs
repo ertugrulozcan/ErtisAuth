@@ -1324,9 +1324,6 @@ public class UserService : DynamicObjectCrudService, IUserService
     
     #region Delete Methods
 	
-    public bool Delete(Utilizer utilizer, string membershipId, string id) =>
-        this.DeleteAsync(utilizer, membershipId, id).ConfigureAwait(false).GetAwaiter().GetResult();
-    
     public async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
     {
         var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
@@ -1346,9 +1343,6 @@ public class UserService : DynamicObjectCrudService, IUserService
         return isDeleted;
     }
 	
-    public bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids) =>
-		this.BulkDeleteAsync(utilizer, membershipId, ids).ConfigureAwait(false).GetAwaiter().GetResult();
-    
     public async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
     {
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);

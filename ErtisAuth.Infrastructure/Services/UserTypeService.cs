@@ -494,7 +494,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
         }
     }
     
-	protected override bool ValidateModel(UserType model, out IEnumerable<string> errors)
+	protected override Task<IEnumerable<string>> ValidateModelAsync(UserType model, CancellationToken cancellationToken = default)
 	{
 		var errorList = new List<string>();
 		
@@ -512,8 +512,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 			
 			if (errorList.Any())
 			{
-				errors = errorList;
-				return false;
+				return Task.FromResult<IEnumerable<string>>(errorList);
 			}
 		}
 		catch (Exception ex)
@@ -521,12 +520,8 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 			errorList.Add(ex.Message);
 		}
 		
-		errors = errorList;
-		return !errorList.Any();
+		return Task.FromResult<IEnumerable<string>>(errorList);
 	}
-	
-	protected override bool IsAlreadyExist(UserType model, string membershipId, UserType? exclude = null) =>
-		this.IsAlreadyExistAsync(model, membershipId, exclude).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	protected override async Task<bool> IsAlreadyExistAsync(UserType model, string membershipId, UserType? exclude = null, CancellationToken cancellationToken = default)
 	{
@@ -580,13 +575,6 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
 	#region Create Methods
 	
-	public override UserType Create(Utilizer utilizer, string membershipId, UserType model)
-	{
-		var created = base.Create(utilizer, membershipId, model);
-		this.PurgeAllCache(membershipId);
-		return created;
-	}
-	
 	public override async Task<UserType> CreateAsync(Utilizer utilizer, string membershipId, UserType model, CancellationToken cancellationToken = default)
 	{
 		var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
@@ -597,17 +585,6 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	#endregion
 	
 	#region Update Methods
-	
-	public override UserType Update(Utilizer utilizer, string membershipId, UserType model)
-	{
-		// The name or slug may change, so the entries of the prior version are removed explicitly
-		var prior = this.Get(membershipId, model.Id);
-		this.KeepSlugIfInUseAsync(membershipId, model, prior).ConfigureAwait(false).GetAwaiter().GetResult();
-		var updated = base.Update(utilizer, membershipId, model);
-		this.PurgeCache(membershipId, prior);
-		this.PurgeAllCache(membershipId);
-		return updated;
-	}
 	
 	public override async Task<UserType> UpdateAsync(Utilizer utilizer, string membershipId, UserType model, CancellationToken cancellationToken = default)
 	{
@@ -643,22 +620,6 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
 	#region Delete Methods
 	
-	public override bool Delete(Utilizer utilizer, string membershipId, string id)
-	{
-		// Is Deletable?
-		if (!this.IsDeletable(id, membershipId, out _))
-		{
-			throw ErtisAuthException.UserTypeCanNotBeDelete();
-		}
-		
-		// The deleted user type is no longer listed by PurgeAllCache, so its own entries are removed explicitly
-		var prior = this.Get(membershipId, id);
-		var isDeleted = base.Delete(utilizer, membershipId, id);
-		this.PurgeCache(membershipId, prior);
-		this.PurgeAllCache(membershipId);
-		return isDeleted;
-	}
-	
 	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		// Is Deletable?
@@ -674,12 +635,6 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		this.PurgeCache(membershipId, prior);
 		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
 		return isDeleted;
-	}
-	
-	private bool IsDeletable(string id, string membershipId, out IEnumerable<string>? errors)
-	{
-		errors = this.CheckDeletableAsync(id, membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
-		return errors == null || !errors.Any();
 	}
 	
 	private async Task<IEnumerable<string>?> CheckDeletableAsync(string id, string membershipId, CancellationToken cancellationToken = default)
@@ -736,8 +691,6 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	{
 		return new MemoryCacheEntryOptions().SetAbsoluteExpiration(CacheDefaults.UserTypesCacheTTL);
 	}
-	
-	private void PurgeAllCache(string membershipId) => this.PurgeAllCacheAsync(membershipId).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	private async Task PurgeAllCacheAsync(string membershipId, CancellationToken cancellationToken = default)
 	{

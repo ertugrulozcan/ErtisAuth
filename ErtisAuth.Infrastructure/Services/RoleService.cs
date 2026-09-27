@@ -175,14 +175,6 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		return null;
 	}
 	
-	private void RefreshCache(string membershipId)
-	{
-		var cacheKey = GetCacheKey(membershipId);
-		this._memoryCache.Remove(cacheKey);
-		var roles = base.Get(membershipId);
-		this._memoryCache.Set(cacheKey, roles.Items, GetCacheTTL());
-	}
-	
 	private async Task RefreshCacheAsync(string membershipId)
 	{
 		var cacheKey = GetCacheKey(membershipId);
@@ -195,7 +187,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	#region Methods
 	
-	protected override bool ValidateModel(Role model, out IEnumerable<string> errors)
+	protected override Task<IEnumerable<string>> ValidateModelAsync(Role model, CancellationToken cancellationToken = default)
 	{
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
@@ -247,8 +239,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 			errorList.Add(ex.Message);
 		}
 		
-		errors = errorList;
-		return !errors.Any();
+		return Task.FromResult<IEnumerable<string>>(errorList);
 	}
 	
 	protected override void Overwrite(Role destination, Role source)
@@ -271,9 +262,6 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		destination.Permissions ??= source.Permissions;
 		destination.Forbidden ??= source.Forbidden;
 	}
-	
-	protected override bool IsAlreadyExist(Role model, string membershipId, Role? exclude = null) =>
-		this.IsAlreadyExistAsync(model, membershipId, exclude).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	protected override async Task<bool> IsAlreadyExistAsync(Role model, string membershipId, Role? exclude = null, CancellationToken cancellationToken = default)
 	{
@@ -309,27 +297,10 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	#region Read Methods
 	
-	public override Role? Get(string membershipId, string id)
-	{
-		var role = this.GetFromCacheById(membershipId, id);
-		return role ?? base.Get(membershipId, id);
-	}
-	
 	public override async Task<Role?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var role = this.GetFromCacheById(membershipId, id);
 		return role ?? await base.GetAsync(membershipId, id, cancellationToken: cancellationToken);
-	}
-	
-	public Role? GetBySlug(string slug, string membershipId)
-	{
-		var role = this.GetFromCacheBySlug(membershipId, slug);
-		if (role != null)
-		{
-			return role;
-		}
-		
-		return this._repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
 	}
 	
 	public async ValueTask<Role?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
@@ -347,18 +318,6 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	#region Create Methods
 	
-	public override Role Create(Utilizer utilizer, string membershipId, Role model)
-	{
-		if (model.Slug is ReservedRoles.Administrator && utilizer.Type != Utilizer.UtilizerType.System)
-		{
-			throw ErtisAuthException.ReservedRoleName(model.Slug);
-		}
-		
-		var created = base.Create(utilizer, membershipId, model);
-		this.RefreshCache(membershipId);
-		return created;
-	}
-	
 	public override async Task<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
 	{
 		if (model.Slug is ReservedRoles.Administrator && utilizer.Type != Utilizer.UtilizerType.System)
@@ -375,13 +334,6 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	#region Update Methods
 	
-	public override Role Update(Utilizer utilizer, string membershipId, Role model)
-	{
-		var updated = base.Update(utilizer, membershipId, model);
-		this.RefreshCache(membershipId);
-		return updated;
-	}
-	
 	public override async Task<Role> UpdateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
 	{
 		var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
@@ -393,17 +345,6 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	#region Delete Methods
 	
-	public override bool Delete(Utilizer utilizer, string membershipId, string id)
-	{
-		var isDeleted = base.Delete(utilizer, membershipId, id);
-		if (isDeleted)
-		{
-			this.RefreshCache(membershipId);
-		}
-		
-		return isDeleted;
-	}
-	
 	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
@@ -413,13 +354,6 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		}
 		
 		return isDeleted;
-	}
-	
-	public override bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids)
-	{
-		var result = base.BulkDelete(utilizer, membershipId, ids);
-		this.RefreshCache(membershipId);
-		return result;
 	}
 	
 	public override async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)

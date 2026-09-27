@@ -7,25 +7,6 @@ namespace ErtisAuth.Infrastructure.Services;
 
 public class AccessControlService : IAccessControlService
 {
-	#region Services
-	
-	private readonly IRoleService _roleService;
-	
-	#endregion
-	
-	#region Constructors
-	
-	/// <summary>
-	/// Constructor
-	/// </summary>
-	/// <param name="roleService"></param>
-	public AccessControlService(IRoleService roleService)
-	{
-		this._roleService = roleService;
-	}
-	
-	#endregion
-	
 	#region Methods
 	
 	/// <summary>
@@ -75,52 +56,6 @@ public class AccessControlService : IAccessControlService
 	}
 	
 	/// <summary>
-	/// Returns whether the role of utilizer has the permission specified in the given rbac expression, also if the rbac action is 'update' and the rbac object is equal to the utilizer id (ie the utilizer is the user doing the action) accepted to be permitted.
-	/// </summary>
-	/// <param name="rbac"></param>
-	/// <param name="utilizer"></param>
-	/// <returns></returns>
-	public bool HasPermission(IUtilizer utilizer, Rbac rbac)
-	{
-		return this.CheckPermission(utilizer.Role, utilizer.MembershipId, rbac, utilizer);
-	}
-	
-	/// <summary>
-	/// Returns whether the role of utilizer has the permission specified in the given rbac expression, also if the rbac action is 'update' and the rbac object is equal to the utilizer id (ie the utilizer is the user doing the action) accepted to be permitted.
-	/// </summary>
-	/// <param name="rbac"></param>
-	/// <param name="utilizer"></param>
-	/// <returns></returns>
-	public bool HasPermission(IUtilizer utilizer, string rbac)
-	{
-		return this.CheckPermission(utilizer.Role, utilizer.MembershipId, Rbac.Parse(rbac), utilizer);
-	}
-	
-	/// <summary>
-	/// Returns whether the role of utilizer has the permission specified in the given rbac expression, also if the rbac action is 'update' and the rbac object is equal to the owner id (ie the owner is the user doing the action) accepted to be permitted.
-	/// </summary>
-	/// <param name="rbac"></param>
-	/// <param name="utilizer"></param>
-	/// <param name="owner"></param>
-	/// <returns></returns>
-	public bool HasPermission(IUtilizer utilizer, Rbac rbac, Utilizer owner)
-	{
-		return this.CheckPermission(utilizer.Role, utilizer.MembershipId, rbac, owner);
-	}
-	
-	/// <summary>
-	/// Returns whether the role of utilizer has the permission specified in the given rbac expression, also if the rbac action is 'update' and the rbac object is equal to the owner id (ie the owner is the user doing the action) accepted to be permitted.
-	/// </summary>
-	/// <param name="rbac"></param>
-	/// <param name="utilizer"></param>
-	/// <param name="owner"></param>
-	/// <returns></returns>
-	public bool HasPermission(IUtilizer utilizer, string rbac, Utilizer owner)
-	{
-		return this.CheckPermission(utilizer.Role, utilizer.MembershipId, Rbac.Parse(rbac), owner);
-	}
-	
-	/// <summary>
 	/// Returns whether the given role or the utilizer's own permissions (UBAC) grant the permission specified in the given rbac expression.
 	/// Unlike HasPermission, the own-update exception (a user updating itself) is not taken into account,
 	/// so this is the check for changes that require a real update permission (e.g. role, permissions, forbidden).
@@ -132,44 +67,6 @@ public class AccessControlService : IAccessControlService
 	public bool HasGrantedPermission(Role? role, Rbac rbac, Utilizer utilizer)
 	{
 		return Evaluate(role, rbac, utilizer.HasPermission(rbac), () => false, utilizer.Scopes);
-	}
-	
-	private bool CheckPermission(string roleSlug, string membershipId, Rbac rbac, IUtilizer? utilizer = null)
-	{
-		var hasUbacPermission = utilizer?.HasPermission(rbac);
-		if (hasUbacPermission != null)
-		{
-			return hasUbacPermission.Value;
-		}
-		
-		var role = this._roleService.GetBySlug(roleSlug, membershipId);
-		if (role != null)
-		{
-			return CheckPermission(role, rbac, utilizer);
-		}
-		else
-		{
-			throw Core.Exceptions.ErtisAuthException.RoleNotFound(roleSlug, true);
-		}
-	}
-	
-	private bool CheckPermission(string roleSlug, string membershipId, Rbac rbac, Utilizer utilizer)
-	{
-		var hasUbacPermission = utilizer.HasPermission(rbac);
-		if (hasUbacPermission != null)
-		{
-			return Evaluate(null, rbac, hasUbacPermission, () => false, utilizer.Scopes);
-		}
-		
-		var role = this._roleService.GetBySlug(roleSlug, membershipId);
-		if (role != null)
-		{
-			return CheckPermission(role, rbac, utilizer);
-		}
-		else
-		{
-			throw Core.Exceptions.ErtisAuthException.RoleNotFound(roleSlug, true);
-		}
 	}
 	
 	private static bool CheckPermission(Role role, Rbac rbac, IUtilizer? utilizer = null)

@@ -45,7 +45,6 @@ public class ApplicationServiceSecretTests
 	public ApplicationServiceSecretTests()
 	{
 		this._membership = TestServiceFactory.CreateMembership("SHA2-256");
-		this._membershipService.Get(this._membership.Id).Returns(this._membership);
 		this._membershipService.GetAsync(this._membership.Id, Arg.Any<CancellationToken>()).Returns(this._membership);
 		var role = new Role
 		{
@@ -54,7 +53,6 @@ public class ApplicationServiceSecretTests
 			MembershipId = this._membership.Id
 		};
 		
-		this._roleService.GetBySlug("server", this._membership.Id).Returns(role);
 		this._roleService.GetBySlugAsync("server", this._membership.Id, Arg.Any<CancellationToken>()).Returns(role);
 		
 		this._utilizer = Utilizer.GetSystemUtilizer(this._membership.Id);
@@ -177,12 +175,11 @@ public class ApplicationServiceSecretTests
 	}
 	
 	[Fact]
-	public async Task CreateWithSecretAsync_ValidatesRoleWithoutBlockingCall()
+	public async Task CreateWithSecretAsync_ValidatesRoleAsynchronously()
 	{
 		await this.CreateWithSecretAsync(this.CreateApplicationService());
 		
 		await this._roleService.Received().GetBySlugAsync("server", this._membership.Id, Arg.Any<CancellationToken>());
-		this._roleService.DidNotReceiveWithAnyArgs().GetBySlug(default!, default!);
 	}
 	
 	[Fact]

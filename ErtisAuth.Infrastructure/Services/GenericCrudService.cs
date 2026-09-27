@@ -42,20 +42,13 @@ public abstract class GenericCrudService<TModel> :
 	
 	#region Abstract Methods
 	
-	protected abstract bool ValidateModel(TModel model, out IEnumerable<string> errors);
-	
 	/// <summary>
-	/// Used by the async create and update flows, so that validations reading the database do not block the thread.
-	/// Defaults to the synchronous ValidateModel; override it when the validation needs I/O.
+	/// Returns the validation errors of the model (empty when valid).
+	/// Async, so that validations reading the database do not block the thread.
 	/// </summary>
-	protected virtual Task<IEnumerable<string>> ValidateModelAsync(TModel model, CancellationToken cancellationToken = default)
-	{
-		return Task.FromResult(this.ValidateModel(model, out var errors) ? Enumerable.Empty<string>() : errors);
-	}
+	protected abstract Task<IEnumerable<string>> ValidateModelAsync(TModel model, CancellationToken cancellationToken = default);
 	
 	protected abstract void Overwrite(TModel destination, TModel source);
-	
-	protected abstract bool IsAlreadyExist(TModel model, TModel? exclude = null);
 	
 	protected abstract Task<bool> IsAlreadyExistAsync(TModel model, TModel? exclude = null);
 	
@@ -67,16 +60,6 @@ public abstract class GenericCrudService<TModel> :
 	
 	#region Read Methods
 	
-	public virtual TModel? Get(string id)
-	{
-		if (string.IsNullOrEmpty(id))
-		{
-			return null;
-		}
-		
-		return this._repository.FindOne(id);
-	}
-	
 	public virtual async Task<TModel?> GetAsync(string id, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(id))
@@ -85,17 +68,6 @@ public abstract class GenericCrudService<TModel> :
 		}
 		
 		return await this._repository.FindOneAsync(id, cancellationToken: cancellationToken);
-	}
-	
-	public virtual IPaginationCollection<TModel> Get(
-		int? skip = null, 
-		int? limit = null, 
-		bool withCount = false, 
-		string? orderBy = null, 
-		SortDirection? sortDirection = null)
-	{
-		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
-		return this._repository.Find(skip, limit, withCount, orderBy, sortDirection);
 	}
 	
 	public virtual async Task<IPaginationCollection<TModel>> GetAsync(
@@ -128,19 +100,6 @@ public abstract class GenericCrudService<TModel> :
 	
 	#region Search Methods
 	
-	public IPaginationCollection<TModel> Search(
-		string keyword,
-		TextSearchOptions? options = null,
-		int? skip = null,
-		int? limit = null,
-		bool? withCount = null,
-		string? sortField = null,
-		SortDirection? sortDirection = null)
-	{
-		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
-		return this._repository.Search(keyword, options, skip, limit, withCount, sortField, sortDirection);
-	}
-	
 	public async Task<IPaginationCollection<TModel>> SearchAsync(
 		string keyword,
 		TextSearchOptions? options = null,
@@ -157,41 +116,7 @@ public abstract class GenericCrudService<TModel> :
 	
 	#endregion
 	
-	#region Insert Methods
-	
-	public virtual TModel Create(TModel model)
-	{
-		try
-		{
-			// Model validation
-			if (!this.ValidateModel(model, out var errors))
-			{
-				throw ErtisAuthException.ValidationError(errors);
-			}
-			
-			// Check existing
-			if (this.IsAlreadyExist(model))
-			{
-				throw this.GetAlreadyExistError(model);
-			}
-			
-			// Insert to database
-			var inserted = this._repository.Insert(model);
-			
-			this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(inserted));
-			
-			return inserted;
-		}
-		catch (MongoDB.Driver.MongoWriteException ex)
-		{
-			if (ex.WriteError.Category == MongoDB.Driver.ServerErrorCategory.DuplicateKey)
-			{
-				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
-			}
-            
-			throw;
-		}
-	}
+	#region Create Methods
 	
 	public virtual async Task<TModel> CreateAsync(TModel model, CancellationToken cancellationToken = default)
 	{
@@ -231,48 +156,6 @@ public abstract class GenericCrudService<TModel> :
 	#endregion
 	
 	#region Update Methods
-	
-	public virtual TModel Update(TModel model)
-	{
-		try
-		{
-			// Overwrite
-			var current = this.Get(model.Id);
-			if (current == null)
-			{
-				throw this.GetNotFoundError(model.Id);
-			}
-			
-			this.Overwrite(model, current);
-			
-			// Model validation
-			if (!this.ValidateModel(model, out var errors))
-			{
-				throw ErtisAuthException.ValidationError(errors);
-			}
-			
-			// Check existing
-			if (this.IsAlreadyExist(model, current))
-			{
-				throw this.GetAlreadyExistError(model);
-			}
-			
-			var updated = this._repository.Update(model);
-			
-			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(current, updated));
-			
-			return updated;
-		}
-		catch (MongoDB.Driver.MongoWriteException ex)
-		{
-			if (ex.WriteError.Category == MongoDB.Driver.ServerErrorCategory.DuplicateKey)
-			{
-				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
-			}
-            
-			throw;
-		}
-	}
 	
 	public virtual async Task<TModel> UpdateAsync(TModel model, CancellationToken cancellationToken = default)
 	{
@@ -320,25 +203,6 @@ public abstract class GenericCrudService<TModel> :
 	#endregion
 	
 	#region Delete Methods
-	
-	public virtual bool Delete(string id)
-	{
-		var current = this.Get(id);
-		if (current != null)
-		{
-			var isDeleted = this._repository.Delete(id);
-			if (isDeleted)
-			{
-				this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(current));	
-			}
-			
-			return isDeleted;
-		}
-		else
-		{
-			return false;
-		}
-	}
 	
 	public virtual async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
 	{

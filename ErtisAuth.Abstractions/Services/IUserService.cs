@@ -78,8 +78,6 @@ public interface IUserService : IDeletableMembershipBoundedService
     
     Task<bool> CheckPasswordAsync(Utilizer utilizer, string password, CancellationToken cancellationToken = default);
     
-    dynamic Aggregate(string membershipId, string aggregationStagesJson);
-    
     Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default);
     
     Task<User?> ActivateUserAsync(Utilizer utilizer, string membershipId, string activationCode, CancellationToken cancellationToken = default);

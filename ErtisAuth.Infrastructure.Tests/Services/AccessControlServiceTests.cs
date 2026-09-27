@@ -24,7 +24,7 @@ public class AccessControlServiceTests
 	
 	private static AccessControlService CreateService()
 	{
-		return new AccessControlService(Substitute.For<IRoleService>());
+		return new AccessControlService();
 	}
 	
 	private static Role CreateRole(string[]? permissions = null, string[]? forbidden = null)

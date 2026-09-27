@@ -81,17 +81,6 @@ public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventServ
 	
 	#region Get Methods
 	
-	public override ErtisAuthEvent? Get(string membershipId, string id)
-	{
-		var membership = this._membershipService.Get(membershipId);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		
-		return this._repository.FindOne(x => x.Id == id && x.MembershipId == membershipId);
-	}
-	
 	public override async Task<ErtisAuthEvent?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
@@ -101,23 +90,6 @@ public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventServ
 		}
 		
 		return await this._repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-	}
-	
-	public override IPaginationCollection<ErtisAuthEvent> Get(
-		string membershipId, 
-		int? skip = null, 
-		int? limit = null, 
-		bool withCount = false, 
-		string? orderBy = null, 
-		SortDirection? sortDirection = null)
-	{
-		var membership = this._membershipService.Get(membershipId);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		
-		return this._repository.Find(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection);
 	}
 	
 	public override async Task<IPaginationCollection<ErtisAuthEvent>> GetAsync(

@@ -38,20 +38,13 @@ public abstract class MembershipBoundedCrudService<TModel> :
 	
 	#region Abstract Methods
 	
-	protected abstract bool ValidateModel(TModel model, out IEnumerable<string> errors);
-	
 	/// <summary>
-	/// Used by the async create and update flows, so that validations reading the database do not block the thread.
-	/// Defaults to the synchronous ValidateModel; override it when the validation needs I/O.
+	/// Returns the validation errors of the model (empty when valid).
+	/// Async, so that validations reading the database do not block the thread.
 	/// </summary>
-	protected virtual Task<IEnumerable<string>> ValidateModelAsync(TModel model, CancellationToken cancellationToken = default)
-	{
-		return Task.FromResult(this.ValidateModel(model, out var errors) ? Enumerable.Empty<string>() : errors);
-	}
+	protected abstract Task<IEnumerable<string>> ValidateModelAsync(TModel model, CancellationToken cancellationToken = default);
 	
 	protected abstract void Overwrite(TModel destination, TModel source);
-	
-	protected abstract bool IsAlreadyExist(TModel model, string membershipId, TModel? exclude = null);
 	
 	protected abstract Task<bool> IsAlreadyExistAsync(TModel model, string membershipId, TModel? exclude = null, CancellationToken cancellationToken = default);
 	
@@ -63,13 +56,6 @@ public abstract class MembershipBoundedCrudService<TModel> :
 	
 	#region Virtual Methods
 	
-	// ReSharper disable once UnusedParameter.Global
-	// ReSharper disable once VirtualMemberNeverOverridden.Global
-	protected virtual TModel Touch(TModel model, CrudOperation crudOperation)
-	{
-		return model;
-	}
-	
 	protected virtual async Task<TModel> TouchAsync(TModel model, CrudOperation crudOperation, CancellationToken cancellationToken = default)
 	{
 		await Task.CompletedTask;
@@ -78,43 +64,7 @@ public abstract class MembershipBoundedCrudService<TModel> :
 	
 	#endregion
 	
-	#region Insert Methods
-	
-	public virtual TModel Create(Utilizer utilizer, string membershipId, TModel model)
-	{
-		// Check membership
-		var membership = this._membershipService.Get(membershipId);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		else
-		{
-			model.MembershipId = membershipId;	
-		}
-		
-		// Touch model
-		model = this.Touch(model, CrudOperation.Create);
-		
-		// Model validation
-		if (!this.ValidateModel(model, out var errors))
-		{
-			throw ErtisAuthException.ValidationError(errors);
-		}
-		
-		// Check existing
-		if (this.IsAlreadyExist(model, membershipId))
-		{
-			throw this.GetAlreadyExistError(model);
-		}
-		
-		// Insert to database
-		var inserted = this._repository.Insert(model);
-		
-		this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(utilizer, inserted, membershipId));
-		
-		return inserted;
-	}
+	#region Create Methods
 	
 	public virtual async Task<TModel> CreateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
 	{
@@ -156,51 +106,6 @@ public abstract class MembershipBoundedCrudService<TModel> :
 	#endregion
 	
 	#region Update Methods
-	
-	public virtual TModel Update(Utilizer utilizer, string membershipId, TModel model)
-	{
-		// Check membership
-		var membership = this._membershipService.Get(membershipId);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		else
-		{
-			model.MembershipId = membershipId;	
-		}
-		
-		// Overwrite
-		var current = this.Get(membershipId, model.Id);
-		if (current == null)
-		{
-			throw this.GetNotFoundError(model.Id);
-		}
-		
-		this.Overwrite(model, current);
-		
-		// Touch model
-		model = this.Touch(model, CrudOperation.Update);
-		
-		// Model validation
-		if (!this.ValidateModel(model, out var errors))
-		{
-			throw ErtisAuthException.ValidationError(errors);
-		}
-		
-		// Check existing
-		if (this.IsAlreadyExist(model, membershipId, current))
-		{
-			throw this.GetAlreadyExistError(model);
-		}
-		
-		model.MembershipId = membershipId;
-		var updated = this._repository.Update(model);
-		
-		this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated, membershipId));
-		
-		return updated;
-	}
 	
 	public virtual async Task<TModel> UpdateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
 	{
@@ -296,25 +201,6 @@ public abstract class MembershipBoundedCrudService<TModel> :
 	
 	#region Delete Methods
 	
-	public virtual bool Delete(Utilizer utilizer, string membershipId, string id)
-	{
-		var current = this.Get(membershipId, id);
-		if (current != null)
-		{
-			var isDeleted = this._repository.Delete(id);
-			if (isDeleted)
-			{
-				this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current, membershipId));		
-			}
-			
-			return isDeleted;
-		}
-		else
-		{
-			return false;
-		}
-	}
-	
 	public virtual async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
 	{
 		var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
@@ -331,41 +217,6 @@ public abstract class MembershipBoundedCrudService<TModel> :
 		else
 		{
 			return false;
-		}
-	}
-	
-	public virtual bool? BulkDelete(Utilizer utilizer, string membershipId, string[] ids)
-	{
-		var isAllDeleted = true;
-		var isAllFailed = true;
-		
-		foreach (var id in ids)
-		{
-			var current = this.Get(membershipId, id);
-			if (current != null)
-			{
-				var isDeleted = this._repository.Delete(id);
-				if (isDeleted)
-				{
-					this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current, membershipId));		
-				}
-				
-				isAllDeleted &= isDeleted;
-				isAllFailed &= !isDeleted;
-			}
-		}
-		
-		if (isAllDeleted)
-		{
-			return true;
-		}
-		else if (isAllFailed)
-		{
-			return false;
-		}
-		else
-		{
-			return null;
 		}
 	}
 	

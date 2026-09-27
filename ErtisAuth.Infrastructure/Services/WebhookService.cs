@@ -58,7 +58,16 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	
 	#region Event Handlers
 	
-	private void OnEventFired(object? _, ErtisAuthEvent ertisAuthEvent)
+	/// <summary>
+	/// Raised synchronously by EventService, so the hook lookup must not block the request that fired the event.
+	/// async void is safe here: OnEventFiredAsync catches and logs every exception.
+	/// </summary>
+	private async void OnEventFired(object? _, ErtisAuthEvent ertisAuthEvent)
+	{
+		await this.OnEventFiredAsync(ertisAuthEvent);
+	}
+	
+	private async Task OnEventFiredAsync(ErtisAuthEvent ertisAuthEvent, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -70,14 +79,20 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			};
 			
 			var query = QueryBuilder.Where(expressions);
-			var webhooksDynamicCollection = this.Query(ertisAuthEvent.MembershipId, query.ToString());
+			var webhooksDynamicCollection = await this.QueryAsync(ertisAuthEvent.MembershipId, query.ToString(), cancellationToken: cancellationToken);
 			var json = JsonSerializer.Serialize(webhooksDynamicCollection);
 			var webhooks = JsonSerializer.Deserialize<PaginationCollection<Webhook>>(json);
 			if (webhooks != null)
 			{
 				foreach (var webhook in webhooks.Items)
 				{
-					this.ExecuteWebhookAsync(webhook, ertisAuthEvent.UtilizerId, ertisAuthEvent.MembershipId, ertisAuthEvent.Document, ertisAuthEvent.Prior);
+					this.ExecuteWebhookAsync(
+						webhook, 
+						ertisAuthEvent.UtilizerId, 
+						ertisAuthEvent.MembershipId, 
+						ertisAuthEvent.Document, 
+						ertisAuthEvent.Prior, 
+						cancellationToken: cancellationToken);
 				}	
 			}
 		}
@@ -127,7 +142,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	
 	#region Methods
 	
-	private async void ExecuteWebhookAsync(Webhook webhook, string utilizerId, string membershipId, object? document, object? prior)
+	private async void ExecuteWebhookAsync(Webhook webhook, string utilizerId, string membershipId, object? document, object? prior, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -138,13 +153,13 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 					var tryCount = webhook.TryCount > 0 ? webhook.TryCount : 1;
 					try
 					{
-						this.ExecuteWebhookRequestAsync(webhook, utilizerId, membershipId, document, prior, tryCount);
+						this.ExecuteWebhookRequestAsync(webhook, utilizerId, membershipId, document, prior, tryCount, cancellationToken: cancellationToken);
 					}
 					catch (Exception ex)
 					{
 						this._logger.LogError(ex, "Webhook execution occured an exception");
 					}
-				});
+				}, cancellationToken: cancellationToken);
 			}
 		}
 		catch (Exception ex)
@@ -153,7 +168,14 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		}
 	}
 	
-	private async void ExecuteWebhookRequestAsync(Webhook webhook, string utilizerId, string membershipId, object? document, object? prior, int tryCount)
+	private async void ExecuteWebhookRequestAsync(
+		Webhook webhook, 
+		string utilizerId, 
+		string membershipId, 
+		object? document, 
+		object? prior, 
+		int tryCount, 
+		CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -223,12 +245,12 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 					
 					if (response.IsSuccess)
 					{
-						await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestSent, utilizerId, membershipId, webhookExecutionResult);
+						await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestSent, utilizerId, membershipId, webhookExecutionResult, cancellationToken: cancellationToken);
 						break;
 					}
 					else
 					{
-						await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestFailed, utilizerId, membershipId, webhookExecutionResult);
+						await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestFailed, utilizerId, membershipId, webhookExecutionResult, cancellationToken: cancellationToken);
 					}
 				}
 				catch (Exception ex)
@@ -243,7 +265,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 						Request = webhookRequest
 					};
 					
-					await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestFailed, utilizerId, membershipId, webhookExecutionResult);
+					await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestFailed, utilizerId, membershipId, webhookExecutionResult, cancellationToken: cancellationToken);
 				}
 			}
 		}
@@ -253,7 +275,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		}
 	}
 	
-	protected override bool ValidateModel(Webhook model, out IEnumerable<string> errors)
+	protected override Task<IEnumerable<string>> ValidateModelAsync(Webhook model, CancellationToken cancellationToken = default)
 	{
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
@@ -307,8 +329,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			}
 		}
 		
-		errors = errorList;
-		return !errors.Any();
+		return Task.FromResult<IEnumerable<string>>(errorList);
 	}
 	
 	protected override void Overwrite(Webhook destination, Webhook source)
@@ -346,26 +367,6 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		}
 	}
 	
-	protected override bool IsAlreadyExist(Webhook model, string membershipId, Webhook? exclude = null)
-	{
-		if (exclude == null)
-		{
-			return this.GetWebhookByName(model.Name, membershipId) != null;	
-		}
-		else
-		{
-			var current = this.GetWebhookByName(model.Name, membershipId);
-			if (current != null)
-			{
-				return current.Name != exclude.Name;	
-			}
-			else
-			{
-				return false;
-			}
-		}
-	}
-	
 	protected override async Task<bool> IsAlreadyExistAsync(Webhook model, string membershipId, Webhook? exclude = null, CancellationToken cancellationToken = default)
 	{
 		if (exclude == null)
@@ -394,11 +395,6 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	protected override ErtisAuthException GetNotFoundError(string id)
 	{
 		return ErtisAuthException.WebhookNotFound(id);
-	}
-	
-	private Webhook? GetWebhookByName(string name, string membershipId)
-	{
-		return this._repository.FindOne(x => x.Name == name && x.MembershipId == membershipId);
 	}
 	
 	private async Task<Webhook?> GetWebhookByNameAsync(string name, string membershipId)

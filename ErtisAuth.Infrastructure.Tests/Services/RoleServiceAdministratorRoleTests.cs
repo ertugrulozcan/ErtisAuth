@@ -52,7 +52,6 @@ public class RoleServiceAdministratorRoleTests
 		var membership = TestServiceFactory.CreateMembership("SHA2-256");
 		membership.Id = id;
 		this._memberships.Add(membership);
-		this._membershipService.Get(id).Returns(membership);
 		this._membershipService.GetAsync(id, Arg.Any<CancellationToken>()).Returns(membership);
 	}
 	

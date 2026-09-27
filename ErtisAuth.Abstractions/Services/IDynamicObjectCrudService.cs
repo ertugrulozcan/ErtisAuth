@@ -38,7 +38,5 @@ public interface IDynamicObjectCrudService
         string? language = null, 
         CancellationToken cancellationToken = default);
 	
-    dynamic Aggregate(string membershipId, string aggregationStagesJson);
-	
     Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default);
 }

@@ -42,7 +42,6 @@ public class UserTypeServiceCacheTests
 	public UserTypeServiceCacheTests()
 	{
 		this._membership = TestServiceFactory.CreateMembership("SHA2-256");
-		this._membershipService.Get(this._membership.Id).Returns(this._membership);
 		this._membershipService.GetAsync(this._membership.Id, Arg.Any<CancellationToken>()).Returns(this._membership);
 		this._utilizer = Utilizer.GetSystemUtilizer(this._membership.Id);
 		

@@ -53,11 +53,6 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		}
 	}
 	
-	protected override bool ValidateModel(Membership model, out IEnumerable<string> errors)
-	{
-		return ValidateModel(model, this.GetBySlug(model.Slug), out errors);
-	}
-	
 	protected override async Task<IEnumerable<string>> ValidateModelAsync(Membership model, CancellationToken cancellationToken = default)
 	{
 		var membershipWithSameSlug = await this.GetBySlugAsync(model.Slug, cancellationToken: cancellationToken);
@@ -160,26 +155,6 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		}
 	}
 	
-	protected override bool IsAlreadyExist(Membership model, Membership? exclude = null)
-	{
-		if (exclude == null)
-		{
-			return this.Get(model.Id) != null;	
-		}
-		else
-		{
-			var current = this.Get(model.Id);
-			if (current != null)
-			{
-				return current.Id != exclude.Id;	
-			}
-			else
-			{
-				return false;
-			}
-		}
-	}
-	
 	protected override async Task<bool> IsAlreadyExistAsync(Membership model, Membership? exclude = null)
 	{
 		if (exclude == null)
@@ -209,9 +184,6 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	{
 		return ErtisAuthException.MembershipNotFound(id);
 	}
-	
-	private IEnumerable<MembershipBoundedResource> GetMembershipBoundedResources(string membershipId, int limit = 10) =>
-		this.GetMembershipBoundedResourcesAsync(membershipId, limit).ConfigureAwait(false).GetAwaiter().GetResult();
 	
 	private async Task<IEnumerable<MembershipBoundedResource>> GetMembershipBoundedResourcesAsync(string membershipId, int limit = 10, CancellationToken cancellationToken = default)
 	{
@@ -251,8 +223,6 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		return new MemoryCacheEntryOptions().SetAbsoluteExpiration(CacheDefaults.MembershipsCacheTTL);
 	}
 	
-	private void PurgeAllCache() => this.PurgeAllCacheAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-	
 	private async Task PurgeAllCacheAsync(CancellationToken cancellationToken = default)
 	{
 		var memberships = await this.GetAsync(cancellationToken: cancellationToken);
@@ -280,23 +250,6 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	#region Read Methods
 	
-	public override Membership? Get(string id)
-	{
-		var cacheKey = GetCacheKey(id);
-		if (!this._memoryCache.TryGetValue<Membership>(cacheKey, out var membership))
-		{
-			membership = base.Get(id);
-			if (membership == null)
-			{
-				return null;
-			}
-			
-			this._memoryCache.Set(cacheKey, membership, GetCacheTTL());
-		}
-		
-		return membership;
-	}
-	
 	public override async Task<Membership?> GetAsync(string id, CancellationToken cancellationToken = default)
 	{
 		var cacheKey = GetCacheKey(id);
@@ -314,31 +267,9 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		return membership;
 	}
 	
-	private Membership? GetBySlug(string slug)
-	{
-		return this._repository.FindOne(x => x.Slug == slug.Trim());
-	}
-	
 	private async Task<Membership?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
 	{
 		return await this._repository.FindOneAsync(x => x.Slug == slug.Trim(), cancellationToken: cancellationToken);
-	}
-	
-	public Membership? GetBySecretKey(string secretKey)
-	{
-		var cacheKey = GetSecretKeyCacheKey(secretKey);
-		if (!this._memoryCache.TryGetValue<Membership>(cacheKey, out var membership))
-		{
-			membership = this._repository.FindOne(x => x.SecretKey == secretKey);
-			if (membership == null)
-			{
-				return null;
-			}
-			
-			this._memoryCache.Set(cacheKey, membership, GetCacheTTL());
-		}
-		
-		return membership;
 	}
 	
 	public async Task<Membership?> GetBySecretKeyAsync(string secretKey, CancellationToken cancellationToken = default)
@@ -362,16 +293,6 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	#region Create Methods
 	
-	public override Membership Create(Membership model)
-	{
-		// LEGACY-APP-SECRET: new memberships have no legacy applications
-		model.AllowMembershipSecretForApplications = false;
-		
-		var created = base.Create(model);
-		this.PurgeAllCache();
-		return created;
-	}
-	
 	public override async Task<Membership> CreateAsync(Membership model, CancellationToken cancellationToken = default)
 	{
 		// LEGACY-APP-SECRET: new memberships have no legacy applications
@@ -386,16 +307,6 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	#region Update Methods
 	
-	public override Membership Update(Membership model)
-	{
-		// The secret key may change, so the entries of the prior version are removed explicitly (read from the database, not the cache)
-		var prior = base.Get(model.Id);
-		var updated = base.Update(model);
-		this.PurgeCache(prior);
-		this.PurgeAllCache();
-		return updated;
-	}
-	
 	public override async Task<Membership> UpdateAsync(Membership model, CancellationToken cancellationToken = default)
 	{
 		// The secret key may change, so the entries of the prior version are removed explicitly (read from the database, not the cache)
@@ -409,26 +320,6 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	#endregion
 	
 	#region Delete Methods
-	
-	public override bool Delete(string id)
-	{
-		var membershipBoundedResources = this.GetMembershipBoundedResources(id);
-		if (membershipBoundedResources.Any())
-		{
-			throw ErtisAuthException.MembershipCouldNotDeleted(id);
-		}
-		
-		// The deleted membership is no longer listed by PurgeAllCache, so its own entries are removed explicitly
-		var prior = base.Get(id);
-		var isDeleted = base.Delete(id);
-		if (isDeleted)
-		{
-			this.PurgeCache(prior);
-			this.PurgeAllCache();	
-		}
-		
-		return isDeleted;
-	}
 	
 	public override async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
 	{
