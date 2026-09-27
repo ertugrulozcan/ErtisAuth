@@ -1,4 +1,6 @@
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Constants;
 using ErtisAuth.Core.Models.Events;
@@ -458,21 +460,24 @@ public class TokenService : ITokenService
 		var applicationId = parts[0];
 		var secret = parts[1];
 		
+		// Unknown applications, unknown memberships and wrong secrets are all reported as an invalid token,
+		// so that application ids can not be probed
 		var application = await this._applicationService.GetByIdAsync(applicationId, cancellationToken: cancellationToken);
 		if (application == null)
 		{
-			throw ErtisAuthException.ApplicationNotFound(applicationId);
+			throw ErtisAuthException.InvalidToken();
 		}
 		
 		var membership = await this._membershipService.GetAsync(application.MembershipId, cancellationToken: cancellationToken);
 		if (membership == null)
 		{
-			throw ErtisAuthException.MembershipNotFound(application.MembershipId);
+			throw ErtisAuthException.InvalidToken();
 		}
 		
-		if (membership.SecretKey != secret)
+		// Constant-time comparison, so that the secret can not be guessed from response times
+		if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(membership.SecretKey), Encoding.UTF8.GetBytes(secret)))
 		{
-			throw ErtisAuthException.ApplicationSecretMismatch();
+			throw ErtisAuthException.InvalidToken();
 		}
 		
 		if (fireEvent)
