@@ -31,8 +31,8 @@ public static class RbacExtensions
 		if (Rbac.TryParse(permission, out var roleRbac) && roleRbac != null)
 		{
 			var isSubjectPermitted = roleRbac.Subject.IsAll() || roleRbac.Subject.Equals(rbac.Subject);
-			var isResourcePermitted = roleRbac.Resource.IsAll() || roleRbac.Resource.Equals(rbac.Resource, StringComparison.CurrentCultureIgnoreCase);
-			var isActionPermitted = roleRbac.Action.IsAll() || roleRbac.Action.Equals(rbac.Action, StringComparison.CurrentCultureIgnoreCase);
+			var isResourcePermitted = roleRbac.Resource.IsAll() || roleRbac.Resource.Equals(rbac.Resource, Rbac.NameSegmentComparison);
+			var isActionPermitted = roleRbac.Action.IsAll() || roleRbac.Action.Equals(rbac.Action, Rbac.NameSegmentComparison);
 			var isObjectPermitted = roleRbac.Object.IsAll() || roleRbac.Object.Equals(rbac.Object);
 			
 			return isSubjectPermitted && isResourcePermitted && isActionPermitted && isObjectPermitted;

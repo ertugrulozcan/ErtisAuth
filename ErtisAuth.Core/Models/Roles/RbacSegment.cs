@@ -106,10 +106,15 @@ public readonly struct RbacSegment : IEquatable<RbacSegment>, IEquatable<string>
 		return this.AreEqual(obj);
 	}
 	
+	/// <summary>
+	/// Request segments encode dots as %2E, so both forms denote the same segment.
+	/// </summary>
+	private static string Normalize(string value) => value.Replace("%2E", ".");
+	
 	private bool AreEqual(object? obj, StringComparison? stringComparison = null)
 	{
-		var value = this.Value.Replace("%2E", ".");
-		var slug = this.Slug.Replace("%2E", ".");
+		var value = Normalize(this.Value);
+		var slug = Normalize(this.Slug);
 		
 		if (stringComparison == null)
 		{
@@ -141,9 +146,20 @@ public readonly struct RbacSegment : IEquatable<RbacSegment>, IEquatable<string>
 		}
 	}
 	
+	/// <summary>
+	/// Computed from the normalized values, consistent with Equals.
+	/// </summary>
 	public override int GetHashCode()
 	{
-		return HashCode.Combine(this.Value, this.Slug);
+		return this.GetHashCode(StringComparison.Ordinal);
+	}
+	
+	/// <summary>
+	/// Consistent with Equals(RbacSegment, StringComparison) for the same comparison.
+	/// </summary>
+	public int GetHashCode(StringComparison stringComparison)
+	{
+		return HashCode.Combine(Normalize(this.Value).GetHashCode(stringComparison), Normalize(this.Slug).GetHashCode(stringComparison));
 	}
 	
 	#endregion

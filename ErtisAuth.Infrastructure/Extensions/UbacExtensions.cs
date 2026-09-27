@@ -62,8 +62,8 @@ public static class UbacExtensions
 		{
 			if (Ubac.TryParse(permission, out var userUbac) && userUbac != null)
 			{
-				var isResourcePermitted = userUbac.Resource.IsAll() || userUbac.Resource.Equals(rbac.Resource, StringComparison.CurrentCultureIgnoreCase);
-				var isActionPermitted = userUbac.Action.IsAll() || userUbac.Action.Equals(rbac.Action, StringComparison.CurrentCultureIgnoreCase);
+				var isResourcePermitted = userUbac.Resource.IsAll() || userUbac.Resource.Equals(rbac.Resource, Rbac.NameSegmentComparison);
+				var isActionPermitted = userUbac.Action.IsAll() || userUbac.Action.Equals(rbac.Action, Rbac.NameSegmentComparison);
 				var isObjectPermitted = userUbac.Object.IsAll() || userUbac.Object.Equals(rbac.Object);
 				
 				var isPermitted = isResourcePermitted && isActionPermitted && isObjectPermitted;

@@ -2,6 +2,16 @@ namespace ErtisAuth.Core.Models.Roles;
 
 public class Rbac : IEquatable<Rbac>
 {
+	#region Constants
+	
+	/// <summary>
+	/// Resource and action segments are names, compared case-insensitively and independent of the current culture
+	/// ("users.read" and "USERS.read" are the same permission). Subject and object segments are ids, compared ordinally.
+	/// </summary>
+	public const StringComparison NameSegmentComparison = StringComparison.OrdinalIgnoreCase;
+	
+	#endregion
+	
 	#region Properties
 	
 	public RbacSegment Subject { get; private init; } = RbacSegment.All;
@@ -136,7 +146,11 @@ public class Rbac : IEquatable<Rbac>
 	
 	public override int GetHashCode()
 	{
-		return HashCode.Combine(Subject, Resource, Action, Object);
+		return HashCode.Combine(
+			this.Subject,
+			this.Resource.GetHashCode(NameSegmentComparison),
+			this.Action.GetHashCode(NameSegmentComparison),
+			this.Object);
 	}
 	
 	public bool Equals(Rbac? other)
@@ -156,7 +170,12 @@ public class Rbac : IEquatable<Rbac>
 			return false;
 		}
 		
-		return rbac1.GetHashCode() == rbac2.GetHashCode();
+		// Same rules as permission matching
+		return
+			rbac1.Subject.Equals(rbac2.Subject) &&
+			rbac1.Resource.Equals(rbac2.Resource, NameSegmentComparison) &&
+			rbac1.Action.Equals(rbac2.Action, NameSegmentComparison) &&
+			rbac1.Object.Equals(rbac2.Object);
 	}
 	
 	public override string ToString()

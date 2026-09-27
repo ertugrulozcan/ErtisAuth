@@ -1,3 +1,4 @@
+using ErtisAuth.Core.Models.Roles;
 using UbacSegment = ErtisAuth.Core.Models.Roles.RbacSegment;
 
 // ReSharper disable UnusedMember.Global
@@ -112,7 +113,10 @@ public class Ubac : IEquatable<Ubac>
 	
 	public override int GetHashCode()
 	{
-		return HashCode.Combine(Resource, Action, Object);
+		return HashCode.Combine(
+			this.Resource.GetHashCode(Rbac.NameSegmentComparison),
+			this.Action.GetHashCode(Rbac.NameSegmentComparison),
+			this.Object);
 	}
 	
 	public bool Equals(Ubac? other)
@@ -132,7 +136,11 @@ public class Ubac : IEquatable<Ubac>
 			return false;
 		}
 		
-		return ubac1.GetHashCode() == ubac2.GetHashCode();
+		// Same rules as permission matching
+		return
+			ubac1.Resource.Equals(ubac2.Resource, Rbac.NameSegmentComparison) &&
+			ubac1.Action.Equals(ubac2.Action, Rbac.NameSegmentComparison) &&
+			ubac1.Object.Equals(ubac2.Object);
 	}
 	
 	public override string ToString()

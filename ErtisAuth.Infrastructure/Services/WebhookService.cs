@@ -301,7 +301,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			{
 				errorList.Add("method is a required field for the webhook request");
 			}
-			else if (!httpMethodList.Any(x => string.Equals(x, model.Request.Method, StringComparison.CurrentCultureIgnoreCase)))
+			else if (!httpMethodList.Any(x => string.Equals(x, model.Request.Method, StringComparison.OrdinalIgnoreCase)))
 			{
 				errorList.Add($"Unknown http method in webhook request. (Supported methods: [{string.Join(", ", httpMethodList)}])");
 			}
