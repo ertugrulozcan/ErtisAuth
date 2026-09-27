@@ -75,11 +75,11 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken>, IRevo
 		return revokedToken;
 	}
 	
-	public async Task RevokeAsync(ActiveToken activeToken, User user, bool isRefreshToken, CancellationToken cancellationToken = default)
+	public async Task RevokeAsync(string token, User user, bool isRefreshToken, CancellationToken cancellationToken = default)
 	{
 		var revokedToken = new RevokedToken
 		{
-			Token = activeToken.AccessToken,
+			Token = token,
 			RevokedAt = DateTime.UtcNow,
 			UserId = user.Id,
 			UserName = user.Username,
@@ -91,7 +91,7 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken>, IRevo
 		};
 		
 		await this._repository.InsertAsync(revokedToken, cancellationToken: cancellationToken);
-		var cacheKey = GetCacheKey(activeToken.AccessToken);
+		var cacheKey = GetCacheKey(token);
 		this._memoryCache.Set(cacheKey, revokedToken, GetCacheTTL());
 	}
 	

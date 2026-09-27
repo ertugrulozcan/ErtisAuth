@@ -5,7 +5,7 @@ namespace ErtisAuth.Abstractions.Services;
 
 public interface IRevokedTokenService : IMembershipBoundedService<RevokedToken>
 {
-	Task RevokeAsync(ActiveToken activeToken, User user, bool isRefreshToken, CancellationToken cancellationToken = default);
+	Task RevokeAsync(string token, User user, bool isRefreshToken, CancellationToken cancellationToken = default);
 	
 	Task<RevokedToken?> GetByAccessTokenAsync(string accessToken, CancellationToken cancellationToken = default);
 	
