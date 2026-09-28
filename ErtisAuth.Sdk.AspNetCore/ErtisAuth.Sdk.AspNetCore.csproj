@@ -9,8 +9,4 @@
 		<ProjectReference Include="..\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj" />
 		<ProjectReference Include="..\ErtisAuth.Sdk\ErtisAuth.Sdk.csproj" />
 	</ItemGroup>
-	
-	<ItemGroup>
-		<InternalsVisibleTo Include="ErtisAuth.Sdk.AspNetCore.Tests" />
-	</ItemGroup>
 </Project>
