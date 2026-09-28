@@ -10,43 +10,36 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ErtisAuth.Integrations.OAuth;
 
-public class AuthenticatorFactory
+public interface IAuthenticatorFactory
+{
+	IProviderAuthenticator GetAuthenticator(Provider provider);
+}
+
+public class AuthenticatorFactory : IAuthenticatorFactory
 {
 	#region Services
 	
-	private IServiceProvider? _serviceProvider;
+	private readonly IServiceProvider _serviceProvider;
 	
 	#endregion
 	
-	#region Fields
+	#region Constructors
 	
-	private static AuthenticatorFactory? self;
-	
-	#endregion
-	
-	#region Properties
-	
-	public static AuthenticatorFactory Current
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="serviceProvider"></param>
+	public AuthenticatorFactory(IServiceProvider serviceProvider)
 	{
-		get { return self ??= new AuthenticatorFactory(); }
+		this._serviceProvider = serviceProvider;
 	}
 	
 	#endregion
 	
 	#region Methods
 	
-	internal void Configure(IServiceProvider serviceProvider)
-	{
-		this._serviceProvider = serviceProvider;
-	}
-	
 	public IProviderAuthenticator GetAuthenticator(Provider provider)
 	{
-		if (this._serviceProvider == null)
-		{
-			throw new Exception("AuthenticatorFactory was not configured yet");
-		}
-		
 		if (provider.Name == KnownProviders.Facebook.ToString())
 		{
 			return this._serviceProvider.GetRequiredService<IFacebookAuthenticator>();

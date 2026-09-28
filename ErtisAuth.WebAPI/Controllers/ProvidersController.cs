@@ -106,6 +106,8 @@ public class ProvidersController : ControllerBase
 		
 		if (Enum.TryParse<KnownProviders>(model.Name, true, out var providerType) && providerType != KnownProviders.ErtisAuth)
 		{
+			// Omitted flags keep their current values
+			var current = model.IsActive == null || model.TrustEmail == null ? await this._providerService.GetAsync(membershipId, id, cancellationToken: cancellationToken) : null;
 			var providerModel = new Provider(providerType)
 			{
 				Id = id,
@@ -118,7 +120,8 @@ public class ProvidersController : ControllerBase
 				PrivateKey = model.PrivateKey,
 				PrivateKeyId = model.PrivateKeyId,
 				RedirectUri = model.RedirectUri,
-				IsActive = model.IsActive ?? false,
+				IsActive = model.IsActive ?? current?.IsActive ?? false,
+				TrustEmail = model.TrustEmail ?? current?.TrustEmail ?? false,
 				MembershipId = membershipId
 			};
 			

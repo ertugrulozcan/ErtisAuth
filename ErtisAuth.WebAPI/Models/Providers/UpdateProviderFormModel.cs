@@ -55,6 +55,13 @@ public class UpdateProviderFormModel
 	[JsonPropertyName("isActive")]
 	public bool? IsActive { get; set; }
 	
+	/// <summary>
+	/// Omitted: the current value is kept.
+	/// </summary>
+	[JsonProperty("trust_email")]
+	[JsonPropertyName("trust_email")]
+	public bool? TrustEmail { get; set; }
+	
 	[JsonProperty("membership_id")]
 	[JsonPropertyName("membership_id")]
 	public string? MembershipId { get; set; }

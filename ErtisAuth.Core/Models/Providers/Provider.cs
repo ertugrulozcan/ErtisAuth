@@ -101,6 +101,15 @@ public class Provider : MembershipBoundedResource, IHasSysInfo
 	[BsonElement("isActive")]
 	public bool IsActive { get; set; }
 	
+	/// <summary>
+	/// Link a provider login to an existing user by email address even when the provider does not assert that the
+	/// email is verified (Facebook, Microsoft). Google and Apple verified emails are linked regardless.
+	/// </summary>
+	[JsonPropertyName("trust_email")]
+	[NewtonsoftJsonProperty("trust_email")]
+	[BsonElement("trust_email")]
+	public bool TrustEmail { get; set; }
+	
 	[JsonPropertyName("sys")]
 	[NewtonsoftJsonProperty("sys")]
 	[BsonElement("sys")]

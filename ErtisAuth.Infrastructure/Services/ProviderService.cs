@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Ertis.MongoDB.Queries;
 using Ertis.Schema.Dynamics;
 using Ertis.Schema.Types;
@@ -11,7 +12,7 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using ErtisAuth.Integrations.OAuth.Core;
-using ErtisAuth.Integrations.OAuth.Extensions;
+using ErtisAuth.Integrations.OAuth;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -31,14 +32,18 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	private readonly IUserTypeService _userTypeService;
 	private readonly ITokenService _tokenService;
 	private readonly IEventService _eventService;
+	private readonly IAuthenticatorFactory _authenticatorFactory;
 	private readonly IMemoryCache _memoryCache;
 	private readonly ILogger<ProviderService> _logger;
 	
 	#endregion
 	
-	#region Properties
+	#region Fields
 	
-	private bool IsInitialized { get; set; }
+	/// <summary>
+	/// Memberships whose default providers have been created (the service is a singleton shared by all memberships).
+	/// </summary>
+	private readonly ConcurrentDictionary<string, bool> _initializedMemberships = new();
 	
 	#endregion
 	
@@ -52,6 +57,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	/// <param name="userTypeService"></param>
 	/// <param name="tokenService"></param>
 	/// <param name="eventService"></param>
+	/// <param name="authenticatorFactory"></param>
 	/// <param name="memoryCache"></param>
 	/// <param name="repository"></param>
 	/// <param name="logger"></param>
@@ -61,6 +67,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		IUserTypeService userTypeService,
 		ITokenService tokenService,
 		IEventService eventService,
+		IAuthenticatorFactory authenticatorFactory,
 		IMemoryCache memoryCache,
 		IProviderRepository repository, 
 		ILogger<ProviderService> logger) : base(membershipService, repository)
@@ -69,6 +76,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		this._userTypeService = userTypeService;
 		this._tokenService = tokenService;
 		this._eventService = eventService;
+		this._authenticatorFactory = authenticatorFactory;
 		this._memoryCache = memoryCache;
 		this._logger = logger;
 		
@@ -102,7 +110,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	private async ValueTask InitializeAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
-		if (this.IsInitialized)
+		if (this._initializedMemberships.ContainsKey(membershipId))
 		{
 			return;
 		}
@@ -132,12 +140,11 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 				}
 			}
 			
-			this.IsInitialized = true;
+			this._initializedMemberships[membershipId] = true;
 		}
 		catch (Exception ex)
 		{
 			this._logger.LogError(ex, "ProviderService.InitializeAsync occured an error");
-			this.IsInitialized = false;
 		}
 	}
 	
@@ -202,7 +209,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	{
 		destination.Id = source.Id;
 		destination.MembershipId = source.MembershipId;
-		destination.IsActive = source.IsActive;
 		destination.Sys = source.Sys;
 		
 		if (this.IsIdentical(destination, source))
@@ -338,9 +344,11 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		{
 			if (provider.IsActive)
 			{
-				var providerAuthenticator = provider.GetAuthenticator();
+				var providerAuthenticator = this._authenticatorFactory.GetAuthenticator(provider);
 				var isVerified = await providerAuthenticator.VerifyTokenAsync(request, provider, cancellationToken: cancellationToken);
-				if (isVerified)
+				
+				// The authenticator sets the identity from verified provider data; without it the login can't be matched safely
+				if (isVerified && !string.IsNullOrEmpty(request.UserId))
 				{
 					var user = await this.FindUserAsync(request, provider, membershipId, cancellationToken: cancellationToken);
 					var isNewUser = user == null;
@@ -398,7 +406,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 						var provider = await this.GetAsync(user.MembershipId, x => x.MembershipId == user.MembershipId && x.Name == accountInfo.Provider, cancellationToken: cancellationToken);
 						if (provider is { IsActive: true })
 						{
-							var providerAuthenticator = provider.GetAuthenticator();
+							var providerAuthenticator = this._authenticatorFactory.GetAuthenticator(provider);
 							await providerAuthenticator.RevokeTokenAsync(accountInfo.Token, provider, cancellationToken: cancellationToken);
 							
 							connectedAccounts.Add(new ProviderAccountInfo
@@ -450,18 +458,27 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 			var dynamicUser = queryUsersResult.Items.First();
 			return dynamicUser.Deserialize<User>();
 		}
-		else
+		
+		if (string.IsNullOrEmpty(request.EmailAddress))
 		{
-			var query2 = QueryBuilder.Where(
-				QueryBuilder.Equals("membership_id", membershipId), 
-				QueryBuilder.Equals("email_address", request.EmailAddress)).ToString();
-			
-			var queryUsers2Result = await this._userService.QueryAsync(membershipId, query2, 0, 1, cancellationToken: cancellationToken);
-			if (queryUsers2Result.Items.Any())
+			return null;
+		}
+		
+		var query2 = QueryBuilder.Where(
+			QueryBuilder.Equals("membership_id", membershipId), 
+			QueryBuilder.Equals("email_address", request.EmailAddress)).ToString();
+		
+		var queryUsers2Result = await this._userService.QueryAsync(membershipId, query2, 0, 1, cancellationToken: cancellationToken);
+		if (queryUsers2Result.Items.Any())
+		{
+			// Linking to an existing account by email is safe only if the provider verified the email or it's trusted explicitly
+			if (!request.IsEmailVerified && !provider.TrustEmail)
 			{
-				var dynamicUser = queryUsers2Result.Items.First();
-				return dynamicUser.Deserialize<User>();
+				throw ErtisAuthException.ProviderEmailNotTrusted(provider.Name);
 			}
+			
+			var dynamicUser = queryUsers2Result.Items.First();
+			return dynamicUser.Deserialize<User>();
 		}
 		
 		return null;

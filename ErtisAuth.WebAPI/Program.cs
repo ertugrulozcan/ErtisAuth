@@ -71,9 +71,6 @@ app.UseResponseCompression();
 // Database
 await app.UseMongoDBAsync();
 
-// OAuth Providers
-app.UseProviders();
-
 app.UseCORS();
 app.UseHttpsRedirection();
 app.UseRouting();

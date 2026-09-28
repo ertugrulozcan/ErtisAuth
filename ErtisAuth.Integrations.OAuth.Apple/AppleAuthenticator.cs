@@ -81,11 +81,18 @@ public class AppleAuthenticator : IAppleAuthenticator
 			if (response.StatusCode == HttpStatusCode.OK)
 			{
 				var appleBearerToken = JsonSerializer.Deserialize<AppleBearerToken>(await response.Content.ReadAsStringAsync(cancellationToken));
-				if (appleBearerToken != null)
+				if (appleBearerToken != null && !string.IsNullOrEmpty(appleBearerToken.AccessToken))
 				{
+					var identity = this.ReadIdentity(appleBearerToken.IdToken, provider);
+					if (identity == null)
+					{
+						return false;
+					}
+					
 					// Set AccessToken
 					request.Token.AccessToken = appleBearerToken.AccessToken;
-					return !string.IsNullOrEmpty(appleBearerToken.AccessToken) && !string.IsNullOrEmpty(appleBearerToken.IdToken);
+					this.ApplyIdentity(request, identity);
+					return true;
 				}
 			}
 			else
@@ -132,6 +139,60 @@ public class AppleAuthenticator : IAppleAuthenticator
 			this._logger.LogError(ex, "AppleAuthenticator.RevokeTokenAsync occured an error");
 			return false;
 		}
+	}
+	
+	/// <summary>
+	/// Reads the id_token returned by Apple's token endpoint. It is received directly from Apple over TLS in the code
+	/// exchange, so TLS server validation replaces the signature check (OpenID Connect Core 3.1.3.7);
+	/// issuer, audience and expiration are still verified.
+	/// </summary>
+	private JsonWebToken? ReadIdentity(string? idToken, Provider provider)
+	{
+		if (string.IsNullOrEmpty(idToken) || !this._tokenHandler.CanReadToken(idToken))
+		{
+			return null;
+		}
+		
+		var jwt = this._tokenHandler.ReadJsonWebToken(idToken);
+		var isValid =
+			jwt.Issuer == Authority &&
+			jwt.Audiences.Contains(provider.AppClientId) &&
+			jwt.ValidTo > DateTime.UtcNow &&
+			!string.IsNullOrEmpty(jwt.Subject);
+		
+		if (!isValid)
+		{
+			this._logger.LogWarning("Apple id_token rejected (issuer: {Issuer}, audiences: {Audiences}, expires: {Expires})", jwt.Issuer, string.Join(",", jwt.Audiences), jwt.ValidTo);
+			return null;
+		}
+		
+		return jwt;
+	}
+	
+	/// <summary>
+	/// The identity comes only from Apple's id_token; the client payload can only contribute the name,
+	/// which Apple shares once, with the client.
+	/// </summary>
+	private void ApplyIdentity(AppleLoginRequestBase request, JsonWebToken identity)
+	{
+		request.User ??= new AppleUser();
+		if (!string.IsNullOrEmpty(request.User.Id) && request.User.Id != identity.Subject)
+		{
+			this._logger.LogWarning("Apple login: the user id sent by the client does not match the id_token subject; the id_token subject is used");
+		}
+		
+		request.User.Id = identity.Subject;
+		request.User.EmailAddress = identity.TryGetPayloadValue<string>("email", out var email) && !string.IsNullOrEmpty(email) ? email : null;
+		request.User.EmailVerified = request.User.EmailAddress != null && IsTrue(identity, "email_verified");
+	}
+	
+	/// <summary>
+	/// Apple sends boolean claims either as JSON booleans or as the strings "true" / "false".
+	/// </summary>
+	private static bool IsTrue(JsonWebToken jwt, string claimType)
+	{
+		var claim = jwt.Claims.FirstOrDefault(x => x.Type == claimType);
+		return claim != null && bool.TryParse(claim.Value, out var value) && value;
 	}
 	
 	private string? GenerateAppleClientSecret(Provider provider)

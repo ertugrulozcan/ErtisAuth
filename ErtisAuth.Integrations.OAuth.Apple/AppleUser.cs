@@ -24,5 +24,12 @@ public class AppleUser : IProviderUser
 	[JsonPropertyName("email")]
 	public string? EmailAddress { get; set; }
 	
+	/// <summary>
+	/// Set by AppleAuthenticator from Apple's id_token; never read from the client payload.
+	/// </summary>
+	[System.Text.Json.Serialization.JsonIgnore]
+	[Newtonsoft.Json.JsonIgnore]
+	public bool EmailVerified { get; set; }
+	
 	#endregion
 }

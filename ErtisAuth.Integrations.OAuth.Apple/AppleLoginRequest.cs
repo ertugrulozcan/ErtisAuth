@@ -30,6 +30,10 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken, 
 	[NewtonsoftJsonIgnore]
     public string? EmailAddress => this.User?.EmailAddress;
     
+	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
+	public bool IsEmailVerified => this.User?.EmailVerified ?? false;
+	
     [JsonIgnore]
 	[NewtonsoftJsonIgnore]
     public string? AccessToken => this.Token?.AccessToken;

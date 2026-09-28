@@ -443,6 +443,16 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.Forbidden, "Untrusted provider", "UntrustedProvider");
 	}
 	
+	public static ErtisAuthException ProviderEmailNotTrusted(string providerName)
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"A user with the same email address already exists and the email address is not verified by {providerName}", "ProviderEmailNotTrusted");
+	}
+	
+	public static ErtisAuthException ProviderProfileIncomplete(string providerName, string message)
+	{
+		return new ErtisAuthException(HttpStatusCode.Unauthorized, $"The {providerName} profile is incomplete ({message})", "ProviderProfileIncomplete");
+	}
+	
 	public static ErtisAuthException ProviderNotConfigured()
 	{
 		return new ErtisAuthException(HttpStatusCode.Forbidden, "Provider not configured", "ProviderNotConfigured");

@@ -11,6 +11,11 @@ public interface IProviderLoginRequest
 	
 	string? EmailAddress { get; }
 	
+	/// <summary>
+	/// True only when the provider itself asserted (in verified data) that the email address is verified.
+	/// </summary>
+	bool IsEmailVerified { get; }
+	
 	string? AvatarUrl { get; }
 	
 	string? AccessToken { get; }

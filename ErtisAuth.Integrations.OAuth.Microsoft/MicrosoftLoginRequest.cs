@@ -36,6 +36,10 @@ public class MicrosoftLoginRequest : IProviderLoginRequest<MicrosoftToken, Micro
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
+	public bool IsEmailVerified => false;
+	
+	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public string? AccessToken => this.Token?.AccessToken;
 	
 	[JsonIgnore]

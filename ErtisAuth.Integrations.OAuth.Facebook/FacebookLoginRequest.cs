@@ -40,6 +40,10 @@ public class FacebookLoginRequest : IProviderLoginRequest<FacebookUserToken, Fac
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
+	public bool IsEmailVerified => false;
+	
+	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public string? AvatarUrl => this.User?.Picture?.Data?.Url;
 	
 	[JsonIgnore]

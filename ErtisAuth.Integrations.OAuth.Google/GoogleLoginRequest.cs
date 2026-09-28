@@ -36,6 +36,10 @@ public class GoogleLoginRequest : IProviderLoginRequest<GoogleToken, GoogleUser>
 	
 	[JsonIgnore]
 	[NewtonsoftJsonIgnore]
+	public bool IsEmailVerified => this.User?.EmailVerified ?? false;
+	
+	[JsonIgnore]
+	[NewtonsoftJsonIgnore]
 	public string? AccessToken => this.Token?.AccessToken;
 	
 	[JsonIgnore]

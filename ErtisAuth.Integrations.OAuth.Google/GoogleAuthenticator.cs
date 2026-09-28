@@ -10,6 +10,25 @@ public interface IGoogleAuthenticator : IProviderAuthenticator, IProviderAuthent
 
 public class GoogleAuthenticator : IGoogleAuthenticator
 {
+	#region Services
+	
+	private readonly IGoogleIdTokenValidator _idTokenValidator;
+	
+	#endregion
+	
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="idTokenValidator"></param>
+	public GoogleAuthenticator(IGoogleIdTokenValidator idTokenValidator)
+	{
+		this._idTokenValidator = idTokenValidator;
+	}
+	
+	#endregion
+	
 	#region Methods
 	
 	public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
@@ -19,36 +38,47 @@ public class GoogleAuthenticator : IGoogleAuthenticator
 	
 	public async Task<bool> VerifyTokenAsync(GoogleLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
 	{
-		if (request.Token == null || string.IsNullOrEmpty(provider.AppClientId))
+		if (request.Token == null || string.IsNullOrEmpty(request.AccessToken) || string.IsNullOrEmpty(provider.AppClientId))
 		{
 			return false;
 		}
 		
 		if (provider.AppClientId == request.ClientId)
 		{
-			var googleUser = await GoogleOAuth.GoogleJsonWebSignature.ValidateAsync(
-				request.AccessToken, // ID Token
-				new GoogleOAuth.GoogleJsonWebSignature.ValidationSettings
-				{
-					Audience = new List<string> { provider.AppClientId }
-				});
+			GoogleOAuth.GoogleJsonWebSignature.Payload googleUser;
+			try
+			{
+				// AccessToken is the ID token
+				googleUser = await this._idTokenValidator.ValidateAsync(request.AccessToken, provider.AppClientId);
+			}
+			catch (GoogleOAuth.InvalidJwtException)
+			{
+				return false;
+			}
 			
 			request.Token.ExpiresIn = googleUser.ExpirationTimeSeconds ?? 0;
 			
 			request.User = new GoogleUser
 			{
 				Id = googleUser.Subject,
-				FirstName = googleUser.GivenName,
+				// Names written in a single field may come only as "name"
+				FirstName = string.IsNullOrEmpty(googleUser.GivenName) ? googleUser.Name : googleUser.GivenName,
 				LastName = googleUser.FamilyName,
 				EmailAddress = googleUser.Email,
 				Scope = googleUser.Scope,
 				Prn = googleUser.Prn,
 				HostedDomain = googleUser.HostedDomain,
-				EmailVerified = false,
+				EmailVerified = googleUser.EmailVerified,
 				FullName = googleUser.Name,
 				Picture = googleUser.Picture,
 				Locale = googleUser.Locale
 			};
+			
+			// A valid token without these claims means the client did not request the "email" / "profile" scopes
+			if (string.IsNullOrEmpty(request.User.EmailAddress) || string.IsNullOrEmpty(request.User.FirstName))
+			{
+				throw ErtisAuthException.ProviderProfileIncomplete(provider.Name, "email and name are required, request the 'email' and 'profile' scopes");
+			}
 			
 			return request.IsValid();
 		}
