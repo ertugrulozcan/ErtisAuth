@@ -17,6 +17,12 @@ namespace ErtisAuth.Extensions.Database;
 
 public static class DatabaseExtensions
 {
+	#region Fields
+	
+	private static int _isSerializationRegistered;
+	
+	#endregion
+	
 	#region Methods
 	
 	public static void AddMongoDB(this IServiceCollection services, IConfiguration configuration)
@@ -47,8 +53,12 @@ public static class DatabaseExtensions
 		services.AddSingleton<IEventRepository, EventRepository>();
 		services.AddSingleton<ISetupTokenRepository, SetupTokenRepository>();
 		
-		RegisterClassMaps();
-		RegisterDiscriminatorConventions();
+		// BSON registrations are process-wide and throw when repeated (e.g. several hosts in one test process)
+		if (Interlocked.Exchange(ref _isSerializationRegistered, 1) == 0)
+		{
+			RegisterClassMaps();
+			RegisterDiscriminatorConventions();
+		}
 	}
 	
 	private static void RegisterClassMaps()

@@ -55,26 +55,24 @@ public class SetupController : ControllerBase
 		
 		var membership = new Membership
 		{
-			Name = model.Membership.Name,
-			Slug = model.Membership.Slug,
+			Name = model.Membership.Name ?? string.Empty,
+			Slug = model.Membership.Slug ?? string.Empty,
 			ExpiresIn = model.Membership.ExpiresIn,
 			RefreshTokenExpiresIn = model.Membership.RefreshTokenExpiresIn,
 			HashAlgorithm = model.Membership.HashAlgorithm,
 			DefaultEncoding = model.Membership.DefaultEncoding,
-			SecretKey = model.Membership.SecretKey
+			SecretKey = model.Membership.SecretKey ?? string.Empty
 		};
 		
 		var user = new UserWithPassword
 		{
-			Username = model.User.Username,
+			Username = model.User.Username ?? string.Empty,
 			EmailAddress = model.User.EmailAddress,
 			FirstName = model.User.FirstName,
 			LastName = model.User.LastName,
 			Password = model.User.Password,
-			Role = model.User.Role,
 			UserType = model.User.UserType,
-			Forbidden = model.User.Forbidden,
-			Permissions = model.User.Permissions,
+			Role = string.Empty,
 			MembershipId = string.Empty
 		};
 		

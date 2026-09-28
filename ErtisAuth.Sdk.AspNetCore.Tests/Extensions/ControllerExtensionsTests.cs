@@ -150,7 +150,7 @@ public class ControllerExtensionsTests
 	{
 		var controller = CreateController();
 		
-		Assert.Equal(StatusCodes.Status400BadRequest, controller.AuthorizationHeaderMissing().StatusCode);
+		Assert.Equal(StatusCodes.Status401Unauthorized, controller.AuthorizationHeaderMissing().StatusCode);
 		Assert.Equal(StatusCodes.Status401Unauthorized, controller.InvalidToken().StatusCode);
 	}
 	

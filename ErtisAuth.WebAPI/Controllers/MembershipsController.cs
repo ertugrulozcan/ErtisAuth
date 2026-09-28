@@ -3,12 +3,16 @@ using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using Ertis.MongoDB.Queries;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Cryptography;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Attributes;
 using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.WebAPI.Models.Memberships;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -42,9 +46,9 @@ public class MembershipsController : QueryControllerBase
 	
 	[HttpPost]
 	[RbacAction(Rbac.CrudActions.Create)]
-	public async Task<IActionResult> Create([FromBody] Membership model, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> Create([FromBody] CreateMembershipFormModel model, CancellationToken cancellationToken = default)
 	{
-		var membership = await this._membershipService.CreateAsync(model, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.CreateAsync(ToMembership(model), cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{membership.Id}", membership);
 	}
 	
@@ -118,10 +122,75 @@ public class MembershipsController : QueryControllerBase
 	[HttpPut("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Update)]
-	public async Task<IActionResult> Update([FromRoute] string id, [FromBody] Membership model, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> Update([FromRoute] string id, [FromBody] UpdateMembershipFormModel model, CancellationToken cancellationToken = default)
 	{
-		var membership = await this._membershipService.UpdateAsync(model, cancellationToken: cancellationToken);
-		return this.Ok(membership);
+		// The route id is the one authorized (RbacObject), so it is the one updated
+		var membership = ToMembership(id, model);
+		return this.Ok(await this._membershipService.UpdateAsync(membership, cancellationToken: cancellationToken));
+	}
+	
+	#endregion
+	
+	#region Mapping Methods
+	
+	private static Membership ToMembership(CreateMembershipFormModel model)
+	{
+		return ToMembership(null, model.Name, model.Slug, model.SecretKey, model.ExpiresIn, model.ScopedTokenExpiresIn, model.RefreshTokenExpiresIn, model.ResetPasswordTokenExpiresIn, model.HashAlgorithm, model.DefaultEncoding, model.DefaultLanguage, model.MailProviders, model.UserActivation, model.CodePolicy, model.OtpSettings);
+	}
+	
+	private static Membership ToMembership(string id, UpdateMembershipFormModel model)
+	{
+		var membership = ToMembership(id, model.Name, model.Slug, model.SecretKey, model.ExpiresIn, model.ScopedTokenExpiresIn, model.RefreshTokenExpiresIn, model.ResetPasswordTokenExpiresIn, model.HashAlgorithm, model.DefaultEncoding, model.DefaultLanguage, model.MailProviders, model.UserActivation, model.CodePolicy, model.OtpSettings);
+		membership.AllowMembershipSecretForApplications = model.AllowMembershipSecretForApplications; // LEGACY-APP-SECRET
+		return membership;
+	}
+	
+	private static Membership ToMembership(
+		string? id,
+		string? name,
+		string? slug,
+		string? secretKey,
+		int expiresIn,
+		int scopedTokenExpiresIn,
+		int refreshTokenExpiresIn,
+		int? resetPasswordTokenExpiresIn,
+		string? hashAlgorithm,
+		string? defaultEncoding,
+		string? defaultLanguage,
+		IMailProvider[]? mailProviders,
+		Status userActivation,
+		string? codePolicy,
+		OtpSettings? otpSettings)
+	{
+		var membership = new Membership
+		{
+			Name = name ?? string.Empty,
+			SecretKey = secretKey ?? string.Empty,
+			ExpiresIn = expiresIn,
+			ScopedTokenExpiresIn = scopedTokenExpiresIn,
+			RefreshTokenExpiresIn = refreshTokenExpiresIn,
+			ResetPasswordTokenExpiresIn = resetPasswordTokenExpiresIn,
+			HashAlgorithm = hashAlgorithm,
+			DefaultEncoding = defaultEncoding,
+			DefaultLanguage = defaultLanguage,
+			MailProviders = mailProviders,
+			UserActivation = userActivation,
+			CodePolicy = codePolicy,
+			OtpSettings = otpSettings
+		};
+		
+		if (id != null)
+		{
+			membership.Id = id;
+		}
+		
+		// Otherwise derived from the name
+		if (!string.IsNullOrEmpty(slug))
+		{
+			membership.Slug = slug;
+		}
+		
+		return membership;
 	}
 	
 	#endregion
@@ -139,7 +208,7 @@ public class MembershipsController : QueryControllerBase
 		}
 		else
 		{
-			return this.RoleNotFound(id);
+			return this.MembershipNotFound(id);
 		}
 	}
 	

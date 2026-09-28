@@ -94,9 +94,9 @@ public static class ControllerExtensions
 		return null;
 	}
 	
-	public static BadRequestObjectResult AuthorizationHeaderMissing(this ControllerBase controller)
+	public static UnauthorizedObjectResult AuthorizationHeaderMissing(this ControllerBase controller)
 	{
-		return controller.BadRequest(ErtisAuthException.AuthorizationHeaderMissing().Error);
+		return controller.Unauthorized(ErtisAuthException.AuthorizationHeaderMissing().Error);
 	}
 	
 	public static UnauthorizedObjectResult InvalidToken(this ControllerBase controller)

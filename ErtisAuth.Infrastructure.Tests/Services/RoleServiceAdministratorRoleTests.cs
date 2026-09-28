@@ -93,6 +93,8 @@ public class RoleServiceAdministratorRoleTests
 		Assert.Single(this.AdministratorRoles(membership.Id));
 		Assert.Contains("*.users.create.*", role.Permissions!);
 		Assert.Contains("*.memberships.delete.*", role.Permissions!);
+		Assert.Contains("*.code-policies.update.*", role.Permissions!);
+		Assert.Contains("*.otp.create.*", role.Permissions!);
 	}
 	
 	[Fact]

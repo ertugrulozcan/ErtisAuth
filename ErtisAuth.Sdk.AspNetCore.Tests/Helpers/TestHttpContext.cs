@@ -1,7 +1,6 @@
 using ErtisAuth.Core.Attributes;
 using ErtisAuth.Core.Models.Roles;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Patterns;
 
@@ -21,9 +20,7 @@ internal static class TestHttpContext
 	public static DefaultHttpContext Create(string? authorizationHeader = null, params object[] metadata)
 	{
 		var httpContext = new DefaultHttpContext();
-		var responseFeature = new RecordingResponseFeature();
-		httpContext.Features.Set<IHttpResponseFeature>(responseFeature);
-		httpContext.Features.Set(responseFeature);
+		httpContext.Response.Body = new MemoryStream();
 		
 		if (authorizationHeader != null)
 		{
@@ -48,44 +45,6 @@ internal static class TestHttpContext
 		
 		httpContext.SetEndpoint(endpoint);
 		return httpContext;
-	}
-	
-	/// <summary>
-	/// Runs the callbacks registered with Response.OnStarting, as the server does when it starts writing the response.
-	/// </summary>
-	public static async Task StartResponseAsync(HttpContext httpContext)
-	{
-		await httpContext.Features.Get<RecordingResponseFeature>()!.StartAsync();
-	}
-	
-	#endregion
-	
-	#region Helper Classes
-	
-	private sealed class RecordingResponseFeature : HttpResponseFeature
-	{
-		#region Fields
-		
-		private readonly List<(Func<object, Task> Callback, object State)> _onStarting = [];
-		
-		#endregion
-		
-		#region Methods
-		
-		public override void OnStarting(Func<object, Task> callback, object state)
-		{
-			this._onStarting.Add((callback, state));
-		}
-		
-		public async Task StartAsync()
-		{
-			foreach (var (callback, state) in this._onStarting)
-			{
-				await callback(state);
-			}
-		}
-		
-		#endregion
 	}
 	
 	#endregion

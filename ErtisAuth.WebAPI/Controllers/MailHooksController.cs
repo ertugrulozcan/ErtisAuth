@@ -10,6 +10,7 @@ using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Extensions.AspNetCore.Attributes;
+using ErtisAuth.WebAPI.Models.MailHooks;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -57,7 +58,7 @@ public class MailHooksController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
-	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] MailHook model, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateMailHookFormModel model, CancellationToken cancellationToken = default)
 	{
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
@@ -65,10 +66,9 @@ public class MailHooksController : QueryControllerBase
 			return this.MembershipNotFound(membershipId);
 		}
 		
-		model.MembershipId = membershipId;
-		
+		var mailHookModel = ToMailHook(membershipId, null, model.Name, model.Slug, model.Description, model.Event, model.Status, model.MailSubject, model.MailTemplate, model.FromName, model.FromAddress, model.SendToUtilizer, model.Recipients, model.MailProvider, model.Variables);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var mailHook = await this._mailHookService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		var mailHook = await this._mailHookService.CreateAsync(utilizer, membershipId, mailHookModel, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{mailHook.Id}", mailHook);
 	}
 	
@@ -147,13 +147,61 @@ public class MailHooksController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
-	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] MailHook model, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateMailHookFormModel model, CancellationToken cancellationToken = default)
 	{
-		model.MembershipId = membershipId;
-		
+		// The route id, not an id in the body, identifies the updated mail hook (RBAC checks the route id)
+		var mailHookModel = ToMailHook(membershipId, id, model.Name, model.Slug, model.Description, model.Event, model.Status, model.MailSubject, model.MailTemplate, model.FromName, model.FromAddress, model.SendToUtilizer, model.Recipients, model.MailProvider, model.Variables);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var mailHook = await this._mailHookService.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		var mailHook = await this._mailHookService.UpdateAsync(utilizer, membershipId, mailHookModel, cancellationToken: cancellationToken);
 		return this.Ok(mailHook);
+	}
+	
+	private static MailHook ToMailHook(
+		string membershipId, 
+		string? id, 
+		string? name, 
+		string? slug, 
+		string? description, 
+		string? eventName, 
+		string? status, 
+		string? mailSubject, 
+		string? mailTemplate, 
+		string? fromName, 
+		string? fromAddress, 
+		bool sendToUtilizer, 
+		Recipient[]? recipients, 
+		string? mailProvider, 
+		MailHookVariable[]? variables)
+	{
+		var mailHook = new MailHook
+		{
+			Name = name ?? string.Empty,
+			Description = description,
+			Event = eventName,
+			Status = status,
+			MailSubject = mailSubject,
+			MailTemplate = mailTemplate,
+			FromName = fromName,
+			FromAddress = fromAddress,
+			SendToUtilizer = sendToUtilizer,
+			Recipients = recipients,
+			MailProvider = mailProvider,
+			Variables = variables,
+			MembershipId = membershipId
+		};
+		
+		if (id != null)
+		{
+			mailHook.Id = id;
+		}
+		
+		// Otherwise derived from the name
+		if (!string.IsNullOrEmpty(slug))
+		{
+			mailHook.Slug = slug;
+		}
+		
+		return mailHook;
 	}
 	
 	#endregion

@@ -88,7 +88,9 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 			"providers",
 			"tokens",
 			"webhooks",
-			"mailhooks"
+			"mailhooks",
+			"code-policies",
+			"otp"
 		};
 		
 		RbacSegment[] adminPrivileges =

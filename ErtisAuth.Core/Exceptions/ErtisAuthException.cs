@@ -54,7 +54,8 @@ public class ErtisAuthException : ErtisException
 	
 	public static ErtisAuthException AuthorizationHeaderMissing()
 	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, "Authorization header missing or empty", "AuthorizationHeaderMissing");
+		// No credentials: 401 (RFC 9110 §15.5.2, RFC 6750 §3.1)
+		return new ErtisAuthException(HttpStatusCode.Unauthorized, "Authorization header missing or empty", "AuthorizationHeaderMissing");
 	}
 	
 	public static ErtisAuthException InvalidToken(string? message = null)

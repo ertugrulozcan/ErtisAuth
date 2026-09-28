@@ -18,6 +18,12 @@ namespace ErtisAuth.Extensions.AspNetCore.Middleware;
 
 public class ErtisAuthAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
+	#region Constants
+	
+	private const string AuthenticationErrorItemKey = "ErtisAuth.AuthenticationError";
+	
+	#endregion
+	
 	#region Services
 	
 	private readonly ITokenService tokenService;
@@ -57,6 +63,28 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 	#endregion
 	
 	#region Methods
+	
+	/// <summary>
+	/// Writes the authentication error (status code and error body) of the request; 401 responses get the WWW-Authenticate challenge.
+	/// </summary>
+	protected override async Task HandleChallengeAsync(AuthenticationProperties properties)
+	{
+		if (this.Context.Items.TryGetValue(AuthenticationErrorItemKey, out var item) && item is ErtisAuthException ex && !this.Response.HasStarted)
+		{
+			this.Response.StatusCode = (int) ex.StatusCode;
+			if (this.Response.StatusCode == StatusCodes.Status401Unauthorized)
+			{
+				this.Response.Headers.WWWAuthenticate = ErtisAuth.Extensions.Authorization.Scheme.WwwAuthenticate;
+			}
+			
+			this.Response.ContentType = "application/json";
+			await this.Response.WriteAsync(JsonSerializer.Serialize(ex.Error));
+			return;
+		}
+		
+		await base.HandleChallengeAsync(properties);
+		this.Response.Headers.WWWAuthenticate = ErtisAuth.Extensions.Authorization.Scheme.WwwAuthenticate;
+	}
 	
 	protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
 	{
@@ -107,28 +135,8 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 		}
 		catch (ErtisAuthException ex)
 		{
-			try
-			{
-				if (!this.Context.Response.HasStarted)
-				{
-					this.Context.Response.OnStarting(async () =>
-					{
-						this.Context.Response.StatusCode = (int) ex.StatusCode;
-						this.Context.Response.ContentType = "application/json";
-						var result = JsonSerializer.Serialize(ex.Error);
-						await this.Context.Response.WriteAsync(result);
-					});
-				}
-				else
-				{
-					await this.Context.Response.WriteAsync(ex.Message);
-				}
-			}
-			catch
-			{
-				await this.Context.Response.WriteAsync(ex.Message);
-			}
-			
+			// Written by HandleChallengeAsync: the ErtisAuth policy challenges this scheme for the failed authentication
+			this.Context.Items[AuthenticationErrorItemKey] = ex;
 			return AuthenticateResult.Fail(ex.Error.Message);
 		}
 		catch (Exception ex)

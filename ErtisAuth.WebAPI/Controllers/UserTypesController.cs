@@ -10,6 +10,8 @@ using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Extensions.AspNetCore.Attributes;
+using Ertis.Schema.Types;
+using ErtisAuth.WebAPI.Models.UserTypes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -161,10 +163,11 @@ public class UserTypesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
-	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] UserType model, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateUserTypeFormModel model, CancellationToken cancellationToken = default)
 	{
+		var userTypeModel = ToUserType(membershipId, null, model.Name, model.Slug, model.Description, model.Properties, model.AllowAdditionalProperties, model.IsAbstract, model.IsSealed, model.BaseUserType);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var userType = await this._userTypeService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		var userType = await this._userTypeService.CreateAsync(utilizer, membershipId, userTypeModel, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{userType.Id}", userType);
 	}
 	
@@ -175,13 +178,50 @@ public class UserTypesController : QueryControllerBase
 	[HttpPut("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Update)]
-	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UserType model, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateUserTypeFormModel model, CancellationToken cancellationToken = default)
 	{
-		model.Id = id;
-		
+		var userTypeModel = ToUserType(membershipId, id, model.Name, model.Slug, model.Description, model.Properties, model.AllowAdditionalProperties, model.IsAbstract, model.IsSealed, model.BaseUserType);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var userType = await this._userTypeService.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		var userType = await this._userTypeService.UpdateAsync(utilizer, membershipId, userTypeModel, cancellationToken: cancellationToken);
 		return this.Ok(userType);
+	}
+	
+	private static UserType ToUserType(
+		string membershipId, 
+		string? id, 
+		string? name, 
+		string? slug, 
+		string? description, 
+		IReadOnlyCollection<IFieldInfo>? properties, 
+		bool allowAdditionalProperties, 
+		bool isAbstract, 
+		bool isSealed, 
+		string? baseUserType)
+	{
+		var userType = new UserType
+		{
+			Name = name ?? string.Empty,
+			Description = description,
+			Properties = properties ?? [],
+			AllowAdditionalProperties = allowAdditionalProperties,
+			IsAbstract = isAbstract,
+			IsSealed = isSealed,
+			BaseUserType = baseUserType,
+			MembershipId = membershipId
+		};
+		
+		if (id != null)
+		{
+			userType.Id = id;
+		}
+		
+		// Otherwise derived from the name
+		if (!string.IsNullOrEmpty(slug))
+		{
+			userType.Slug = slug;
+		}
+		
+		return userType;
 	}
 	
 	#endregion

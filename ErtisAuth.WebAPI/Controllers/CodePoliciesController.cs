@@ -10,6 +10,7 @@ using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Attributes;
+using ErtisAuth.WebAPI.Models.CodePolicies;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
@@ -57,7 +58,7 @@ public class CodePoliciesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
-	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] TokenCodePolicy model, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateTokenCodePolicyFormModel model, CancellationToken cancellationToken = default)
 	{
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
@@ -65,10 +66,9 @@ public class CodePoliciesController : QueryControllerBase
 			return this.MembershipNotFound(membershipId);
 		}
 		
-		model.MembershipId = membershipId;
-		
+		var policyModel = ToTokenCodePolicy(membershipId, null, model.Name, model.Slug, model.Description, model.Length, model.ContainsLetters, model.ContainsDigits, model.ExpiresIn);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var policy = await this._codePolicyService.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		var policy = await this._codePolicyService.CreateAsync(utilizer, membershipId, policyModel, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{policy.Id}", policy);
 	}
 	
@@ -147,14 +147,39 @@ public class CodePoliciesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
-	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] TokenCodePolicy model, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateTokenCodePolicyFormModel model, CancellationToken cancellationToken = default)
 	{
-		model.Id = id;
-		model.MembershipId = membershipId;
-		
+		var policyModel = ToTokenCodePolicy(membershipId, id, model.Name, model.Slug, model.Description, model.Length, model.ContainsLetters, model.ContainsDigits, model.ExpiresIn);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var policy = await this._codePolicyService.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		var policy = await this._codePolicyService.UpdateAsync(utilizer, membershipId, policyModel, cancellationToken: cancellationToken);
 		return this.Ok(policy);
+	}
+	
+	private static TokenCodePolicy ToTokenCodePolicy(string membershipId, string? id, string? name, string? slug, string? description, int length, bool containsLetters, bool containsDigits, int expiresIn)
+	{
+		var policy = new TokenCodePolicy
+		{
+			Name = name ?? string.Empty,
+			Description = description,
+			Length = length,
+			ContainsLetters = containsLetters,
+			ContainsDigits = containsDigits,
+			ExpiresIn = expiresIn,
+			MembershipId = membershipId
+		};
+		
+		if (id != null)
+		{
+			policy.Id = id;
+		}
+		
+		// Otherwise derived from the name
+		if (!string.IsNullOrEmpty(slug))
+		{
+			policy.Slug = slug;
+		}
+		
+		return policy;
 	}
 	
 	#endregion

@@ -74,6 +74,7 @@ await app.UseMongoDBAsync();
 app.UseCORS();
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseWwwAuthenticateChallenge();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseGlobalExceptionHandler();
@@ -85,3 +86,6 @@ app.MapControllers();
 app.UseServices();
 
 app.Run();
+
+// Exposes the entry point to WebApplicationFactory (ErtisAuth.IntegrationTests)
+public partial class Program;

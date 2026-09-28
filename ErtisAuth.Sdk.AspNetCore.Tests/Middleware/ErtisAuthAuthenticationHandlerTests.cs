@@ -39,14 +39,37 @@ public class ErtisAuthAuthenticationHandlerTests
 	
 	#region Helpers
 	
-	private async Task<AuthenticateResult> AuthenticateAsync(HttpContext httpContext)
+	private async Task<ErtisAuthAuthenticationHandler> CreateHandlerAsync(HttpContext httpContext)
 	{
 		var options = Substitute.For<IOptionsMonitor<AuthenticationSchemeOptions>>();
 		options.Get(Arg.Any<string>()).Returns(new AuthenticationSchemeOptions());
 		
 		var handler = new ErtisAuthAuthenticationHandler(this._basicHandler, this._bearerHandler, options, NullLoggerFactory.Instance, UrlEncoder.Default);
 		await handler.InitializeAsync(new AuthenticationScheme(ErtisAuth.Extensions.Authorization.Scheme.Name, null, typeof(ErtisAuthAuthenticationHandler)), httpContext);
+		return handler;
+	}
+	
+	private async Task<AuthenticateResult> AuthenticateAsync(HttpContext httpContext)
+	{
+		var handler = await this.CreateHandlerAsync(httpContext);
 		return await handler.AuthenticateAsync();
+	}
+	
+	/// <summary>
+	/// What the pipeline does for a failed authentication: the ErtisAuth policy challenges this scheme.
+	/// </summary>
+	private async Task<AuthenticateResult> AuthenticateAndChallengeAsync(HttpContext httpContext)
+	{
+		var handler = await this.CreateHandlerAsync(httpContext);
+		var result = await handler.AuthenticateAsync();
+		await handler.ChallengeAsync(null);
+		return result;
+	}
+	
+	private static string ReadBody(HttpContext httpContext)
+	{
+		httpContext.Response.Body.Position = 0;
+		return new StreamReader(httpContext.Response.Body).ReadToEnd();
 	}
 	
 	private static Utilizer CreateUser()
@@ -144,8 +167,7 @@ public class ErtisAuthAuthenticationHandlerTests
 		this._bearerHandler.CheckAuthorizationAsync(Arg.Any<BearerToken>(), Arg.Any<HttpContext>()).Returns(Result(CreateUser(), false));
 		var httpContext = TestHttpContext.Create("Bearer access-token", new AuthorizedAttribute());
 		
-		var result = await this.AuthenticateAsync(httpContext);
-		await TestHttpContext.StartResponseAsync(httpContext);
+		var result = await this.AuthenticateAndChallengeAsync(httpContext);
 		
 		Assert.NotNull(result.Failure);
 		Assert.Contains("4032", result.Failure.Message);
@@ -159,11 +181,11 @@ public class ErtisAuthAuthenticationHandlerTests
 		this._basicHandler.CheckAuthorizationAsync(Arg.Any<BasicToken>(), Arg.Any<HttpContext>()).Returns(Result(application, false));
 		var httpContext = TestHttpContext.Create($"Basic {ApplicationId}:secret", new AuthorizedAttribute());
 		
-		var result = await this.AuthenticateAsync(httpContext);
-		await TestHttpContext.StartResponseAsync(httpContext);
+		var result = await this.AuthenticateAndChallengeAsync(httpContext);
 		
 		Assert.Contains("4031", result.Failure!.Message);
 		Assert.Equal(StatusCodes.Status403Forbidden, httpContext.Response.StatusCode);
+		Assert.False(httpContext.Response.Headers.ContainsKey("WWW-Authenticate"));
 	}
 	
 	[Fact]
@@ -172,12 +194,25 @@ public class ErtisAuthAuthenticationHandlerTests
 		this._bearerHandler.CheckAuthorizationAsync(Arg.Any<BearerToken>(), Arg.Any<HttpContext>()).Returns<AuthorizationResult>(_ => throw ErtisAuthException.Unauthorized("Token was expired"));
 		var httpContext = TestHttpContext.Create("Bearer access-token", new AuthorizedAttribute());
 		
-		var result = await this.AuthenticateAsync(httpContext);
-		await TestHttpContext.StartResponseAsync(httpContext);
+		var result = await this.AuthenticateAndChallengeAsync(httpContext);
 		
 		Assert.Equal("Token was expired", result.Failure!.Message);
 		Assert.Equal(StatusCodes.Status401Unauthorized, httpContext.Response.StatusCode);
 		Assert.Equal("application/json", httpContext.Response.ContentType);
+		Assert.Equal(ErtisAuth.Extensions.Authorization.Scheme.WwwAuthenticate, httpContext.Response.Headers.WWWAuthenticate.ToString());
+		Assert.Contains("Token was expired", ReadBody(httpContext));
+	}
+	
+	[Fact]
+	public async Task AuthorizedEndpoint_WithoutToken_ChallengesWithUnauthorizedAndWwwAuthenticate()
+	{
+		var httpContext = TestHttpContext.Create(null, new AuthorizedAttribute());
+		
+		await this.AuthenticateAndChallengeAsync(httpContext);
+		
+		Assert.Equal(StatusCodes.Status401Unauthorized, httpContext.Response.StatusCode);
+		Assert.Equal(ErtisAuth.Extensions.Authorization.Scheme.WwwAuthenticate, httpContext.Response.Headers.WWWAuthenticate.ToString());
+		Assert.Contains("AuthorizationHeaderMissing", ReadBody(httpContext));
 	}
 	
 	[Theory]

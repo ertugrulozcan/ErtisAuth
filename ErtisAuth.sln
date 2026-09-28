@@ -68,6 +68,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Sdk.AspNetCore.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Tests", "ErtisAuth.Integrations.OAuth.Tests\ErtisAuth.Integrations.OAuth.Tests.csproj", "{01189E8F-A318-46A9-A746-026FB76F223A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.IntegrationTests", "ErtisAuth.IntegrationTests\ErtisAuth.IntegrationTests.csproj", "{7C1A3B52-2E8F-4D6A-9B1E-5F3C2D4A6B70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -178,6 +180,10 @@ Global
 		{01189E8F-A318-46A9-A746-026FB76F223A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01189E8F-A318-46A9-A746-026FB76F223A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01189E8F-A318-46A9-A746-026FB76F223A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C1A3B52-2E8F-4D6A-9B1E-5F3C2D4A6B70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C1A3B52-2E8F-4D6A-9B1E-5F3C2D4A6B70}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C1A3B52-2E8F-4D6A-9B1E-5F3C2D4A6B70}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C1A3B52-2E8F-4D6A-9B1E-5F3C2D4A6B70}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{47AE4554-C608-40D3-B9F9-86617B6EE760} = {9F94F615-8602-4C69-BC7E-A8A8B3746357}
@@ -206,5 +212,6 @@ Global
 		{4B6CE0F2-D168-4C26-96C4-F7C7C623460D} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{581F8F67-2B05-433F-8577-D9A2808C106E} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{01189E8F-A318-46A9-A746-026FB76F223A} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{7C1A3B52-2E8F-4D6A-9B1E-5F3C2D4A6B70} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
