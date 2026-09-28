@@ -7,7 +7,7 @@ using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Cryptography;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Mailing;
-using MongoDB.Bson;
+using ErtisAuth.Core.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
 using JsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
@@ -108,8 +108,8 @@ public class Membership : ResourceBase, IHasSysInfo
 	[JsonPropertyName("user_activation")]
 	[BsonElement("user_activation")]
 	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
-	[JsonConverter(typeof(JsonStringEnumConverter))]
-	[BsonRepresentation(BsonType.String)]
+	[JsonConverter(typeof(EnumMemberJsonConverter<Status>))]
+	[BsonSerializer(typeof(EnumMemberBsonSerializer<Status>))]
 	public Status UserActivation { get; set; }
 	
 	[JsonProperty("code_policy")]

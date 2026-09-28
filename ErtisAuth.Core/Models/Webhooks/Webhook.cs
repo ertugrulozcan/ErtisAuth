@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Ertis.Core.Models.Resources;
 using ErtisAuth.Core.Models.Events;
 using MongoDB.Bson;
+using ErtisAuth.Core.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
 using JsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
@@ -53,8 +54,8 @@ public class Webhook : MembershipBoundedResource, IHasSysInfo
 	[JsonPropertyName("status")]
 	[BsonElement("status")]
 	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
-	[JsonConverter(typeof(JsonStringEnumConverter))]
-	[BsonRepresentation(BsonType.String)]
+	[JsonConverter(typeof(EnumMemberJsonConverter<WebhookStatus>))]
+	[BsonSerializer(typeof(NullableEnumMemberBsonSerializer<WebhookStatus>))]
 	public WebhookStatus? Status { get; set; }
 	
 	[JsonIgnore]
