@@ -59,6 +59,12 @@ public static class ErtisAuthExtensions
 	private static IServiceCollection AddErtisAuthAspNetCore<TAuthenticationHandler>(this IServiceCollection services)
 		where TAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 	{
+		// The first registration wins: adding the authentication scheme again would fail ("Scheme already exists")
+		if (services.Any(x => x.ServiceType == typeof(IAuthorizationHandler<BasicToken>)))
+		{
+			return services;
+		}
+		
 		services.TryAddSingleton<IAuthorizationHandler<BasicToken>, BasicAuthorizationHandler>();
 		services.TryAddSingleton<IAuthorizationHandler<BearerToken>, BearerAuthorizationHandler>();
 		

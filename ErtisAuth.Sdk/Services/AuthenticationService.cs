@@ -79,7 +79,20 @@ public class AuthenticationService : MembershipBoundedService, IAuthenticationSe
 		var url = $"{this.BaseUrl}/verify-token";
 		var headers = HeaderCollection.Add("Authorization", token.ToString());
 		var response = await this.ExecuteRequestAsync<BearerTokenValidationResult>(HttpMethod.Get, url, null, headers, cancellationToken: cancellationToken).ConfigureAwait(false);
-		return (IResponseResult<ITokenValidationResult>) response;
+		// ResponseResult<T> is not covariant; StatusCode can only be set through the constructor
+		var result = response.StatusCode is { } statusCode
+			? new ResponseResult<ITokenValidationResult>(statusCode)
+			: new ResponseResult<ITokenValidationResult>(response.IsSuccess);
+		
+		result.Headers = response.Headers;
+		result.Message = response.Message;
+		// BearerTokenValidationResult is a struct; a failed response must not carry a boxed default value
+		result.Data = response.IsSuccess ? response.Data : null;
+		result.RawData = response.RawData;
+		result.Json = response.Json;
+		result.Exception = response.Exception;
+		
+		return result;
 	}
 	
 	public async Task<IResponseResult<ITokenValidationResult>> VerifyTokenAsync(string accessToken, CancellationToken cancellationToken = default)

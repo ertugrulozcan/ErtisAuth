@@ -10,38 +10,35 @@ namespace ErtisAuth.Core.Models.Identity;
 
 public readonly struct BearerTokenValidationResult : ITokenValidationResult
 {
+	#region Constants
+	
+	private const string AccessTokenKind = "access_token";
+	
+	private const string RefreshTokenKind = "refresh_token";
+	
+	#endregion
+	
 	#region Properties
 	
 	[JsonProperty("verified")]
 	[JsonPropertyName("verified")]
 	[BsonElement("verified")]
-	public bool IsValidated { get; }
+	public bool IsValidated { get; init; }
 	
 	[JsonIgnore]
 	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public bool IsRefreshToken { get; }
+	public bool IsRefreshToken => this.TokenKind == RefreshTokenKind;
 	
 	[JsonProperty("token")]
 	[JsonPropertyName("token")]
 	[BsonElement("token")]
-	public string Token { get; }
+	public string Token { get; init; }
 	
 	[JsonProperty("token_kind")]
 	[JsonPropertyName("token_kind")]
 	[BsonElement("token_kind")]
-	public string TokenKind
-	{
-		get
-		{
-			if (this.IsRefreshToken)
-			{
-				return "refresh_token";
-			}
-			
-			return "access_token";
-		}
-	}
+	public string TokenKind { get; init; }
 	
 	[JsonIgnore]
 	[BsonIgnore]
@@ -56,12 +53,12 @@ public readonly struct BearerTokenValidationResult : ITokenValidationResult
 	[JsonIgnore]
 	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public TimeSpan RemainingTime { get; }
+	public TimeSpan RemainingTime => TimeSpan.FromSeconds(this.RemainingTimeUnixEpoch);
 	
 	[JsonProperty("remaining_time")]
 	[JsonPropertyName("remaining_time")]
 	[BsonElement("remaining_time")]
-	public int RemainingTimeUnixEpoch => (int) this.RemainingTime.TotalSeconds;
+	public int RemainingTimeUnixEpoch { get; init; }
 	
 	#endregion
 	
@@ -80,8 +77,9 @@ public readonly struct BearerTokenValidationResult : ITokenValidationResult
 		this.IsValidated = isVerified;
 		this.Token = token;
 		this.User = user;
-		this.RemainingTime = remainingTime;
-		this.IsRefreshToken = isRefreshToken;
+		this.RemainingTimeUnixEpoch = (int) remainingTime.TotalSeconds;
+		// Stored as a settable kind (not derived from IsRefreshToken) so that clients can deserialize it
+		this.TokenKind = isRefreshToken ? RefreshTokenKind : AccessTokenKind;
 	}
 	
 	#endregion

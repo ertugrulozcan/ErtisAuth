@@ -100,7 +100,7 @@ public abstract class MembershipBoundedService<T> : ReadonlyMembershipBoundedSer
 	
 	public async Task<IResponseResult> DeleteAsync(string modelId, TokenBase token, CancellationToken cancellationToken = default)
 	{
-		return await this.ExecuteRequestAsync<T>(
+		return await this.ExecuteRequestAsync(
 			HttpMethod.Delete, 
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/{modelId}", 
 			null, 
@@ -110,7 +110,7 @@ public abstract class MembershipBoundedService<T> : ReadonlyMembershipBoundedSer
 	
 	public async Task<IResponseResult> BulkDeleteAsync(IEnumerable<string> modelIds, TokenBase token, CancellationToken cancellationToken = default)
 	{
-		return await this.ExecuteRequestAsync<T>(
+		return await this.ExecuteRequestAsync(
 			HttpMethod.Delete, 
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}", 
 			null, 

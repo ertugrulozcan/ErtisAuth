@@ -32,28 +32,31 @@ public class ScopedBearerToken : TokenBase
 	/// <summary>
 	/// Private Constructor
 	/// </summary>
-	private ScopedBearerToken()
+	/// <param name="token"></param>
+	/// <param name="createdAt"></param>
+	private ScopedBearerToken(string token, DateTime? createdAt = null) : base(token, createdAt)
 	{
 		
 	}
 	
 	/// <summary>
-	/// Constructor
+	/// Constructor 1
 	/// </summary>
 	/// <param name="token"></param>
 	/// <param name="expiresIn"></param>
-	public ScopedBearerToken(string token, TimeSpan expiresIn)
+	public ScopedBearerToken(string token, TimeSpan expiresIn) : base(token)
 	{
-		this.AccessToken = token;
 		this.ExpiresIn = expiresIn;
-		this.CreatedAt = DateTime.UtcNow;
 	}
 	
-	public ScopedBearerToken(BearerToken bearerToken, string[] scopes)
+	/// <summary>
+	/// Constructor 2
+	/// </summary>
+	/// <param name="bearerToken"></param>
+	/// <param name="scopes"></param>
+	public ScopedBearerToken(BearerToken bearerToken, string[] scopes) : base(bearerToken.AccessToken, bearerToken.CreatedAt)
 	{
-		this.AccessToken = bearerToken.AccessToken;
 		this.ExpiresIn = TimeSpan.FromSeconds(bearerToken.ExpiresInTimeStamp);
-		this.CreatedAt = bearerToken.CreatedAt;
 		this.Scopes = scopes;
 	}
 	
@@ -63,26 +66,20 @@ public class ScopedBearerToken : TokenBase
 	
 	public static ScopedBearerToken CreateTemp(string token)
 	{
-		return new ScopedBearerToken
-		{
-			AccessToken = token,
-			CreatedAt = DateTime.UtcNow
-		};
+		return new ScopedBearerToken(token);
 	}
 	
 	public static ScopedBearerToken? ParseFromJson(string json)
 	{
-		var bearerToken = System.Text.Json.JsonSerializer.Deserialize<BearerToken>(json);
+		var bearerToken = BearerToken.ParseFromJson(json);
 		if (bearerToken == null)
 		{
 			return null;
 		}
 		
-		return new ScopedBearerToken
+		return new ScopedBearerToken(bearerToken.AccessToken, bearerToken.CreatedAt)
 		{
-			AccessToken = bearerToken.AccessToken,
-			ExpiresIn = bearerToken.ExpiresIn,
-			CreatedAt = bearerToken.CreatedAt
+			ExpiresIn = bearerToken.ExpiresIn
 		};
 	}
 	

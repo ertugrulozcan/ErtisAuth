@@ -12,7 +12,7 @@ public interface IPasswordService
 {
 	Task<IResponseResult> ChangePasswordAsync(string userId, string newPassword, TokenBase token, CancellationToken cancellationToken = default);
 	
-	Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress, string server, string host, TokenBase token, CancellationToken cancellationToken = default);
+	Task<IResponseResult> ResetPasswordAsync(string emailAddress, string host, TokenBase token, CancellationToken cancellationToken = default);
 	
 	Task<IResponseResult> SetPasswordAsync(string email, string password, string resetToken, TokenBase token, CancellationToken cancellationToken = default);
 }

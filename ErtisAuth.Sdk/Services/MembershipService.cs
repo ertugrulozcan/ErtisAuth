@@ -140,7 +140,7 @@ public class MembershipService : BaseRestService, IMembershipService
 	
 	public async Task<IResponseResult> DeleteMembershipAsync(string membershipId, TokenBase token, CancellationToken cancellationToken = default)
 	{
-		return await this.ExecuteRequestAsync<Membership>(
+		return await this.ExecuteRequestAsync(
 			HttpMethod.Delete, 
 			$"{this.AuthApiBaseUrl}/memberships/{membershipId}", 
 			null, 

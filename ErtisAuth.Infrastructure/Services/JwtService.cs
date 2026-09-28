@@ -96,7 +96,7 @@ public class JwtService : IJwtService
         {
             if (!claims.Exists(x => x.Type == additionalClaim.Key) && additionalClaim.Value != null)
             {
-                claims.Add(new Claim(additionalClaim.Key, additionalClaim.Value.ToString() ?? string.Empty));
+				claims.Add(CreateClaim(additionalClaim.Key, additionalClaim.Value));
             }
         }
         
@@ -194,6 +194,19 @@ public class JwtService : IJwtService
             return false;
         }
     }
+	
+	/// <summary>
+	/// Typed claims are written to the payload as JSON values (e.g. "refresh_token": true instead of "True").
+	/// </summary>
+	private static Claim CreateClaim(string type, object value)
+	{
+		if (value is bool boolean)
+		{
+			return new Claim(type, boolean ? "true" : "false", ClaimValueTypes.Boolean);
+		}
+		
+		return new Claim(type, value.ToString() ?? string.Empty);
+	}
     
     #endregion
 }

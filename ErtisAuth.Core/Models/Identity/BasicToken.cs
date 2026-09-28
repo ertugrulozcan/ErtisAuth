@@ -26,11 +26,9 @@ public class BasicToken : TokenBase
 	/// Constructor
 	/// </summary>
 	/// <param name="token"></param>
-	public BasicToken(string token)
+	public BasicToken(string token) : base(token)
 	{
-		this.AccessToken = token;
 		this.ExpiresIn = TimeSpan.MaxValue;
-		this.CreatedAt = DateTime.UtcNow;
 	}
 	
 	#endregion

@@ -1,0 +1,209 @@
+using System.Text.Encodings.Web;
+using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Roles;
+using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Extensions.Authorization.Extensions;
+using ErtisAuth.Sdk.AspNetCore.Middleware;
+using ErtisAuth.Sdk.AspNetCore.Models;
+using ErtisAuth.Sdk.AspNetCore.Tests.Helpers;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using NSubstitute;
+
+namespace ErtisAuth.Sdk.AspNetCore.Tests.Middleware;
+
+/// <summary>
+/// The authentication handler of client applications: which endpoints need authentication, which authorization handler
+/// checks the token, and what the client gets when the check fails.
+/// </summary>
+public class ErtisAuthAuthenticationHandlerTests
+{
+	#region Constants
+	
+	private const string UserId = "5f8a1b2c3d4e5f6a7b8c9d01";
+	
+	private const string ApplicationId = "5f8a1b2c3d4e5f6a7b8c9d02";
+	
+	#endregion
+	
+	#region Fields
+	
+	private readonly IAuthorizationHandler<BasicToken> _basicHandler = Substitute.For<IAuthorizationHandler<BasicToken>>();
+	
+	private readonly IAuthorizationHandler<BearerToken> _bearerHandler = Substitute.For<IAuthorizationHandler<BearerToken>>();
+	
+	#endregion
+	
+	#region Helpers
+	
+	private async Task<AuthenticateResult> AuthenticateAsync(HttpContext httpContext)
+	{
+		var options = Substitute.For<IOptionsMonitor<AuthenticationSchemeOptions>>();
+		options.Get(Arg.Any<string>()).Returns(new AuthenticationSchemeOptions());
+		
+		var handler = new ErtisAuthAuthenticationHandler(this._basicHandler, this._bearerHandler, options, NullLoggerFactory.Instance, UrlEncoder.Default);
+		await handler.InitializeAsync(new AuthenticationScheme(ErtisAuth.Extensions.Authorization.Scheme.Name, null, typeof(ErtisAuthAuthenticationHandler)), httpContext);
+		return await handler.AuthenticateAsync();
+	}
+	
+	private static Utilizer CreateUser()
+	{
+		return new Utilizer
+		{
+			Id = UserId,
+			Username = "john.doe",
+			Role = "user",
+			Type = Utilizer.UtilizerType.User,
+			MembershipId = "membership-id"
+		};
+	}
+	
+	private static AuthorizationResult Result(Utilizer utilizer, bool isAuthorized)
+	{
+		return new AuthorizationResult(utilizer, Rbac.Parse("users.read"), isAuthorized);
+	}
+	
+	#endregion
+	
+	#region Endpoint Kinds
+	
+	[Fact]
+	public async Task EndpointWithoutErtisAuthAttributes_IsNotAuthenticated()
+	{
+		var result = await this.AuthenticateAsync(TestHttpContext.Create("Bearer access-token"));
+		
+		Assert.True(result.None);
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+	}
+	
+	[Fact]
+	public async Task UnauthorizedEndpoint_SucceedsWithPublicIdentityWithoutToken()
+	{
+		var result = await this.AuthenticateAsync(TestHttpContext.Create(null, new UnauthorizedAttribute()));
+		
+		Assert.True(result.Succeeded);
+		Assert.Equal(ClaimExtensions.PublicClaimName, result.Principal!.Identities.Single().NameClaimType);
+	}
+	
+	[Fact]
+	public async Task AuthorizedEndpoint_WithPermittedBearerToken_SucceedsWithUtilizerIdentity()
+	{
+		this._bearerHandler.CheckAuthorizationAsync(Arg.Any<BearerToken>(), Arg.Any<HttpContext>()).Returns(Result(CreateUser(), true));
+		
+		var result = await this.AuthenticateAsync(TestHttpContext.Create("Bearer access-token", new AuthorizedAttribute()));
+		
+		Assert.True(result.Succeeded);
+		Assert.Equal(ClaimExtensions.UtilizerClaimName, result.Principal!.Identities.Single().NameClaimType);
+		await this._bearerHandler.Received(1).CheckAuthorizationAsync(Arg.Is<BearerToken>(x => x.AccessToken == "access-token"), Arg.Any<HttpContext>());
+	}
+	
+	[Fact]
+	public async Task AuthorizedEndpoint_WithBasicToken_UsesBasicHandler()
+	{
+		var application = new Utilizer { Id = ApplicationId, Username = "server-app", Role = "server", Type = Utilizer.UtilizerType.Application, MembershipId = "membership-id" };
+		this._basicHandler.CheckAuthorizationAsync(Arg.Any<BasicToken>(), Arg.Any<HttpContext>()).Returns(Result(application, true));
+		
+		var result = await this.AuthenticateAsync(TestHttpContext.Create($"Basic {ApplicationId}:secret", new AuthorizedAttribute()));
+		
+		Assert.True(result.Succeeded);
+		await this._basicHandler.Received(1).CheckAuthorizationAsync(Arg.Is<BasicToken>(x => x.AccessToken == $"{ApplicationId}:secret"), Arg.Any<HttpContext>());
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+	}
+	
+	[Fact]
+	public async Task AuthorizedAndUnauthorizedEndpoint_IsPublic()
+	{
+		var result = await this.AuthenticateAsync(TestHttpContext.Create(null, new AuthorizedAttribute(), new UnauthorizedAttribute()));
+		
+		Assert.True(result.Succeeded);
+		Assert.Equal(ClaimExtensions.PublicClaimName, result.Principal!.Identities.Single().NameClaimType);
+	}
+	
+	[Fact]
+	public async Task SelfAuthorizedEndpoint_AuthenticatesWithoutPermissionCheck()
+	{
+		this._bearerHandler.CheckAuthenticationAsync(Arg.Any<BearerToken>()).Returns(CreateUser());
+		
+		var result = await this.AuthenticateAsync(TestHttpContext.Create("Bearer access-token", new SelfAuthorizedAttribute()));
+		
+		Assert.True(result.Succeeded);
+		await this._bearerHandler.Received(1).CheckAuthenticationAsync(Arg.Any<BearerToken>());
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+	}
+	
+	#endregion
+	
+	#region Failures
+	
+	[Fact]
+	public async Task AuthorizedEndpoint_WithBearerTokenNotPermitted_FailsWithForbidden()
+	{
+		this._bearerHandler.CheckAuthorizationAsync(Arg.Any<BearerToken>(), Arg.Any<HttpContext>()).Returns(Result(CreateUser(), false));
+		var httpContext = TestHttpContext.Create("Bearer access-token", new AuthorizedAttribute());
+		
+		var result = await this.AuthenticateAsync(httpContext);
+		await TestHttpContext.StartResponseAsync(httpContext);
+		
+		Assert.NotNull(result.Failure);
+		Assert.Contains("4032", result.Failure.Message);
+		Assert.Equal(StatusCodes.Status403Forbidden, httpContext.Response.StatusCode);
+	}
+	
+	[Fact]
+	public async Task AuthorizedEndpoint_WithBasicTokenNotPermitted_FailsWithForbidden()
+	{
+		var application = new Utilizer { Id = ApplicationId, Username = "server-app", Role = "server", Type = Utilizer.UtilizerType.Application, MembershipId = "membership-id" };
+		this._basicHandler.CheckAuthorizationAsync(Arg.Any<BasicToken>(), Arg.Any<HttpContext>()).Returns(Result(application, false));
+		var httpContext = TestHttpContext.Create($"Basic {ApplicationId}:secret", new AuthorizedAttribute());
+		
+		var result = await this.AuthenticateAsync(httpContext);
+		await TestHttpContext.StartResponseAsync(httpContext);
+		
+		Assert.Contains("4031", result.Failure!.Message);
+		Assert.Equal(StatusCodes.Status403Forbidden, httpContext.Response.StatusCode);
+	}
+	
+	[Fact]
+	public async Task AuthorizedEndpoint_WhenHandlerRejectsToken_FailsWithItsStatusCode()
+	{
+		this._bearerHandler.CheckAuthorizationAsync(Arg.Any<BearerToken>(), Arg.Any<HttpContext>()).Returns<AuthorizationResult>(_ => throw ErtisAuthException.Unauthorized("Token was expired"));
+		var httpContext = TestHttpContext.Create("Bearer access-token", new AuthorizedAttribute());
+		
+		var result = await this.AuthenticateAsync(httpContext);
+		await TestHttpContext.StartResponseAsync(httpContext);
+		
+		Assert.Equal("Token was expired", result.Failure!.Message);
+		Assert.Equal(StatusCodes.Status401Unauthorized, httpContext.Response.StatusCode);
+		Assert.Equal("application/json", httpContext.Response.ContentType);
+	}
+	
+	[Theory]
+	[InlineData(null, "AuthorizationHeaderMissing")]
+	[InlineData("Digest abc", "UnsupportedTokenType")]
+	[InlineData("abc", "UnsupportedTokenType")]
+	public async Task AuthorizedEndpoint_WithMissingOrUnsupportedToken_Fails(string? authorizationHeader, string errorCode)
+	{
+		var httpContext = TestHttpContext.Create(authorizationHeader, new AuthorizedAttribute());
+		
+		var result = await this.AuthenticateAsync(httpContext);
+		
+		Assert.NotNull(result.Failure);
+		Assert.Equal(ErrorMessage(errorCode), result.Failure.Message);
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+		await this._basicHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+	}
+	
+	private static string ErrorMessage(string errorCode)
+	{
+		return errorCode switch
+		{
+			"AuthorizationHeaderMissing" => ErtisAuthException.AuthorizationHeaderMissing().Error.Message,
+			_ => ErtisAuthException.UnsupportedTokenType().Error.Message
+		};
+	}
+	
+	#endregion
+}

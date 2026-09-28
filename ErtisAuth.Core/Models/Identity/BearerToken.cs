@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using NewtonsoftJsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
@@ -27,7 +28,7 @@ public class BearerToken : TokenBase, IRefreshableToken
 	[JsonIgnore]
 	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
-	public TimeSpan RefreshExpiresIn { get; private set; }
+	public TimeSpan RefreshExpiresIn { get; }
 	
 	[JsonPropertyName("refresh_token_expires_in")]
 	[NewtonsoftJsonProperty("refresh_token_expires_in")]
@@ -39,27 +40,23 @@ public class BearerToken : TokenBase, IRefreshableToken
 	#region Constructors
 	
 	/// <summary>
-	/// Private Constructor
-	/// </summary>
-	private BearerToken()
-	{
-		
-	}
-	
-	/// <summary>
 	/// Constructor
 	/// </summary>
 	/// <param name="token"></param>
 	/// <param name="expiresIn"></param>
 	/// <param name="refreshToken"></param>
 	/// <param name="refreshExpiresIn"></param>
-	public BearerToken(string token, TimeSpan expiresIn, string? refreshToken, TimeSpan refreshExpiresIn)
+	/// <param name="createdAt"></param>
+	public BearerToken(
+		string token, 
+		TimeSpan expiresIn, 
+		string? refreshToken = null, 
+		TimeSpan? refreshExpiresIn = null, 
+		DateTime? createdAt = null) : base(token, createdAt)
 	{
-		this.AccessToken = token;
 		this.ExpiresIn = expiresIn;
 		this.RefreshToken = refreshToken;
-		this.RefreshExpiresIn = refreshExpiresIn;
-		this.CreatedAt = DateTime.UtcNow;
+		this.RefreshExpiresIn = refreshExpiresIn ?? TimeSpan.Zero;
 	}
 	
 	#endregion
@@ -68,16 +65,24 @@ public class BearerToken : TokenBase, IRefreshableToken
 	
 	public static BearerToken CreateTemp(string token)
 	{
-		return new BearerToken
-		{
-			AccessToken = token,
-			CreatedAt = DateTime.UtcNow
-		};
+		return new BearerToken(token, TimeSpan.Zero);
 	}
 	
 	public static BearerToken? ParseFromJson(string json)
 	{
-		return System.Text.Json.JsonSerializer.Deserialize<BearerToken>(json);
+		var serializableToken = JsonSerializer.Deserialize<SerializableToken>(json);
+		if (serializableToken == null)
+		{
+			return null;
+		}
+		
+		return new BearerToken(
+			token: serializableToken.AccessToken,
+			expiresIn: TimeSpan.FromSeconds(serializableToken.ExpiresInTimeStamp),
+			refreshToken: serializableToken.RefreshToken,
+			refreshExpiresIn: TimeSpan.FromSeconds(serializableToken.RefreshTokenExpiresInTimeStamp),
+			createdAt: serializableToken.CreatedAt
+		);
 	}
 	
 	#endregion

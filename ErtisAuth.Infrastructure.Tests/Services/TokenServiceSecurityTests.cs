@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Constants;
 using ErtisAuth.Core.Exceptions;
@@ -8,6 +9,7 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.Infrastructure.Tests.Helpers;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.IdentityModel.Tokens;
 using NSubstitute;
 
 namespace ErtisAuth.Infrastructure.Tests.Services;
@@ -218,6 +220,36 @@ public class TokenServiceSecurityTests
 	}
 	
 	[Fact]
+	public async Task GenerateTokenAsync_WritesRefreshTokenClaimAsJsonBoolean()
+	{
+		var (membership, _) = this.Setup();
+		var tokenService = this.CreateTokenService();
+		var token = await this.GenerateTokenAsync(tokenService, membership);
+		
+		using var refreshTokenPayload = JsonDocument.Parse(Base64UrlEncoder.Decode(token.RefreshToken!.Split('.')[1]));
+		using var accessTokenPayload = JsonDocument.Parse(Base64UrlEncoder.Decode(token.AccessToken.Split('.')[1]));
+		
+		Assert.Equal(JsonValueKind.True, refreshTokenPayload.RootElement.GetProperty("refresh_token").ValueKind);
+		Assert.False(accessTokenPayload.RootElement.TryGetProperty("refresh_token", out _));
+	}
+	
+	[Fact]
+	public async Task RefreshTokenAsync_WithLegacyStringRefreshTokenClaim_ReturnsNewToken()
+	{
+		// Refresh tokens issued before the claim became a JSON boolean carry "refresh_token": "True"
+		var (membership, user) = this.Setup();
+		var claims = new TokenClaims(Guid.NewGuid().ToString(), user, membership).AddClaim("refresh_token", "True");
+		var legacyRefreshToken = this._jwtService.GenerateToken(claims, expiresIn: TimeSpan.FromHours(1));
+		var tokenService = this.CreateTokenService();
+		
+		var refreshed = await tokenService.RefreshTokenAsync(legacyRefreshToken, revokeBefore: false, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		
+		var result = await tokenService.VerifyBearerTokenAsync(refreshed.AccessToken, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		Assert.True(result.IsValidated);
+		Assert.False(result.IsRefreshToken);
+	}
+	
+	[Fact]
 	public async Task WhoAmIAsync_WithRefreshToken_ThrowsInvalidToken()
 	{
 		var (membership, _) = this.Setup();
@@ -415,7 +447,7 @@ public class TokenServiceSecurityTests
 		var resetToken = this.CreateActionToken(membership, user, ActionTokens.ResetPasswordTokenType);
 		var tokenService = this.CreateTokenService();
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.WhoAmIAsync(new BearerToken(resetToken, TimeSpan.FromHours(1), null, TimeSpan.Zero), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.WhoAmIAsync(new BearerToken(resetToken, TimeSpan.FromHours(1)), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("InvalidToken", exception.ErrorCode);
 	}

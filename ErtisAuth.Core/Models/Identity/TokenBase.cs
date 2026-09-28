@@ -14,11 +14,6 @@ public abstract class TokenBase
 {
 	#region Properties
 	
-	[JsonPropertyName("access_token")]
-	[NewtonsoftJsonProperty("access_token")]
-	[BsonElement("access_token")]
-	public string AccessToken { get; set; } = null!;
-	
 	[JsonPropertyName("token_type")]
 	[NewtonsoftJsonProperty("token_type")]
 	[JsonConverter(typeof(JsonStringEnumConverter))]
@@ -26,6 +21,11 @@ public abstract class TokenBase
 	[BsonElement("token_type")]
 	[BsonRepresentation(BsonType.String)]
 	public abstract SupportedTokenTypes TokenType { get; }
+	
+	[JsonPropertyName("access_token")]
+	[NewtonsoftJsonProperty("access_token")]
+	[BsonElement("access_token")]
+	public string AccessToken { get; set; }
 	
 	[JsonIgnore]
 	[BsonIgnore]
@@ -40,12 +40,27 @@ public abstract class TokenBase
 	[JsonPropertyName("created_at")]
 	[NewtonsoftJsonProperty("created_at")]
 	[BsonElement("created_at")]
-	public DateTime CreatedAt { get; protected set; }
+	public DateTime CreatedAt { get; private set; }
 	
 	[JsonIgnore]
 	[BsonIgnore]
 	[NewtonsoftJsonIgnore]
 	public bool IsExpired => DateTime.UtcNow > this.CreatedAt.Add(this.ExpiresIn);
+	
+	#endregion
+	
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="accessToken"></param>
+	/// <param name="createdAt"></param>
+	protected TokenBase(string accessToken, DateTime? createdAt = null)
+	{
+		this.AccessToken = accessToken;
+		this.CreatedAt = createdAt ?? DateTime.UtcNow;
+	}
 	
 	#endregion
 	

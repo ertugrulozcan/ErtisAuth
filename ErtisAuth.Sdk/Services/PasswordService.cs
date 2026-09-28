@@ -37,18 +37,16 @@ public class PasswordService : MembershipBoundedService, IPasswordService
 			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}
 	
-	public async Task<IResponseResult<ResetPasswordToken>> ResetPasswordAsync(string emailAddress, string server, string host, TokenBase token, CancellationToken cancellationToken = default)
+	public async Task<IResponseResult> ResetPasswordAsync(string emailAddress, string host, TokenBase token, CancellationToken cancellationToken = default)
 	{
-		return await this.ExecuteRequestAsync<ResetPasswordToken>(
+		return await this.ExecuteRequestAsync(
 			HttpMethod.Post, 
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/users/reset-password", 
 			null, 
-			HeaderCollection.Add("Authorization", token.ToString()),
+			HeaderCollection.Add("Authorization", token.ToString()).Add("X-Host", host),
 			new JsonRequestBody(new
 			{
-				email_address = emailAddress,
-				server,
-				host
+				email_address = emailAddress
 			}),
 			cancellationToken: cancellationToken).ConfigureAwait(false);
 	}

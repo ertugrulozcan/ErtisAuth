@@ -61,6 +61,8 @@ public static class DatabaseExtensions
 			classMap.MapMember(x => x.ModifiedAt).SetElementName("modified_at").SetIgnoreIfNull(true);
 			classMap.MapMember(x => x.ModifiedBy).SetElementName("modified_by").SetIgnoreIfNull(true);
 		});
+		
+		BearerTokenClassMap.Register();
 	}
 	
 	private static void RegisterDiscriminatorConventions()
