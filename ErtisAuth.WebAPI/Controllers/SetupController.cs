@@ -1,20 +1,25 @@
 using ErtisAuth.Abstractions.Services;
-using ErtisAuth.Core.Models.Memberships;
-using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Applications;
-using ErtisAuth.WebAPI.Models.Migration;
+using ErtisAuth.Core.Models.Memberships;
+using ErtisAuth.Core.Models.Users;
+using ErtisAuth.WebAPI.Models.Setup;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErtisAuth.WebAPI.Controllers;
 
+/// <summary>
+/// The one-time setup of a fresh installation (first membership, administrator user, optional application).
+/// Authorized by the X-Setup-Token header matching a token the operator inserted into the "setup" collection;
+/// closed once the installation is set up.
+/// </summary>
 [ApiController]
-[Route("migrate")]
-public class MigrationController : ControllerBase
+[Route("setup")]
+public class SetupController : ControllerBase
 {
 	#region Services
 	
-	private readonly IMigrationService _migrationService;
+	private readonly ISetupService _setupService;
 	
 	#endregion
 	
@@ -23,10 +28,10 @@ public class MigrationController : ControllerBase
 	/// <summary>
 	/// Constructor
 	/// </summary>
-	/// <param name="migrationService"></param>
-	public MigrationController(IMigrationService migrationService)
+	/// <param name="setupService"></param>
+	public SetupController(ISetupService setupService)
 	{
-		this._migrationService = migrationService;
+		this._setupService = setupService;
 	}
 	
 	#endregion
@@ -34,7 +39,7 @@ public class MigrationController : ControllerBase
 	#region Methods
 	
 	[HttpPost]
-	public async Task<IActionResult> Migrate([FromBody] MigrationModel model)
+	public async Task<IActionResult> Setup([FromBody] SetupModel model, CancellationToken cancellationToken = default)
 	{
 		if (model.Membership == null)
 		{
@@ -46,11 +51,7 @@ public class MigrationController : ControllerBase
 			throw ErtisAuthException.ValidationError(new[] { "user is required" });
 		}
 		
-		var connectionString = this.Request.Headers["ConnectionString"].ToString();
-		if (string.IsNullOrEmpty(connectionString))
-		{
-			throw ErtisAuthException.ValidationError(new[] { "ConnectionString must be post in header" });
-		}
+		var setupToken = this.Request.Headers["X-Setup-Token"].ToString();
 		
 		var membership = new Membership
 		{
@@ -86,14 +87,11 @@ public class MigrationController : ControllerBase
 				Slug = model.Application.Slug ?? string.Empty,
 				Role = model.Application.Role ?? string.Empty,
 				MembershipId = string.Empty
-			};	
+			};
 		}
 		
-		this.Request.HttpContext.Items.Add("SysUtilizer", "migration");
-		
-		var migrationResult = await this._migrationService.MigrateAsync(connectionString, membership, user, application);
-		
-		return this.Ok(migrationResult);
+		var result = await this._setupService.SetupAsync(setupToken, membership, user, application, cancellationToken: cancellationToken);
+		return this.Ok(result);
 	}
 	
 	#endregion

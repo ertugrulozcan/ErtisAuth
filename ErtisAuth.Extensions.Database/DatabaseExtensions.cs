@@ -45,6 +45,7 @@ public static class DatabaseExtensions
 		services.AddSingleton<ICodePolicyRepository, CodePolicyRepository>();
 		services.AddSingleton<IOneTimePasswordRepository, OneTimePasswordRepository>();
 		services.AddSingleton<IEventRepository, EventRepository>();
+		services.AddSingleton<ISetupTokenRepository, SetupTokenRepository>();
 		
 		RegisterClassMaps();
 		RegisterDiscriminatorConventions();

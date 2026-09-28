@@ -25,7 +25,7 @@ For developer guide and API documentation, please visit [wiki page](https://gith
 * Set database configuration
 * Build solution in the root of the cloned repo
 * Start ErtisAuth Server
-* Migrate
+* Set up (see the Setup section)
 * Enjoy with ErtisAuth
 
 ## ErtisAuth on Docker
@@ -71,26 +71,39 @@ $ docker-compose up -d
 ```
 
 This command will start ErtisAuth API exposed on the local port 9716 along with a composed MongoDB in same container. It will also create an membership (realm) an initial admin user and an application (optional) for machine to machine communication.
-If you wish, you can migrate whether membership, admin user, application etc resources later. For more information about the migration, look at the migration section in the documentation.
+If you wish, you can create the membership, admin user, application etc. resources later. For more information, look at the Setup section.
 
 <br/>
 
-## Migration
+## Setup
 
 To start using ErtisAuth, you must have at least one membership and at least one user for generating tokens.
 To use basic authentication method, you must have an application.
-ErtisAuth incorporates a migration API endpoint to create basic resources such as membership and admin user and set administrator settings at the first installation.
-The migrate command creates these resources and configures relations and settings.
-The admin role will be created automatically by ErtisAuth.
-The database connection string must be sent in headers to checking the database authorization.
+The setup endpoint creates these first resources of a fresh installation: the membership, its administrator role, a user type and the administrator user, and optionally an application.
+The setup can be done only once: when a membership exists, the endpoint answers `409 AlreadySetUp`.
+
+Nothing exists yet to authenticate against, so the setup is authorized by a setup token that you insert into the database yourself (database access proves the authority).
+The token must be at least 32 characters long; when the setup completes, the `setup` collection is deleted.
+
+1. Generate a token and insert it into the `setup` collection of the ErtisAuth database:
+
+```bash
+openssl rand -hex 32
+```
+
+```javascript
+db.setup.insertOne({ token: "{{setup_token}}" })
+```
+
+2. Call the setup endpoint with the token in the `X-Setup-Token` header:
 
 <br/>
 
 Request Model
 
 ```yaml
-curl --location --request POST '{{base_url}}/api/v1/migrate' \
---header 'ConnectionString: {{db_connection_string}}' \
+curl --location --request POST '{{base_url}}/api/v1/setup' \
+--header 'X-Setup-Token: {{setup_token}}' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "membership": {
@@ -142,7 +155,7 @@ Status Code : `50X` (Sample unhealhty case)
 ```json
 {
     "status": "Unhealthy",
-    "message": "Database have not migrated yet"
+    "message": "ErtisAuth has not been set up yet"
 }
 ```
 

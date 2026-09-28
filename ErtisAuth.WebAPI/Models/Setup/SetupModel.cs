@@ -4,9 +4,9 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.WebAPI.Models.Applications;
 using Newtonsoft.Json;
 
-namespace ErtisAuth.WebAPI.Models.Migration;
+namespace ErtisAuth.WebAPI.Models.Setup;
 
-public class MigrationModel
+public class SetupModel
 {
 	#region Properties
 	

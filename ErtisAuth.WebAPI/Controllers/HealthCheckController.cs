@@ -10,7 +10,8 @@ public class HealthCheckController : ControllerBase
 	#region Services
 	
 	private readonly IMongoDatabase _database;
-	private readonly IMembershipService _membershipService;
+	private readonly ISetupService _setupService;
+	private readonly ILogger<HealthCheckController> _logger;
 	
 	#endregion
 	
@@ -20,11 +21,13 @@ public class HealthCheckController : ControllerBase
 	/// Constructor
 	/// </summary>
 	/// <param name="database"></param>
-	/// <param name="membershipService"></param>
-	public HealthCheckController(IMongoDatabase database, IMembershipService membershipService)
+	/// <param name="setupService"></param>
+	/// <param name="logger"></param>
+	public HealthCheckController(IMongoDatabase database, ISetupService setupService, ILogger<HealthCheckController> logger)
 	{
 		this._database = database;
-		this._membershipService = membershipService;
+		this._setupService = setupService;
+		this._logger = logger;
 	}
 	
 	#endregion
@@ -39,13 +42,7 @@ public class HealthCheckController : ControllerBase
 			var dbStatisticsTask = this._database.GetDatabaseStatisticsAsync();
 			var listCollectionsTask = this._database.ListCollectionsAsync();
 			
-			var tasks = new Task[]
-			{
-				dbStatisticsTask,
-				listCollectionsTask
-			};
-			
-			Task.WaitAll(tasks);
+			await Task.WhenAll(dbStatisticsTask, listCollectionsTask);
 			
 			var dbStatistics = await dbStatisticsTask;
 			if (dbStatistics == null)
@@ -57,18 +54,16 @@ public class HealthCheckController : ControllerBase
 				});
 			}
 			
-			var memberships = await this._membershipService.GetAsync();
-			
 			var collectionList = (await listCollectionsTask).ToList();
 			if (!collectionList.Contains("memberships") ||
 				!collectionList.Contains("roles") ||
 				!collectionList.Contains("users") ||
-				!memberships.Items.Any())
+				!await this._setupService.IsSetUpAsync())
 			{
 				return this.Ok(new
 				{
 					Status = "Unhealthy",
-					Message = "Database have not migrated yet"
+					Message = "ErtisAuth has not been set up yet"
 				});
 			}
 			
@@ -79,7 +74,13 @@ public class HealthCheckController : ControllerBase
 		}
 		catch (Exception ex)
 		{
-			return this.StatusCode(500, ex);
+			// The endpoint is anonymous: the exception (stack trace, connection details) stays in the log
+			this._logger.LogError(ex, "Health check failed");
+			return this.StatusCode(500, new
+			{
+				Status = "Unhealthy",
+				Message = "Health check failed"
+			});
 		}
 	}
 	

@@ -586,11 +586,21 @@ public class ErtisAuthException : ErtisException
 	
 	#endregion
 	
-	#region Migration Exceptions
+	#region Setup Exceptions
 	
-	public static ErtisAuthException MigrationRejected(string message)
+	public static ErtisAuthException SetupRejected(string message)
 	{
-		return new ErtisAuthException(HttpStatusCode.Unauthorized, message, "MigrationRejected");
+		return new ErtisAuthException(HttpStatusCode.Unauthorized, message, "SetupRejected");
+	}
+	
+	public static ErtisAuthException AlreadySetUp()
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, "ErtisAuth has already been set up", "AlreadySetUp");
+	}
+	
+	public static ErtisAuthException SetupInProgress()
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, "Another setup request is in progress", "SetupInProgress");
 	}
 	
 	#endregion
