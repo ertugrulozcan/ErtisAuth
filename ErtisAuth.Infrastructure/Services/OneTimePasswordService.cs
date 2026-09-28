@@ -16,6 +16,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	
 	private readonly IUserService _userService;
 	private readonly IPasswordResetService _passwordResetService;
+	private readonly IOneTimePasswordRepository _oneTimePasswordRepository;
 	private readonly ILogger<OneTimePasswordService> _logger;
 	
 	#endregion
@@ -39,6 +40,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	{
 		this._userService = userService;
 		this._passwordResetService = passwordResetService;
+		this._oneTimePasswordRepository = repository;
 		this._logger = logger;
 	}
 	
@@ -220,11 +222,28 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			return null;
 		}
 		
-		if (!IsMatch(membership, otp, password))
+		// The attempt is reserved before the code is compared, so parallel requests can't evaluate more guesses than allowed
+		var maxAttempts = membership.OtpSettings?.Policy?.MaxAttempts ?? OtpPasswordPolicy.DefaultMaxAttempts;
+		var reserved = await this._oneTimePasswordRepository.TryReserveAttemptAsync(otp.Id, maxAttempts, cancellationToken: cancellationToken);
+		if (reserved == null)
 		{
-			await this.RegisterFailedAttemptAsync(membership, otp, cancellationToken: cancellationToken);
+			// The attempts are used up (or the one-time password is gone)
+			await this._repository.DeleteAsync(otp.Id, cancellationToken: cancellationToken);
 			return null;
 		}
+		
+		if (!IsMatch(membership, otp, password))
+		{
+			if (reserved.FailedAttempts >= maxAttempts)
+			{
+				await this._repository.DeleteAsync(otp.Id, cancellationToken: cancellationToken);
+			}
+			
+			return null;
+		}
+		
+		// Not a failed attempt: give the reservation back
+		await this._oneTimePasswordRepository.ReleaseAttemptAsync(otp.Id, cancellationToken: cancellationToken);
 		
 		if (otp.Token.IsExpired)
 		{
@@ -233,23 +252,6 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		
 		// The one-time password stays until set-password consumes its reset token (RevokeResetPasswordTokenAsync)
 		return otp;
-	}
-	
-	/// <summary>
-	/// Read-modify-write: parallel requests may exceed the limit by a few attempts, which doesn't change the odds meaningfully.
-	/// </summary>
-	private async Task RegisterFailedAttemptAsync(Membership membership, OneTimePassword otp, CancellationToken cancellationToken = default)
-	{
-		otp.FailedAttempts++;
-		var maxAttempts = membership.OtpSettings?.Policy?.MaxAttempts ?? OtpPasswordPolicy.DefaultMaxAttempts;
-		if (otp.FailedAttempts >= maxAttempts)
-		{
-			await this._repository.DeleteAsync(otp.Id, cancellationToken: cancellationToken);
-		}
-		else
-		{
-			await this._repository.UpdateAsync(otp, cancellationToken: cancellationToken);
-		}
 	}
 	
 	public async Task RevokeResetPasswordTokenAsync(Utilizer utilizer, string membershipId, string resetToken, CancellationToken cancellationToken = default)

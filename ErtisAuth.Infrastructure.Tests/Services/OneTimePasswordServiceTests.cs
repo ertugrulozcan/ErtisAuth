@@ -53,6 +53,33 @@ public class OneTimePasswordServiceTests
 	{
 		this._otps = InMemoryRepository.Setup(this._repository, x => x.Id ??= ObjectId.GenerateNewId().ToString());
 		
+		// Like the repository's atomic FindOneAndUpdate: increments only below the limit, returns the updated document
+		this._repository
+			.TryReserveAttemptAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo =>
+			{
+				var otp = this._otps.FirstOrDefault(x => x.Id == callInfo.ArgAt<string>(0) && x.FailedAttempts < callInfo.ArgAt<int>(1));
+				if (otp != null)
+				{
+					otp.FailedAttempts++;
+				}
+				
+				return otp;
+			});
+		
+		this._repository
+			.ReleaseAttemptAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo =>
+			{
+				var otp = this._otps.FirstOrDefault(x => x.Id == callInfo.ArgAt<string>(0) && x.FailedAttempts > 0);
+				if (otp != null)
+				{
+					otp.FailedAttempts--;
+				}
+				
+				return Task.CompletedTask;
+			});
+		
 		this._membership = TestServiceFactory.CreateMembership();
 		this._membership.Id = MembershipId;
 		this._membership.OtpSettings = new OtpSettings
@@ -231,6 +258,31 @@ public class OneTimePasswordServiceTests
 		Assert.Null(await this.VerifyAsync(service, WrongCode(otp.Password!)));
 		
 		Assert.Equal(1, Assert.Single(this._otps).FailedAttempts);
+	}
+	
+	[Fact]
+	public async Task VerifyOtpAsync_WithCorrectCode_DoesNotCountAsAFailedAttempt()
+	{
+		var service = this.CreateService();
+		var otp = await this.GenerateAsync(service);
+		await this.VerifyAsync(service, WrongCode(otp.Password!));
+		
+		Assert.NotNull(await this.VerifyAsync(service, otp.Password!));
+		
+		Assert.Equal(1, Assert.Single(this._otps).FailedAttempts);
+	}
+	
+	[Fact]
+	public async Task VerifyOtpAsync_WhenTheAttemptsAreUsedUp_RejectsEvenTheCorrectCode()
+	{
+		// Attempts are reserved before the code is compared: parallel requests that already reserved all attempts
+		// leave none for further guesses, so no more than max_attempts guesses are ever evaluated
+		var service = this.CreateService();
+		var otp = await this.GenerateAsync(service);
+		Assert.Single(this._otps).FailedAttempts = MaxAttempts;
+		
+		Assert.Null(await this.VerifyAsync(service, otp.Password!));
+		Assert.Empty(this._otps);
 	}
 	
 	[Fact]
