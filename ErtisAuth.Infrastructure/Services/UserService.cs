@@ -578,7 +578,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 			throw ErtisAuthException.UserNotFound(userId, "_id");
 		}
 		
-		var prior = user.Clone();
+		var prior = (DynamicObject) user.Clone();
 		user.RemoveProperty("_id");
 		user.RemoveProperty("password");
 		user.RemoveProperty("password_hash");
@@ -589,6 +589,10 @@ public class UserService : DynamicObjectCrudService, IUserService
 		user.SetValue("password_hash", passwordHash, true);
 		
 		var updatedUser = await base.UpdateAsync(userId, user, cancellationToken: cancellationToken);
+		
+		// Events are readable (events.read) and forwarded to webhooks and mail hooks: no password hashes
+		prior.HidePasswordHash();
+		updatedUser.HidePasswordHash();
 		await this._eventService.FireEventAsync(ErtisAuthEventType.UserPasswordChanged, userId, membershipId, updatedUser, prior, cancellationToken: cancellationToken);
 		
 		return updatedUser!;

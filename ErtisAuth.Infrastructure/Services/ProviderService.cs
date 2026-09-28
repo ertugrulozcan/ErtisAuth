@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Ertis.MongoDB.Queries;
 using Ertis.Schema.Dynamics;
 using Ertis.Schema.Types;
@@ -91,17 +93,32 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	private void ProviderCreatedEventHandler(object? sender, CreateResourceEventArgs<Provider> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
+		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderCreated, eventArgs.Utilizer, eventArgs.MembershipId, ToEventDocument(eventArgs.Resource));
 	}
 	
 	private void ProviderUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Provider> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
+		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderUpdated, eventArgs.Utilizer, eventArgs.MembershipId, ToEventDocument(eventArgs.Updated), ToEventDocument(eventArgs.Prior));
 	}
 	
 	private void ProviderDeletedEventHandler(object? sender, DeleteResourceEventArgs<Provider> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
+		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, ToEventDocument(eventArgs.Resource));
+	}
+	
+	/// <summary>
+	/// Events are readable (events.read) and forwarded to webhooks: the provider without its private key (Apple).
+	/// </summary>
+	private static JsonObject? ToEventDocument(Provider? provider)
+	{
+		if (provider == null)
+		{
+			return null;
+		}
+		
+		var document = JsonSerializer.SerializeToNode(provider)?.AsObject();
+		document?.Remove("privateKey");
+		return document;
 	}
 	
 	#endregion

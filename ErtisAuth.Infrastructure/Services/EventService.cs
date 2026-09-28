@@ -1,14 +1,19 @@
-using Ertis.Core.Collections;
-using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
 public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventService
 {
+	#region Services
+	
+	private readonly ILogger<EventService> _logger;
+	
+	#endregion
+	
 	#region Constructors
 	
 	/// <summary>
@@ -16,9 +21,10 @@ public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventServ
 	/// </summary>
 	/// <param name="membershipService"></param>
 	/// <param name="repository"></param>
-	public EventService(IMembershipService membershipService, IEventRepository repository) : base(membershipService, repository)
+	/// <param name="logger"></param>
+	public EventService(IMembershipService membershipService, IEventRepository repository, ILogger<EventService> logger) : base(membershipService, repository)
 	{
-		
+		this._logger = logger;
 	}
 	
 	#endregion
@@ -30,6 +36,25 @@ public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventServ
 	#endregion
 	
 	#region Fire Methods
+	
+	/// <summary>
+	/// Each subscriber is isolated: a failing one doesn't fail the caller (the event is already stored) or skip the others.
+	/// </summary>
+	private void NotifySubscribers(ErtisAuthEvent ertisAuthEvent)
+	{
+		var subscribers = this.OnEventFired?.GetInvocationList() ?? [];
+		foreach (var subscriber in subscribers.Cast<EventHandler<ErtisAuthEvent>>())
+		{
+			try
+			{
+				subscriber(this, ertisAuthEvent);
+			}
+			catch (Exception ex)
+			{
+				this._logger.LogError(ex, "EventService: an OnEventFired subscriber failed for the {EventType} event", ertisAuthEvent.EventType);
+			}
+		}
+	}
 	
 	public async Task<ErtisAuthEvent> FireEventAsync(
 		ErtisAuthEventType type, 
@@ -50,7 +75,7 @@ public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventServ
 		};
 		
 		var insertedEvent = await this._repository.InsertAsync(ertisAuthEvent, cancellationToken: cancellationToken);
-		this.OnEventFired?.Invoke(this, insertedEvent);
+		this.NotifySubscribers(insertedEvent);
 		return insertedEvent;
 	}
 	
@@ -73,42 +98,8 @@ public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventServ
 		};
 		
 		var insertedEvent = await this._repository.InsertAsync(ertisAuthEvent, cancellationToken: cancellationToken);
-		this.OnEventFired?.Invoke(this, insertedEvent);
+		this.NotifySubscribers(insertedEvent);
 		return insertedEvent;
-	}
-	
-	#endregion
-	
-	#region Get Methods
-	
-	public override async Task<ErtisAuthEvent?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
-	{
-		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		
-		return await this._repository.FindOneAsync(x => x.Id == id && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-	}
-	
-	public override async Task<IPaginationCollection<ErtisAuthEvent>> GetAsync(
-		string membershipId, 
-		int? skip = null, 
-		int? limit = null, 
-		bool withCount = false, 
-		string? orderBy = null, 
-		SortDirection? sortDirection = null, 
-		CancellationToken cancellationToken = default)
-	{
-		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			throw ErtisAuthException.MembershipNotFound(membershipId);
-		}
-		
-		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
-		return await this._repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
 	
 	#endregion

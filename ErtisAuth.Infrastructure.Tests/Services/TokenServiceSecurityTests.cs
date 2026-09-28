@@ -2,6 +2,7 @@ using System.Text.Json;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Constants;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
@@ -39,6 +40,8 @@ public class TokenServiceSecurityTests
 	
 	private readonly IRoleService _roleService = Substitute.For<IRoleService>();
 	
+	private readonly IEventService _eventService = Substitute.For<IEventService>();
+	
 	private readonly JwtService _jwtService = new();
 	
 	#endregion
@@ -53,7 +56,7 @@ public class TokenServiceSecurityTests
 			Substitute.For<IApplicationService>(),
 			this._roleService,
 			this._jwtService,
-			Substitute.For<IEventService>(),
+			this._eventService,
 			this._activeTokenService,
 			this._revokedTokenService,
 			TestServiceFactory.CreateLegacyApplicationSecretVerifier(),
@@ -115,6 +118,52 @@ public class TokenServiceSecurityTests
 		}
 		
 		return this._jwtService.GenerateToken(claims, expiresIn: TimeSpan.FromHours(1));
+	}
+	
+	#endregion
+	
+	#region Events
+	
+	private Func<object?> CaptureEventDocument(ErtisAuthEventType eventType)
+	{
+		object? document = null;
+		this._eventService
+			.When(x => x.FireEventAsync(eventType, Arg.Any<Utilizer>(), Arg.Any<string?>(), Arg.Any<object?>(), Arg.Any<object?>(), Arg.Any<CancellationToken>()))
+			.Do(x => document = x.ArgAt<object?>(3));
+		
+		return () => document;
+	}
+	
+	[Fact]
+	public async Task GenerateTokenAsync_EventDoesNotContainTheTokens()
+	{
+		// Events are readable (events.read) and forwarded to webhooks: live tokens would allow impersonating any user
+		var (membership, _) = this.Setup();
+		var document = this.CaptureEventDocument(ErtisAuthEventType.TokenGenerated);
+		var tokenService = this.CreateTokenService();
+		
+		var token = await tokenService.GenerateTokenAsync("john.doe", "P@ssw0rd!", membership.Id, fireEvent: true, cancellationToken: TestContext.Current.CancellationToken);
+		
+		var json = JsonSerializer.Serialize(document());
+		Assert.DoesNotContain(token.AccessToken, json);
+		Assert.DoesNotContain(token.RefreshToken!, json);
+		Assert.Contains("\"expires_in\"", json);
+		Assert.Contains("john.doe", json);
+	}
+	
+	[Fact]
+	public async Task VerifyBearerTokenAsync_EventDoesNotContainTheToken()
+	{
+		var (membership, _) = this.Setup();
+		var tokenService = this.CreateTokenService();
+		var token = await this.GenerateTokenAsync(tokenService, membership);
+		var document = this.CaptureEventDocument(ErtisAuthEventType.TokenVerified);
+		
+		await tokenService.VerifyBearerTokenAsync(token.AccessToken, fireEvent: true, cancellationToken: TestContext.Current.CancellationToken);
+		
+		var json = JsonSerializer.Serialize(document());
+		Assert.DoesNotContain(token.AccessToken, json);
+		Assert.Contains("\"token_type\":\"bearer\"", json);
 	}
 	
 	#endregion

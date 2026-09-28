@@ -1,6 +1,9 @@
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
+using System.Text.Json;
 using ErtisAuth.Core.Models.Applications;
+using ErtisAuth.Core.Models.Events;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.Infrastructure.Services;
@@ -26,6 +29,8 @@ public class TokenServiceBasicTokenTests
 	private readonly IMembershipService _membershipService = Substitute.For<IMembershipService>();
 	
 	private readonly IApplicationService _applicationService = Substitute.For<IApplicationService>();
+	
+	private readonly IEventService _eventService = Substitute.For<IEventService>();
 	
 	private readonly Membership _membership;
 	
@@ -66,7 +71,7 @@ public class TokenServiceBasicTokenTests
 			this._applicationService,
 			Substitute.For<IRoleService>(),
 			new JwtService(),
-			Substitute.For<IEventService>(),
+			this._eventService,
 			Substitute.For<IActiveTokenService>(),
 			Substitute.For<IRevokedTokenService>(),
 			TestServiceFactory.CreateLegacyApplicationSecretVerifier(),
@@ -79,6 +84,28 @@ public class TokenServiceBasicTokenTests
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.VerifyBasicTokenAsync(basicToken, false, cancellationToken: TestContext.Current.CancellationToken));
 		Assert.Equal("InvalidToken", exception.ErrorCode);
 		return exception;
+	}
+	
+	#endregion
+	
+	#region Event
+	
+	[Fact]
+	public async Task VerifyBasicTokenAsync_EventDoesNotContainTheSecret()
+	{
+		// The basic token carries the application secret (legacy: the membership secret key, i.e. the JWT signing key)
+		object? document = null;
+		this._eventService
+			.When(x => x.FireEventAsync(ErtisAuthEventType.TokenVerified, Arg.Any<Utilizer>(), Arg.Any<string?>(), Arg.Any<object?>(), Arg.Any<object?>(), Arg.Any<CancellationToken>()))
+			.Do(x => document = x.ArgAt<object?>(3));
+		var tokenService = this.CreateTokenService();
+		
+		await tokenService.VerifyBasicTokenAsync($"{ApplicationId}:{this._secret}", true, cancellationToken: TestContext.Current.CancellationToken);
+		
+		var json = JsonSerializer.Serialize(document);
+		Assert.DoesNotContain(this._secret, json);
+		Assert.Contains(ApplicationId, json);
+		Assert.Contains("\"token_type\":\"basic\"", json);
 	}
 	
 	#endregion

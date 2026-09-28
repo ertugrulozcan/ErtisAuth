@@ -314,7 +314,16 @@ public class TokenService : ITokenService
 		
 		if (fireEvent)
 		{
-			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenGenerated, user, membership.Id, new { user, token = bearerToken }, cancellationToken: cancellationToken);
+			// Events are readable (events.read) and forwarded to webhooks: only token metadata, never the token itself
+			var tokenInfo = new
+			{
+				token_type = "bearer",
+				expires_in = bearerToken.ExpiresInTimeStamp,
+				refresh_token_expires_in = bearerToken.RefreshTokenExpiresInTimeStamp,
+				created_at = bearerToken.CreatedAt
+			};
+			
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenGenerated, user, membership.Id, new { user, token = tokenInfo }, cancellationToken: cancellationToken);
 		}
 		
 		return bearerToken;
@@ -416,7 +425,9 @@ public class TokenService : ITokenService
 		
 		if (fireEvent)
 		{
-			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenVerified, user, user.MembershipId, new { token }, cancellationToken: cancellationToken);	
+			// Only token metadata, never the token itself
+			var tokenInfo = new { token_type = "bearer", is_refresh_token = this.IsRefreshToken(securityToken), expires_at = expireTime };
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenVerified, user, user.MembershipId, new { token = tokenInfo }, cancellationToken: cancellationToken);
 		}
 		
 		return new BearerTokenValidationResult(true, token, user, expireTime - DateTime.UtcNow, this.IsRefreshToken(securityToken))
@@ -495,7 +506,9 @@ public class TokenService : ITokenService
 		
 		if (fireEvent)
 		{
-			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenVerified, application, membership.Id, new { basicToken }, cancellationToken: cancellationToken);	
+			// Never the basic token: it carries the application secret (or, for legacy applications, the membership secret key)
+			var tokenInfo = new { token_type = "basic", application_id = application.Id };
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenVerified, application, membership.Id, new { token = tokenInfo }, cancellationToken: cancellationToken);
 		}
 		
 		return new BasicTokenValidationResult(true, basicToken, application);

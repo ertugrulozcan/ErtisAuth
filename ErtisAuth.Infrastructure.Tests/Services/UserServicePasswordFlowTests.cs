@@ -2,7 +2,9 @@ using System.Dynamic;
 using Ertis.Core.Collections;
 using Ertis.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
+using DynamicObject = Ertis.Schema.Dynamics.DynamicObject;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
@@ -34,6 +36,8 @@ public class UserServicePasswordFlowTests
 	
 	private readonly IUserRepository _repository = Substitute.For<IUserRepository>();
 	
+	private readonly IEventService _eventService = Substitute.For<IEventService>();
+	
 	private BsonDocument? _updatedDocument;
 	
 	#endregion
@@ -42,7 +46,7 @@ public class UserServicePasswordFlowTests
 	
 	private UserService CreateUserService()
 	{
-		return TestServiceFactory.CreateUserService(this._membershipService, this._repository);
+		return TestServiceFactory.CreateUserService(this._membershipService, this._repository, this._eventService);
 	}
 	
 	private Membership SetupMembership(string hashAlgorithm)
@@ -115,6 +119,29 @@ public class UserServicePasswordFlowTests
 	#endregion
 	
 	#region ChangePasswordAsync
+	
+	[Fact]
+	public async Task ChangePasswordAsync_EventDoesNotContainPasswordHashes()
+	{
+		// Events are readable (events.read) and forwarded to webhooks and mail hooks; legacy hashes are unsalted
+		var membership = this.SetupMembership("SHA2-256");
+		this.SetupStoredUser(membership, "old-hash");
+		object? document = null;
+		object? prior = null;
+		this._eventService
+			.When(x => x.FireEventAsync(ErtisAuthEventType.UserPasswordChanged, Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<object?>(), Arg.Any<object?>(), Arg.Any<CancellationToken>()))
+			.Do(x =>
+			{
+				document = x.ArgAt<object?>(3);
+				prior = x.ArgAt<object?>(4);
+			});
+		
+		await this.CreateUserService().ChangePasswordAsync(CreateUtilizer(membership), membership.Id, UserId, Password, TestContext.Current.CancellationToken);
+		
+		Assert.False(Assert.IsType<DynamicObject>(document).ContainsProperty("password_hash"));
+		Assert.False(Assert.IsType<DynamicObject>(prior).ContainsProperty("password_hash"));
+		Assert.Equal("john.doe", Assert.IsType<DynamicObject>(document).GetValue<string>("username"));
+	}
 	
 	[Theory]
 	[InlineData("SHA2-256")]

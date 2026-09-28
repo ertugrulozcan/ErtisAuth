@@ -2,6 +2,7 @@ using Ertis.Core.Collections;
 using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Providers;
@@ -43,6 +44,8 @@ public class ProviderServiceLoginTests
 	private readonly IProviderRepository _repository = Substitute.For<IProviderRepository>();
 	
 	private readonly IProviderAuthenticator _authenticator = Substitute.For<IProviderAuthenticator>();
+	
+	private readonly IEventService _eventService = Substitute.For<IEventService>();
 	
 	private readonly List<Provider> _providers;
 	
@@ -101,7 +104,7 @@ public class ProviderServiceLoginTests
 			this._userService,
 			Substitute.For<IUserTypeService>(),
 			this._tokenService,
-			Substitute.For<IEventService>(),
+			this._eventService,
 			authenticatorFactory,
 			new MemoryCache(new MemoryCacheOptions()),
 			this._repository,
@@ -321,6 +324,41 @@ public class ProviderServiceLoginTests
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.LoginAsync(this.CreateService(), CreateRequest()));
 		
 		Assert.Equal("ProviderNotConfigured", exception.ErrorCode);
+	}
+	
+	#endregion
+	
+	#region Events
+	
+	[Fact]
+	public async Task UpdateAsync_EventDoesNotContainThePrivateKey()
+	{
+		// Events are readable (events.read) and forwarded to webhooks: not the Apple signing key
+		this.AddProvider();
+		this._providers.Single().PrivateKey = "-----BEGIN PRIVATE KEY-----current";
+		object? document = null;
+		object? prior = null;
+		this._eventService
+			.When(x => x.FireEventAsync(ErtisAuthEventType.ProviderUpdated, Arg.Any<Utilizer>(), Arg.Any<string?>(), Arg.Any<object?>(), Arg.Any<object?>(), Arg.Any<CancellationToken>()))
+			.Do(x =>
+			{
+				document = x.ArgAt<object?>(3);
+				prior = x.ArgAt<object?>(4);
+			});
+		
+		var update = new Provider(KnownProviders.Facebook)
+		{
+			Id = "5f8a1b2c3d4e5f6a7b8c9d10",
+			MembershipId = MembershipId,
+			AppClientId = "new-app-id",
+			PrivateKey = "-----BEGIN PRIVATE KEY-----updated"
+		};
+		
+		await this.CreateService().UpdateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, update, TestContext.Current.CancellationToken);
+		
+		var json = System.Text.Json.JsonSerializer.Serialize(new { document, prior });
+		Assert.DoesNotContain("BEGIN PRIVATE KEY", json);
+		Assert.Contains("new-app-id", json);
 	}
 	
 	#endregion
