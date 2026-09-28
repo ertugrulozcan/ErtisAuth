@@ -111,6 +111,11 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 			{
 				errorList.Add(ErtisAuthException.OtpHostRequired().Message);
 			}
+			
+			if (model.OtpSettings.Policy is { MaxAttempts: < 1 })
+			{
+				errorList.Add("otp_settings.policy.max_attempts must be greater than zero");
+			}
 		}
 		
 		errors = errorList;

@@ -7,6 +7,12 @@ namespace ErtisAuth.Core.Models.Identity;
 
 public class OtpPasswordPolicy
 {
+	#region Constants
+	
+	public const int DefaultMaxAttempts = 5;
+	
+	#endregion
+	
     #region Properties
     
     [JsonProperty("length")]
@@ -32,6 +38,15 @@ public class OtpPasswordPolicy
     [BsonElement("expires_in")]
     [BsonIgnoreIfNull]
     public int? ExpiresIn { get; set; }
-    
+	
+	/// <summary>
+	/// Failed verifications allowed per one-time password; reaching it deletes the one-time password.
+	/// Memberships stored before this setting existed read the default.
+	/// </summary>
+	[JsonProperty("max_attempts")]
+	[JsonPropertyName("max_attempts")]
+	[BsonElement("max_attempts")]
+	public int MaxAttempts { get; set; } = DefaultMaxAttempts;
+	
     #endregion
 }

@@ -1,5 +1,6 @@
 using Ertis.Core.Exceptions;
 using Ertis.Data.Models;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Services;
@@ -139,6 +140,33 @@ public class MembershipServiceValidationTests
 		var membership = TestServiceFactory.CreateMembership("ARGON2ID", "unknown-encoding");
 		
 		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, TestContext.Current.CancellationToken), "Unsupported encoding (unknown-encoding)");
+	}
+	
+	[Theory]
+	[InlineData(0)]
+	[InlineData(-1)]
+	public async Task CreateAsync_WithOtpMaxAttemptsBelowOne_ThrowsValidationError(int maxAttempts)
+	{
+		var membershipService = this.CreateMembershipService();
+		var membership = TestServiceFactory.CreateMembership("ARGON2ID");
+		membership.OtpSettings = new OtpSettings
+		{
+			Host = "https://app.example.com",
+			Policy = new OtpPasswordPolicy { Length = 6, ContainsDigits = true, MaxAttempts = maxAttempts }
+		};
+		
+		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, TestContext.Current.CancellationToken), "otp_settings.policy.max_attempts must be greater than zero");
+	}
+	
+	[Fact]
+	public void OtpPasswordPolicy_StoredWithoutMaxAttempts_ReadsTheDefault()
+	{
+		// Memberships stored before max_attempts existed
+		var fromBson = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<OtpPasswordPolicy>("{ length: 6, contains_letters: false, contains_digits: true, expires_in: 300 }");
+		var fromJson = System.Text.Json.JsonSerializer.Deserialize<OtpPasswordPolicy>("""{"length":6,"contains_digits":true}""");
+		
+		Assert.Equal(OtpPasswordPolicy.DefaultMaxAttempts, fromBson.MaxAttempts);
+		Assert.Equal(OtpPasswordPolicy.DefaultMaxAttempts, fromJson!.MaxAttempts);
 	}
 	
 	#endregion

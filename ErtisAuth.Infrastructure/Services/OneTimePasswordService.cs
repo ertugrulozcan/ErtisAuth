@@ -1,6 +1,5 @@
+using System.Security.Cryptography;
 using System.Text;
-using Ertis.MongoDB.Queries;
-using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
@@ -93,9 +92,9 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			errorList.Add($"The {nameof(model.MembershipId)} is required.");
 		}
 		
-		if (string.IsNullOrEmpty(model.Password))
+		if (string.IsNullOrEmpty(model.PasswordHash))
 		{
-			errorList.Add($"The {nameof(model.Password)} is required.");
+			errorList.Add($"The {nameof(model.PasswordHash)} is required.");
 		}
 		
 		if (model.Token == null)
@@ -156,69 +155,79 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			throw ErtisAuthException.UserNotFound(userId, "userId");
 		}
 		
-		var results = await this.QueryAsync(membershipId, QueryBuilder.Equals("user_id", userId).ToString(), 0, 1, cancellationToken: cancellationToken);
-		var currentDynamic = results.Items.FirstOrDefault();
-		if (currentDynamic != null)
+		// Only the hash of a code is stored, so an active code can't be returned again: a new one replaces it
+		var previousOtps = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.UserId == user.Id, sorting: null, cancellationToken: cancellationToken);
+		foreach (var previousOtp in previousOtps.Items)
 		{
-			var otpDynamicObject = new DynamicObject(currentDynamic);
-			var currentOtp = otpDynamicObject.Deserialize<OneTimePassword>();
-			if (currentOtp?.Token is { IsExpired: false })
-			{
-				return currentOtp;
-			}
+			await this._repository.DeleteAsync(previousOtp.Id, cancellationToken: cancellationToken);
 		}
 		
+		var code = GenerateCode(membership.OtpSettings.Policy);
 		var resetPasswordToken = await this._passwordResetService.GenerateResetPasswordTokenAsync(user, membership, true, ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword, cancellationToken: cancellationToken);
 		var model = new OneTimePassword
 		{
 			UserId = user.Id,
 			EmailAddress = user.EmailAddress,
 			Username = user.Username,
-			Password = GenerateCode(membership.OtpSettings.Policy),
+			PasswordHash = HashCode(membership, user.Id, code),
 			Token = resetPasswordToken,
 			MembershipId = membershipId
 		};
 		
-		return await this.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		var created = await this.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		created.Password = code;
+		return created;
 	}
 	
 	private static string GenerateCode(OtpPasswordPolicy policy)
 	{
-		var chars = AllChars.ToArray();
+		var chars = AllChars;
 		var onlyDigits = false;
 		if (policy is { ContainsDigits: true, ContainsLetters: false })
 		{
-			chars = Digits.ToArray();
+			chars = Digits;
 			onlyDigits = true;
 		}
 		else if (policy is { ContainsLetters: true, ContainsDigits: false })
 		{
-			chars = Letters.ToArray();
+			chars = Letters;
 		}
 		
 		var stringBuilder = new StringBuilder();
-		var random = new Random(DateTime.Now.Microsecond);
-		var beforeIndex = -1;
 		for (var i = 0; i < policy.Length; i++)
 		{
-			var index = random.Next(0, chars.Length);
-			if (index == beforeIndex)
-			{
-				index += random.Next(0, chars.Length);
-				index %= chars.Length;
-			}
-			
-			var character = chars[index];
-			if (onlyDigits && i == 0 && character == '0')
-			{
-				character = Digits[random.Next(1, 9)];
-			}
+			// A digits-only code doesn't start with 0, so it survives being handled as a number
+			var character = onlyDigits && i == 0
+				? Digits[RandomNumberGenerator.GetInt32(1, Digits.Length)]
+				: chars[RandomNumberGenerator.GetInt32(chars.Length)];
 			
 			stringBuilder.Append(character);
-			beforeIndex = index;
 		}
 		
-		return stringBuilder.ToString().ToUpper();
+		return stringBuilder.ToString();
+	}
+	
+	/// <summary>
+	/// HMAC-SHA256 keyed with the membership secret: a leaked database alone doesn't allow brute-forcing the short codes offline.
+	/// Codes are compared case-insensitively.
+	/// </summary>
+	private static string HashCode(Membership membership, string userId, string code)
+	{
+		var key = Encoding.UTF8.GetBytes(membership.SecretKey);
+		var message = Encoding.UTF8.GetBytes($"otp:{userId}:{code.ToUpperInvariant()}");
+		return Convert.ToHexStringLower(HMACSHA256.HashData(key, message));
+	}
+	
+	private static bool IsMatch(Membership membership, OneTimePassword otp, string code)
+	{
+		if (string.IsNullOrEmpty(otp.UserId) || string.IsNullOrEmpty(otp.PasswordHash))
+		{
+			return false;
+		}
+		
+		var expected = Encoding.ASCII.GetBytes(otp.PasswordHash);
+		var actual = Encoding.ASCII.GetBytes(HashCode(membership, otp.UserId, code));
+		return CryptographicOperations.FixedTimeEquals(expected, actual);
 	}
 	
 	public async Task<OneTimePassword?> VerifyOtpAsync(
@@ -239,32 +248,42 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			throw ErtisAuthException.OtpHostMismatch();
 		}
 		
-		var query = QueryBuilder.And(
-			QueryBuilder.Equals("password", password),
-			QueryBuilder.Or(
-				QueryBuilder.Equals("username", username),
-				QueryBuilder.Equals("email_address", username)
-			)
-		);
-		
-		var result = await this.QueryAsync(membershipId, query.ToString(), 0, 1, cancellationToken: cancellationToken);
-		var currentDynamic = result.Items.FirstOrDefault();
-		if (currentDynamic != null)
+		var otp = await this._repository.FindOneAsync(x => x.MembershipId == membershipId && (x.Username == username || x.EmailAddress == username), cancellationToken: cancellationToken);
+		if (otp?.Token == null)
 		{
-			var otpDynamicObject = new DynamicObject(currentDynamic);
-			var otp = otpDynamicObject.Deserialize<OneTimePassword>();
-			if (otp?.Token != null)
-			{
-				if (otp.Token.IsExpired)
-				{
-					throw ErtisAuthException.OtpExpired();
-				}
-				
-				return otp;
-			}
+			return null;
 		}
 		
-		return null;
+		if (!IsMatch(membership, otp, password))
+		{
+			await this.RegisterFailedAttemptAsync(membership, otp, cancellationToken: cancellationToken);
+			return null;
+		}
+		
+		if (otp.Token.IsExpired)
+		{
+			throw ErtisAuthException.OtpExpired();
+		}
+		
+		// The one-time password stays until set-password consumes its reset token (RevokeResetPasswordTokenAsync)
+		return otp;
+	}
+	
+	/// <summary>
+	/// Read-modify-write: parallel requests may exceed the limit by a few attempts, which doesn't change the odds meaningfully.
+	/// </summary>
+	private async Task RegisterFailedAttemptAsync(Membership membership, OneTimePassword otp, CancellationToken cancellationToken = default)
+	{
+		otp.FailedAttempts++;
+		var maxAttempts = membership.OtpSettings?.Policy?.MaxAttempts ?? OtpPasswordPolicy.DefaultMaxAttempts;
+		if (otp.FailedAttempts >= maxAttempts)
+		{
+			await this._repository.DeleteAsync(otp.Id, cancellationToken: cancellationToken);
+		}
+		else
+		{
+			await this._repository.UpdateAsync(otp, cancellationToken: cancellationToken);
+		}
 	}
 	
 	public async Task RevokeResetPasswordTokenAsync(Utilizer utilizer, string membershipId, string resetToken, CancellationToken cancellationToken = default)
@@ -272,17 +291,10 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		try
 		{
 			await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-			var query = QueryBuilder.Equals("token.reset_token", resetToken);
-			var result = await this.QueryAsync(membershipId, query.ToString(), 0, 1, cancellationToken: cancellationToken);
-			var currentDynamic = result.Items.FirstOrDefault();
-			if (currentDynamic != null)
+			var otp = await this._repository.FindOneAsync(x => x.MembershipId == membershipId && x.Token != null && x.Token.Token == resetToken, cancellationToken: cancellationToken);
+			if (otp != null)
 			{
-				var otpDynamicObject = new DynamicObject(currentDynamic);
-				var otp = otpDynamicObject.Deserialize<OneTimePassword>();
-				if (otp != null)
-				{
-					await this.DeleteAsync(utilizer, membershipId, otp.Id, cancellationToken: cancellationToken);
-				}
+				await this.DeleteAsync(utilizer, membershipId, otp.Id, cancellationToken: cancellationToken);
 			}
 		}
 		catch (Exception ex)
