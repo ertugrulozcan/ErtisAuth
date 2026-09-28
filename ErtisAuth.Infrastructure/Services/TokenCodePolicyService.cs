@@ -39,11 +39,6 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
     
     #region Read Methods
     
-    public TokenCodePolicy? GetBySlug(string slug, string membershipId)
-    {
-	    return this._repository.FindOne(x => x.Slug == slug && x.MembershipId == membershipId);
-    }
-	
     public async Task<TokenCodePolicy?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
     {
 	    return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
@@ -71,6 +66,51 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
     #endregion
     
     #region Methods
+	
+	/// <summary>
+	/// The membership refers to its token code policy by slug (Membership.CodePolicy).
+	/// </summary>
+	private async Task<bool> IsUsedByMembershipAsync(TokenCodePolicy policy, string membershipId, CancellationToken cancellationToken = default)
+	{
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		return membership?.CodePolicy == policy.Slug;
+	}
+	
+	public override async Task<TokenCodePolicy> UpdateAsync(Utilizer utilizer, string membershipId, TokenCodePolicy model, CancellationToken cancellationToken = default)
+	{
+		// A renamed policy gets a new slug; the policy in use keeps its slug, so the membership's reference stays valid
+		var current = await this.GetAsync(membershipId, model.Id, cancellationToken: cancellationToken);
+		if (current != null && await this.IsUsedByMembershipAsync(current, membershipId, cancellationToken: cancellationToken))
+		{
+			model.Slug = current.Slug;
+		}
+		
+		return await base.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+	}
+	
+	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	{
+		await this.EnsureNotInUseAsync(membershipId, [id], cancellationToken: cancellationToken);
+		return await base.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken);
+	}
+	
+	public override async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
+	{
+		await this.EnsureNotInUseAsync(membershipId, ids, cancellationToken: cancellationToken);
+		return await base.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken: cancellationToken);
+	}
+	
+	private async Task EnsureNotInUseAsync(string membershipId, IEnumerable<string> ids, CancellationToken cancellationToken = default)
+	{
+		foreach (var id in ids)
+		{
+			var policy = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			if (policy != null && await this.IsUsedByMembershipAsync(policy, membershipId, cancellationToken: cancellationToken))
+			{
+				throw ErtisAuthException.TokenCodePolicyInUse(policy.Slug);
+			}
+		}
+	}
 	
 	protected override Task<IEnumerable<string>> ValidateModelAsync(TokenCodePolicy model, CancellationToken cancellationToken = default)
 	{

@@ -5,7 +5,5 @@ namespace ErtisAuth.Abstractions.Services;
 
 public interface ITokenCodePolicyService : IMembershipBoundedCrudService<TokenCodePolicy>
 {
-    TokenCodePolicy? GetBySlug(string slug, string membershipId);
-    
     Task<TokenCodePolicy?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default);
 }

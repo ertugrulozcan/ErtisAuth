@@ -161,6 +161,16 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.Unauthorized, "Token code unauthorized yet", "UnauthorizedTokenCode");
 	}
 	
+	public static ErtisAuthException TokenCodeAlreadyAuthorized()
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, "Token code was already authorized", "TokenCodeAlreadyAuthorized");
+	}
+	
+	public static ErtisAuthException TokenCodePolicyInUse(string slug)
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The token code policy '{slug}' is used by the membership, it can't be deleted", "TokenCodePolicyInUse");
+	}
+	
 	public static ErtisAuthException InvalidUtilizer(string message)
 	{
 		return new ErtisAuthException(HttpStatusCode.NotImplemented, message, "InvalidUtilizer");

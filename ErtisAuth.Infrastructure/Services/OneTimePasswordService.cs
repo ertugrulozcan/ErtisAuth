@@ -5,20 +5,13 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using ErtisAuth.Infrastructure.Helpers;
 using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
 public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePassword>, IOneTimePasswordService
 {
-	#region Constants
-	
-	private static readonly char[] Letters = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' };
-	private static readonly char[] Digits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-	private static readonly char[] AllChars = Letters.Concat(Digits).ToArray();
-	
-	#endregion
-	
 	#region Services
 	
 	private readonly IUserService _userService;
@@ -162,7 +155,8 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			await this._repository.DeleteAsync(previousOtp.Id, cancellationToken: cancellationToken);
 		}
 		
-		var code = GenerateCode(membership.OtpSettings.Policy);
+		var policy = membership.OtpSettings.Policy;
+		var code = RandomCodeGenerator.Generate(policy.Length, policy.ContainsLetters, policy.ContainsDigits);
 		var resetPasswordToken = await this._passwordResetService.GenerateResetPasswordTokenAsync(user, membership, true, ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword, cancellationToken: cancellationToken);
 		var model = new OneTimePassword
 		{
@@ -177,34 +171,6 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		var created = await this.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
 		created.Password = code;
 		return created;
-	}
-	
-	private static string GenerateCode(OtpPasswordPolicy policy)
-	{
-		var chars = AllChars;
-		var onlyDigits = false;
-		if (policy is { ContainsDigits: true, ContainsLetters: false })
-		{
-			chars = Digits;
-			onlyDigits = true;
-		}
-		else if (policy is { ContainsLetters: true, ContainsDigits: false })
-		{
-			chars = Letters;
-		}
-		
-		var stringBuilder = new StringBuilder();
-		for (var i = 0; i < policy.Length; i++)
-		{
-			// A digits-only code doesn't start with 0, so it survives being handled as a number
-			var character = onlyDigits && i == 0
-				? Digits[RandomNumberGenerator.GetInt32(1, Digits.Length)]
-				: chars[RandomNumberGenerator.GetInt32(chars.Length)];
-			
-			stringBuilder.Append(character);
-		}
-		
-		return stringBuilder.ToString();
 	}
 	
 	/// <summary>
