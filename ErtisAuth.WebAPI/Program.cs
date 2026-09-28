@@ -47,7 +47,7 @@ builder.Services.AddResponseCompression(options =>
 // OpenAPI
 builder.Services.AddOpenApi();
 
-// Controllers & Json Options
+// Controllers & JSON Options
 builder.Services.AddControllers().AddJsonSerialization();
 
 // Graceful shutdown
@@ -87,5 +87,5 @@ app.UseServices();
 
 app.Run();
 
-// Exposes the entry point to WebApplicationFactory (ErtisAuth.IntegrationTests)
+// Exposes the entry point to WebApplicationFactory (for ErtisAuth.IntegrationTests)
 public partial class Program;
