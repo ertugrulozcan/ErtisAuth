@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text;
 using System.Text.Json;
 using Ertis.Core.Collections;
 using Ertis.Schema.Dynamics;
@@ -80,6 +82,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	/// Raised synchronously by EventService, so the hook lookup must not block the request that fired the event.
 	/// async void is safe here: OnEventFiredAsync catches and logs every exception.
 	/// </summary>
+	// ReSharper disable once AsyncVoidMethod
 	private async void OnEventFired(object? _, ErtisAuthEvent ertisAuthEvent)
 	{
 		await this.OnEventFiredAsync(ertisAuthEvent);
@@ -254,8 +257,8 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 					}
 				}
 				
-				var mailBody = formatter.Format(mailhook.MailTemplate ?? string.Empty, payload);
-				var mailSubject = formatter.Format(mailhook.MailSubject ?? string.Empty, payload);
+				var mailBody = FormatHtml(formatter, mailhook.MailTemplate ?? string.Empty, payload);
+				var mailSubject = FormatSingleLine(formatter, mailhook.MailSubject ?? string.Empty, payload);
 				await this.SendMailAsync(
 					mailProvider,
 					mailhook.FromName ?? string.Empty,
@@ -278,6 +281,40 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 				this._logger.LogError(ex, "The hook mail could not be sent!");
 			}
 		}
+	}
+	
+	/// <summary>
+	/// The mail body is HTML and payload values (e.g. a user's own name) are user-controlled: each placeholder's value is
+	/// HTML-encoded, the template's own markup is kept. Placeholders are resolved by the template engine as before.
+	/// </summary>
+	private static string FormatHtml(Ertis.TemplateEngine.Formatter formatter, string template, object? payload)
+	{
+		var builder = new StringBuilder();
+		foreach (var segment in formatter.LookUp(template))
+		{
+			switch (segment)
+			{
+				case Ertis.TemplateEngine.PlaceHolder placeHolder:
+					var value = formatter.Format(placeHolder.Outer, payload);
+					
+					// An unresolved placeholder is kept as it is
+					builder.Append(value == placeHolder.Outer ? value : WebUtility.HtmlEncode(value));
+					break;
+				case Ertis.TemplateEngine.RawPart rawPart:
+					builder.Append(rawPart.RawValue);
+					break;
+			}
+		}
+		
+		return builder.ToString();
+	}
+	
+	/// <summary>
+	/// The subject is plain text; line breaks from payload values are removed (header injection).
+	/// </summary>
+	private static string FormatSingleLine(Ertis.TemplateEngine.Formatter formatter, string template, object? payload)
+	{
+		return formatter.Format(template, payload).ReplaceLineEndings(" ");
 	}
 	
 	private async Task SendMailAsync(

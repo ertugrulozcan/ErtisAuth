@@ -1,5 +1,5 @@
-using System.Net;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
 using Ertis.Net.Http;
@@ -62,6 +62,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	/// Raised synchronously by EventService, so the hook lookup must not block the request that fired the event.
 	/// async void is safe here: OnEventFiredAsync catches and logs every exception.
 	/// </summary>
+	// ReSharper disable once AsyncVoidMethod
 	private async void OnEventFired(object? _, ErtisAuthEvent ertisAuthEvent)
 	{
 		await this.OnEventFiredAsync(ertisAuthEvent);
@@ -86,7 +87,8 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			{
 				foreach (var webhook in webhooks.Items)
 				{
-					this.ExecuteWebhookAsync(
+					// Fire and forget: webhooks run in the background, ExecuteWebhookAsync catches and logs every exception
+					_ = this.ExecuteWebhookAsync(
 						webhook, 
 						ertisAuthEvent.UtilizerId, 
 						ertisAuthEvent.MembershipId, 
@@ -142,52 +144,30 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	
 	#region Methods
 	
-	private async void ExecuteWebhookAsync(Webhook webhook, string utilizerId, string membershipId, object? document, object? prior, CancellationToken cancellationToken = default)
-	{
-		try
-		{
-			if (webhook.IsActive)
-			{
-				await Task.Run(() =>
-				{
-					var tryCount = webhook.TryCount > 0 ? webhook.TryCount : 1;
-					try
-					{
-						this.ExecuteWebhookRequestAsync(webhook, utilizerId, membershipId, document, prior, tryCount, cancellationToken: cancellationToken);
-					}
-					catch (Exception ex)
-					{
-						this._logger.LogError(ex, "Webhook execution occured an exception");
-					}
-				}, cancellationToken: cancellationToken);
-			}
-		}
-		catch (Exception ex)
-		{
-			this._logger.LogError(ex, "WebhookService.ExecuteWebhookAsync occured an error");
-		}
-	}
-	
-	private async void ExecuteWebhookRequestAsync(
+	private async Task ExecuteWebhookAsync(
 		Webhook webhook, 
 		string utilizerId, 
 		string membershipId, 
 		object? document, 
 		object? prior, 
-		int tryCount, 
 		CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			if (webhook.Request == null)
+			if (!webhook.IsActive || webhook.Request == null)
 			{
 				return;
 			}
 			
-			var data = DynamicObject.Parse(JsonSerializer.Serialize(new { document, prior })).ToDynamic();
+			var tryCount = webhook.TryCount > 0 ? webhook.TryCount : 1;
+			
+			// Event data is user-controlled: every template target gets context-specific escaping
+			var dataNode = JsonSerializer.SerializeToNode(new { document, prior });
+			var data = ToTemplateData(dataNode);
+			var urlData = ToTemplateData(MapStringValues(dataNode?.DeepClone(), Uri.EscapeDataString));
 			var formatter = new Ertis.TemplateEngine.Formatter();
 			var httpMethod = new HttpMethod(webhook.Request.Method);
-			var url = formatter.Format(webhook.Request.Url, data);
+			var url = formatter.Format(webhook.Request.Url, urlData);
 			var headers = HeaderCollection.Create();
 			if (webhook.Request.Headers != null)
 			{
@@ -196,15 +176,20 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 					var headerValue = webhookRequestHeader.Value;
 					if (!string.IsNullOrEmpty(webhookRequestHeader.Key) && !string.IsNullOrEmpty(headerValue))
 					{
-						var trustedHeaderValue = Uri.EscapeDataString(WebUtility.HtmlEncode(formatter.Format(headerValue, data)));
-						headers = headers.Add(webhookRequestHeader.Key, trustedHeaderValue);
+						var formattedHeaderValue = formatter.Format(headerValue, data);
+						if (formattedHeaderValue.Contains('\r') || formattedHeaderValue.Contains('\n'))
+						{
+							// Header injection
+							this._logger.LogWarning("Webhook {WebhookId}: the '{HeaderName}' header contains a line break and was not sent", webhook.Id, webhookRequestHeader.Key);
+							continue;
+						}
+						
+						headers = headers.Add(webhookRequestHeader.Key, formattedHeaderValue);
 					}
 				}
 			}
 			
-			var jsonBody = webhook.Request.Body?.ToJson();
-			jsonBody = jsonBody != null ? formatter.Format(jsonBody, data) : null;
-			var webhookBody = jsonBody != null ? DynamicObject.Parse(jsonBody) : null;
+			var webhookBody = FormatBody(webhook.Request.Body, formatter, data);
 			
 			IRequestBody body = webhook.Request.UncoveredBody ?
 				new SystemJsonRequestBody(webhookBody != null ? webhookBody.ToDictionary() : new {}) :
@@ -231,7 +216,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			{
 				try
 				{
-					var response = await this._restHandler.ExecuteRequestAsync(httpMethod, url, QueryString.Empty, headers, body);
+					var response = await this._restHandler.ExecuteRequestAsync(httpMethod, url, QueryString.Empty, headers, body, cancellationToken: CancellationToken.None);
 					var webhookExecutionResult = new WebhookExecutionResult
 					{
 						WebhookId = webhook.Id,
@@ -271,7 +256,55 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		}
 		catch (Exception ex)
 		{
-			this._logger.LogError(ex, "WebhookService.ExecuteWebhookRequestAsync occured an error");
+			this._logger.LogError(ex, "WebhookService.ExecuteWebhookAsync occured an error");
+		}
+	}
+	
+	/// <summary>
+	/// The body template is JSON, so its placeholders are always inside string values: each string value is formatted
+	/// separately and stays a string value, the data can't change the structure of the body (JSON injection).
+	/// </summary>
+	private static DynamicObject? FormatBody(DynamicObject? body, Ertis.TemplateEngine.Formatter formatter, object data)
+	{
+		if (body == null)
+		{
+			return null;
+		}
+		
+		var formatted = MapStringValues(JsonNode.Parse(body.ToJson()), x => formatter.Format(x, data));
+		return formatted != null ? DynamicObject.Parse(formatted.ToJsonString()) : null;
+	}
+	
+	private static object ToTemplateData(JsonNode? dataNode)
+	{
+		return DynamicObject.Parse(dataNode?.ToJsonString() ?? "{}").ToDynamic();
+	}
+	
+	/// <summary>
+	/// Replaces every string value of the JSON tree (object keys are kept).
+	/// </summary>
+	private static JsonNode? MapStringValues(JsonNode? node, Func<string, string> map)
+	{
+		switch (node)
+		{
+			case JsonObject jsonObject:
+				foreach (var property in jsonObject.ToArray())
+				{
+					jsonObject[property.Key] = MapStringValues(property.Value?.DeepClone(), map);
+				}
+				
+				return jsonObject;
+			case JsonArray jsonArray:
+				for (var i = 0; i < jsonArray.Count; i++)
+				{
+					jsonArray[i] = MapStringValues(jsonArray[i]?.DeepClone(), map);
+				}
+				
+				return jsonArray;
+			case JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text):
+				return JsonValue.Create(map(text));
+			default:
+				return node;
 		}
 	}
 	
