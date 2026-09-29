@@ -166,7 +166,7 @@ public class ReferenceFieldTests : IClassFixture<ErtisAuthInstance>
 	}
 	
 	/// <summary>
-	/// Current behavior: without a content type the referenced user must exist, but the id is kept as it is (not embedded).
+	/// Without a content type the referenced user must exist, but the id is kept as it is (not embedded).
 	/// </summary>
 	[Fact]
 	public async Task SingleReference_WithoutContentType_KeepsTheId()
@@ -225,18 +225,32 @@ public class ReferenceFieldTests : IClassFixture<ErtisAuthInstance>
 	}
 	
 	/// <summary>
-	/// Current behavior (differs from the single reference): without a content type nothing is collected, so the ids are
-	/// replaced by an empty array.
+	/// Without a content type the referenced users must exist, but the ids are kept as they are (not embedded), like the single
+	/// reference. Before, the ids were replaced by an empty array (the references were lost; also on master).
 	/// </summary>
 	[Fact]
-	public async Task MultipleReference_WithoutContentType_IsEmptied()
+	public async Task MultipleReference_WithoutContentType_KeepsTheIds()
+	{
+		var contentType = await this.CreateUserTypeAsync();
+		var firstId = await this.CreateUserIdAsync(contentType);
+		var secondId = await this.CreateUserIdAsync(contentType);
+		var userType = await this.CreateReferencingUserTypeAsync("multiple", null);
+		
+		var user = await this.CreateReferencingUserAsync(userType, new JsonArray(secondId, firstId));
+		
+		Assert.Equal([secondId, firstId], user["ref"]!.AsArray().Select(x => x!.GetValue<string>()));
+	}
+	
+	[Fact]
+	public async Task MultipleReference_WithoutContentType_ToAMissingUser_IsRejected()
 	{
 		var referencedId = await this.CreateUserIdAsync(await this.CreateUserTypeAsync());
 		var userType = await this.CreateReferencingUserTypeAsync("multiple", null);
+		const string missingId = "5f0a1b2c3d4e5f6a7b8c9d0e";
 		
-		var user = await this.CreateReferencingUserAsync(userType, new JsonArray(referencedId));
+		using var response = await this.CreateUserAsync(userType, new JsonArray(referencedId, missingId));
 		
-		Assert.Empty(user["ref"]!.AsArray());
+		await AssertRejectedAsync(response, $"Could not find any content with id '{missingId}' for reference type 'ref'");
 	}
 	
 	#endregion

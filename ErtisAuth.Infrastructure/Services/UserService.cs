@@ -407,7 +407,7 @@ public class UserService : DynamicObjectCrudService, IUserService
                         var referenceItem = await this.ResolveReferenceAsync(userType, referenceProperty, referenceId, cancellationToken: cancellationToken);
                         if (referenceItem != null)
                         {
-                            model.TrySetValue(path, referenceItem, out Exception _);
+                            model.TrySetValue(path, referenceItem, out _);
                         }
                     }
 					
@@ -417,8 +417,8 @@ public class UserService : DynamicObjectCrudService, IUserService
                 {
                     if (model.TryGetValue(path, out var value, out _) && value is object[] referenceObjectIds && referenceObjectIds.Any() && referenceObjectIds.All(x => x is string))
                     {
-                        // Only the embedded items are collected, and the field is always replaced by them:
-                        // without a content type nothing is collected and the ids are replaced by an empty array
+                        // The referenced users are embedded only with a content type; without it the ids are kept as they are
+                        // (existence still checked), like the single reference
                         var referenceItems = new List<object>();
                         foreach (var referenceId in referenceObjectIds.Cast<string>())
                         {
@@ -429,7 +429,10 @@ public class UserService : DynamicObjectCrudService, IUserService
                             }
                         }
                         
-                        model.TrySetValue(path, referenceItems.ToArray(), out _);
+                        if (!string.IsNullOrEmpty(referenceProperty.ContentType))
+                        {
+                            model.TrySetValue(path, referenceItems.ToArray(), out _);
+                        }
                     }
 					
                     break;
