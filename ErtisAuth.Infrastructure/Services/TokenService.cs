@@ -631,9 +631,11 @@ public class TokenService : ITokenService
 		return true;
 	}
 	
-	public async Task RevokeAllAsync(string membershipId, string userId, bool fireEvent = true, CancellationToken cancellationToken = default)
+	public async Task RevokeAllAsync(string membershipId, string userId, string? exceptAccessToken = null, bool fireEvent = true, CancellationToken cancellationToken = default)
 	{
-		var activeTokens = (await this._activeTokenService.GetActiveTokensByUser(userId, membershipId, cancellationToken: cancellationToken)).ToArray();
+		var activeTokens = (await this._activeTokenService.GetActiveTokensByUser(userId, membershipId, cancellationToken: cancellationToken))
+			.Where(x => exceptAccessToken == null || x.AccessToken != exceptAccessToken)
+			.ToArray();
 		if (activeTokens.Any())
 		{
 			var user = await this._userService.GetUserAsync(membershipId, userId, cancellationToken: cancellationToken);

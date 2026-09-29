@@ -946,6 +946,12 @@ public class UserService : DynamicObjectCrudService, IUserService
 	        throw ErtisAuthException.UserNotFound(userId, "_id");
         }
         
+        // Single use: the activation link can not be used again once the user is active
+        if (user.TryGetValue<bool>("is_active", out var isActive, out _) && isActive)
+        {
+	        throw ErtisAuthException.UserAlreadyActive();
+        }
+        
         // A link issued before the last change of the user (e.g. freezing it, or the activation itself) is no longer valid
         var modifiedAt = user.Deserialize<User>()?.Sys?.ModifiedAt;
         if (modifiedAt != null && securityToken.IssuedAt < TruncateToSeconds(AsUtc(modifiedAt.Value)))

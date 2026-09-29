@@ -209,7 +209,7 @@ public class PasswordResetService : IPasswordResetService
 	
 	#region Set Password
 	
-	public async Task SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default)
+	public async Task<User> SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(usernameOrEmailAddress))
 		{
@@ -236,6 +236,7 @@ public class PasswordResetService : IPasswordResetService
 		}
 		
 		await this._userService.ChangePasswordAsync(utilizer, membershipId, user.Id, password, cancellationToken: cancellationToken);
+		return user;
 	}
 	
 	#endregion

@@ -27,7 +27,7 @@ public interface ITokenService
 	
 	Task<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true, CancellationToken cancellationToken = default);
 	
-	Task RevokeAllAsync(string membershipId, string userId, bool fireEvent = true, CancellationToken cancellationToken = default);
+	Task RevokeAllAsync(string membershipId, string userId, string? exceptAccessToken = null, bool fireEvent = true, CancellationToken cancellationToken = default);
 	
 	Task<User?> GetTokenOwnerUserAsync(string bearerToken, CancellationToken cancellationToken = default);
 }

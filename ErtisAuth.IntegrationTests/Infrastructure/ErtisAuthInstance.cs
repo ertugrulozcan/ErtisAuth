@@ -85,9 +85,16 @@ public class ErtisAuthInstance : IAsyncLifetime
 		this.MembershipId = result.GetProperty("membership").GetProperty("_id").GetString()!;
 		this.ApplicationId = result.GetProperty("application").GetProperty("_id").GetString()!;
 		this.ApplicationSecret = result.GetProperty("application").GetProperty("secret").GetString()!;
+		
+		await this.OnSetUpAsync();
 	}
 	
-	public async ValueTask DisposeAsync()
+	/// <summary>
+	/// Runs once after the setup, to prepare the installation further (e.g. mail providers).
+	/// </summary>
+	protected virtual Task OnSetUpAsync() => Task.CompletedTask;
+	
+	public virtual async ValueTask DisposeAsync()
 	{
 		await this.Factory.DisposeAsync();
 		await this.Database.Client.DropDatabaseAsync(this.DatabaseName);
@@ -170,7 +177,7 @@ public class ErtisAuthInstance : IAsyncLifetime
 	
 	#region Tokens
 	
-	public async Task<(string AccessToken, string RefreshToken)> GenerateTokenAsync(string username = AdminUsername, string password = AdminPassword)
+	public async Task<HttpResponseMessage> RequestTokenAsync(string username, string password)
 	{
 		using var request = new HttpRequestMessage(HttpMethod.Post, "/generate-token")
 		{
@@ -178,7 +185,12 @@ public class ErtisAuthInstance : IAsyncLifetime
 		};
 		
 		request.Headers.Add("Membership", this.MembershipId);
-		using var response = await this.CreateClient().SendAsync(request);
+		return await this.CreateClient().SendAsync(request);
+	}
+	
+	public async Task<(string AccessToken, string RefreshToken)> GenerateTokenAsync(string username = AdminUsername, string password = AdminPassword)
+	{
+		using var response = await this.RequestTokenAsync(username, password);
 		var token = await ReadJsonAsync(response);
 		if (!response.IsSuccessStatusCode)
 		{

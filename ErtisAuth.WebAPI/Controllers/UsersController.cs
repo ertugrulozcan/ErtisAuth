@@ -3,6 +3,7 @@ using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Attributes;
@@ -305,7 +306,7 @@ public class UsersController : QueryControllerBase
 		}
 		
 		var emailAddress = await this._userService.SendActivationMailAsync(membershipId, user.Id, host, cancellationToken: cancellationToken);
-		if (string.IsNullOrEmpty(emailAddress))
+		if (!string.IsNullOrEmpty(emailAddress))
 		{
 			return this.Ok(new
 			{
@@ -339,7 +340,21 @@ public class UsersController : QueryControllerBase
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		await this._userService.ChangePasswordAsync(utilizer, membershipId, id, model.Password, cancellationToken: cancellationToken);
+		await this.RevokeTokensAfterPasswordChangeAsync(utilizer, membershipId, id, cancellationToken);
 		return this.Ok();
+	}
+	
+	/// <summary>
+	/// Signs the user out on every device after a password change (e.g. after an account takeover),
+	/// except the session in which the user changed its own password.
+	/// </summary>
+	private async Task RevokeTokensAfterPasswordChangeAsync(Utilizer utilizer, string membershipId, string userId, CancellationToken cancellationToken)
+	{
+		var callersOwnAccessToken = utilizer.Type == Utilizer.UtilizerType.User && utilizer.Id == userId && utilizer.TokenType == SupportedTokenTypes.Bearer
+			? utilizer.Token
+			: null;
+		
+		await this._tokenService.RevokeAllAsync(membershipId, userId, callersOwnAccessToken, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -416,7 +431,8 @@ public class UsersController : QueryControllerBase
 		}
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		await this._passwordResetService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password, cancellationToken: cancellationToken);
+		var user = await this._passwordResetService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password, cancellationToken: cancellationToken);
+		await this.RevokeTokensAfterPasswordChangeAsync(utilizer, membershipId, user.Id, cancellationToken);
 		await this._oneTimePasswordService.RevokeResetPasswordTokenAsync(utilizer, membershipId, model.ResetToken, cancellationToken: cancellationToken);
 		return this.Ok();
 	}
