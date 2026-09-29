@@ -52,14 +52,5 @@ public static class ServiceExtensions
 		serviceProvider.GetRequiredService<IMailHookService>();
 	}
 	
-	/// <summary>
-	/// Brings the unique indexes of the users collection in line with the user types (e.g. after a manual change in the database).
-	/// Failures (e.g. duplicate values in existing users) are logged, the application still starts.
-	/// </summary>
-	public static async Task SynchronizeUniqueIndexesAsync(this IApplicationBuilder app)
-	{
-		await app.ApplicationServices.GetRequiredService<IUserUniqueIndexSynchronizer>().SynchronizeAllAsync();
-	}
-	
 	#endregion
 }

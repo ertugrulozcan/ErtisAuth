@@ -70,14 +70,11 @@ if (app.Environment.IsDevelopment())
 app.UseResponseCompression();
 
 // Database
-await app.UseMongoDBAsync();
-await app.SynchronizeUniqueIndexesAsync();
+await app.UseMongoDB();
 
 app.UseCORS();
 app.UseHttpsRedirection();
 app.UseRouting();
-
-// Before authentication: an exception of the authentication handler (e.g. database outage) gets the error response
 app.UseGlobalExceptionHandler();
 app.UseWwwAuthenticateChallenge();
 app.UseAuthentication();

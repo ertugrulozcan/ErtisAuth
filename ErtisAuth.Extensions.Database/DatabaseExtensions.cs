@@ -2,6 +2,7 @@
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Database;
+using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Dao.Serialization;
@@ -82,9 +83,10 @@ public static class DatabaseExtensions
 		MailProviderDiscriminatorConvention.Register();
 	}
 	
-	public static async Task UseMongoDBAsync(this IApplicationBuilder app)
+	public static async Task UseMongoDB(this IApplicationBuilder app)
 	{
 		await CheckDatabaseIndexesAsync(app.ApplicationServices);
+		await app.SynchronizeUniqueIndexesAsync();
 	}
 	
 	private static async Task CheckDatabaseIndexesAsync(IServiceProvider serviceProvider)
@@ -98,6 +100,15 @@ public static class DatabaseExtensions
 				await repository.CreateIndexesAsync();
 			}
 		}
+	}
+	
+	/// <summary>
+	/// Brings the unique indexes of the users collection in line with the user types (e.g. after a manual change in the database).
+	/// Failures (e.g. duplicate values in existing users) are logged, the application still starts.
+	/// </summary>
+	private static async Task SynchronizeUniqueIndexesAsync(this IApplicationBuilder app)
+	{
+		await app.ApplicationServices.GetRequiredService<IUserUniqueIndexSynchronizer>().SynchronizeAllAsync();
 	}
 	
 	#endregion
