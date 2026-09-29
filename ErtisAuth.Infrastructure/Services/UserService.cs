@@ -654,6 +654,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         CancellationToken cancellationToken = default)
     {
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+        QueryHelper.EnsureSortable(orderBy, HiddenFields);
         var queries = new[]
         {
             QueryBuilder.Equals("membership_id", membershipId)
@@ -676,7 +677,8 @@ public class UserService : DynamicObjectCrudService, IUserService
         CancellationToken cancellationToken = default)
     {
 		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId);
+        query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId, HiddenFields);
+        QueryHelper.EnsureSortable(orderBy, HiddenFields);
 		var results = await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, language: locale, cancellationToken: cancellationToken);
 		return results.HidePasswordHash();
     }
@@ -693,6 +695,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     {
 		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
         var query = QueryHelper.FullTextSearchQuery(membershipId, keyword);
+        QueryHelper.EnsureSortable(orderBy, HiddenFields);
 		var results = await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return results.HidePasswordHash();
     }
@@ -1078,6 +1081,11 @@ public class UserService : DynamicObjectCrudService, IUserService
 	/// The own-update exception (a user updating its own profile) does not cover them.
 	/// </summary>
 	private static readonly string[] PrivilegedProperties = ["role", "permissions", "forbidden", "is_active", "user_type"];
+	
+	/// <summary>
+	/// Fields never returned, which therefore can not be filtered or sorted on either (see QueryHelper).
+	/// </summary>
+	private static readonly IReadOnlyCollection<string> HiddenFields = ["password_hash"];
 	
 	private void EnsureServerManagedProperties(DynamicObject model, Utilizer utilizer)
 	{

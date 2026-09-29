@@ -4,6 +4,7 @@ using ErtisAuth.Extensions.Prometheus;
 using ErtisAuth.Integrations.OAuth.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.WebAPI.Extensions;
+using ErtisAuth.WebAPI.Filters;
 using Microsoft.AspNetCore.ResponseCompression;
 using Scalar.AspNetCore;
 
@@ -48,7 +49,7 @@ builder.Services.AddResponseCompression(options =>
 builder.Services.AddOpenApi();
 
 // Controllers & JSON Options
-builder.Services.AddControllers().AddJsonSerialization();
+builder.Services.AddControllers(options => options.Filters.Add<QueryActionFilter>()).AddJsonSerialization();
 
 // Graceful shutdown
 builder.ConfigureShutdown();

@@ -53,7 +53,6 @@ public class QueryHelperTests
 	[InlineData("{ \"$or\": [ { \"membership_id\": \"membership-b\" }, { \"gender\": \"female\" } ] }")]
 	[InlineData("{ \"where\": [] }")]
 	[InlineData("{ \"where\": { \"membership_id\": \"membership-b\" } }")]
-	[InlineData("{ \"$where\": \"true\" }")]
 	// The caller's own membership: redundant but harmless, results are unchanged
 	[InlineData("{ \"membership_id\": \"membership-a\" }")]
 	// membership_id conditions at inner levels or with operators
@@ -200,11 +199,90 @@ public class QueryHelperTests
 		
 		Assert.Equal(ScopePipeline(pipeline), stagesParsedLikeTheRepository);
 	}
-
+	
 	#endregion
-
+	
+	#region Hidden Fields And JavaScript
+	
+	private static readonly string[] HiddenFields = ["password_hash"];
+	
+	[Theory]
+	[InlineData("""{ "password_hash": "x" }""")]
+	[InlineData("""{ "password_hash": { "$regex": "^a" } }""")]
+	[InlineData("""{ "password_hash.0": "x" }""")]
+	[InlineData("""{ "profile.password_hash": "x" }""")]
+	[InlineData("""{ "$and": [ { "username": "a" }, { "$or": [ { "password_hash": { "$exists": true } } ] } ] }""")]
+	[InlineData("""{ "$nor": [ { "password_hash": { "$not": { "$regex": "^a" } } } ] }""")]
+	[InlineData("""{ "$expr": { "$eq": [ "$username", "a" ] } }""")]
+	[InlineData("""{ "$jsonSchema": { "required": [ "username" ] } }""")]
+	public void InjectMembershipIdToQuery_ReachingAHiddenField_ThrowsInvalidQuery(string query)
+	{
+		var exception = Assert.Throws<ErtisAuthException>(() => QueryHelper.InjectMembershipIdToQuery<dynamic>(query, OwnMembershipId, HiddenFields));
+		
+		Assert.Equal("InvalidQuery", exception.ErrorCode);
+	}
+	
+	[Theory]
+	[InlineData("""{ "$where": "true" }""")]
+	[InlineData("""{ "$where": function() { return true; } }""")]
+	[InlineData("""{ "$and": [ { "$where": "true" } ] }""")]
+	[InlineData("""{ "$expr": { "$function": { "body": "function() { return true; }", "args": [], "lang": "js" } } }""")]
+	public void InjectMembershipIdToQuery_RunningJavaScript_ThrowsInvalidQuery(string query)
+	{
+		var exception = Assert.Throws<ErtisAuthException>(() => QueryHelper.InjectMembershipIdToQuery<dynamic>(query, OwnMembershipId));
+		
+		Assert.Equal("InvalidQuery", exception.ErrorCode);
+	}
+	
+	[Theory]
+	[InlineData("""{ "username": "admin" }""")]
+	[InlineData("""{ "$or": [ { "username": "a" }, { "email_address": { "$regex": "@example" } } ] }""")]
+	[InlineData("""{ "sys.created_at": { "$gt": "2026-01-01" } }""")]
+	public void InjectMembershipIdToQuery_WithoutHiddenFields_IsScoped(string query)
+	{
+		var scoped = BsonDocument.Parse(QueryHelper.InjectMembershipIdToQuery<dynamic>(query, OwnMembershipId, HiddenFields));
+		
+		AssertScopedQuery(scoped, BsonDocument.Parse(query));
+	}
+	
+	[Fact]
+	public void InjectMembershipIdToQuery_OnResourceWithoutHiddenFields_AllowsExpr()
+	{
+		const string query = """{ "$expr": { "$eq": [ "$name", "admin" ] } }""";
+		
+		var scoped = BsonDocument.Parse(QueryHelper.InjectMembershipIdToQuery<dynamic>(query, OwnMembershipId));
+		
+		AssertScopedQuery(scoped, BsonDocument.Parse(query));
+	}
+	
+	[Theory]
+	[InlineData("""[ { "$match": { "$where": "true" } } ]""")]
+	[InlineData("""[ { "$project": { "x": { "$function": { "body": "function() { return 1; }", "args": [], "lang": "js" } } } } ]""")]
+	[InlineData("""[ { "$facet": { "a": [ { "$match": { "$where": "true" } } ] } } ]""")]
+	public void InjectMembershipIdToAggregation_RunningJavaScript_ThrowsInvalidQuery(string pipeline)
+	{
+		var exception = Assert.Throws<ErtisAuthException>(() => QueryHelper.InjectMembershipIdToAggregation(pipeline, OwnMembershipId));
+		
+		Assert.Equal("InvalidQuery", exception.ErrorCode);
+	}
+	
+	[Theory]
+	[InlineData("password_hash", true)]
+	[InlineData("-password_hash", true)]
+	[InlineData("password_hash.x", true)]
+	[InlineData("username", false)]
+	[InlineData(null, false)]
+	public void EnsureSortable_RejectsHiddenFields(string? sortField, bool rejected)
+	{
+		var exception = Record.Exception(() => QueryHelper.EnsureSortable(sortField, HiddenFields));
+		
+		Assert.Equal(rejected, exception is ErtisAuthException { ErrorCode: "InvalidQuery" });
+	}
+	
+	#endregion
+	
 	#region Full Text Search
-
+	
 	[Theory]
 	[InlineData("Editor")]
 	[InlineData("a\"b")]
@@ -214,24 +292,24 @@ public class QueryHelperTests
 	public void FullTextSearchQuery_KeepsTheKeywordAsAStringWithinTheMembership(string keyword)
 	{
 		var query = BsonDocument.Parse(QueryHelper.FullTextSearchQuery(OwnMembershipId, keyword));
-
+		
 		Assert.Equal(["membership_id", "$text"], query.Names);
 		Assert.Equal(OwnMembershipId, query["membership_id"].AsString);
-
+		
 		var textSearch = query["$text"].AsBsonDocument;
 		Assert.Equal(keyword, textSearch["$search"].AsString);
 		Assert.False(textSearch["$caseSensitive"].AsBoolean);
 		Assert.False(textSearch["$diacriticSensitive"].AsBoolean);
 		Assert.False(textSearch.Contains("$language"));
 	}
-
+	
 	[Fact]
 	public void FullTextSearchQuery_WithLanguage_AddsTheLanguage()
 	{
 		var query = BsonDocument.Parse(QueryHelper.FullTextSearchQuery(OwnMembershipId, "editor", "tr"));
-
+		
 		Assert.Equal("tr", query["$text"]["$language"].AsString);
 	}
-
+	
 	#endregion
 }

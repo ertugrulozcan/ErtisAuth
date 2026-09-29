@@ -33,6 +33,15 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	
 	#endregion
 	
+	#region Properties
+	
+	/// <summary>
+	/// Fields never returned (e.g. secrets), which therefore can not be filtered or sorted on either.
+	/// </summary>
+	protected virtual IReadOnlyCollection<string> HiddenFields => [];
+	
+	#endregion
+	
 	#region Query Methods
 	
 	public virtual async Task<IPaginationCollection<dynamic>> QueryAsync(
@@ -46,7 +55,8 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		IDictionary<string, bool>? selectFields = null, 
 		CancellationToken cancellationToken = default)
 	{
-		query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId);
+		query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId, this.HiddenFields);
+		QueryHelper.EnsureSortable(sortField, this.HiddenFields);
 		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return await this._repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 	}
@@ -99,6 +109,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
+		QueryHelper.EnsureSortable(orderBy, this.HiddenFields);
 		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return await this._repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
@@ -149,6 +160,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		}
 		
 		var query = QueryHelper.FullTextSearchQuery(membershipId, keyword, textSearchLanguage.ISO6391Code);
+		QueryHelper.EnsureSortable(sortField, this.HiddenFields);
 		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return await this._repository.FindAsync(query, skip, limit, withCount, sortField, sortDirection, cancellationToken: cancellationToken);
 	}

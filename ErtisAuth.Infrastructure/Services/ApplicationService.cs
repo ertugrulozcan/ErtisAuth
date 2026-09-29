@@ -22,6 +22,8 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	private const string SECRET_HASH_FIELD = "secret_hash";
 	
+	protected override IReadOnlyCollection<string> HiddenFields => [SECRET_HASH_FIELD];
+	
 	#endregion
 	
 	#region Services

@@ -93,15 +93,21 @@ public static class ErrorHandlingExtensions
 							};
 							break;
 						default:
-							context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+						{
+							// Internal details (database errors, stack traces) stay in the log
+							var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger(nameof(ErrorHandlingExtensions));
+							logger.LogError(contextFeature.Error, "Unhandled exception on {Method} {Path}", context.Request.Method, context.Request.Path);
+							
+							context.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
 							errorModel = new ErrorModel
 							{
-								Message = contextFeature.Error.Message,
+								Message = "An unexpected error occurred",
 								ErrorCode = "UnhandledExceptionError",
 								StatusCode = 500
 							};
 							
 							break;
+						}
 					}
 					
 					var json = JsonSerializer.Serialize(errorModel);
