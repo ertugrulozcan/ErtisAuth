@@ -403,37 +403,11 @@ public class UserService : DynamicObjectCrudService, IUserService
                 {
                     if (model.TryGetValue(path, out var value, out _) && value is string referenceId && !string.IsNullOrEmpty(referenceId))
                     {
-                        var referenceItem = await this.GetAsync(userType.MembershipId, referenceId, cancellationToken: cancellationToken);
+                        // Set only when embedded: without a content type the id is kept as it is
+                        var referenceItem = await this.ResolveReferenceAsync(userType, referenceProperty, referenceId, cancellationToken: cancellationToken);
                         if (referenceItem != null)
                         {
-                            if (!string.IsNullOrEmpty(referenceProperty.ContentType))
-                            {
-                                if (referenceItem.TryGetValue<string>("user_type", out var referenceItemUserType, out _) && !string.IsNullOrEmpty(referenceItemUserType))
-                                {
-                                    if (await this._userTypeService.IsInheritFromAsync(userType.MembershipId, referenceItemUserType, referenceProperty.ContentType, cancellationToken: cancellationToken))
-                                    {
-                                        model.TrySetValue(path, referenceItem.ToDynamic(), out Exception _);   
-                                    }
-                                    else
-                                    {
-                                        throw new FieldValidationException(
-                                            $"This reference-type field only can bind contents from '{referenceProperty.ContentType}' content-type or inherited from '{referenceProperty.ContentType}' content-type. ('{referenceProperty.Name}')",
-                                            referenceProperty);
-                                    }
-                                }
-                                else
-                                {
-                                    throw new FieldValidationException(
-                                        $"Content type could not read for reference value '{referenceProperty.Name}'",
-                                        referenceProperty);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            throw new FieldValidationException(
-                                $"Could not find any content with id '{referenceId}' for reference type '{referenceProperty.Name}'",
-                                referenceProperty);
+                            model.TrySetValue(path, referenceItem, out Exception _);
                         }
                     }
 					
@@ -443,41 +417,15 @@ public class UserService : DynamicObjectCrudService, IUserService
                 {
                     if (model.TryGetValue(path, out var value, out _) && value is object[] referenceObjectIds && referenceObjectIds.Any() && referenceObjectIds.All(x => x is string))
                     {
-                        var referenceIds = referenceObjectIds.Cast<string>();
+                        // Only the embedded items are collected, and the field is always replaced by them:
+                        // without a content type nothing is collected and the ids are replaced by an empty array
                         var referenceItems = new List<object>();
-                        foreach (var referenceId in referenceIds)
+                        foreach (var referenceId in referenceObjectIds.Cast<string>())
                         {
-                            var referenceItem = await this.GetAsync(userType.MembershipId, referenceId, cancellationToken: cancellationToken);
+                            var referenceItem = await this.ResolveReferenceAsync(userType, referenceProperty, referenceId, cancellationToken: cancellationToken);
                             if (referenceItem != null)
                             {
-                                if (!string.IsNullOrEmpty(referenceProperty.ContentType))
-                                {
-                                    if (referenceItem.TryGetValue<string>("user_type", out var referenceItemUserType, out _) && !string.IsNullOrEmpty(referenceItemUserType))
-                                    {
-                                        if (await this._userTypeService.IsInheritFromAsync(userType.MembershipId, referenceItemUserType, referenceProperty.ContentType, cancellationToken: cancellationToken))
-                                        {
-                                            referenceItems.Add(referenceItem.ToDynamic());
-                                        }
-                                        else
-                                        {
-                                            throw new FieldValidationException(
-                                                $"This reference-type field only can bind contents from '{referenceProperty.ContentType}' content-type or inherited from '{referenceProperty.ContentType}' content-type. ('{referenceProperty.Name}')",
-                                                referenceProperty);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        throw new FieldValidationException(
-                                            $"Content type could not read for reference value '{referenceProperty.Name}'",
-                                            referenceProperty);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                throw new FieldValidationException(
-                                    $"Could not find any content with id '{referenceId}' for reference type '{referenceProperty.Name}'",
-                                    referenceProperty);
+                                referenceItems.Add(referenceItem);
                             }
                         }
                         
@@ -488,6 +436,42 @@ public class UserService : DynamicObjectCrudService, IUserService
                 }
             }
         }
+    }
+    
+    /// <summary>
+    /// The referenced user to embed (password hash excluded). Throws when the user does not exist, or is not of the content type
+    /// of the field (or inherited from it). Null (nothing to embed) when the field has no content type.
+    /// </summary>
+    private async Task<object?> ResolveReferenceAsync(UserType userType, ReferenceFieldInfo referenceProperty, string referenceId, CancellationToken cancellationToken = default)
+    {
+        var referenceItem = await this.GetAsync(userType.MembershipId, referenceId, cancellationToken: cancellationToken);
+        if (referenceItem == null)
+        {
+            throw new FieldValidationException(
+                $"Could not find any content with id '{referenceId}' for reference type '{referenceProperty.Name}'",
+                referenceProperty);
+        }
+        
+        if (string.IsNullOrEmpty(referenceProperty.ContentType))
+        {
+            return null;
+        }
+        
+        if (!referenceItem.TryGetValue<string>("user_type", out var referenceItemUserType, out _) || string.IsNullOrEmpty(referenceItemUserType))
+        {
+            throw new FieldValidationException(
+                $"Content type could not read for reference value '{referenceProperty.Name}'",
+                referenceProperty);
+        }
+        
+        if (!await this._userTypeService.IsInheritFromAsync(userType.MembershipId, referenceItemUserType, referenceProperty.ContentType, cancellationToken: cancellationToken))
+        {
+            throw new FieldValidationException(
+                $"This reference-type field only can bind contents from '{referenceProperty.ContentType}' content-type or inherited from '{referenceProperty.ContentType}' content-type. ('{referenceProperty.Name}')",
+                referenceProperty);
+        }
+        
+        return referenceItem.ToDynamic();
     }
 	
     #endregion
