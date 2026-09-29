@@ -1,4 +1,7 @@
 using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using ErtisAuth.IntegrationTests.Infrastructure;
 
 namespace ErtisAuth.IntegrationTests.Resources;
@@ -86,6 +89,44 @@ public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
 		
 		await mailHooks.AssertNotFoundAsync(first, "MailHookNotFound");
 		await mailHooks.AssertNotFoundAsync(second, "MailHookNotFound");
+	}
+	
+	/// <summary>
+	/// Without a subject, a sender or any recipient no mail can be sent: rejected on create as well (was checked on update only).
+	/// </summary>
+	[Theory]
+	[InlineData("mailSubject", "MailSubject is a required field")]
+	[InlineData("fromName", "FromName is a required field")]
+	[InlineData("fromAddress", "FromAddress is a required field")]
+	[InlineData("recipients", "Recipients list is empty")]
+	public async Task MailHook_CreateWithoutARequiredField_IsRejected(string field, string error)
+	{
+		var mailHooks = await this.CreateResourceClientAsync();
+		var body = JsonSerializer.SerializeToNode(MailHookBody($"Incomplete {Guid.NewGuid():N}", "Welcome"))!.AsObject();
+		body.Remove(field);
+		
+		var adminClient = await this._instance.CreateAdminClientAsync();
+		using var response = await adminClient.PostAsJsonAsync(mailHooks.Url, body, TestContext.Current.CancellationToken);
+		
+		var result = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.BadRequest);
+		Assert.Equal("ModelValidationError", result!["errorCode"]!.GetValue<string>());
+		Assert.Equal([error], result["data"]!.AsArray().Select(x => x!.GetValue<string>()));
+	}
+	
+	/// <summary>
+	/// A mail sent to the utilizer (e.g. activation, reset password) needs no other recipient.
+	/// </summary>
+	[Fact]
+	public async Task MailHook_SentToTheUtilizer_NeedsNoRecipients()
+	{
+		var mailHooks = await this.CreateResourceClientAsync();
+		var body = JsonSerializer.SerializeToNode(MailHookBody($"To utilizer {Guid.NewGuid():N}", "Welcome"))!.AsObject();
+		body.Remove("recipients");
+		body["sendToUtilizer"] = true;
+		
+		var created = await mailHooks.CreateAsync(body);
+		
+		Assert.True(created["sendToUtilizer"]!.GetValue<bool>());
 	}
 	
 	#endregion

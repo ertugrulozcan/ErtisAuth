@@ -428,27 +428,26 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			errorList.Add($"Unknown event type. (Supported events: [{string.Join(", ", Enum.GetNames(typeof(ErtisAuthEventType)))}])");
 		}
 		
-		if (!string.IsNullOrEmpty(model.Id))
+		// Required on create as well as on update: without them no mail can be sent
+		// (no recipients at all unless the mail goes to the utilizer)
+		if (string.IsNullOrEmpty(model.MailSubject))
 		{
-			if (string.IsNullOrEmpty(model.MailSubject))
-			{
-				errorList.Add("MailSubject is a required field");
-			}
-			
-			if (!model.SendToUtilizer && (model.Recipients == null || !model.Recipients.Any()))
-			{
-				errorList.Add("Recipients list is empty");
-			}
-			
-			if (string.IsNullOrEmpty(model.FromName))
-			{
-				errorList.Add("FromName is a required field");
-			}
-			
-			if (string.IsNullOrEmpty(model.FromAddress))
-			{
-				errorList.Add("FromAddress is a required field");
-			}	
+			errorList.Add("MailSubject is a required field");
+		}
+		
+		if (!model.SendToUtilizer && (model.Recipients == null || !model.Recipients.Any()))
+		{
+			errorList.Add("Recipients list is empty");
+		}
+		
+		if (string.IsNullOrEmpty(model.FromName))
+		{
+			errorList.Add("FromName is a required field");
+		}
+		
+		if (string.IsNullOrEmpty(model.FromAddress))
+		{
+			errorList.Add("FromAddress is a required field");
 		}
 		
 		return Task.FromResult<IEnumerable<string>>(errorList);
