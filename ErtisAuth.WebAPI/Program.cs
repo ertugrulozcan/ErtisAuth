@@ -71,6 +71,7 @@ app.UseResponseCompression();
 
 // Database
 await app.UseMongoDBAsync();
+await app.SynchronizeUniqueIndexesAsync();
 
 app.UseCORS();
 app.UseHttpsRedirection();

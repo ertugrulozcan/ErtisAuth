@@ -61,7 +61,7 @@ public class UserTypeServiceCacheTests
 	
 	private UserTypeService CreateUserTypeService()
 	{
-		return new UserTypeService(this._membershipService, Substitute.For<IEventService>(), this._repository, Substitute.For<IUserRepository>(), new MemoryCache(new MemoryCacheOptions()));
+		return new UserTypeService(this._membershipService, Substitute.For<IEventService>(), this._repository, Substitute.For<IUserRepository>(), Substitute.For<IUserUniqueIndexSynchronizer>(), new MemoryCache(new MemoryCacheOptions()));
 	}
 	
 	private UserType NewUserType(string name)

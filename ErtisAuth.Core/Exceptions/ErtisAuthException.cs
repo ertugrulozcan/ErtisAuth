@@ -38,9 +38,12 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(httpStatusCode, errorMessage, errorCode);
 	}
 	
-	public static ErtisAuthException DuplicateKeyError(string message)
+	public static DuplicateKeyException DuplicateKeyError(string message, string? indexName = null)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"Some fields has unique index. ({message})", "DuplicateKeyError");
+		return new DuplicateKeyException(HttpStatusCode.Conflict, $"Some fields has unique index. ({message})", "DuplicateKeyError")
+		{
+			IndexName = indexName
+		};
 	}
 	
 	#endregion
@@ -332,6 +335,11 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException VirtualFieldTypeCanNotOverwrite(string fieldName)
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, $"The field type cannot be overwritten on virtual fields. ('{fieldName}')", "VirtualFieldTypeCanNotOverwrite");
+	}
+	
+	public static ErtisAuthException UniqueFieldHasDuplicates(string fieldPath, string duplicateKey)
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The '{fieldPath}' field can not be unique, some users already share the same value. ({duplicateKey})", "UniqueFieldHasDuplicates");
 	}
 	
 	public static ErtisAuthException UserTypeAlreadyExists(string userTypeName)

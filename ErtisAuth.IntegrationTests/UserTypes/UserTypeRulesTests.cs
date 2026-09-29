@@ -123,6 +123,27 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 		Assert.Contains("tier", relations[childSlug]!.AsArray().Select(x => x!.GetValue<string>()));
 	}
 	
+	/// <summary>
+	/// Derived types refer to their base type by its slug: a base type can not be deleted, and keeps its slug when renamed.
+	/// </summary>
+	[Fact]
+	public async Task BaseTypeOfAnotherType_CanNotBeDeletedAndKeepsItsSlug()
+	{
+		var parent = await this.CreateUserTypeAsync(UniqueName("Member"));
+		var parentId = parent["_id"]!.GetValue<string>();
+		var parentSlug = parent["slug"]!.GetValue<string>();
+		var child = await this.CreateUserTypeAsync(UniqueName("Honorary Member"), baseType: parentSlug);
+		
+		var userTypes = await this.AdminResourceClientAsync("user-types");
+		var adminClient = await this._instance.CreateAdminClientAsync();
+		using var deleteResponse = await adminClient.DeleteAsync($"{userTypes.Url}/{parentId}", CancellationToken);
+		await AssertErrorAsync(deleteResponse, "UserTypeCanNotBeDelete");
+		
+		var renamed = await userTypes.UpdateAsync(parentId, UserTypeBody(UniqueName("Renamed Member")));
+		Assert.Equal(parentSlug, renamed["slug"]!.GetValue<string>());
+		Assert.Equal(parentSlug, (await userTypes.GetAsync(child["_id"]!.GetValue<string>()))["baseType"]!.GetValue<string>());
+	}
+	
 	[Fact]
 	public async Task AbstractType_HasNoUsersButCanBeInherited()
 	{

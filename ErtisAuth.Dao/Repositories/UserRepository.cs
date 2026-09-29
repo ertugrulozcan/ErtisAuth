@@ -3,6 +3,8 @@ using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace ErtisAuth.Dao.Repositories;
 
@@ -41,4 +43,32 @@ public class UserRepository : DynamicRepositoryBase, IUserRepository
     }
     
     #endregion
+	
+	#region Unique Index Methods
+	
+	public async Task<string[]> GetIndexNamesAsync(string prefix, CancellationToken cancellationToken = default)
+	{
+		var indexes = await (await this.DocumentCollection.Indexes.ListAsync(cancellationToken)).ToListAsync(cancellationToken);
+		return indexes.Select(x => x["name"].AsString).Where(x => x.StartsWith(prefix, StringComparison.Ordinal)).ToArray();
+	}
+	
+	public async Task CreateUniqueIndexAsync(string name, string path, BsonDocument partialFilterExpression, CancellationToken cancellationToken = default)
+	{
+		var keys = Builders<BsonDocument>.IndexKeys.Ascending("membership_id").Ascending(path);
+		var options = new CreateIndexOptions<BsonDocument>
+		{
+			Name = name,
+			Unique = true,
+			PartialFilterExpression = partialFilterExpression
+		};
+		
+		await this.DocumentCollection.Indexes.CreateOneAsync(new CreateIndexModel<BsonDocument>(keys, options), cancellationToken: cancellationToken);
+	}
+	
+	public async Task DropIndexAsync(string name, CancellationToken cancellationToken = default)
+	{
+		await this.DocumentCollection.Indexes.DropOneAsync(name, cancellationToken);
+	}
+	
+	#endregion
 }

@@ -221,9 +221,15 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
     }
     
+    /// <summary>
+    /// Checks the unique fields in the same scope as their unique indexes (see <see cref="UniqueFieldIndexHelper"/>):
+    /// the unique fields of the origin user type among all users of the membership, the others among the users of the user type
+    /// declaring the field unique and its descendants. The indexes are the final guard; this check reports all violations at once.
+    /// </summary>
     private async Task<bool> CheckUniquePropertiesAsync(string membershipId, UserType userType, DynamicObject model, string? userId, IValidationContext validationContext)
     {
         var isValid = true;
+        IReadOnlyList<UniqueFieldIndex>? membershipIndexes = null;
         var uniqueProperties = userType.GetUniqueProperties();
         foreach (var uniqueProperty in uniqueProperties)
         {
@@ -235,23 +241,69 @@ public class UserService : DynamicObjectCrudService, IUserService
 		        {
 			        continue;
 		        }
-                
-		        var found = await this.FindOneAsync(
-			        QueryBuilder.Equals("membership_id", membershipId),
-			        QueryBuilder.Equals(path, value));
 		        
+		        var queries = new List<IQuery>
+		        {
+			        QueryBuilder.Equals("membership_id", membershipId),
+			        QueryBuilder.Equals(path, value)
+		        };
+		        
+		        if (!UniqueFieldIndexHelper.IsGlobalPath(path))
+		        {
+			        membershipIndexes ??= await this.GetMembershipUniqueIndexesAsync(membershipId);
+			        var index = membershipIndexes.FirstOrDefault(x => x.Path == path && x.UserTypes.Contains(userType.Slug));
+			        if (index != null)
+			        {
+				        queries.Add(QueryBuilder.Where("user_type", [QueryBuilder.Contains(index.UserTypes)]));
+			        }
+		        }
+		        
+		        var found = await this.FindOneAsync(queries.ToArray());
 		        if (found != null && found.TryGetValue(path, out var value_, out _) && value.Equals(value_))
 		        {
 			        if (string.IsNullOrEmpty(userId) || found.TryGetValue<string>("_id", out var foundId, out _) && userId != foundId)
 			        {
 				        isValid = false;
-				        validationContext.Errors.Add(new FieldValidationException($"The '{uniqueProperty.Name}' field has unique constraint. The same value is already using in another user.", uniqueProperty));   
+				        validationContext.Errors.Add(GetUniqueConstraintError(uniqueProperty));
 			        }
 		        }
 	        }
         }
         
         return isValid;
+    }
+    
+    private async Task<IReadOnlyList<UniqueFieldIndex>> GetMembershipUniqueIndexesAsync(string membershipId)
+    {
+        var userTypes = await this._userTypeService.GetAsync(membershipId, null, null, false, null, null);
+        return UniqueFieldIndexHelper.GetMembershipIndexes(membershipId, userTypes.Items);
+    }
+    
+    private static FieldValidationException GetUniqueConstraintError(IFieldInfo uniqueProperty)
+    {
+        return new FieldValidationException($"The '{uniqueProperty.Name}' field has unique constraint. The same value is already using in another user.", uniqueProperty);
+    }
+    
+    /// <summary>
+    /// A write rejected by a unique index (a concurrent write passed the uniqueness check with the same value)
+    /// gets the same validation error as the uniqueness check.
+    /// </summary>
+    private static bool TryGetUniqueConstraintError(DuplicateKeyException exception, UserType userType, out CumulativeValidationException error)
+    {
+        error = null!;
+        if (!UniqueFieldIndexHelper.TryParseIndexName(exception.IndexName, out _, out var path))
+        {
+	        return false;
+        }
+        
+        var uniqueProperty = userType.GetUniqueProperties().FirstOrDefault(x => x.GetSelfPath(userType) == path);
+        if (uniqueProperty == null)
+        {
+	        return false;
+        }
+        
+        error = new CumulativeValidationException([GetUniqueConstraintError(uniqueProperty)]);
+        return true;
     }
     
     private void EnsureManagedProperties(DynamicObject model, string membershipId)
@@ -797,7 +849,16 @@ public class UserService : DynamicObjectCrudService, IUserService
 	        this.SetPasswordHash(model, membership, password);
         }
         
-        var created = await base.CreateAsync(model, cancellationToken: cancellationToken);
+        DynamicObject created;
+        try
+        {
+	        created = await base.CreateAsync(model, cancellationToken: cancellationToken);
+        }
+        catch (DuplicateKeyException ex) when (TryGetUniqueConstraintError(ex, userType, out var error))
+        {
+	        throw error;
+        }
+        
 		created.HidePasswordHash();
 		
 		await this.FireOnCreatedEvent(membershipId, utilizer, created);
@@ -1031,7 +1092,17 @@ public class UserService : DynamicObjectCrudService, IUserService
 		await this.CheckPrivilegedPropertiesAsync(utilizer, userId, model, current, cancellationToken: cancellationToken);
         this.EnsurePasswordHash(model, current);
         await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current, cancellationToken: cancellationToken);
-        var updated = await base.UpdateAsync(userId, model, cancellationToken: cancellationToken);
+        
+        DynamicObject? updated;
+        try
+        {
+	        updated = await base.UpdateAsync(userId, model, cancellationToken: cancellationToken);
+        }
+        catch (DuplicateKeyException ex) when (TryGetUniqueConstraintError(ex, userType, out var error))
+        {
+	        throw error;
+        }
+        
 		if (updated == null)
 		{
 			return null;

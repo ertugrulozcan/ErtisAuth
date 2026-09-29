@@ -15,7 +15,7 @@ using NSubstitute;
 namespace ErtisAuth.Infrastructure.Tests.Services;
 
 /// <summary>
-/// Users (user_type) and inherited user types (base_type) refer to a user type by its slug:
+/// Users (user_type) and inherited user types (baseType) refer to a user type by its slug:
 /// a user type in use can not be deleted and its slug can not change.
 /// </summary>
 public class UserTypeServiceUsageTests
@@ -42,8 +42,6 @@ public class UserTypeServiceUsageTests
 	
 	private long _userCount;
 	
-	private IEnumerable<dynamic> _inheritedUserTypes = [];
-	
 	#endregion
 	
 	#region Constructors
@@ -56,10 +54,6 @@ public class UserTypeServiceUsageTests
 		
 		this._userTypes = InMemoryRepository.Setup(this._repository);
 		this._userTypes.Add(this.NewUserType("Customer"));
-		
-		this._repository
-			.QueryAsync(default(string)!, orderBy: null)
-			.ReturnsForAnyArgs(_ => new PaginationCollection<dynamic> { Count = this._inheritedUserTypes.Count(), Items = this._inheritedUserTypes });
 		
 		// Only users of this membership with the slug of the user type are counted
 		this._userRepository
@@ -77,7 +71,7 @@ public class UserTypeServiceUsageTests
 	
 	private UserTypeService CreateUserTypeService()
 	{
-		return new UserTypeService(this._membershipService, Substitute.For<IEventService>(), this._repository, this._userRepository, new MemoryCache(new MemoryCacheOptions()));
+		return new UserTypeService(this._membershipService, Substitute.For<IEventService>(), this._repository, this._userRepository, Substitute.For<IUserUniqueIndexSynchronizer>(), new MemoryCache(new MemoryCacheOptions()));
 	}
 	
 	private UserType NewUserType(string name, string? slug = null)
@@ -103,7 +97,14 @@ public class UserTypeServiceUsageTests
 	
 	private void SetupInheritedUserType()
 	{
-		this._inheritedUserTypes = [new Dictionary<string, object?> { { "title", "VIP Customer" } }];
+		this._userTypes.Add(new UserType
+		{
+			Id = "vip-customer-id",
+			Name = "VIP Customer",
+			Properties = Array.Empty<IFieldInfo>(),
+			BaseUserType = "customer",
+			MembershipId = this._membership.Id
+		});
 	}
 	
 	private async Task<UserType> UpdateAsync(UserType model)

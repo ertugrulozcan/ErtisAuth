@@ -6,11 +6,12 @@ using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Infrastructure.Helpers;
+using System.Text.RegularExpressions;
 using MongoDB.Bson;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class DynamicObjectCrudService : IDynamicObjectCrudService
+public partial class DynamicObjectCrudService : IDynamicObjectCrudService
 {
 	#region Services
 	
@@ -104,7 +105,7 @@ public class DynamicObjectCrudService : IDynamicObjectCrudService
 		{
 			if (ex.WriteError.Category == MongoDB.Driver.ServerErrorCategory.DuplicateKey)
 			{
-				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
+				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message, GetIndexName(ex.WriteError.Message));
 			}
 			
 			throw;
@@ -127,12 +128,24 @@ public class DynamicObjectCrudService : IDynamicObjectCrudService
 		{
 			if (ex.WriteError.Category == MongoDB.Driver.ServerErrorCategory.DuplicateKey)
 			{
-				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message);
+				throw ErtisAuthException.DuplicateKeyError(ex.WriteError.Message, GetIndexName(ex.WriteError.Message));
 			}
 			
 			throw;
 		}
 	}
+	
+	/// <summary>
+	/// The violated index in the duplicate key error message (e.g. "E11000 duplicate key error collection: db.users index: ux_email_address dup key: { ... }").
+	/// </summary>
+	private static string? GetIndexName(string message)
+	{
+		var match = DuplicateKeyIndexNameRegex().Match(message);
+		return match.Success ? match.Groups["name"].Value : null;
+	}
+	
+	[GeneratedRegex(@" index: (?<name>\S+) dup key:")]
+	private static partial Regex DuplicateKeyIndexNameRegex();
 	
 	#endregion
 	

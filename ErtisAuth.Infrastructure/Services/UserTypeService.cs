@@ -29,11 +29,18 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
     private readonly IEventService _eventService;
     private readonly IUserRepository _userRepository;
+    private readonly IUserUniqueIndexSynchronizer _uniqueIndexSynchronizer;
     private readonly IMemoryCache _memoryCache;
 	
     #endregion
     
     #region Fields
+	
+	/// <summary>
+	/// Serializes the user type changes (of this instance), so that the unique index synchronization of a change
+	/// doesn't drop the index just created for another one.
+	/// </summary>
+	private readonly SemaphoreSlim _changeLock = new(1, 1);
 	
     private static UserType? originUserType;
     private static ObjectFieldInfo? sysFieldInfo;
@@ -42,7 +49,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
     
     #region Properties
 	
-    private static UserType OriginUserType
+    internal static UserType OriginUserType
     {
 	    get
 	    {
@@ -251,17 +258,20 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
     /// <param name="eventService"></param>
     /// <param name="repository"></param>
     /// <param name="userRepository">Used directly instead of IUserService, which depends on this service</param>
+    /// <param name="uniqueIndexSynchronizer"></param>
     /// <param name="memoryCache"></param>
     public UserTypeService(
         IMembershipService membershipService,
         IEventService eventService,
         IUserTypeRepository repository,
         IUserRepository userRepository,
+        IUserUniqueIndexSynchronizer uniqueIndexSynchronizer,
         IMemoryCache memoryCache)
         : base(membershipService, repository)
     {
         this._eventService = eventService;
         this._userRepository = userRepository;
+        this._uniqueIndexSynchronizer = uniqueIndexSynchronizer;
         this._memoryCache = memoryCache;
         
         this.OnCreated += this.UserTypeCreatedEventHandler;
@@ -577,9 +587,23 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
 	public override async Task<UserType> CreateAsync(Utilizer utilizer, string membershipId, UserType model, CancellationToken cancellationToken = default)
 	{
-		var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
-		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
-		return created;
+		await this._changeLock.WaitAsync(cancellationToken);
+		try
+		{
+			var userTypes = await this.GetAllAsync(membershipId, cancellationToken: cancellationToken);
+			await this.EnsureUniqueIndexesAsync(membershipId, userTypes.Append(model), cancellationToken: cancellationToken);
+			
+			var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return created;
+		}
+		finally
+		{
+			// Drops the indexes which are no longer needed after the change, or which were built for a change which failed afterward.
+			// Never throws; runs even when the request is cancelled, so no index is left behind.
+			await this._uniqueIndexSynchronizer.SynchronizeAsync(membershipId, CancellationToken.None);
+			this._changeLock.Release();
+		}
 	}
 	
 	#endregion
@@ -588,17 +612,32 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
 	public override async Task<UserType> UpdateAsync(Utilizer utilizer, string membershipId, UserType model, CancellationToken cancellationToken = default)
 	{
-		// The name or slug may change, so the entries of the prior version are removed explicitly
-		var prior = await this.GetAsync(membershipId, model.Id, cancellationToken: cancellationToken);
-		await this.KeepSlugIfInUseAsync(membershipId, model, prior, cancellationToken: cancellationToken);
-		var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
-		this.PurgeCache(membershipId, prior);
-		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
-		return updated;
+		await this._changeLock.WaitAsync(cancellationToken);
+		try
+		{
+			// The name or slug may change, so the entries of the prior version are removed explicitly
+			var prior = await this.GetAsync(membershipId, model.Id, cancellationToken: cancellationToken);
+			await this.KeepSlugIfInUseAsync(membershipId, model, prior, cancellationToken: cancellationToken);
+			
+			var userTypes = await this.GetAllAsync(membershipId, cancellationToken: cancellationToken);
+			await this.EnsureUniqueIndexesAsync(membershipId, userTypes.Where(x => x.Id != model.Id).Append(model), cancellationToken: cancellationToken);
+			
+			var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
+			this.PurgeCache(membershipId, prior);
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return updated;
+		}
+		finally
+		{
+			// Drops the indexes which are no longer needed after the change, or which were built for a change which failed afterward.
+			// Never throws; runs even when the request is cancelled, so no index is left behind.
+			await this._uniqueIndexSynchronizer.SynchronizeAsync(membershipId, CancellationToken.None);
+			this._changeLock.Release();
+		}
 	}
 	
 	/// <summary>
-	/// Users (user_type) and inherited user types (base_type) refer to a user type by its slug, so the slug of a user type
+	/// Users (user_type) and inherited user types (baseType) refer to a user type by its slug, so the slug of a user type
 	/// in use can not change; the name still can. A slug which is not sent is derived from the name, so the prior slug
 	/// is kept instead of rejecting the update.
 	/// </summary>
@@ -629,12 +668,23 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 			throw ErtisAuthException.UserTypeCanNotBeDelete();
 		}
 		
-		// The deleted user type is no longer listed by PurgeAllCacheAsync, so its own entries are removed explicitly
-		var prior = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
-		var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
-		this.PurgeCache(membershipId, prior);
-		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
-		return isDeleted;
+		await this._changeLock.WaitAsync(cancellationToken);
+		try
+		{
+			// The deleted user type is no longer listed by PurgeAllCacheAsync, so its own entries are removed explicitly
+			var prior = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+			this.PurgeCache(membershipId, prior);
+			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
+			return isDeleted;
+		}
+		finally
+		{
+			// Drops the indexes which are no longer needed after the change, or which were built for a change which failed afterward.
+			// Never throws; runs even when the request is cancelled, so no index is left behind.
+			await this._uniqueIndexSynchronizer.SynchronizeAsync(membershipId, CancellationToken.None);
+			this._changeLock.Release();
+		}
 	}
 	
 	private async Task<IEnumerable<string>?> CheckDeletableAsync(string id, string membershipId, CancellationToken cancellationToken = default)
@@ -655,17 +705,17 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	}
 	
 	/// <summary>
-	/// Lists what refers to the user type by its slug: inherited user types (base_type) and users (user_type).
+	/// Lists what refers to the user type by its slug: inherited user types (baseType) and users (user_type).
 	/// </summary>
 	private async Task<List<string>> CheckUsagesAsync(string membershipId, UserType userType, CancellationToken cancellationToken = default)
 	{
 		var usages = new List<string>();
 		
-		var inheritedUserTypesQuery = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("base_type", userType.Slug));
-		var inheritedUserTypes = await this.QueryAsync(membershipId, inheritedUserTypesQuery.ToString(), cancellationToken: cancellationToken);
+		// Typed query: the field name comes from the BSON mapping of UserType.BaseUserType ("baseType")
+		var inheritedUserTypes = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.BaseUserType == userType.Slug, sorting: null, cancellationToken: cancellationToken);
 		if (inheritedUserTypes.Items.Any())
 		{
-			usages.Add($"This user type is currently using as the base type of some other user types. ({string.Join(", ", inheritedUserTypes.Items.Select(x => x["title"]))})");
+			usages.Add($"This user type is currently using as the base type of some other user types. ({string.Join(", ", inheritedUserTypes.Items.Select(x => x.Name))})");
 		}
 		
 		var usersQuery = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("user_type", userType.Slug));
@@ -676,6 +726,24 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		}
 		
 		return usages;
+	}
+	
+	#endregion
+	
+	#region Unique Index Methods
+	
+	private async Task<UserType[]> GetAllAsync(string membershipId, CancellationToken cancellationToken = default)
+	{
+		return (await this.GetAsync(membershipId, null, null, cancellationToken: cancellationToken)).Items.ToArray();
+	}
+	
+	/// <summary>
+	/// Builds the unique indexes needed by the user types after the change, before the change is saved:
+	/// a field can not become unique while the users already have duplicate values for it.
+	/// </summary>
+	private async Task EnsureUniqueIndexesAsync(string membershipId, IEnumerable<UserType> userTypes, CancellationToken cancellationToken = default)
+	{
+		await this._uniqueIndexSynchronizer.EnsureIndexesAsync(membershipId, userTypes, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
