@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -55,7 +56,8 @@ public class ErtisAuthInstance : IAsyncLifetime
 	public ErtisAuthInstance(MongoDbContainerFixture mongo)
 	{
 		this.DatabaseName = $"ertisauth-{Guid.NewGuid():N}";
-		this.Factory = new ErtisAuthFactory(mongo.ConnectionString, this.DatabaseName);
+		// The callback runs when the host is built (first request), after the derived instance is constructed
+		this.Factory = new ErtisAuthFactory(mongo.ConnectionString, this.DatabaseName, this.ConfigureTestServices);
 		
 		// Real Kestrel on a random port (no conflict with a local ErtisAuth on 9716), as in production;
 		// the in-memory TestServer behaves differently in places (e.g. re-runs Response.OnStarting callbacks)
@@ -87,6 +89,14 @@ public class ErtisAuthInstance : IAsyncLifetime
 		this.ApplicationSecret = result.GetProperty("application").GetProperty("secret").GetString()!;
 		
 		await this.OnSetUpAsync();
+	}
+	
+	/// <summary>
+	/// Replaces services of the app for this installation (e.g. outgoing HTTP calls to external providers).
+	/// </summary>
+	protected virtual void ConfigureTestServices(IServiceCollection services)
+	{
+	
 	}
 	
 	/// <summary>

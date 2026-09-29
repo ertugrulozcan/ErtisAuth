@@ -55,7 +55,7 @@ public class ProvidersController : ControllerBase
 		}
 		else
 		{
-			return this.ApplicationNotFound(id);
+			return this.ProviderNotFound(id);
 		}
 	}
 	
@@ -106,8 +106,8 @@ public class ProvidersController : ControllerBase
 		
 		if (Enum.TryParse<KnownProviders>(model.Name, true, out var providerType) && providerType != KnownProviders.ErtisAuth)
 		{
-			// Omitted flags keep their current values
-			var current = model.IsActive == null || model.TrustEmail == null ? await this._providerService.GetAsync(membershipId, id, cancellationToken: cancellationToken) : null;
+			// Omitted flags and private key keep their current values
+			var current = model.IsActive == null || model.TrustEmail == null || model.PrivateKey == null ? await this._providerService.GetAsync(membershipId, id, cancellationToken: cancellationToken) : null;
 			var providerModel = new Provider(providerType)
 			{
 				Id = id,
@@ -117,7 +117,7 @@ public class ProvidersController : ControllerBase
 				AppClientId = model.AppClientId,
 				TenantId = model.TenantId,
 				TeamId = model.TeamId,
-				PrivateKey = model.PrivateKey,
+				PrivateKey = model.PrivateKey ?? current?.PrivateKey,
 				PrivateKeyId = model.PrivateKeyId,
 				RedirectUri = model.RedirectUri,
 				IsActive = model.IsActive ?? current?.IsActive ?? false,
