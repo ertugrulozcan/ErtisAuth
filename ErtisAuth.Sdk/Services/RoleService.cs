@@ -1,8 +1,11 @@
+using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Sdk.Configuration;
+using ErtisAuth.Sdk.Extensions;
 using ErtisAuth.Sdk.Services.Interfaces;
 
 // ReSharper disable UnusedType.Global
@@ -25,7 +28,7 @@ public class RoleService : MembershipBoundedService<Role>, IRoleService
 	/// <param name="restHandler"></param>
 	public RoleService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
 	{
-		
+	
 	}
 	
 	#endregion
@@ -38,7 +41,7 @@ public class RoleService : MembershipBoundedService<Role>, IRoleService
 		var queryString = QueryString.Add("permission", rbac);
 		var headers = HeaderCollection.Add("Authorization", token.ToString());
 		var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, queryString, headers, cancellationToken: cancellationToken).ConfigureAwait(false);
-		return response.IsSuccess;
+		return IsPermitted(response);
 	}
 	
 	public async Task<bool> CheckPermissionByRoleAsync(string roleId, string rbac, TokenBase token, CancellationToken cancellationToken = default)
@@ -47,6 +50,20 @@ public class RoleService : MembershipBoundedService<Role>, IRoleService
 		var queryString = QueryString.Add("permission", rbac);
 		var headers = HeaderCollection.Add("Authorization", token.ToString());
 		var response = await this.ExecuteRequestAsync(HttpMethod.Get, url, queryString, headers, cancellationToken: cancellationToken).ConfigureAwait(false);
+		return IsPermitted(response);
+	}
+	
+	/// <summary>
+	/// ErtisAuth answered whether the permission is granted; if it could not answer (unreachable, 5xx), the permission
+	/// is unknown: AuthenticationServiceUnavailable instead of a denial.
+	/// </summary>
+	private static bool IsPermitted(IResponseResult response)
+	{
+		if (response.IsServiceUnavailable())
+		{
+			throw ErtisAuthException.AuthenticationServiceUnavailable();
+		}
+		
 		return response.IsSuccess;
 	}
 	

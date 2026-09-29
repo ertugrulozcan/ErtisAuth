@@ -54,22 +54,29 @@ public class AppleAuthenticator : IAppleAuthenticator
 		return await this.VerifyTokenAsync(request as AppleLoginRequestBase, provider, cancellationToken: cancellationToken);
 	}
 	
+	/// <summary>
+	/// Exchanges the authorization code. Only a code (or token) Apple does not accept is a failed login (false or 401);
+	/// a provider configuration Apple can't use is ProviderNotConfiguredCorrectly, and Apple not answering (network
+	/// error, timeout, 5xx, unreadable response) is ProviderUnavailable (503).
+	/// </summary>
 	public async Task<bool> VerifyTokenAsync(AppleLoginRequestBase? request, Provider provider, CancellationToken cancellationToken = default)
 	{
+		if (request?.Token == null || string.IsNullOrEmpty(request.Token.Code))
+		{
+			return false;
+		}
+		
+		if (string.IsNullOrEmpty(provider.AppClientId) || string.IsNullOrEmpty(provider.RedirectUri) || string.IsNullOrEmpty(provider.PrivateKey))
+		{
+			throw ErtisAuthException.ProviderNotConfiguredCorrectly("Sign in with Apple requires the app client id, the redirect uri and the private key");
+		}
+		
+		var secret = this.CreateClientSecret(provider);
+		
+		HttpResponseMessage response;
 		try
 		{
-			if (request?.Token == null || string.IsNullOrEmpty(request.Token.Code))
-			{
-				return false;
-			}
-			
-			var secret = this.GenerateAppleClientSecret(provider);
-			if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(provider.AppClientId) || string.IsNullOrEmpty(provider.RedirectUri))
-			{
-				return false;
-			}
-			
-			var response = await this._httpClient.PostAsync(VerifyTokenEndpoint, new FormUrlEncodedContent(new[]
+			response = await this._httpClient.PostAsync(VerifyTokenEndpoint, new FormUrlEncodedContent(new[]
 			{
 				new KeyValuePair<string, string>("client_id", provider.AppClientId),
 				new KeyValuePair<string, string>("client_secret", secret),
@@ -77,40 +84,97 @@ public class AppleAuthenticator : IAppleAuthenticator
 				new KeyValuePair<string, string>("grant_type", "authorization_code"),
 				new KeyValuePair<string, string>("redirect_uri", provider.RedirectUri)
 			}), cancellationToken);
-			
+		}
+		catch (HttpRequestException ex)
+		{
+			this._logger.LogError(ex, "Apple token endpoint could not be reached");
+			throw ErtisAuthException.ProviderUnavailable("Apple");
+		}
+		catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+		{
+			this._logger.LogError(ex, "Apple token endpoint timed out");
+			throw ErtisAuthException.ProviderUnavailable("Apple");
+		}
+		
+		using (response)
+		{
+			var content = await response.Content.ReadAsStringAsync(cancellationToken);
 			if (response.StatusCode == HttpStatusCode.OK)
 			{
-				var appleBearerToken = JsonSerializer.Deserialize<AppleBearerToken>(await response.Content.ReadAsStringAsync(cancellationToken));
-				if (appleBearerToken != null && !string.IsNullOrEmpty(appleBearerToken.AccessToken))
+				AppleBearerToken? appleBearerToken;
+				try
 				{
-					var identity = this.ReadIdentity(appleBearerToken.IdToken, provider);
-					if (identity == null)
-					{
-						return false;
-					}
-					
-					// Set AccessToken
-					request.Token.AccessToken = appleBearerToken.AccessToken;
-					this.ApplyIdentity(request, identity);
-					return true;
+					appleBearerToken = JsonSerializer.Deserialize<AppleBearerToken>(content);
 				}
-			}
-			else
-			{
-				var message = await response.Content.ReadAsStringAsync(cancellationToken: cancellationToken);
-				throw ErtisAuthException.Unauthorized($"Token was not verified by provider ({message})");
+				catch (JsonException ex)
+				{
+					this._logger.LogError(ex, "Apple token endpoint returned an unreadable response");
+					throw ErtisAuthException.ProviderUnavailable("Apple");
+				}
+				
+				if (appleBearerToken == null || string.IsNullOrEmpty(appleBearerToken.AccessToken))
+				{
+					return false;
+				}
+				
+				var identity = this.ReadIdentity(appleBearerToken.IdToken, provider);
+				if (identity == null)
+				{
+					return false;
+				}
+				
+				request.Token.AccessToken = appleBearerToken.AccessToken;
+				this.ApplyIdentity(request, identity);
+				return true;
 			}
 			
-			return false;
+			if ((int) response.StatusCode >= 500)
+			{
+				this._logger.LogError("Apple token endpoint answered {StatusCode}: {Content}", (int) response.StatusCode, content);
+				throw ErtisAuthException.ProviderUnavailable("Apple");
+			}
+			
+			// https://developer.apple.com/documentation/sign_in_with_apple/errorresponse
+			var error = ReadErrorCode(content);
+			if (error is "invalid_client" or "unauthorized_client")
+			{
+				this._logger.LogError("Apple rejected the client credentials of the provider: {Content}", content);
+				throw ErtisAuthException.ProviderNotConfiguredCorrectly($"Apple rejected the client credentials ({error})");
+			}
+			
+			throw ErtisAuthException.Unauthorized($"Token was not verified by provider ({content})");
 		}
-		catch (ErtisAuthException)
+	}
+	
+	/// <summary>
+	/// The client secret signed with the provider's private key; a key that can't be read is a configuration error.
+	/// </summary>
+	private string CreateClientSecret(Provider provider)
+	{
+		try
 		{
-			throw;
+			var secret = this.GenerateAppleClientSecret(provider);
+			return string.IsNullOrEmpty(secret)
+				? throw ErtisAuthException.ProviderNotConfiguredCorrectly("The client secret could not be created")
+				: secret;
 		}
-		catch (Exception ex)
+		catch (Exception ex) when (ex is ArgumentException or CryptographicException)
 		{
-			this._logger.LogError(ex, "AppleAuthenticator.VerifyTokenAsync occured an error");
-			return false;
+			this._logger.LogError(ex, "The private key of the Apple provider could not be read");
+			throw ErtisAuthException.ProviderNotConfiguredCorrectly("The private key could not be read");
+		}
+	}
+	
+	private static string? ReadErrorCode(string content)
+	{
+		try
+		{
+			using var document = JsonDocument.Parse(content);
+			return document.RootElement.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.String ? error.GetString() : null;
+		}
+		catch (JsonException)
+		{
+			return null;
 		}
 	}
 	

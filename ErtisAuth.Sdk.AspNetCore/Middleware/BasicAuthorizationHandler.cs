@@ -1,7 +1,9 @@
+using Ertis.Core.Models.Response;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.Authorization.Extensions;
 using ErtisAuth.Sdk.Configuration;
+using ErtisAuth.Sdk.Extensions;
 using ErtisAuth.Sdk.AspNetCore.Helpers;
 using ErtisAuth.Sdk.AspNetCore.Models;
 using ErtisAuth.Sdk.Services.Interfaces;
@@ -65,6 +67,8 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 		}
 		else
 		{
+			this.ThrowIfServiceUnavailable(getApplicationResponse);
+			
 			var errorMessage = getApplicationResponse.Message;
 			if (errorMessage != null && ResponseHelper.TryParseError(errorMessage, out var error) && error != null)
 			{
@@ -116,6 +120,9 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 			}
 			else
 			{
+				// Before caching: an outage is not an answer about the token
+				this.ThrowIfServiceUnavailable(getApplicationResponse);
+				
 				var errorMessage = getApplicationResponse.Message;
 				if (errorMessage != null && ResponseHelper.TryParseError(errorMessage, out var error) && error != null)
 				{
@@ -138,6 +145,18 @@ internal class BasicAuthorizationHandler : IAuthorizationHandler<BasicToken>
 				
 				throw ErtisAuthException.Unauthorized(string.IsNullOrEmpty(errorMessage) ? "An error occured on basic authorization check" : errorMessage);
 			}
+		}
+	}
+	
+	/// <summary>
+	/// ErtisAuth could not answer (unreachable, 5xx): 503 AuthenticationServiceUnavailable, not an invalid token (401).
+	/// </summary>
+	private void ThrowIfServiceUnavailable(IResponseResult response)
+	{
+		if (response.IsServiceUnavailable())
+		{
+			this._logger.LogError(response.Exception, "ErtisAuth could not be reached on basic authorization check ({StatusCode})", response.StatusCode);
+			throw ErtisAuthException.AuthenticationServiceUnavailable();
 		}
 	}
 	

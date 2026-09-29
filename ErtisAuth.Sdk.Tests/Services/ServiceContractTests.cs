@@ -1,5 +1,6 @@
 using System.Net;
 using System.Web;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Sdk.Services.Interfaces;
@@ -192,6 +193,35 @@ public class ServiceContractTests
 		Assert.Equal(HttpMethod.Get, this.LastRequest.Method);
 		Assert.Equal($"{MembershipUrl}/roles/check-permission", this.LastRequest.Path);
 		Assert.Equal("users.read", this.LastQuery["permission"]);
+	}
+	
+	/// <summary>
+	/// ErtisAuth not answering is not a denial: the permission is unknown (503 in the client application).
+	/// </summary>
+	[Theory]
+	[InlineData(HttpStatusCode.InternalServerError)]
+	[InlineData(HttpStatusCode.BadGateway)]
+	[InlineData(HttpStatusCode.ServiceUnavailable)]
+	public async Task RoleService_CheckPermissionAsync_WhenErtisAuthFails_ThrowsServiceUnavailable(HttpStatusCode statusCode)
+	{
+		this._sdk.Handler.ResponseStatusCode = statusCode;
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this._sdk.Get<IRoleService>().CheckPermissionAsync("users.read", this._token, TestContext.Current.CancellationToken));
+		
+		Assert.Equal("AuthenticationServiceUnavailable", exception.ErrorCode);
+		Assert.Equal(HttpStatusCode.ServiceUnavailable, exception.StatusCode);
+	}
+	
+	/// <summary>
+	/// The rest handler lets the network error through: not a denial either (the authentication handler of
+	/// ErtisAuth.Sdk.AspNetCore turns it into 503).
+	/// </summary>
+	[Fact]
+	public async Task RoleService_CheckPermissionAsync_WhenErtisAuthIsUnreachable_Throws()
+	{
+		this._sdk.Handler.ResponseException = new HttpRequestException("Connection refused");
+		
+		await Assert.ThrowsAsync<HttpRequestException>(() => this._sdk.Get<IRoleService>().CheckPermissionByRoleAsync("role-id", "users.read", this._token, TestContext.Current.CancellationToken));
 	}
 	
 	[Fact]

@@ -45,9 +45,11 @@ public sealed class SdkClientApplication : IAsyncDisposable
 	
 	#region Methods
 	
-	public static async Task<SdkClientApplication> StartAsync(ErtisAuthInstance instance)
+	/// <param name="instance"></param>
+	/// <param name="ertisAuthAddress">Another ErtisAuth address than the instance's (e.g. an unreachable one)</param>
+	public static async Task<SdkClientApplication> StartAsync(ErtisAuthInstance instance, string? ertisAuthAddress = null)
 	{
-		var ertisAuthAddress = instance.CreateClient().BaseAddress!.ToString().TrimEnd('/');
+		ertisAuthAddress ??= instance.CreateClient().BaseAddress!.ToString().TrimEnd('/');
 		
 		var builder = WebApplication.CreateSlimBuilder();
 		builder.WebHost.UseKestrel(options => options.Listen(System.Net.IPAddress.Loopback, 0));

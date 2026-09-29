@@ -231,7 +231,7 @@ public class AuthorizationHandlerTests
 	[Fact]
 	public async Task Bearer_CheckAuthorizationAsync_WhenApiErrorIsNotParsable_ThrowsGenericUnauthorized()
 	{
-		this._authenticationService.WhoAmIAsync(this._bearerToken, Arg.Any<CancellationToken>()).Returns(new ResponseResult<User>(HttpStatusCode.BadGateway, string.Empty));
+		this._authenticationService.WhoAmIAsync(this._bearerToken, Arg.Any<CancellationToken>()).Returns(new ResponseResult<User>(HttpStatusCode.BadRequest, string.Empty));
 		
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateBearerHandler().CheckAuthorizationAsync(this._bearerToken, TestHttpContext.Create()));
 		
@@ -248,6 +248,63 @@ public class AuthorizationHandlerTests
 		Assert.Equal(UserId, utilizer.Id);
 		Assert.Equal("access-token", utilizer.Token);
 		await this._roleService.DidNotReceiveWithAnyArgs().CheckPermissionAsync(null!, null!, TestContext.Current.CancellationToken);
+	}
+	
+	#endregion
+	
+	#region ErtisAuth Unavailable
+	
+	/// <summary>
+	/// ErtisAuth not answering (a 5xx, or no response at all) is not an invalid token: 503, so that the client
+	/// application doesn't sign its users out during an outage.
+	/// </summary>
+	public static TheoryData<ResponseResult<User>> UnavailableUserResponses => new()
+	{
+		new ResponseResult<User>(HttpStatusCode.InternalServerError, string.Empty),
+		new ResponseResult<User>(HttpStatusCode.BadGateway, string.Empty),
+		new ResponseResult<User>(HttpStatusCode.ServiceUnavailable, string.Empty),
+		new ResponseResult<User>(false) { Exception = new HttpRequestException("Connection refused") }
+	};
+	
+	[Theory]
+	[MemberData(nameof(UnavailableUserResponses))]
+	public async Task Bearer_WhenErtisAuthDoesNotAnswer_ThrowsServiceUnavailable(ResponseResult<User> response)
+	{
+		this._authenticationService.WhoAmIAsync(this._bearerToken, Arg.Any<CancellationToken>()).Returns(response);
+		
+		var authorization = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateBearerHandler().CheckAuthorizationAsync(this._bearerToken, TestHttpContext.Create()));
+		var authentication = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateBearerHandler().CheckAuthenticationAsync(this._bearerToken));
+		
+		Assert.Equal("AuthenticationServiceUnavailable", authorization.ErrorCode);
+		Assert.Equal(HttpStatusCode.ServiceUnavailable, authorization.StatusCode);
+		Assert.Equal("AuthenticationServiceUnavailable", authentication.ErrorCode);
+	}
+	
+	[Fact]
+	public async Task Basic_WhenErtisAuthDoesNotAnswer_ThrowsServiceUnavailableAndCachesNothing()
+	{
+		this._applicationService.GetAsync(ApplicationId, this._basicToken, Arg.Any<CancellationToken>()).Returns(new ResponseResult<Application>(HttpStatusCode.ServiceUnavailable, string.Empty));
+		var handler = this.CreateBasicHandler(basicTokenCacheTTL: 60);
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => handler.CheckAuthorizationAsync(this._basicToken, TestHttpContext.Create()));
+		Assert.Equal("AuthenticationServiceUnavailable", exception.ErrorCode);
+		
+		// Recovered: the outage was not cached as a rejected token
+		this.SetupApplication();
+		this.SetupPermission(true);
+		var result = await handler.CheckAuthorizationAsync(this._basicToken, TestHttpContext.Create());
+		Assert.True(result.IsAuthorized);
+	}
+	
+	[Fact]
+	public async Task WhenThePermissionCheckIsUnavailable_ThrowsServiceUnavailable()
+	{
+		this.SetupUser();
+		this._roleService.CheckPermissionAsync(Arg.Any<string>(), Arg.Any<TokenBase>(), Arg.Any<CancellationToken>()).Returns<bool>(_ => throw ErtisAuthException.AuthenticationServiceUnavailable());
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateBearerHandler().CheckAuthorizationAsync(this._bearerToken, TestHttpContext.Create()));
+		
+		Assert.Equal("AuthenticationServiceUnavailable", exception.ErrorCode);
 	}
 	
 	#endregion

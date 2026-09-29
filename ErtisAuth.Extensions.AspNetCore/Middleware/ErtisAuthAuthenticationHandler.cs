@@ -120,11 +120,9 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 			this.Context.Items[AuthenticationErrorItemKey] = ex;
 			return AuthenticateResult.Fail(ex.Error.Message);
 		}
-		catch (Exception ex)
-		{
-			this._logger.LogError(ex, "ErtisAuthAuthenticationHandler.HandleAuthenticateAsync occurred an error");
-			return AuthenticateResult.Fail(ex.Message);
-		}
+		
+		// Any other exception (e.g. the database is unreachable) is not an authentication failure: it reaches the
+		// global exception handler (500), so that clients don't take an outage for an invalid token
 	}
 	
 	private async Task<Utilizer> CheckAuthorizationAsync(bool checkPermission)
@@ -186,12 +184,12 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				{
 					throw ErtisAuthException.InvalidToken();
 				}
-
+				
 				if (verifyTokenResult.IsRefreshToken)
 				{
 					throw ErtisAuthException.InvalidToken("Refresh tokens can not be used as access tokens");
 				}
-
+				
 				var user = verifyTokenResult.User;
 				if (user == null)
 				{

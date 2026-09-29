@@ -1,6 +1,8 @@
+using Ertis.Core.Models.Response;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.Authorization.Extensions;
+using ErtisAuth.Sdk.Extensions;
 using ErtisAuth.Sdk.AspNetCore.Helpers;
 using ErtisAuth.Sdk.AspNetCore.Models;
 using ErtisAuth.Sdk.Services.Interfaces;
@@ -50,6 +52,8 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 		}
 		else
 		{
+			this.ThrowIfServiceUnavailable(meResponse);
+			
 			var errorMessage = meResponse.Message;
 			if (errorMessage != null && ResponseHelper.TryParseError(errorMessage, out var error) && error != null)
 			{
@@ -98,6 +102,8 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 		}
 		else
 		{
+			this.ThrowIfServiceUnavailable(meResponse);
+			
 			var errorMessage = meResponse.Message;
 			if (errorMessage != null && ResponseHelper.TryParseError(errorMessage, out var error) && error != null)
 			{
@@ -117,6 +123,18 @@ internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
 			}
 			
 			throw ErtisAuthException.Unauthorized(string.IsNullOrEmpty(errorMessage) ? "An error occured on bearer authorization handler" : errorMessage);
+		}
+	}
+	
+	/// <summary>
+	/// ErtisAuth could not answer (unreachable, 5xx): 503 AuthenticationServiceUnavailable, not an invalid token (401).
+	/// </summary>
+	private void ThrowIfServiceUnavailable(IResponseResult response)
+	{
+		if (response.IsServiceUnavailable())
+		{
+			this._logger.LogError(response.Exception, "ErtisAuth could not be reached on bearer authorization check ({StatusCode})", response.StatusCode);
+			throw ErtisAuthException.AuthenticationServiceUnavailable();
 		}
 	}
 	

@@ -151,6 +151,75 @@ public class AppleAuthenticatorTests
 	
 	#endregion
 	
+	#region Errors Other Than A Rejected Code
+	
+	/// <summary>
+	/// Apple not answering is not a rejected login: 503 ProviderUnavailable (the client can retry).
+	/// </summary>
+	[Fact]
+	public async Task VerifyTokenAsync_WhenAppleIsUnreachable_ThrowsProviderUnavailable()
+	{
+		this._services.Handler.Fail(TokenEndpoint, new HttpRequestException("Name or service not known"));
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), CreateProvider(), TestContext.Current.CancellationToken));
+		
+		Assert.Equal("ProviderUnavailable", exception.ErrorCode);
+		Assert.Equal(HttpStatusCode.ServiceUnavailable, exception.StatusCode);
+	}
+	
+	[Theory]
+	[InlineData(HttpStatusCode.InternalServerError, "{}")]
+	[InlineData(HttpStatusCode.ServiceUnavailable, "")]
+	[InlineData(HttpStatusCode.OK, "<html>maintenance</html>")]
+	public async Task VerifyTokenAsync_WhenAppleFails_ThrowsProviderUnavailable(HttpStatusCode statusCode, string body)
+	{
+		this._services.Handler.Respond(TokenEndpoint, body, statusCode);
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), CreateProvider(), TestContext.Current.CancellationToken));
+		
+		Assert.Equal("ProviderUnavailable", exception.ErrorCode);
+	}
+	
+	/// <summary>
+	/// Apple rejecting the provider's credentials is a configuration error, not a failed login of the user.
+	/// </summary>
+	[Theory]
+	[InlineData("invalid_client")]
+	[InlineData("unauthorized_client")]
+	public async Task VerifyTokenAsync_WhenAppleRejectsTheClient_ThrowsProviderNotConfiguredCorrectly(string error)
+	{
+		this._services.Handler.Respond(TokenEndpoint, $$"""{"error":"{{error}}"}""", HttpStatusCode.BadRequest);
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), CreateProvider(), TestContext.Current.CancellationToken));
+		
+		Assert.Equal("ProviderNotConfiguredCorrectly", exception.ErrorCode);
+	}
+	
+	[Fact]
+	public async Task VerifyTokenAsync_WithUnreadablePrivateKey_ThrowsProviderNotConfiguredCorrectly()
+	{
+		var provider = CreateProvider();
+		provider.PrivateKey = "-----BEGIN PRIVATE KEY-----\nnot a key\n-----END PRIVATE KEY-----";
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), provider, TestContext.Current.CancellationToken));
+		
+		Assert.Equal("ProviderNotConfiguredCorrectly", exception.ErrorCode);
+		Assert.Empty(this._services.Handler.Requests);
+	}
+	
+	[Fact]
+	public async Task VerifyTokenAsync_WithoutRedirectUri_ThrowsProviderNotConfiguredCorrectly()
+	{
+		var provider = CreateProvider();
+		provider.RedirectUri = null;
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), provider, TestContext.Current.CancellationToken));
+		
+		Assert.Equal("ProviderNotConfiguredCorrectly", exception.ErrorCode);
+	}
+	
+	#endregion
+	
 	#region Identity
 	
 	[Theory]

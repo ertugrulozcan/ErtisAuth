@@ -297,4 +297,22 @@ public class ErtisAuthAuthenticationHandlerTests
 	}
 	
 	#endregion
+	
+	#region Infrastructure Errors
+	
+	/// <summary>
+	/// An exception that is not an ErtisAuthException (e.g. the database is unreachable) is not an authentication failure:
+	/// it goes to the global exception handler (500), so that clients don't take an outage for an invalid token (401).
+	/// </summary>
+	[Fact]
+	public async Task AuthenticateAsync_WhenTheTokenCanNotBeVerified_Throws()
+	{
+		this._tokenService
+			.VerifyBearerTokenAsync(Token, false, Arg.Any<CancellationToken>())
+			.Returns<BearerTokenValidationResult>(_ => throw new TimeoutException("A timeout occurred after 30000ms selecting a server"));
+		
+		await Assert.ThrowsAsync<TimeoutException>(() => this.AuthenticateAsync($"Bearer {Token}"));
+	}
+	
+	#endregion
 }

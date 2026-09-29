@@ -98,5 +98,44 @@ public class StartupIndexTests : IClassFixture<ErtisAuthInstance>
 		}
 	}
 	
+	/// <summary>
+	/// Indexes are created one by one: one that can't be created (here the name 'membership_id_1' is taken by an index on
+	/// another field) doesn't keep the others of the collection from being created.
+	/// </summary>
+	[Fact]
+	public async Task Startup_AnIndexThatCanNotBeCreated_DoesNotBlockTheOthers()
+	{
+		var databaseName = $"ertisauth-{Guid.NewGuid():N}";
+		var database = new MongoClient(this._mongo.ConnectionString).GetDatabase(databaseName);
+		try
+		{
+			var roles = database.GetCollection<BsonDocument>("roles");
+			await roles.Indexes.CreateOneAsync(new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending("slug"), new CreateIndexOptions { Name = "membership_id_1" }), cancellationToken: TestContext.Current.CancellationToken);
+			
+			await using (var factory = new ErtisAuthFactory(this._mongo.ConnectionString, databaseName))
+			{
+				factory.UseKestrel(0);
+				using var client = factory.CreateClient();
+			}
+			
+			var indexes = await (await roles.Indexes.ListAsync(TestContext.Current.CancellationToken)).ToListAsync(TestContext.Current.CancellationToken);
+			
+			// The conflicting index is left as it is
+			var conflicting = Assert.Single(indexes, x => x["name"].AsString == "membership_id_1");
+			Assert.Equal(["slug"], conflicting["key"].AsBsonDocument.Names);
+			
+			// The others are created
+			var names = indexes.Select(x => x["name"].AsString).ToArray();
+			Assert.Contains("name_1", names);
+			Assert.Contains("_id_1_membership_id_1", names);
+			Assert.Contains("name_1_membership_id_1", names);
+			Assert.Contains(indexes, x => x.Contains("weights"));
+		}
+		finally
+		{
+			await database.Client.DropDatabaseAsync(databaseName, TestContext.Current.CancellationToken);
+		}
+	}
+	
 	#endregion
 }

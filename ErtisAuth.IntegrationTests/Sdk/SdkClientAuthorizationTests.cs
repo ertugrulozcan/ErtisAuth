@@ -225,4 +225,27 @@ public class SdkClientAuthorizationTests : IClassFixture<ErtisAuthInstance>
 	}
 	
 	#endregion
+	
+	#region ErtisAuth Unavailable
+	
+	/// <summary>
+	/// ErtisAuth unreachable: 503 AuthenticationServiceUnavailable, not 401, so that the client application doesn't sign
+	/// its users out during an outage.
+	/// </summary>
+	[Fact]
+	public async Task UnreachableErtisAuth_IsServiceUnavailable()
+	{
+		var (accessToken, _) = await this.LoginAsUserOfRoleAsync("orders.read");
+		await using var application = await SdkClientApplication.StartAsync(this._instance, ertisAuthAddress: "http://127.0.0.1:1");
+		
+		foreach (var path in new[] { "/orders", "/profile" })
+		{
+			using var client = application.CreateClient($"Bearer {accessToken}");
+			using var response = await client.GetAsync(path, CancellationToken);
+			var error = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.ServiceUnavailable);
+			Assert.Equal("AuthenticationServiceUnavailable", error!["ErrorCode"]?.GetValue<string>() ?? error["errorCode"]!.GetValue<string>());
+		}
+	}
+	
+	#endregion
 }

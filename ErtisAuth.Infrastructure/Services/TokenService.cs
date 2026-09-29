@@ -609,11 +609,6 @@ public class TokenService : ITokenService
 			
 			return false;
 		}
-		catch (Exception ex)
-		{
-			this._logger.LogError(ex, "TokenService.RevokeTokenAsync occured an error");
-			return false;
-		}
 		
 		if (user == null)
 		{

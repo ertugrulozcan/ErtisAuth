@@ -21,6 +21,11 @@ internal sealed class RecordingHttpMessageHandler : HttpMessageHandler
 	/// </summary>
 	public string? ResponseJson { get; set; } = "{}";
 	
+	/// <summary>
+	/// Thrown instead of answering (e.g. HttpRequestException for an unreachable server).
+	/// </summary>
+	public Exception? ResponseException { get; set; }
+	
 	#endregion
 	
 	#region Methods
@@ -33,6 +38,11 @@ internal sealed class RecordingHttpMessageHandler : HttpMessageHandler
 			.ToDictionary(x => x.Key, x => string.Join(",", x.Value), StringComparer.OrdinalIgnoreCase);
 		
 		this.Requests.Add(new RecordedRequest(request.Method, request.RequestUri!, headers, body));
+		
+		if (this.ResponseException != null)
+		{
+			throw this.ResponseException;
+		}
 		
 		var response = new HttpResponseMessage(this.ResponseStatusCode);
 		if (this.ResponseJson != null)

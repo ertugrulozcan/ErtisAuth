@@ -116,8 +116,12 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 		}
 		catch (Exception ex)
 		{
+			// Not an answer of ErtisAuth about the token (e.g. ErtisAuth unreachable): 503, so that the client
+			// application doesn't take an outage for an invalid token and sign its users out
 			this._logger.LogError(ex, "ErtisAuthAuthenticationHandler.HandleAuthenticateAsync occured an error");
-			return AuthenticateResult.Fail(ex.Message);
+			var unavailable = ErtisAuthException.AuthenticationServiceUnavailable();
+			this.Context.Items[AuthenticationErrorItemKey] = unavailable;
+			return AuthenticateResult.Fail(unavailable.Error.Message);
 		}
 	}
 	

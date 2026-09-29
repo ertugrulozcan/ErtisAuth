@@ -28,9 +28,9 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 	protected static readonly TimeSpan TTLGracePeriod = TimeSpan.FromMinutes(5);
 	
 	#endregion
-    
+	
 	#region Constructors
-    
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -58,7 +58,7 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 		{
 			return;
 		}
-        
+		
 		try
 		{
 			var currentIndexes = (await this.GetIndexesAsync(cancellationToken)).ToArray();
@@ -78,23 +78,29 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 				}
 			}
 			
-			if (missingIndexes.Any())
-			{
-				await this.CreateManyIndexAsync(missingIndexes, cancellationToken);
-				
-				foreach (var index in missingIndexes)
-				{
-					this._logger.LogInformation("Index '{Key}' created on {CollectionName} collection", index.Key, this.CollectionName);
-				}
-			}
-			else
+			if (!missingIndexes.Any())
 			{
 				this._logger.LogInformation("All indexes already exist on {CollectionName} collection", this.CollectionName);
+				return;
+			}
+			
+			// One by one: an index that can't be created (e.g. conflicting with an existing one) doesn't keep the others from being created
+			foreach (var index in missingIndexes)
+			{
+				try
+				{
+					await this.CreateIndexAsync(index, cancellationToken);
+					this._logger.LogInformation("Index '{Key}' created on {CollectionName} collection", index.Key, this.CollectionName);
+				}
+				catch (Exception ex)
+				{
+					this._logger.LogError(ex, "Index '{Key}' could not be created on {CollectionName} collection", index.Key, this.CollectionName);
+				}
 			}
 		}
 		catch (Exception ex)
 		{
-			this._logger.LogError(ex, "RepositoryBase<TDto>.CreateIndexesAsync occured an error");
+			this._logger.LogError(ex, "The indexes of {CollectionName} collection could not be read", this.CollectionName);
 		}
 	}
 	

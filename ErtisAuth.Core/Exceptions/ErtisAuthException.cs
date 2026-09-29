@@ -13,7 +13,7 @@ public class ErtisAuthException : ErtisException
 	// ReSharper disable once MemberCanBePrivate.Global
 	protected ErtisAuthException(HttpStatusCode statusCode, string message, string errorCode) : base(statusCode, message, errorCode)
 	{
-		
+	
 	}
 	
 	#endregion
@@ -205,32 +205,32 @@ public class ErtisAuthException : ErtisException
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"This membership is already using by some membership related resources, it's could not be deleted ({membershipId})", "MembershipCouldNotDeleted");
 	}
-
+	
 	public static ErtisAuthException InvalidQuery(string message)
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, message, "InvalidQuery");
 	}
-
+	
 	public static ErtisAuthException UnsupportedAggregationStage(string stage)
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, $"The aggregation stage is not supported ({stage})", "UnsupportedAggregationStage");
 	}
-
+	
 	public static ErtisAuthException MembershipHashAlgorithmInvalid(string membershipId, string? hashAlgorithm)
 	{
 		return new ErtisAuthException(HttpStatusCode.InternalServerError, $"The membership has no valid hash algorithm configured ({membershipId}: '{hashAlgorithm}')", "MembershipHashAlgorithmInvalid");
 	}
-
+	
 	public static ErtisAuthException HashAlgorithmRequired()
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "hash_algorithm is a required field", "HashAlgorithmRequired");
 	}
-
+	
 	public static ErtisAuthException UnsupportedHashAlgorithm(string hashAlgorithm)
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, $"Unsupported hash algorithm ({hashAlgorithm})", "UnsupportedHashAlgorithm");
 	}
-
+	
 	public static ErtisAuthException UnsupportedEncoding(string encoding)
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, $"Unsupported encoding ({encoding})", "UnsupportedEncoding");
@@ -472,6 +472,16 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException ProviderNotConfiguredCorrectly(string message)
 	{
 		return new ErtisAuthException(HttpStatusCode.NotImplemented, $"Provider not configured correctly. ({message})", "ProviderNotConfiguredCorrectly");
+	}
+	
+	public static ErtisAuthException ProviderUnavailable(string providerName)
+	{
+		return new ErtisAuthException(HttpStatusCode.ServiceUnavailable, $"{providerName} could not be reached, please try again later", "ProviderUnavailable");
+	}
+	
+	public static ErtisAuthException AuthenticationServiceUnavailable()
+	{
+		return new ErtisAuthException(HttpStatusCode.ServiceUnavailable, "The authentication service could not be reached, please try again later", "AuthenticationServiceUnavailable");
 	}
 	
 	public static ErtisAuthException UnsupportedProvider()

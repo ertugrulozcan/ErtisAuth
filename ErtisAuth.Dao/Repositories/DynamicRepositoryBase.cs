@@ -21,9 +21,9 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
 	protected virtual IIndexDefinition[] Indexes => Array.Empty<IIndexDefinition>();
 	
 	#endregion
-    
+	
 	#region Constructors
-    
+	
 	/// <summary>
 	/// Constructor
 	/// </summary>
@@ -51,7 +51,7 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
 		{
 			return;
 		}
-        
+		
 		try
 		{
 			// Read with the driver: DynamicMongoRepository.GetIndexesAsync throws on a text index of several fields
@@ -77,23 +77,29 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
 				}
 			}
 			
-			if (missingIndexes.Any())
-			{
-				await this.CreateManyIndexAsync(missingIndexes, cancellationToken);
-				
-				foreach (var index in missingIndexes)
-				{
-					this._logger.LogInformation("Index '{Key}' created on {CollectionName} collection", index.Key, this.CollectionName);
-				}
-			}
-			else
+			if (!missingIndexes.Any())
 			{
 				this._logger.LogInformation("All indexes already exist on {CollectionName} collection", this.CollectionName);
+				return;
+			}
+			
+			// One by one: an index that can't be created (e.g. conflicting with an existing one) doesn't keep the others from being created
+			foreach (var index in missingIndexes)
+			{
+				try
+				{
+					await this.CreateIndexAsync(index, cancellationToken);
+					this._logger.LogInformation("Index '{Key}' created on {CollectionName} collection", index.Key, this.CollectionName);
+				}
+				catch (Exception ex)
+				{
+					this._logger.LogError(ex, "Index '{Key}' could not be created on {CollectionName} collection", index.Key, this.CollectionName);
+				}
 			}
 		}
 		catch (Exception ex)
 		{
-			this._logger.LogError(ex, "DynamicRepositoryBase.CreateIndexesAsync occured an error");
+			this._logger.LogError(ex, "The indexes of {CollectionName} collection could not be read", this.CollectionName);
 		}
 	}
 	

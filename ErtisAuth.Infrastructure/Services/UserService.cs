@@ -604,25 +604,12 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
     private KnownProviders GetSourceProvider(DynamicObject model)
     {
-        try
+        if (model.TryGetValue<string>("source_provider", out var sourceProviderName, out _) && Enum.TryParse<KnownProviders>(sourceProviderName, out var sourceProvider))
         {
-	        if (!model.ContainsProperty("source_provider"))
-	        {
-		        return KnownProviders.ErtisAuth;
-	        }
-	        
-	        var sourceProviderName = model.GetValue<string>("source_provider");
-			if (string.IsNullOrEmpty(sourceProviderName))
-			{
-				return KnownProviders.ErtisAuth;
-			}
-			
-	        return Enum.Parse<KnownProviders>(sourceProviderName);
+	        return sourceProvider;
         }
-        catch
-        {
-	        return KnownProviders.ErtisAuth;
-        }
+        
+        return KnownProviders.ErtisAuth;
     }
 	
     #endregion
