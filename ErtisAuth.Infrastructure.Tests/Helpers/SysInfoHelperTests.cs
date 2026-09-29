@@ -43,8 +43,7 @@ public class SysInfoHelperTests
 	public void SystemUtilizer_IsRecordedAsSystem()
 	{
 		var sys = SysInfoHelper.Created(Utilizer.GetSystemUtilizer("membership-id"));
-		
-		Assert.Equal(SysInfoHelper.SystemUtilizerName, sys.CreatedBy);
+		Assert.Equal(Utilizer.GetSystemUtilizer(string.Empty).Username, sys.CreatedBy);
 	}
 	
 	[Fact]
