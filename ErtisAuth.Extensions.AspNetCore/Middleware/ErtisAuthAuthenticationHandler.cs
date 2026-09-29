@@ -218,6 +218,11 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				}
 				
 				Utilizer userUtilizer= user;
+				
+				// Before the permission check: the token scopes are its final gate
+				var scopes = verifyTokenResult.Scopes?.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+				userUtilizer.Scopes = scopes is { Length: > 0 } ? scopes : null;
+				
 				if (!string.IsNullOrEmpty(user.Role))
 				{
 					var role = await this.roleService.GetBySlugAsync(user.Role, user.MembershipId);
@@ -242,9 +247,6 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				
 				userUtilizer.Token = token;
 				userUtilizer.TokenType = _tokenType;
-				
-				var scopes = verifyTokenResult.Scopes?.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-				userUtilizer.Scopes = scopes is { Length: > 0 } ? scopes : null;
 				
 				return userUtilizer;
 			default:
