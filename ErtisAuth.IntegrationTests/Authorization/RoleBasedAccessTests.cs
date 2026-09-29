@@ -238,15 +238,41 @@ public class RoleBasedAccessTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Check Permission
 	
+	/// <summary>
+	/// Self authorized: asking about one's own permissions needs no roles.read.
+	/// </summary>
 	[Fact]
 	public async Task CheckPermission_ByToken()
 	{
-		var (_, client) = await this.LoginAsUserOfRoleAsync(["users.read", "roles.read"]);
+		var (_, client) = await this.LoginAsUserOfRoleAsync(["users.read"]);
 		var url = $"{this.MembershipUrl}/roles/check-permission";
 		
 		await AssertStatusAsync(client.GetAsync($"{url}?permission=users.read", CancellationToken), HttpStatusCode.OK);
 		await AssertStatusAsync(client.GetAsync($"{url}?permission=users.delete", CancellationToken), HttpStatusCode.Unauthorized);
 		await AssertStatusAsync(client.GetAsync(url, CancellationToken), HttpStatusCode.BadRequest);
+		
+		// Other roles still need roles.read
+		await AssertStatusAsync(client.GetAsync($"{this.MembershipUrl}/roles", CancellationToken), HttpStatusCode.Forbidden);
+	}
+	
+	[Fact]
+	public async Task CheckPermission_ByScopedToken_IsLimitedToTheScopes()
+	{
+		var (accessToken, _) = await this._instance.GenerateTokenAsync();
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/generate-token")
+		{
+			Content = JsonContent.Create(new { scopes = new[] { "users.read" } })
+		};
+		
+		request.Headers.Add("Membership", this._instance.MembershipId);
+		request.Headers.Add("Authorization", $"Bearer {accessToken}");
+		using var response = await this._instance.CreateClient().SendAsync(request, CancellationToken);
+		var scoped = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.Created);
+		
+		var client = this._instance.CreateClient($"Bearer {scoped!["access_token"]!.GetValue<string>()}");
+		var url = $"{this.MembershipUrl}/roles/check-permission";
+		await AssertStatusAsync(client.GetAsync($"{url}?permission=users.read", CancellationToken), HttpStatusCode.OK);
+		await AssertStatusAsync(client.GetAsync($"{url}?permission=users.delete", CancellationToken), HttpStatusCode.Unauthorized);
 	}
 	
 	[Fact]

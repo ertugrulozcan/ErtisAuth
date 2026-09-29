@@ -67,6 +67,17 @@ public static class RbacExtensions
 		return false;
 	}
 	
+	/// <summary>
+	/// An application may read its own record (ErtisAuth.Sdk.AspNetCore reads it to authenticate Basic tokens).
+	/// </summary>
+	public static bool HasOwnReadPermission(this Role _, Rbac rbac, Utilizer utilizer)
+	{
+		return rbac.Action.Slug == Rbac.GetSegment(Rbac.CrudActions.Read).Slug &&
+			rbac.Resource == "applications" &&
+			utilizer.Type == Utilizer.UtilizerType.Application &&
+			rbac.Object == utilizer.Id;
+	}
+	
 	public static bool HasOwnUpdatePermission(this Role _, Rbac rbac, IUtilizer utilizer)
 	{
 		if (rbac.Action.Slug != Rbac.GetSegment(Rbac.CrudActions.Update).Slug)

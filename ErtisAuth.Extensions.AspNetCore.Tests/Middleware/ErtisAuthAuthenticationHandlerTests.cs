@@ -2,10 +2,12 @@ using System.Text.Encodings.Web;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Extensions.AspNetCore.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Middleware;
 using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Extensions.Authorization.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -36,11 +38,19 @@ public class ErtisAuthAuthenticationHandlerTests
 	
 	private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
 	
+	private readonly IRoleService _roleService = Substitute.For<IRoleService>();
+	
+	private readonly IAccessControlService _accessControlService = Substitute.For<IAccessControlService>();
+	
 	#endregion
 	
 	#region Helpers
 	
-	private async Task<AuthenticateResult> AuthenticateAsync(string authorizationHeader, string? routeMembershipId = null, bool membershipRoute = false)
+	/// <param name="authorizationHeader"></param>
+	/// <param name="routeMembershipId"></param>
+	/// <param name="membershipRoute"></param>
+	/// <param name="authorization">The endpoint's authorization attributes in metadata order (controller first, then action); [Authorized] by default</param>
+	private async Task<AuthenticateResult> AuthenticateAsync(string authorizationHeader, string? routeMembershipId = null, bool membershipRoute = false, object[]? authorization = null)
 	{
 		var options = Substitute.For<IOptionsMonitor<AuthenticationSchemeOptions>>();
 		options.Get(SchemeName).Returns(new AuthenticationSchemeOptions());
@@ -48,15 +58,16 @@ public class ErtisAuthAuthenticationHandlerTests
 		var handler = new ErtisAuthAuthenticationHandler(
 			options,
 			this._tokenService,
-			Substitute.For<IRoleService>(),
-			Substitute.For<IAccessControlService>(),
+			this._roleService,
+			this._accessControlService,
 			NullLoggerFactory.Instance,
 			UrlEncoder.Default);
-			
+		
+		var authorizationMetadata = authorization ?? [new AuthorizedAttribute()];
 		var metadata = membershipRoute
-			? new EndpointMetadataCollection(new AuthorizedAttribute(), new MembershipRouteAttribute("users"))
-			: new EndpointMetadataCollection(new AuthorizedAttribute());
-			
+			? new EndpointMetadataCollection(authorizationMetadata.Append(new MembershipRouteAttribute("users")))
+			: new EndpointMetadataCollection(authorizationMetadata);
+		
 		var context = new DefaultHttpContext();
 		context.Request.Headers.Authorization = authorizationHeader;
 		context.SetEndpoint(new RouteEndpoint(
@@ -65,7 +76,7 @@ public class ErtisAuthAuthenticationHandlerTests
 			0,
 			metadata,
 			"protected"));
-			
+		
 		if (routeMembershipId != null)
 		{
 			context.Request.RouteValues[MembershipRouteAttribute.ParameterName] = routeMembershipId;
@@ -75,13 +86,13 @@ public class ErtisAuthAuthenticationHandlerTests
 		return await handler.AuthenticateAsync();
 	}
 	
-	private void SetupBearerValidation(bool isRefreshToken = false)
+	private void SetupBearerValidation(bool isRefreshToken = false, string role = "")
 	{
 		var user = new User
 		{
 			Id = "user-id",
 			Username = "john.doe",
-			Role = string.Empty,
+			Role = role,
 			IsActive = true,
 			MembershipId = OwnMembershipId
 		};
@@ -196,6 +207,93 @@ public class ErtisAuthAuthenticationHandlerTests
 		var result = await this.AuthenticateAsync($"Bearer {Token}", OtherMembershipId, membershipRoute: false);
 		
 		Assert.True(result.Succeeded);
+	}
+	
+	#endregion
+	
+	#region Endpoint Authorization
+	
+	/// <summary>
+	/// A user whose role denies every permission.
+	/// </summary>
+	private void SetupBearerValidationWithoutPermission()
+	{
+		this.SetupBearerValidation(role: "no-permission");
+		this._roleService.GetBySlugAsync("no-permission", OwnMembershipId, Arg.Any<CancellationToken>()).Returns(new Role { Id = "role-id", Name = "No Permission", MembershipId = OwnMembershipId });
+		this._accessControlService.HasPermission(Arg.Any<Role>(), Arg.Any<Rbac>(), Arg.Any<Utilizer>()).Returns(false);
+	}
+	
+	[Fact]
+	public async Task AuthorizedEndpoint_ChecksThePermission()
+	{
+		this.SetupBearerValidationWithoutPermission();
+		
+		var result = await this.AuthenticateAsync($"Bearer {Token}");
+		
+		Assert.False(result.Succeeded);
+		this._accessControlService.ReceivedWithAnyArgs(1).HasPermission(default(Role)!, default(Rbac)!, default(Utilizer));
+	}
+	
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task SelfAuthorizedEndpoint_AuthenticatesWithoutPermissionCheck(bool onActionOfAuthorizedController)
+	{
+		this.SetupBearerValidationWithoutPermission();
+		object[] authorization = onActionOfAuthorizedController ? [new AuthorizedAttribute(), new SelfAuthorizedAttribute()] : [new SelfAuthorizedAttribute()];
+		
+		var result = await this.AuthenticateAsync($"Bearer {Token}", authorization: authorization);
+		
+		Assert.True(result.Succeeded);
+		this._accessControlService.DidNotReceiveWithAnyArgs().HasPermission(default(Role)!, default(Rbac)!, default(Utilizer));
+	}
+	
+	[Fact]
+	public async Task AuthorizedActionOfSelfAuthorizedController_ChecksThePermission()
+	{
+		this.SetupBearerValidationWithoutPermission();
+		
+		var result = await this.AuthenticateAsync($"Bearer {Token}", authorization: [new SelfAuthorizedAttribute(), new AuthorizedAttribute()]);
+		
+		Assert.False(result.Succeeded);
+	}
+	
+	[Fact]
+	public async Task SelfAuthorizedEndpoint_StillRejectsRefreshTokens()
+	{
+		this.SetupBearerValidation(isRefreshToken: true);
+		
+		var result = await this.AuthenticateAsync($"Bearer {Token}", authorization: [new AuthorizedAttribute(), new SelfAuthorizedAttribute()]);
+		
+		Assert.False(result.Succeeded);
+	}
+	
+	[Fact]
+	public async Task SelfAuthorizedEndpoint_StillRejectsTokensOfAnotherMembership()
+	{
+		this.SetupBearerValidation();
+		
+		var result = await this.AuthenticateAsync($"Bearer {Token}", OtherMembershipId, membershipRoute: true, authorization: [new AuthorizedAttribute(), new SelfAuthorizedAttribute()]);
+		
+		Assert.False(result.Succeeded);
+		Assert.Equal("You do not have access to the resources of this membership", result.Failure?.Message);
+	}
+	
+	[Fact]
+	public async Task SelfAuthorizedEndpoint_WithoutToken_Fails()
+	{
+		var result = await this.AuthenticateAsync(string.Empty, authorization: [new AuthorizedAttribute(), new SelfAuthorizedAttribute()]);
+		
+		Assert.False(result.Succeeded);
+	}
+	
+	[Fact]
+	public async Task UnauthorizedAttribute_MakesTheEndpointPublic()
+	{
+		var result = await this.AuthenticateAsync(string.Empty, authorization: [new SelfAuthorizedAttribute(), new UnauthorizedAttribute()]);
+		
+		Assert.True(result.Succeeded);
+		Assert.Equal(ClaimExtensions.PublicClaimName, result.Principal!.Identities.Single().NameClaimType);
 	}
 	
 	#endregion

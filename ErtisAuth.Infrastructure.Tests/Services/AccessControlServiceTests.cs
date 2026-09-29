@@ -208,9 +208,39 @@ public class AccessControlServiceTests
 		
 		Assert.False(HasPermission(role, Request("users", "update", UtilizerId), CreateUtilizer()));
 	}
-	
+
 	#endregion
-	
+
+	#region Own Read Rule
+
+	[Fact]
+	public void HasPermission_ApplicationReadingItself_IsAllowedWithoutRolePermission()
+	{
+		var utilizer = CreateUtilizer(Utilizer.UtilizerType.Application);
+
+		Assert.True(HasPermission(CreateRole(), Request("applications", "read", UtilizerId), utilizer));
+	}
+
+	[Theory]
+	[InlineData(Utilizer.UtilizerType.Application, "applications", "read", OtherUserId)]
+	[InlineData(Utilizer.UtilizerType.Application, "applications", "read", null)]
+	[InlineData(Utilizer.UtilizerType.Application, "applications", "delete", UtilizerId)]
+	[InlineData(Utilizer.UtilizerType.User, "users", "read", UtilizerId)]
+	public void HasPermission_OwnReadRule_CoversOnlyAnApplicationReadingItself(Utilizer.UtilizerType type, string resource, string action, string? obj)
+	{
+		Assert.False(HasPermission(CreateRole(), Request(resource, action, obj), CreateUtilizer(type)));
+	}
+
+	[Fact]
+	public void HasPermission_ApplicationReadingItself_IsDeniedWhenRoleForbidsRead()
+	{
+		var role = CreateRole(forbidden: ["applications.read"]);
+
+		Assert.False(HasPermission(role, Request("applications", "read", UtilizerId), CreateUtilizer(Utilizer.UtilizerType.Application)));
+	}
+
+	#endregion
+
 	#region Token Scopes
 	
 	[Fact]

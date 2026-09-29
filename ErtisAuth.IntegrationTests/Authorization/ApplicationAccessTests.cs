@@ -74,6 +74,34 @@ public class ApplicationAccessTests : IClassFixture<ErtisAuthInstance>
 		await AssertStatusAsync(client.DeleteAsync($"{this.MembershipUrl}/applications/{id}", CancellationToken), HttpStatusCode.Forbidden);
 	}
 	
+	/// <summary>
+	/// An application may read its own record (ErtisAuth.Sdk.AspNetCore does it to authenticate Basic tokens),
+	/// but no other application without applications.read.
+	/// </summary>
+	[Fact]
+	public async Task Application_CanReadItselfOnly()
+	{
+		var (id, secret) = await this.CreateApplicationAsync("users.read");
+		var (otherId, _) = await this.CreateApplicationAsync("users.read");
+		var client = this.BasicClient(id, secret);
+		
+		await AssertStatusAsync(client.GetAsync($"{this.MembershipUrl}/applications/{id}", CancellationToken), HttpStatusCode.OK);
+		await AssertStatusAsync(client.GetAsync($"{this.MembershipUrl}/applications/{otherId}", CancellationToken), HttpStatusCode.Forbidden);
+		await AssertStatusAsync(client.GetAsync($"{this.MembershipUrl}/applications", CancellationToken), HttpStatusCode.Forbidden);
+	}
+	
+	[Fact]
+	public async Task Application_RoleForbiddingApplicationsRead_CanNotReadItself()
+	{
+		var roles = await this.AdminResourceClientAsync("roles");
+		var role = await roles.CreateAsync(new { name = $"Service {Guid.NewGuid():N}", permissions = new[] { "users.read" }, forbidden = new[] { "applications.read" } });
+		var applications = await this.AdminResourceClientAsync("applications");
+		var application = await applications.CreateAsync(new { name = $"Service {Guid.NewGuid():N}", role = role["slug"]!.GetValue<string>() });
+		var id = application["_id"]!.GetValue<string>();
+		
+		await AssertStatusAsync(this.BasicClient(id, application["secret"]!.GetValue<string>()).GetAsync($"{this.MembershipUrl}/applications/{id}", CancellationToken), HttpStatusCode.Forbidden);
+	}
+	
 	[Fact]
 	public async Task VerifyToken_WithTheApplicationSecret()
 	{

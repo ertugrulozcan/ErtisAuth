@@ -157,6 +157,55 @@ public class ErtisAuthAuthenticationHandlerTests
 		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
 	}
 	
+	/// <summary>
+	/// Endpoint metadata lists the controller's attributes first: a [SelfAuthorized] action of an [Authorized] controller.
+	/// </summary>
+	[Fact]
+	public async Task SelfAuthorizedActionOfAuthorizedController_AuthenticatesWithoutPermissionCheck()
+	{
+		this._bearerHandler.CheckAuthenticationAsync(Arg.Any<BearerToken>()).Returns(CreateUser());
+		
+		var result = await this.AuthenticateAsync(TestHttpContext.Create("Bearer access-token", new AuthorizedAttribute(), new SelfAuthorizedAttribute()));
+		
+		Assert.True(result.Succeeded);
+		await this._bearerHandler.Received(1).CheckAuthenticationAsync(Arg.Any<BearerToken>());
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+	}
+	
+	[Fact]
+	public async Task SelfAuthorizedActionOfAuthorizedController_WithBasicToken_AuthenticatesWithoutPermissionCheck()
+	{
+		var application = new Utilizer { Id = ApplicationId, Username = "server-app", Role = "server", Type = Utilizer.UtilizerType.Application, MembershipId = "membership-id" };
+		this._basicHandler.CheckAuthenticationAsync(Arg.Any<BasicToken>()).Returns(application);
+		
+		var result = await this.AuthenticateAsync(TestHttpContext.Create($"Basic {ApplicationId}:secret", new AuthorizedAttribute(), new SelfAuthorizedAttribute()));
+		
+		Assert.True(result.Succeeded);
+		await this._basicHandler.Received(1).CheckAuthenticationAsync(Arg.Any<BasicToken>());
+		await this._basicHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+	}
+	
+	[Fact]
+	public async Task AuthorizedActionOfSelfAuthorizedController_ChecksThePermission()
+	{
+		this._bearerHandler.CheckAuthorizationAsync(Arg.Any<BearerToken>(), Arg.Any<HttpContext>()).Returns(Result(CreateUser(), true));
+		
+		var result = await this.AuthenticateAsync(TestHttpContext.Create("Bearer access-token", new SelfAuthorizedAttribute(), new AuthorizedAttribute()));
+		
+		Assert.True(result.Succeeded);
+		await this._bearerHandler.Received(1).CheckAuthorizationAsync(Arg.Any<BearerToken>(), Arg.Any<HttpContext>());
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthenticationAsync(default!);
+	}
+	
+	[Fact]
+	public async Task SelfAuthorizedAndUnauthorizedEndpoint_IsPublic()
+	{
+		var result = await this.AuthenticateAsync(TestHttpContext.Create(null, new SelfAuthorizedAttribute(), new UnauthorizedAttribute()));
+		
+		Assert.True(result.Succeeded);
+		Assert.Equal(ClaimExtensions.PublicClaimName, result.Principal!.Identities.Single().NameClaimType);
+	}
+	
 	#endregion
 	
 	#region Failures
@@ -239,6 +288,29 @@ public class ErtisAuthAuthenticationHandlerTests
 			_ => ErtisAuthException.UnsupportedTokenType().Error.Message
 		};
 	}
+	
+	#region Self Authorized Failures
+	
+	[Fact]
+	public async Task SelfAuthorizedActionOfAuthorizedController_WithInvalidToken_FailsWithUnauthorized()
+	{
+		this._bearerHandler.CheckAuthenticationAsync(Arg.Any<BearerToken>()).Returns<Utilizer>(_ => throw ErtisAuthException.Unauthorized("Invalid token"));
+		var httpContext = TestHttpContext.Create("Bearer access-token", new AuthorizedAttribute(), new SelfAuthorizedAttribute());
+		
+		var result = await this.AuthenticateAsync(httpContext);
+		
+		Assert.False(result.Succeeded);
+	}
+	
+	[Fact]
+	public async Task SelfAuthorizedActionOfAuthorizedController_WithoutToken_Fails()
+	{
+		var result = await this.AuthenticateAsync(TestHttpContext.Create(null, new AuthorizedAttribute(), new SelfAuthorizedAttribute()));
+		
+		Assert.False(result.Succeeded);
+	}
+	
+	#endregion
 	
 	#endregion
 }

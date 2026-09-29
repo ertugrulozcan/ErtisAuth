@@ -264,8 +264,13 @@ public class RolesController : QueryControllerBase
 		}
 	}
 	
+	/// <summary>
+	/// Whether the caller's token may perform the given permission (used by ErtisAuth.Sdk.AspNetCore to authorize the
+	/// requests of client applications). Self authorized: asking about one's own permissions needs a valid token only,
+	/// the asked permission is evaluated with the caller's role, UBAC and token scopes.
+	/// </summary>
 	[HttpGet("check-permission")]
-	[RbacAction(Rbac.CrudActions.Read)]
+	[SelfAuthorized]
 	public async Task<IActionResult> CheckPermissionByToken([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);

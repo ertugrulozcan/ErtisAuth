@@ -132,7 +132,7 @@ public class SdkClientAuthorizationTests : IClassFixture<ErtisAuthInstance>
 	[Fact]
 	public async Task ScopedToken_IsLimitedToItsScopes()
 	{
-		var (accessToken, _) = await this.LoginAsUserOfRoleAsync("orders.*", "roles.read");
+		var (accessToken, _) = await this.LoginAsUserOfRoleAsync("orders.*");
 		var scopedToken = await this.GenerateScopedTokenAsync(accessToken, "orders.read");
 		await using var application = await SdkClientApplication.StartAsync(this._instance);
 		using var client = application.CreateClient($"Bearer {scopedToken}");
@@ -168,14 +168,46 @@ public class SdkClientAuthorizationTests : IClassFixture<ErtisAuthInstance>
 		await AssertStatusAsync(invalidClient.GetAsync("/profile", CancellationToken), HttpStatusCode.Unauthorized);
 	}
 	
+	/// <summary>
+	/// The CMS case: the action is [SelfAuthorized] in an [Authorized] controller and checks an rbac it builds from the request.
+	/// </summary>
+	[Fact]
+	public async Task SelfAuthorizedAction_ChecksThePermissionItself()
+	{
+		var (accessToken, _) = await this.LoginAsUserOfRoleAsync("documents-invoice.read");
+		await using var application = await SdkClientApplication.StartAsync(this._instance);
+		
+		using var client = application.CreateClient($"Bearer {accessToken}");
+		await AssertStatusAsync(client.GetAsync("/documents/invoice", CancellationToken), HttpStatusCode.OK);
+		await AssertStatusAsync(client.GetAsync("/documents/contract", CancellationToken), HttpStatusCode.Forbidden);
+		
+		using var invalidClient = application.CreateClient("Bearer not-a-token");
+		await AssertStatusAsync(invalidClient.GetAsync("/documents/invoice", CancellationToken), HttpStatusCode.Unauthorized);
+	}
+	
+	[Fact]
+	public async Task SelfAuthorizedAction_WithScopedToken_ChecksThePermissionWithinTheScopes()
+	{
+		var (accessToken, _) = await this.LoginAsUserOfRoleAsync("documents-invoice.read", "documents-contract.read");
+		var scopedToken = await this.GenerateScopedTokenAsync(accessToken, "documents-invoice.read");
+		await using var application = await SdkClientApplication.StartAsync(this._instance);
+		
+		using var client = application.CreateClient($"Bearer {scopedToken}");
+		await AssertStatusAsync(client.GetAsync("/documents/invoice", CancellationToken), HttpStatusCode.OK);
+		await AssertStatusAsync(client.GetAsync("/documents/contract", CancellationToken), HttpStatusCode.Forbidden);
+	}
+	
 	#endregion
 	
 	#region Basic
 	
+	/// <summary>
+	/// The application's role needs no ErtisAuth permissions (roles.read, applications.read) for the SDK to work.
+	/// </summary>
 	[Fact]
 	public async Task Application_IsAllowedOnlyWhatItsRolePermits()
 	{
-		var role = await this.CreateRoleAsync("orders.read", "roles.read");
+		var role = await this.CreateRoleAsync("orders.read");
 		var applications = await this.AdminResourceClientAsync("applications");
 		var created = await applications.CreateAsync(new { name = $"Client {Guid.NewGuid():N}", role });
 		var basicToken = $"Basic {created["_id"]!.GetValue<string>()}:{created["secret"]!.GetValue<string>()}";
@@ -184,6 +216,9 @@ public class SdkClientAuthorizationTests : IClassFixture<ErtisAuthInstance>
 		using var client = application.CreateClient(basicToken);
 		await AssertStatusAsync(client.GetAsync("/orders", CancellationToken), HttpStatusCode.OK);
 		await AssertStatusAsync(client.PostAsync("/orders", null, CancellationToken), HttpStatusCode.Forbidden);
+		
+		using var selfAuthorizedClient = application.CreateClient(basicToken);
+		await AssertStatusAsync(selfAuthorizedClient.GetAsync("/documents/invoice", CancellationToken), HttpStatusCode.Forbidden);
 		
 		using var wrongSecretClient = application.CreateClient($"Basic {created["_id"]!.GetValue<string>()}:wrong-secret");
 		await AssertStatusAsync(wrongSecretClient.GetAsync("/orders", CancellationToken), HttpStatusCode.Unauthorized);

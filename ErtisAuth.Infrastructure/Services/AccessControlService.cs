@@ -76,14 +76,15 @@ public class AccessControlService : IAccessControlService
 	
 	private static bool CheckPermission(Role role, Rbac rbac, Utilizer utilizer)
 	{
-		return Evaluate(role, rbac, utilizer.HasPermission(rbac), () => role.HasOwnUpdatePermission(rbac, utilizer), utilizer.Scopes);
+		return Evaluate(role, rbac, utilizer.HasPermission(rbac), () => role.HasOwnUpdatePermission(rbac, utilizer) || role.HasOwnReadPermission(rbac, utilizer), utilizer.Scopes);
 	}
 	
 	/// <summary>
 	/// The single authorization decision:
 	/// 1. A matching UBAC entry (user permissions/forbidden) is decisive,
 	/// 2. otherwise the role permissions (role forbidden wins),
-	/// 3. otherwise the own-update exception, unless the role forbids the update,
+	/// 3. otherwise the own record exceptions (a user or an application updating itself, an application reading itself),
+	///    unless the role forbids the action,
 	/// and finally the token scopes (if any) must cover the request, whichever rule granted it.
 	/// </summary>
 	private static bool Evaluate(Role? role, Rbac rbac, bool? ubacDecision, Func<bool> isOwnUpdate, IEnumerable<string>? scopes)

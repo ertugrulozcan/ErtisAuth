@@ -7,7 +7,6 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.AspNetCore.Attributes;
 using Microsoft.AspNetCore.Authentication;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
-using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Extensions.Authorization.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -90,41 +89,23 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 	{
 		try
 		{
-			var isAuthorizedEndpoint = false;
-			var isUnauthorizedEndpoint = false;
-			
 			var endpoint = this.Context.GetEndpoint();
-			if (endpoint is RouteEndpoint routeEndpoint)
+			var endpointAuthorization = this.Context.GetEndpointAuthorization();
+			if (endpointAuthorization == EndpointAuthorization.Public)
 			{
-				var authorizedAttribute = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(AuthorizedAttribute));
-				var unauthorizedAttribute = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(UnauthorizedAttribute));
-				if (authorizedAttribute is AuthorizedAttribute)
-				{
-					isAuthorizedEndpoint = unauthorizedAttribute == null;
-				}
-				
-				if (unauthorizedAttribute is UnauthorizedAttribute)
-				{
-					isUnauthorizedEndpoint = true;
-				}
+				var publicIdentity = new ClaimsIdentity(Array.Empty<Claim>(), null, ClaimExtensions.PublicClaimName, null);
+				this.Context.User.AddIdentity(publicIdentity);
+				var publicPrincipal = new ClaimsPrincipal(publicIdentity);
+				return AuthenticateResult.Success(new AuthenticationTicket(publicPrincipal, this.Scheme.Name));
 			}
 			
-			if (!isAuthorizedEndpoint)
+			if (endpointAuthorization == EndpointAuthorization.None)
 			{
-				if (isUnauthorizedEndpoint)
-				{
-					var publicIdentity = new ClaimsIdentity(Array.Empty<Claim>(), null, ClaimExtensions.PublicClaimName, null);
-					this.Context.User.AddIdentity(publicIdentity);
-					var publicPrincipal = new ClaimsPrincipal(publicIdentity);
-					return AuthenticateResult.Success(new AuthenticationTicket(publicPrincipal, this.Scheme.Name));
-				}
-				else
-				{
-					return AuthenticateResult.NoResult();
-				}
+				return AuthenticateResult.NoResult();
 			}
 			
-			var utilizer = await this.CheckAuthorizationAsync();
+			// Self authorized endpoints check the permission themselves
+			var utilizer = await this.CheckAuthorizationAsync(checkPermission: endpointAuthorization == EndpointAuthorization.Authorized);
 			this.CheckMembershipScope(endpoint, utilizer);
 			
 			var identity = utilizer.ToClaimsIdentity();
@@ -146,7 +127,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 		}
 	}
 	
-	private async Task<Utilizer> CheckAuthorizationAsync()
+	private async Task<Utilizer> CheckAuthorizationAsync(bool checkPermission)
 	{
 		var token = this.Context.Request.GetTokenFromHeader(out var tokenType);
 		if (string.IsNullOrEmpty(token))
@@ -173,7 +154,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				
 				var application = validationResult.Application;
 				Utilizer applicationUtilizer= application;
-				if (!string.IsNullOrEmpty(application.Role))
+				if (checkPermission && !string.IsNullOrEmpty(application.Role))
 				{
 					var role = await this.roleService.GetBySlugAsync(application.Role, application.MembershipId);
 					if (role != null)
@@ -223,7 +204,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				var scopes = verifyTokenResult.Scopes?.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
 				userUtilizer.Scopes = scopes is { Length: > 0 } ? scopes : null;
 				
-				if (!string.IsNullOrEmpty(user.Role))
+				if (checkPermission && !string.IsNullOrEmpty(user.Role))
 				{
 					var role = await this.roleService.GetBySlugAsync(user.Role, user.MembershipId);
 					if (role != null)

@@ -3,12 +3,10 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
-using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Extensions.Authorization.Extensions;
 using ErtisAuth.Sdk.AspNetCore.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -82,52 +80,26 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 	{
 		try
 		{
-			var isAuthorizedEndpoint = false;
-			var isUnauthorizedEndpoint = false;
-			var isSelfAuthorizedEndpoint = false;
-			
-			var endpoint = this.Context.GetEndpoint();
-			if (endpoint is RouteEndpoint routeEndpoint)
+			switch (this.Context.GetEndpointAuthorization())
 			{
-				var authorizedAttribute = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(AuthorizedAttribute));
-				var unauthorizedAttribute = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(UnauthorizedAttribute));
-				var selfAuthorizedAttribute = routeEndpoint.Metadata.FirstOrDefault(x => x.GetType() == typeof(SelfAuthorizedAttribute));
-				
-				if (authorizedAttribute is AuthorizedAttribute)
-				{
-					isAuthorizedEndpoint = unauthorizedAttribute == null;
-				}
-				
-				if (unauthorizedAttribute is UnauthorizedAttribute)
-				{
-					isUnauthorizedEndpoint = true;
-				}
-				
-				if (selfAuthorizedAttribute is SelfAuthorizedAttribute)
-				{
-					isSelfAuthorizedEndpoint = true;
-				}
-			}
-			
-			if (!isAuthorizedEndpoint)
-			{
-				if (isUnauthorizedEndpoint)
+				case EndpointAuthorization.Public:
 				{
 					var publicIdentity = new ClaimsIdentity(Array.Empty<Claim>(), null, ClaimExtensions.PublicClaimName, null);
 					this.Context.User.AddIdentity(publicIdentity);
 					var publicPrincipal = new ClaimsPrincipal(publicIdentity);
 					return AuthenticateResult.Success(new AuthenticationTicket(publicPrincipal, this.Scheme.Name));
 				}
-				else if (isSelfAuthorizedEndpoint)
+				case EndpointAuthorization.SelfAuthorized:
 				{
+					// The endpoint checks the permission itself
 					var selfIdentity = await this.GetClaimsIdentityAsync(passAuthorization: true).ConfigureAwait(false);
 					this.Context.User.AddIdentity(selfIdentity);
 					var selfPrincipal = new ClaimsPrincipal(selfIdentity);
 					return AuthenticateResult.Success(new AuthenticationTicket(selfPrincipal, this.Scheme.Name));
 				}
-				else
+				case EndpointAuthorization.None:
 				{
-					return AuthenticateResult.NoResult();	
+					return AuthenticateResult.NoResult();
 				}
 			}
 			
