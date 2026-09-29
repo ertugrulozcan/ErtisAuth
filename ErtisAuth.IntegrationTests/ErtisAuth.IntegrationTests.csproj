@@ -25,4 +25,8 @@
     <ItemGroup>
         <Using Include="Xunit" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <None Update="UserTypes\Data\*" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
 </Project>
