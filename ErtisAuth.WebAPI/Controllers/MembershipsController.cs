@@ -102,7 +102,7 @@ public class MembershipsController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
-	public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> Search([FromQuery] string keyword, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(keyword.Trim()))
 		{

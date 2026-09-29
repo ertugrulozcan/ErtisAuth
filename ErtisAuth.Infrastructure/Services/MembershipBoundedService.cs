@@ -148,15 +148,9 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 			textSearchLanguage = TextSearchLanguage.All.FirstOrDefault(x => x.ISO6391Code == membership.DefaultLanguage);
 		}
 		
-		var textSearchOptions = new TextSearchOptions
-		{
-			Language = textSearchLanguage,
-			IsCaseSensitive = true,
-			IsDiacriticSensitive = false
-		};
-		
+		var query = QueryHelper.FullTextSearchQuery(membershipId, keyword, textSearchLanguage.ISO6391Code);
 		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
-		return await this._repository.SearchAsync(keyword, textSearchOptions, skip, limit, withCount, sortField, sortDirection, cancellationToken: cancellationToken);
+		return await this._repository.FindAsync(query, skip, limit, withCount, sortField, sortDirection, cancellationToken: cancellationToken);
 	}
 	
 	#endregion

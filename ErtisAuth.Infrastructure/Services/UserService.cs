@@ -692,7 +692,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         CancellationToken cancellationToken = default)
     {
 		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        var query = QueryBuilder.And(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.FullTextSearch(keyword)).ToString();
+        var query = QueryHelper.FullTextSearchQuery(membershipId, keyword);
 		var results = await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 		return results.HidePasswordHash();
     }

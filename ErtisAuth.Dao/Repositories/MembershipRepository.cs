@@ -13,7 +13,8 @@ public class MembershipRepository : RepositoryBase<Membership>, IMembershipRepos
     
 	protected override IIndexDefinition[] Indexes => new IIndexDefinition[]
 	{
-		new SingleIndexDefinition("name")
+		new SingleIndexDefinition("name"),
+		new TextIndexDefinition(["name", "slug"], IndexLocale.none)
 	};
 	
 	#endregion

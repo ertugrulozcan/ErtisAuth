@@ -202,7 +202,7 @@ public class ApplicationsController : QueryControllerBase
 		}
 		else
 		{
-			return this.RoleNotFound(id);
+			return this.ApplicationNotFound(id);
 		}
 	}
 	

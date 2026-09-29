@@ -200,6 +200,38 @@ public class QueryHelperTests
 		
 		Assert.Equal(ScopePipeline(pipeline), stagesParsedLikeTheRepository);
 	}
-	
+
+	#endregion
+
+	#region Full Text Search
+
+	[Theory]
+	[InlineData("Editor")]
+	[InlineData("a\"b")]
+	[InlineData("back\\slash")]
+	[InlineData("x\" } }, { \"membership_id\": { \"$ne\": \"\" } } ], \"$comment\": \"")]
+	[InlineData("çğıöşü İ")]
+	public void FullTextSearchQuery_KeepsTheKeywordAsAStringWithinTheMembership(string keyword)
+	{
+		var query = BsonDocument.Parse(QueryHelper.FullTextSearchQuery(OwnMembershipId, keyword));
+
+		Assert.Equal(["membership_id", "$text"], query.Names);
+		Assert.Equal(OwnMembershipId, query["membership_id"].AsString);
+
+		var textSearch = query["$text"].AsBsonDocument;
+		Assert.Equal(keyword, textSearch["$search"].AsString);
+		Assert.False(textSearch["$caseSensitive"].AsBoolean);
+		Assert.False(textSearch["$diacriticSensitive"].AsBoolean);
+		Assert.False(textSearch.Contains("$language"));
+	}
+
+	[Fact]
+	public void FullTextSearchQuery_WithLanguage_AddsTheLanguage()
+	{
+		var query = BsonDocument.Parse(QueryHelper.FullTextSearchQuery(OwnMembershipId, "editor", "tr"));
+
+		Assert.Equal("tr", query["$text"]["$language"].AsString);
+	}
+
 	#endregion
 }

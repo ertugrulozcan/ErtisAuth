@@ -16,7 +16,8 @@ public class RoleRepository : RepositoryBase<Role>, IRoleRepository
 		new SingleIndexDefinition("name"),
 		new SingleIndexDefinition("membership_id"),
 		new CompoundIndexDefinition("_id", "membership_id"),
-		new CompoundIndexDefinition("name", "membership_id")
+		new CompoundIndexDefinition("name", "membership_id"),
+		new TextIndexDefinition(["name", "slug", "description"], IndexLocale.none)
 	};
 	
 	#endregion

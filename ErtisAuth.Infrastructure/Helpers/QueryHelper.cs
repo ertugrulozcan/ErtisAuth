@@ -76,7 +76,34 @@ public static class QueryHelper
 		stages.Insert(0, new BsonDocument("$match", new BsonDocument(MembershipIdField, membershipId)));
 		return stages.ToJson();
 	}
-	
+
+	/// <summary>
+	/// A case and diacritic insensitive text search within the membership:
+	/// <c>{ "membership_id": membershipId, "$text": { "$search": keyword, ... } }</c>.
+	/// Built as a document, so the keyword is always a string value and never parsed as query syntax.
+	/// Without a language the text index's default language is used.
+	/// </summary>
+	public static string FullTextSearchQuery(string membershipId, string keyword, string? language = null)
+	{
+		var textSearch = new BsonDocument
+		{
+			{ "$search", keyword },
+			{ "$caseSensitive", false },
+			{ "$diacriticSensitive", false }
+		};
+
+		if (!string.IsNullOrEmpty(language))
+		{
+			textSearch.Add("$language", language);
+		}
+
+		return new BsonDocument
+		{
+			{ MembershipIdField, membershipId },
+			{ "$text", textSearch }
+		}.ToJson();
+	}
+
 	private static BsonDocument ParseQuery(string query)
 	{
 		if (string.IsNullOrWhiteSpace(query))

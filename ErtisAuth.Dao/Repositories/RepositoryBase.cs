@@ -65,6 +65,13 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 			var missingIndexes = new List<IIndexDefinition>();
 			foreach (var index in this.Indexes)
 			{
+				// A collection can have only one text index. An existing one is kept as is: it may have been created
+				// by hand under another name, which would never match the definition's key.
+				if (index.Type == IndexType.Text && currentIndexes.Any(x => x.Type == IndexType.Text))
+				{
+					continue;
+				}
+				
 				if (currentIndexes.All(x => x.Key != index.Key))
 				{
 					missingIndexes.Add(index);

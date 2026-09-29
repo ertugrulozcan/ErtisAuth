@@ -17,7 +17,8 @@ public class UserRepository : DynamicRepositoryBase, IUserRepository
         new SingleIndexDefinition("membership_id"),
         new CompoundIndexDefinition("_id", "membership_id"),
         new CompoundIndexDefinition("username", "membership_id"),
-        new CompoundIndexDefinition("email_address", "membership_id")
+        new CompoundIndexDefinition("email_address", "membership_id"),
+        new TextIndexDefinition(["username", "firstname", "lastname", "email_address"], IndexLocale.none)
     };
     
     #endregion

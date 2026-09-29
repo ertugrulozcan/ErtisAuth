@@ -3,6 +3,7 @@ using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;
 using Ertis.MongoDB.Repository;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using MongoDB.Driver;
 using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
@@ -53,11 +54,24 @@ public abstract class DynamicRepositoryBase : DynamicMongoRepository, IRepositor
         
 		try
 		{
-			var currentIndexes = (await this.GetIndexesAsync(cancellationToken)).ToArray();
+			// Read with the driver: DynamicMongoRepository.GetIndexesAsync throws on a text index of several fields
+			// ("An item with the same key has already been added. Key: text"). The keys of the index definitions
+			// are MongoDB's default index names.
+			var currentIndexes = await (await this.DocumentCollection.Indexes.ListAsync(cancellationToken)).ToListAsync(cancellationToken);
+			var currentIndexNames = currentIndexes.Select(x => x["name"].AsString).ToArray();
+			var hasTextIndex = currentIndexes.Any(x => x["key"].AsBsonDocument.Contains("_fts"));
+			
 			var missingIndexes = new List<IIndexDefinition>();
 			foreach (var index in this.Indexes)
 			{
-				if (currentIndexes.All(x => x.Key != index.Key))
+				// A collection can have only one text index. An existing one is kept as is: it may have been created
+				// by hand under another name, which would never match the definition's key.
+				if (index.Type == IndexType.Text && hasTextIndex)
+				{
+					continue;
+				}
+				
+				if (!currentIndexNames.Contains(index.Key))
 				{
 					missingIndexes.Add(index);
 				}

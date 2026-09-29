@@ -6,6 +6,7 @@ namespace ErtisAuth.IntegrationTests.Database;
 
 /// <summary>
 /// The indexes created at startup (UseMongoDBAsync). The TTL indexes replace the removed cleanup jobs.
+/// The text indexes serve the search endpoints.
 /// </summary>
 public class StartupIndexTests : IClassFixture<ErtisAuthInstance>
 {
@@ -13,13 +14,16 @@ public class StartupIndexTests : IClassFixture<ErtisAuthInstance>
 	
 	private readonly ErtisAuthInstance _instance;
 	
+	private readonly MongoDbContainerFixture _mongo;
+	
 	#endregion
 	
 	#region Constructors
 	
-	public StartupIndexTests(ErtisAuthInstance instance)
+	public StartupIndexTests(ErtisAuthInstance instance, MongoDbContainerFixture mongo)
 	{
 		this._instance = instance;
+		this._mongo = mongo;
 	}
 	
 	#endregion
@@ -46,6 +50,52 @@ public class StartupIndexTests : IClassFixture<ErtisAuthInstance>
 		var indexes = await (await this._instance.Database.GetCollection<BsonDocument>("revoked_tokens").Indexes.ListAsync(TestContext.Current.CancellationToken)).ToListAsync(TestContext.Current.CancellationToken);
 		
 		Assert.Contains(indexes, x => x["key"].AsBsonDocument.Names.SequenceEqual(["token"]));
+	}
+	
+	[Theory]
+	[InlineData("users", new[] { "username", "firstname", "lastname", "email_address" })]
+	[InlineData("roles", new[] { "name", "slug", "description" })]
+	[InlineData("applications", new[] { "name", "slug" })]
+	[InlineData("memberships", new[] { "name", "slug" })]
+	public async Task Startup_CreatesTheTextIndexes(string collection, string[] fields)
+	{
+		var indexes = await (await this._instance.Database.GetCollection<BsonDocument>(collection).Indexes.ListAsync(TestContext.Current.CancellationToken)).ToListAsync(TestContext.Current.CancellationToken);
+		
+		var textIndex = Assert.Single(indexes, x => x.Contains("weights"));
+		Assert.Equal(fields.Order(), textIndex["weights"].AsBsonDocument.Names.Order());
+	}
+	
+	/// <summary>
+	/// Production has a text index on users that was created by hand, under MongoDB's default name. A collection can have
+	/// only one text index: the existing one is kept, and the other indexes are still created.
+	/// </summary>
+	[Fact]
+	public async Task Startup_KeepsAnExistingTextIndex()
+	{
+		var databaseName = $"ertisauth-{Guid.NewGuid():N}";
+		var database = new MongoClient(this._mongo.ConnectionString).GetDatabase(databaseName);
+		try
+		{
+			var users = database.GetCollection<BsonDocument>("users");
+			var keys = Builders<BsonDocument>.IndexKeys.Text("username").Text("firstname").Text("lastname").Text("email_address");
+			var existingName = await users.Indexes.CreateOneAsync(new CreateIndexModel<BsonDocument>(keys), cancellationToken: TestContext.Current.CancellationToken);
+			
+			await using (var factory = new ErtisAuthFactory(this._mongo.ConnectionString, databaseName))
+			{
+				factory.UseKestrel(0);
+				using var client = factory.CreateClient();
+			}
+			
+			var indexes = await (await users.Indexes.ListAsync(TestContext.Current.CancellationToken)).ToListAsync(TestContext.Current.CancellationToken);
+			var textIndex = Assert.Single(indexes, x => x.Contains("weights"));
+			Assert.Equal(existingName, textIndex["name"].AsString);
+			Assert.Equal("english", textIndex["default_language"].AsString);
+			Assert.Contains(indexes, x => x["key"].AsBsonDocument.Names.SequenceEqual(["username", "membership_id"]));
+		}
+		finally
+		{
+			await database.Client.DropDatabaseAsync(databaseName, TestContext.Current.CancellationToken);
+		}
 	}
 	
 	#endregion
