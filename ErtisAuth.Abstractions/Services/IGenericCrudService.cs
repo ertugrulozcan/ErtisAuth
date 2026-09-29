@@ -1,5 +1,6 @@
 using Ertis.Core.Collections;
 using ErtisAuth.Core.Events;
+using ErtisAuth.Core.Models.Identity;
 using Ertis.MongoDB.Queries;
 
 // ReSharper disable UnusedMember.Global
@@ -41,9 +42,9 @@ public interface IGenericCrudService<T>
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default);
 	
-	Task<T> CreateAsync(T model, CancellationToken cancellationToken = default);
+	Task<T> CreateAsync(Utilizer utilizer, T model, CancellationToken cancellationToken = default);
 	
-	Task<T> UpdateAsync(T model, CancellationToken cancellationToken = default);
+	Task<T> UpdateAsync(Utilizer utilizer, T model, CancellationToken cancellationToken = default);
 	
 	Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
 	

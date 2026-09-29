@@ -481,32 +481,19 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
     #region Sys Methods
 	
-    private void EnsureSys(DynamicObject model, Utilizer utilizer)
+    /// <summary>
+    /// The sys info (see <see cref="SysInfoHelper"/>): created on create, from the stored user on update.
+    /// A sys info sent by the caller is ignored (removed with the managed properties).
+    /// </summary>
+    private static void EnsureSys(DynamicObject model, Utilizer utilizer, DynamicObject? current)
     {
-        var now = DateTime.UtcNow;
-        var utilizerName = utilizer.Username;
-        if (utilizer.Type == Utilizer.UtilizerType.System)
-        {
-            utilizerName = "system";
-        }
-		
-        if (model.TryGetValue<SysModel>("sys", out var sys, out _) && sys != null)
-        {
-            sys.CreatedAt ??= now;
-            sys.CreatedBy ??= utilizerName;
-            sys.ModifiedAt = now;
-            sys.ModifiedBy = utilizerName;
-        }
-        else
-        {
-            sys = new SysModel
-            {
-                CreatedAt = now,
-                CreatedBy = utilizerName
-            };
-        }
-		
+        var sys = current == null ? SysInfoHelper.Created(utilizer) : SysInfoHelper.Modified(GetSys(current), utilizer);
         model.SetValue("sys", sys.ToDictionary(), true);
+    }
+    
+    private static SysModel? GetSys(DynamicObject user)
+    {
+        return user.TryGetValue<SysModel>("sys", out var sys, out _) ? sys : null;
     }
 	
     #endregion
@@ -626,6 +613,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 		
 		var passwordHash = this.CalculatePasswordHash(membership, newPassword);
 		user.SetValue("password_hash", passwordHash, true);
+		EnsureSys(user, utilizer, prior);
 		
 		var updatedUser = await base.UpdateAsync(userId, user, cancellationToken: cancellationToken);
 		
@@ -798,7 +786,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     {
         this.EnsureMembershipId(model, membershipId);
         this.EnsureId(model);
-        this.EnsureSys(model, utilizer);
+        EnsureSys(model, utilizer, current);
         this.EnsureUbacs(model);
         
         await this.EnsureUserTypeAsync(membershipId, userType, model, id, current?.GetValue<string>("user_type"));

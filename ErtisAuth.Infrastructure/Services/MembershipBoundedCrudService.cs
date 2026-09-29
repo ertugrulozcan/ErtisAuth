@@ -4,6 +4,7 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models;
+using ErtisAuth.Infrastructure.Helpers;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -95,9 +96,13 @@ public abstract class MembershipBoundedCrudService<TModel> :
 			throw this.GetAlreadyExistError(model);
 		}
 		
+		// Ensure sys
+		SysInfoHelper.SetCreated(model, utilizer);
+		
 		// Insert to database
 		var inserted = await this._repository.InsertAsync(model, cancellationToken: cancellationToken);
 		
+		// Fire event
 		this.OnCreated?.Invoke(this, new CreateResourceEventArgs<TModel>(utilizer, inserted, membershipId));
 		
 		return inserted;
@@ -146,8 +151,14 @@ public abstract class MembershipBoundedCrudService<TModel> :
 		}
 		
 		model.MembershipId = membershipId;
+		
+		// Ensure sys
+		SysInfoHelper.SetModified(model, current, utilizer);
+		
+		// Update
 		var updated = await this._repository.UpdateAsync(model, cancellationToken: cancellationToken);
 		
+		// Fire event
 		this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(utilizer, current, updated, membershipId));
 		
 		return updated;

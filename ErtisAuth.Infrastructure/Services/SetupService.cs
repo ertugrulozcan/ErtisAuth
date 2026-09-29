@@ -160,8 +160,8 @@ public class SetupService : ISetupService
 		
 		try
 		{
-			// 1. Membership
-			membership = await this._membershipService.CreateAsync(new Membership
+			// 1. Membership (created by the system; the membership id of the utilizer is not known yet)
+			membership = await this._membershipService.CreateAsync(Utilizer.GetSystemUtilizer(string.Empty), new Membership
 			{
 				Name = membershipModel.Name,
 				Slug = membershipModel.Slug,

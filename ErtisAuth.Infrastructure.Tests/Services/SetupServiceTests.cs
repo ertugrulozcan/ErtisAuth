@@ -71,10 +71,10 @@ public class SetupServiceTests
 			.Returns(_ => new PaginationCollection<Membership> { Count = this._memberships.Count, Items = this._memberships.ToArray() });
 		
 		this._membershipService
-			.CreateAsync(Arg.Any<Membership>(), Arg.Any<CancellationToken>())
+			.CreateAsync(Arg.Any<Utilizer>(), Arg.Any<Membership>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo =>
 			{
-				var membership = callInfo.ArgAt<Membership>(0);
+				var membership = callInfo.ArgAt<Membership>(1);
 				membership.Id = ObjectId.GenerateNewId().ToString();
 				this._memberships.Add(membership);
 				return membership;
@@ -168,7 +168,7 @@ public class SetupServiceTests
 	{
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(action);
 		Assert.Equal(errorCode, exception.ErrorCode);
-		await this._membershipService.DidNotReceiveWithAnyArgs().CreateAsync(default!);
+		await this._membershipService.DidNotReceiveWithAnyArgs().CreateAsync(default!, default!);
 	}
 	
 	#endregion
@@ -241,7 +241,7 @@ public class SetupServiceTests
 	{
 		this.InsertSetupToken();
 		var membershipCreation = new TaskCompletionSource<Membership>();
-		this._membershipService.CreateAsync(Arg.Any<Membership>(), Arg.Any<CancellationToken>()).Returns(membershipCreation.Task);
+		this._membershipService.CreateAsync(Arg.Any<Utilizer>(), Arg.Any<Membership>(), Arg.Any<CancellationToken>()).Returns(membershipCreation.Task);
 		var service = this.CreateService();
 		
 		var first = this.SetupAsync(service);

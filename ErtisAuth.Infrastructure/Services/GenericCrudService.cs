@@ -4,6 +4,8 @@ using Ertis.MongoDB.Repository;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Infrastructure.Helpers;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -118,7 +120,7 @@ public abstract class GenericCrudService<TModel> :
 	
 	#region Create Methods
 	
-	public virtual async Task<TModel> CreateAsync(TModel model, CancellationToken cancellationToken = default)
+	public virtual async Task<TModel> CreateAsync(Utilizer utilizer, TModel model, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -134,6 +136,9 @@ public abstract class GenericCrudService<TModel> :
 			{
 				throw this.GetAlreadyExistError(model);
 			}
+			
+			// Ensure sys
+			SysInfoHelper.SetCreated(model, utilizer);
 			
 			// Insert to database
 			var inserted = await this._repository.InsertAsync(model, cancellationToken: cancellationToken);
@@ -157,7 +162,7 @@ public abstract class GenericCrudService<TModel> :
 	
 	#region Update Methods
 	
-	public virtual async Task<TModel> UpdateAsync(TModel model, CancellationToken cancellationToken = default)
+	public virtual async Task<TModel> UpdateAsync(Utilizer utilizer, TModel model, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -183,6 +188,10 @@ public abstract class GenericCrudService<TModel> :
 				throw this.GetAlreadyExistError(model);
 			}
 			
+			// Ensure sys
+			SysInfoHelper.SetModified(model, current, utilizer);
+			
+			// Update
 			var updated = await this._repository.UpdateAsync(model, cancellationToken: cancellationToken);
 			
 			this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<TModel>(current, updated));

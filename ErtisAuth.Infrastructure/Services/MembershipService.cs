@@ -5,6 +5,8 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using Microsoft.Extensions.Caching.Memory;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Infrastructure.Helpers;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -298,12 +300,12 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	#region Create Methods
 	
-	public override async Task<Membership> CreateAsync(Membership model, CancellationToken cancellationToken = default)
+	public override async Task<Membership> CreateAsync(Utilizer utilizer, Membership model, CancellationToken cancellationToken = default)
 	{
 		// LEGACY-APP-SECRET: new memberships have no legacy applications
 		model.AllowMembershipSecretForApplications = false;
 		
-		var created = await base.CreateAsync(model, cancellationToken: cancellationToken);
+		var created = await base.CreateAsync(utilizer, model, cancellationToken: cancellationToken);
 		await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
 		return created;
 	}
@@ -312,11 +314,11 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	#region Update Methods
 	
-	public override async Task<Membership> UpdateAsync(Membership model, CancellationToken cancellationToken = default)
+	public override async Task<Membership> UpdateAsync(Utilizer utilizer, Membership model, CancellationToken cancellationToken = default)
 	{
 		// The secret key may change, so the entries of the prior version are removed explicitly (read from the database, not the cache)
 		var prior = await base.GetAsync(model.Id, cancellationToken: cancellationToken);
-		var updated = await base.UpdateAsync(model, cancellationToken: cancellationToken);
+		var updated = await base.UpdateAsync(utilizer, model, cancellationToken: cancellationToken);
 		this.PurgeCache(prior);
 		await this.PurgeAllCacheAsync(cancellationToken: cancellationToken);
 		return updated;

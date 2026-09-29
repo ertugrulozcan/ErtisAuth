@@ -411,7 +411,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 			Role = current.Role,
 			Permissions = current.Permissions,
 			Forbidden = current.Forbidden,
-			Sys = current.Sys,
+			Sys = SysInfoHelper.Modified(current.Sys, utilizer),
 			SecretHash = ApplicationSecretHelper.HashSecret(secret)
 		};
 		

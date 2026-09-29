@@ -50,7 +50,7 @@ public class MembershipServiceValidationTests
 		var membershipService = this.CreateMembershipService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, TestContext.Current.CancellationToken), "hash_algorithm is a required field");
+		await AssertValidationErrorAsync(() => membershipService.CreateAsync(Utilizer.GetSystemUtilizer(string.Empty), membership, TestContext.Current.CancellationToken), "hash_algorithm is a required field");
 		await this._repository.DidNotReceiveWithAnyArgs().InsertAsync(null!, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
@@ -64,7 +64,7 @@ public class MembershipServiceValidationTests
 		var membershipService = this.CreateMembershipService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, TestContext.Current.CancellationToken), $"Unsupported hash algorithm ({hashAlgorithm})");
+		await AssertValidationErrorAsync(() => membershipService.CreateAsync(Utilizer.GetSystemUtilizer(string.Empty), membership, TestContext.Current.CancellationToken), $"Unsupported hash algorithm ({hashAlgorithm})");
 		await this._repository.DidNotReceiveWithAnyArgs().InsertAsync(null!, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
@@ -80,7 +80,7 @@ public class MembershipServiceValidationTests
 		var membershipService = this.CreateMembershipService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		await membershipService.CreateAsync(membership, TestContext.Current.CancellationToken);
+		await membershipService.CreateAsync(Utilizer.GetSystemUtilizer(string.Empty), membership, TestContext.Current.CancellationToken);
 		
 		await this._repository.Received(1).InsertAsync(membership, Arg.Any<InsertOptions?>(), Arg.Any<CancellationToken>());
 	}
@@ -93,7 +93,7 @@ public class MembershipServiceValidationTests
 		var membershipService = this.CreateMembershipService();
 		var update = TestServiceFactory.CreateMembership(hashAlgorithm: null);
 		
-		var exception = await Assert.ThrowsAsync<ValidationException>(() => membershipService.UpdateAsync(update, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ValidationException>(() => membershipService.UpdateAsync(Utilizer.GetSystemUtilizer(string.Empty), update, TestContext.Current.CancellationToken));
 		
 		Assert.NotNull(exception.Errors);
 		Assert.Contains("hash_algorithm is a required field", exception.Errors);
@@ -107,7 +107,7 @@ public class MembershipServiceValidationTests
 		var membershipService = this.CreateMembershipService();
 		var update = TestServiceFactory.CreateMembership("SHA2-256");
 		
-		await membershipService.UpdateAsync(update, TestContext.Current.CancellationToken);
+		await membershipService.UpdateAsync(Utilizer.GetSystemUtilizer(string.Empty), update, TestContext.Current.CancellationToken);
 		
 		Assert.Equal("SHA2-256", update.HashAlgorithm);
 	}
@@ -128,7 +128,7 @@ public class MembershipServiceValidationTests
 		var membershipService = this.CreateMembershipService();
 		var membership = TestServiceFactory.CreateMembership("ARGON2ID", defaultEncoding);
 		
-		await membershipService.CreateAsync(membership, TestContext.Current.CancellationToken);
+		await membershipService.CreateAsync(Utilizer.GetSystemUtilizer(string.Empty), membership, TestContext.Current.CancellationToken);
 		
 		await this._repository.Received(1).InsertAsync(membership, Arg.Any<InsertOptions?>(), Arg.Any<CancellationToken>());
 	}
@@ -139,7 +139,7 @@ public class MembershipServiceValidationTests
 		var membershipService = this.CreateMembershipService();
 		var membership = TestServiceFactory.CreateMembership("ARGON2ID", "unknown-encoding");
 		
-		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, TestContext.Current.CancellationToken), "Unsupported encoding (unknown-encoding)");
+		await AssertValidationErrorAsync(() => membershipService.CreateAsync(Utilizer.GetSystemUtilizer(string.Empty), membership, TestContext.Current.CancellationToken), "Unsupported encoding (unknown-encoding)");
 	}
 	
 	[Theory]
@@ -155,7 +155,7 @@ public class MembershipServiceValidationTests
 			Policy = new OtpPasswordPolicy { Length = 6, ContainsDigits = true, MaxAttempts = maxAttempts }
 		};
 		
-		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, TestContext.Current.CancellationToken), "otp_settings.policy.max_attempts must be greater than zero");
+		await AssertValidationErrorAsync(() => membershipService.CreateAsync(Utilizer.GetSystemUtilizer(string.Empty), membership, TestContext.Current.CancellationToken), "otp_settings.policy.max_attempts must be greater than zero");
 	}
 	
 	[Fact]

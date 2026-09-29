@@ -9,6 +9,7 @@ using ErtisAuth.Infrastructure.Tests.Helpers;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using ErtisAuth.Core.Models.Identity;
 
 namespace ErtisAuth.Infrastructure.Tests.Services;
 
@@ -143,7 +144,7 @@ public class LegacyApplicationSecretTests
 		var membership = TestServiceFactory.CreateMembership("SHA2-256");
 		membership.AllowMembershipSecretForApplications = requested;
 		
-		await this.CreateMembershipService().CreateAsync(membership, TestContext.Current.CancellationToken);
+		await this.CreateMembershipService().CreateAsync(Utilizer.GetSystemUtilizer(string.Empty), membership, TestContext.Current.CancellationToken);
 		
 		Assert.False(membership.AllowMembershipSecretForApplications);
 		await this._membershipRepository.Received(1).InsertAsync(membership, Arg.Any<InsertOptions?>(), Arg.Any<CancellationToken>());
@@ -161,7 +162,7 @@ public class LegacyApplicationSecretTests
 		var update = TestServiceFactory.CreateMembership("SHA2-256");
 		update.Name = "Renamed Membership";
 		
-		await this.CreateMembershipService().UpdateAsync(update, TestContext.Current.CancellationToken);
+		await this.CreateMembershipService().UpdateAsync(Utilizer.GetSystemUtilizer(string.Empty), update, TestContext.Current.CancellationToken);
 		
 		Assert.Equal(stored, update.AllowMembershipSecretForApplications);
 	}
@@ -174,7 +175,7 @@ public class LegacyApplicationSecretTests
 		var update = TestServiceFactory.CreateMembership("SHA2-256");
 		update.AllowMembershipSecretForApplications = false;
 		
-		await this.CreateMembershipService().UpdateAsync(update, TestContext.Current.CancellationToken);
+		await this.CreateMembershipService().UpdateAsync(Utilizer.GetSystemUtilizer(string.Empty), update, TestContext.Current.CancellationToken);
 		
 		Assert.False(update.AllowMembershipSecretForApplications);
 	}

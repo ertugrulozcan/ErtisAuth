@@ -12,6 +12,7 @@ using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Attributes;
 using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.WebAPI.Models.Memberships;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,6 +27,7 @@ public class MembershipsController : QueryControllerBase
 	#region Services
 	
 	private readonly IMembershipService _membershipService;
+	private readonly IUtilizerService _utilizerService;
 	
 	#endregion
 	
@@ -35,9 +37,11 @@ public class MembershipsController : QueryControllerBase
 	/// Constructor
 	/// </summary>
 	/// <param name="membershipService"></param>
-	public MembershipsController(IMembershipService membershipService)
+	/// <param name="utilizerService"></param>
+	public MembershipsController(IMembershipService membershipService, IUtilizerService utilizerService)
 	{
 		this._membershipService = membershipService;
+		this._utilizerService = utilizerService;
 	}
 	
 	#endregion
@@ -48,7 +52,8 @@ public class MembershipsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Create)]
 	public async Task<IActionResult> Create([FromBody] CreateMembershipFormModel model, CancellationToken cancellationToken = default)
 	{
-		var membership = await this._membershipService.CreateAsync(ToMembership(model), cancellationToken: cancellationToken);
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.CreateAsync(utilizer, ToMembership(model), cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{membership.Id}", membership);
 	}
 	
@@ -125,8 +130,9 @@ public class MembershipsController : QueryControllerBase
 	public async Task<IActionResult> Update([FromRoute] string id, [FromBody] UpdateMembershipFormModel model, CancellationToken cancellationToken = default)
 	{
 		// The route id is the one authorized (RbacObject), so it is the one updated
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var membership = ToMembership(id, model);
-		return this.Ok(await this._membershipService.UpdateAsync(membership, cancellationToken: cancellationToken));
+		return this.Ok(await this._membershipService.UpdateAsync(utilizer, membership, cancellationToken: cancellationToken));
 	}
 	
 	#endregion
