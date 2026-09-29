@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Ertis.Core.Collections;
-using Ertis.MongoDB.Queries;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using Ertis.Schema.Dynamics;
+using Ertis.Schema.Serialization;
+using Ertis.MongoDB.Serialization;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Models.Events;
@@ -17,6 +17,22 @@ namespace ErtisAuth.Infrastructure.Services;
 
 public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookService
 {
+	#region Fields
+	
+	/// <summary>
+	/// Event documents are DynamicObjects (e.g. users) with ObjectIds: without these converters they are serialized as '{}'.
+	/// </summary>
+	private static readonly JsonSerializerOptions EventDataSerializerOptions = new()
+	{
+		Converters =
+		{
+			new DynamicObjectJsonConverter(),
+			new ObjectIdConverter()
+		}
+	};
+	
+	#endregion
+	
 	#region Services
 	
 	private readonly IEventService _eventService;
@@ -72,30 +88,26 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	{
 		try
 		{
-			IQuery[] expressions = 
-			{
-				QueryBuilder.Equals("status", "active"),
-				QueryBuilder.Equals("membership_id", ertisAuthEvent.MembershipId),
-				QueryBuilder.Equals("event", ertisAuthEvent.EventType.ToString())
-			};
+			var membershipId = ertisAuthEvent.MembershipId;
+			var eventType = ertisAuthEvent.EventType.ToString();
 			
-			var query = QueryBuilder.Where(expressions);
-			var webhooksDynamicCollection = await this.QueryAsync(ertisAuthEvent.MembershipId, query.ToString(), cancellationToken: cancellationToken);
-			var json = JsonSerializer.Serialize(webhooksDynamicCollection);
-			var webhooks = JsonSerializer.Deserialize<PaginationCollection<Webhook>>(json);
-			if (webhooks != null)
+			// Typed query: no JSON round trip of the documents. The status is checked in memory,
+			// its BSON serializer (NullableEnumMemberBsonSerializer) can not be translated to a LINQ filter
+			var webhooks = await this._repository.FindAsync(
+				x => x.MembershipId == membershipId && x.Event == eventType,
+				sorting: null,
+				cancellationToken: cancellationToken);
+			
+			foreach (var webhook in webhooks.Items.Where(x => x.IsActive))
 			{
-				foreach (var webhook in webhooks.Items)
-				{
-					// Fire and forget: webhooks run in the background, ExecuteWebhookAsync catches and logs every exception
-					_ = this.ExecuteWebhookAsync(
-						webhook, 
-						ertisAuthEvent.UtilizerId, 
-						ertisAuthEvent.MembershipId, 
-						ertisAuthEvent.Document, 
-						ertisAuthEvent.Prior, 
-						cancellationToken: cancellationToken);
-				}	
+				// Fire and forget: webhooks run in the background, ExecuteWebhookAsync catches and logs every exception
+				_ = this.ExecuteWebhookAsync(
+					webhook, 
+					ertisAuthEvent.UtilizerId, 
+					ertisAuthEvent.MembershipId, 
+					ertisAuthEvent.Document, 
+					ertisAuthEvent.Prior, 
+					cancellationToken: cancellationToken);
 			}
 		}
 		catch (Exception ex)
@@ -162,7 +174,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			var tryCount = webhook.TryCount > 0 ? webhook.TryCount : 1;
 			
 			// Event data is user-controlled: every template target gets context-specific escaping
-			var dataNode = JsonSerializer.SerializeToNode(new { document, prior });
+			var dataNode = JsonSerializer.SerializeToNode(new { document, prior }, EventDataSerializerOptions);
 			var data = ToTemplateData(dataNode);
 			var urlData = ToTemplateData(MapStringValues(dataNode?.DeepClone(), Uri.EscapeDataString));
 			var formatter = new Ertis.TemplateEngine.Formatter();
@@ -191,13 +203,15 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			
 			var webhookBody = FormatBody(webhook.Request.Body, formatter, data);
 			
+			// Built as a JSON tree: the rest handler serializes the body with the default options
+			var payloadNode = webhookBody != null ? JsonNode.Parse(webhookBody.ToJson()) : null;
 			IRequestBody body = webhook.Request.UncoveredBody ?
-				new SystemJsonRequestBody(webhookBody != null ? webhookBody.ToDictionary() : new {}) :
-				new SystemJsonRequestBody(new
+				new SystemJsonRequestBody(payloadNode ?? new JsonObject()) :
+				new SystemJsonRequestBody(new JsonObject
 				{
-					document,
-					prior,
-					payload = webhookBody?.ToDictionary()
+					["document"] = dataNode?["document"]?.DeepClone(),
+					["prior"] = dataNode?["prior"]?.DeepClone(),
+					["payload"] = payloadNode
 				});
 			
 			var webhookRequest = new WebhookRequest

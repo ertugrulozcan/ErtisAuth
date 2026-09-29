@@ -52,8 +52,6 @@ public class WebhookServiceTests
 	
 	private HttpStatusCode _responseStatusCode = HttpStatusCode.OK;
 	
-	private string? _lastQuery;
-	
 	#endregion
 	
 	#region Constructors
@@ -65,16 +63,6 @@ public class WebhookServiceTests
 		var membership = TestServiceFactory.CreateMembership();
 		membership.Id = MembershipId;
 		this._membershipService.GetAsync(MembershipId, Arg.Any<CancellationToken>()).Returns(membership);
-		
-		// Event-triggered lookup: the stored webhooks as the dynamic query returns them
-		this._repository
-			.QueryAsync((string) null!, null, null, null, (string?) null)
-			.ReturnsForAnyArgs(callInfo =>
-			{
-				this._lastQuery = callInfo.ArgAt<string>(0);
-				var items = this._webhooks.Select(x => (dynamic) JsonSerializer.SerializeToElement(x)).ToArray();
-				return (IPaginationCollection<dynamic>) new PaginationCollection<dynamic> { Count = items.Length, Items = items };
-			});
 		
 		this._restHandler
 			.ExecuteRequestAsync(Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<IQueryString>(), Arg.Any<IHeaderCollection>(), Arg.Any<IRequestBody>(), Arg.Any<CancellationToken>())
@@ -286,19 +274,43 @@ public class WebhookServiceTests
 	#region Triggering
 	
 	[Fact]
-	public async Task OnEventFired_QueriesTheActiveWebhooksOfTheEventInTheMembership()
+	public async Task OnEventFired_ExecutesOnlyTheActiveWebhooksOfTheEventInTheMembership()
 	{
-		this.AddWebhook(CreateWebhook());
+		this.AddWebhook(CreateWebhook(url: "https://hooks.example.com/matching"));
+		
+		var otherEvent = CreateWebhook(url: "https://hooks.example.com/other-event");
+		otherEvent.Event = nameof(ErtisAuthEventType.UserDeleted);
+		this.AddWebhook(otherEvent);
+		
+		var otherMembership = CreateWebhook(url: "https://hooks.example.com/other-membership");
+		otherMembership.MembershipId = "other-membership";
+		this.AddWebhook(otherMembership);
+		
+		this.AddWebhook(CreateWebhook(url: "https://hooks.example.com/passive", status: WebhookStatus.Passive));
 		this.CreateService();
 		
 		this.FireUserCreated(new { username = "john.doe" });
 		await this.WaitForOutcomeEventsAsync(1);
+		await Task.Delay(300, TestContext.Current.CancellationToken);
 		
-		Assert.NotNull(this._lastQuery);
-		Assert.Contains("\"status\"", this._lastQuery);
-		Assert.Contains("\"active\"", this._lastQuery);
-		Assert.Contains($"\"{MembershipId}\"", this._lastQuery);
-		Assert.Contains("\"UserCreated\"", this._lastQuery);
+		Assert.Equal("https://hooks.example.com/matching", Assert.Single(this._sentRequests).Url);
+	}
+	
+	/// <summary>
+	/// Event documents are DynamicObjects (e.g. users): regression guard, they were sent as '{}'.
+	/// </summary>
+	[Fact]
+	public async Task OnEventFired_WithDynamicObjectDocument_SendsAndTemplatesItsFields()
+	{
+		this.AddWebhook(CreateWebhook(url: "https://hooks.example.com/{{document.username}}"));
+		this.CreateService();
+		
+		this.FireUserCreated(DynamicObject.Parse("""{ "_id": "user-1", "username": "john.doe" }"""));
+		await this.WaitForOutcomeEventsAsync(1);
+		
+		var request = Assert.Single(this._sentRequests);
+		Assert.Equal("https://hooks.example.com/john.doe", request.Url);
+		Assert.Equal("john.doe", request.Body?["document"]?["username"]?.GetValue<string>());
 	}
 	
 	[Fact]

@@ -1,9 +1,8 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Ertis.Core.Collections;
 using Ertis.Schema.Dynamics;
-using Ertis.MongoDB.Queries;
+using Ertis.Schema.Serialization;
 using Ertis.MongoDB.Serialization;
 using Ertis.Net.Rest;
 using ErtisAuth.Core.Models.Events;
@@ -20,29 +19,41 @@ namespace ErtisAuth.Infrastructure.Services;
 public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHookService
 {
     #region Constants
-	
+
     private const string USER_ACTIVATION_MAIL_HOOK_NAME = "User Activation";
     private const string USER_ACTIVATION_MAIL_HOOK_SLUG = "user-activation";
     private const string RESET_PASSWORD_MAIL_HOOK_NAME = "Reset Password";
     private const string RESET_PASSWORD_MAIL_HOOK_SLUG = "reset-password";
-	
+
+    /// <summary>
+    /// Event documents are DynamicObjects (e.g. users) with ObjectIds: without these converters they are serialized as '{}'.
+    /// </summary>
+    private static readonly JsonSerializerOptions TemplateDataSerializerOptions = new()
+    {
+	    Converters =
+	    {
+		    new DynamicObjectJsonConverter(),
+		    new ObjectIdConverter()
+	    }
+    };
+
     private static readonly string[] PredefinedAutonomouslyMailHooks =
     {
 	    USER_ACTIVATION_MAIL_HOOK_SLUG,
 	    RESET_PASSWORD_MAIL_HOOK_SLUG
     };
-	
+
     #endregion
-    
+
     #region Services
 	
 	private readonly ISystemRestHandler _restHandler;
     private readonly IEventService _eventService;
 	private readonly IUserRepository _userRepository;
 	private readonly ILogger<MailHookService> _logger;
-	
+
     #endregion
-    
+
     #region Constructors
 	
 	/// <summary>
@@ -92,39 +103,24 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	{
 		try
 		{
-			IQuery[] expressions = 
-			{
-				QueryBuilder.Equals("status", "active"),
-				QueryBuilder.Equals("membership_id", ertisAuthEvent.MembershipId),
-				QueryBuilder.Equals("event", ertisAuthEvent.EventType.ToString())
-			};
+			var membershipId = ertisAuthEvent.MembershipId;
+			var eventType = ertisAuthEvent.EventType.ToString();
+			var mailHooks = await this._repository.FindAsync(
+				x => x.MembershipId == membershipId && x.Status == "active" && x.Event == eventType,
+				sorting: null,
+				cancellationToken: cancellationToken);
 			
-			var query = QueryBuilder.Where(expressions);
-			var mailHooksDynamicCollection = await this.QueryAsync(ertisAuthEvent.MembershipId, query.ToString(), cancellationToken: cancellationToken);
-			var json = JsonSerializer.Serialize(mailHooksDynamicCollection, new JsonSerializerOptions
+			foreach (var mailHook in mailHooks.Items)
 			{
-				WriteIndented = false,
-				Converters =
+				if (PredefinedAutonomouslyMailHooks.All(x => x != mailHook.Slug))
 				{
-					new ObjectIdConverter()
+					this.SendHookMailAsync(
+						mailHook,
+						ertisAuthEvent.UtilizerId,
+						ertisAuthEvent.MembershipId,
+						ertisAuthEvent,
+						cancellationToken: cancellationToken);
 				}
-			});
-			
-			var mailHooks = JsonSerializer.Deserialize<PaginationCollection<MailHook>>(json);
-			if (mailHooks != null)
-			{
-				foreach (var mailHook in mailHooks.Items)
-				{
-					if (PredefinedAutonomouslyMailHooks.All(x => x != mailHook.Slug))
-					{
-						this.SendHookMailAsync(
-							mailHook,
-							ertisAuthEvent.UtilizerId,
-							ertisAuthEvent.MembershipId,
-							ertisAuthEvent,
-							cancellationToken: cancellationToken);
-					}
-				}	
 			}
 		}
 		catch (Exception ex)
@@ -195,6 +191,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	
 	private async Task SendMailAsync(MailHook mailhook, IMailProvider mailProvider, string userId, string membershipId, object? payload, CancellationToken cancellationToken = default)
 	{
+		payload = ToTemplateData(payload);
 		var recipients = new List<Recipient>();
 		if (mailhook.SendToUtilizer)
 		{
@@ -281,6 +278,21 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 				this._logger.LogError(ex, "The hook mail could not be sent!");
 			}
 		}
+	}
+	
+	/// <summary>
+	/// The template engine resolves placeholders by the JSON names of the payload ({{document.firstname}}, {{event_type}}),
+	/// but can not walk into a DynamicObject (e.g. the document of an event): the payload is converted to plain dynamic data.
+	/// </summary>
+	private static object? ToTemplateData(object? payload)
+	{
+		if (payload == null)
+		{
+			return null;
+		}
+		
+		var json = JsonSerializer.Serialize(payload, TemplateDataSerializerOptions);
+		return DynamicObject.Parse(json).ToDynamic();
 	}
 	
 	/// <summary>

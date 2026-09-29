@@ -1,3 +1,4 @@
+using Ertis.Schema.Dynamics;
 using System.Net;
 using System.Text.Json;
 using Ertis.Core.Collections;
@@ -49,8 +50,6 @@ public class MailHookServiceTests
 	
 	private readonly List<ErtisAuthEventType> _firedEvents = [];
 	
-	private string? _lastQuery;
-	
 	#endregion
 	
 	#region Constructors
@@ -100,16 +99,6 @@ public class MailHookServiceTests
 			Role = "user",
 			MembershipId = MembershipId
 		});
-		
-		// Event-triggered lookup: the stored hooks as the dynamic query returns them
-		this._repository
-			.QueryAsync((string) null!, null, null, null, (string?) null)
-			.ReturnsForAnyArgs(callInfo =>
-			{
-				this._lastQuery = callInfo.ArgAt<string>(0);
-				var items = this._mailHooks.Select(x => (dynamic) JsonSerializer.SerializeToElement(x)).ToArray();
-				return (IPaginationCollection<dynamic>) new PaginationCollection<dynamic> { Count = items.Length, Items = items };
-			});
 		
 		this._eventService
 			.FireEventAsync(Arg.Any<ErtisAuthEventType>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<object?>(), Arg.Any<object?>(), Arg.Any<CancellationToken>())
@@ -309,10 +298,46 @@ public class MailHookServiceTests
 		await this.WaitForOutcomeEventsAsync(1);
 		
 		Assert.Equal("<p>Welcome John</p>", Assert.Single(this._sentMails).HtmlBody);
-		Assert.NotNull(this._lastQuery);
-		Assert.Contains("\"active\"", this._lastQuery);
-		Assert.Contains($"\"{MembershipId}\"", this._lastQuery);
-		Assert.Contains("\"UserCreated\"", this._lastQuery);
+	}
+	
+	[Fact]
+	public async Task OnEventFired_SendsOnlyTheActiveHooksOfTheEventInTheMembership()
+	{
+		this._mailHooks.Add(CreateMailHook(name: "Matching", subject: "Matching"));
+		
+		var otherEvent = CreateMailHook(name: "Other Event", subject: "Other Event");
+		otherEvent.Event = nameof(ErtisAuthEventType.UserDeleted);
+		this._mailHooks.Add(otherEvent);
+		
+		var otherMembership = CreateMailHook(name: "Other Membership", subject: "Other Membership");
+		otherMembership.MembershipId = "other-membership";
+		this._mailHooks.Add(otherMembership);
+		
+		this._mailHooks.Add(CreateMailHook(name: "Passive", subject: "Passive", status: "passive"));
+		this.CreateService();
+		
+		this.FireUserCreated(new { firstname = "John" });
+		await this.WaitForOutcomeEventsAsync(1);
+		await Task.Delay(300, TestContext.Current.CancellationToken);
+		
+		Assert.Equal("Matching", Assert.Single(this._sentMails).Subject);
+	}
+	
+	/// <summary>
+	/// Event documents are DynamicObjects (e.g. users): regression guard, their placeholders were not resolved.
+	/// </summary>
+	[Fact]
+	public async Task OnEventFired_WithDynamicObjectDocument_ResolvesItsPlaceholders()
+	{
+		this._mailHooks.Add(CreateMailHook(name: "Welcome", template: "<p>Welcome {{document.firstname}}</p>", subject: "Hi {{document.firstname}}"));
+		this.CreateService();
+		
+		this.FireUserCreated(DynamicObject.Parse("""{ "_id": "user-1", "firstname": "John" }"""));
+		await this.WaitForOutcomeEventsAsync(1);
+		
+		var mail = Assert.Single(this._sentMails);
+		Assert.Equal("<p>Welcome John</p>", mail.HtmlBody);
+		Assert.Equal("Hi John", mail.Subject);
 	}
 	
 	[Theory]
