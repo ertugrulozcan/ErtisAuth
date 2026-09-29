@@ -25,7 +25,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 	
 	#region Services
 	
-	private readonly HttpClient _httpClient;
+	private readonly IHttpClientFactory _httpClientFactory;
 	private readonly JsonWebTokenHandler _tokenHandler;
 	private readonly ILogger<AppleAuthenticator> _logger;
 	
@@ -40,7 +40,8 @@ public class AppleAuthenticator : IAppleAuthenticator
 	/// <param name="logger"></param>
 	public AppleAuthenticator(IHttpClientFactory httpClientFactory, ILogger<AppleAuthenticator> logger)
 	{
-		this._httpClient = httpClientFactory.CreateClient();
+		// A client per request (not one for the lifetime of this singleton): the factory rotates its handlers, so DNS changes are picked up
+		this._httpClientFactory = httpClientFactory;
 		this._tokenHandler = new JsonWebTokenHandler();
 		this._logger = logger;
 	}
@@ -76,7 +77,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 		HttpResponseMessage response;
 		try
 		{
-			response = await this._httpClient.PostAsync(VerifyTokenEndpoint, new FormUrlEncodedContent(new[]
+			response = await this._httpClientFactory.CreateClient().PostAsync(VerifyTokenEndpoint, new FormUrlEncodedContent(new[]
 			{
 				new KeyValuePair<string, string>("client_id", provider.AppClientId),
 				new KeyValuePair<string, string>("client_secret", secret),
@@ -188,7 +189,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 				return false;
 			}
 			
-			var response = await this._httpClient.PostAsync(RevokeTokenEndpoint, new FormUrlEncodedContent(new[]
+			var response = await this._httpClientFactory.CreateClient().PostAsync(RevokeTokenEndpoint, new FormUrlEncodedContent(new[]
 			{
 				new KeyValuePair<string, string>("client_id", provider.AppClientId),
 				new KeyValuePair<string, string>("client_secret", secret),
