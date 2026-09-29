@@ -118,6 +118,33 @@ public class JwtServiceActionTokenTests
 		await this.AssertRejectedAsync(this.CreateToken(membership, generationTime: DateTime.UtcNow.AddHours(-2)), membership, "TokenWasExpired");
 	}
 	
+	/// <summary>
+	/// Expired exactly at 'exp' (like access and refresh tokens): the token validation's clock skew (5 minutes by default)
+	/// must not extend the lifetime of the token.
+	/// </summary>
+	[Fact]
+	public async Task ValidateActionTokenAsync_WithTokenExpiredWithinTheClockSkew_IsRejectedAsExpired()
+	{
+		var membership = TestServiceFactory.CreateMembership("SHA2-256");
+		var token = this.CreateToken(membership, generationTime: DateTime.UtcNow.AddHours(-1).AddSeconds(-30));
+		
+		await this.AssertRejectedAsync(token, membership, "TokenWasExpired");
+	}
+	
+	/// <summary>
+	/// The clock skew still covers 'nbf': a token issued by a pod whose clock is a little ahead is accepted.
+	/// </summary>
+	[Fact]
+	public async Task ValidateActionTokenAsync_WithTokenIssuedByAClockAhead_IsAccepted()
+	{
+		var membership = TestServiceFactory.CreateMembership("SHA2-256");
+		var token = this.CreateToken(membership, generationTime: DateTime.UtcNow.AddSeconds(30));
+		
+		var securityToken = await this._jwtService.ValidateActionTokenAsync(token, membership, ActionTokens.ResetPasswordTokenType);
+		
+		Assert.Equal(UserId, securityToken.Subject);
+	}
+	
 	[Theory]
 	[InlineData("")]
 	[InlineData("not-a-jwt")]
