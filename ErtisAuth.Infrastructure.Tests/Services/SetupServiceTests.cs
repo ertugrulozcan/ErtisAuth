@@ -58,6 +58,7 @@ public class SetupServiceTests
 	
 	public SetupServiceTests()
 	{
+		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		this._setupTokens = InMemoryRepository.Setup(this._setupTokenRepository, x => x.Id ??= ObjectId.GenerateNewId().ToString());
 		this._setupTokenRepository.DropAsync(Arg.Any<CancellationToken>()).Returns(_ =>
 		{
@@ -71,10 +72,10 @@ public class SetupServiceTests
 			.Returns(_ => new PaginationCollection<Membership> { Count = this._memberships.Count, Items = this._memberships.ToArray() });
 		
 		this._membershipService
-			.CreateAsync(Arg.Any<Utilizer>(), Arg.Any<Membership>(), Arg.Any<CancellationToken>())
+			.CreateAsync(Arg.Any<Membership>(), Arg.Any<Utilizer>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo =>
 			{
-				var membership = callInfo.ArgAt<Membership>(1);
+				var membership = callInfo.ArgAt<Membership>(0);
 				membership.Id = ObjectId.GenerateNewId().ToString();
 				this._memberships.Add(membership);
 				return membership;
@@ -86,33 +87,33 @@ public class SetupServiceTests
 			.EnsureAdministratorRoleAsync(Arg.Any<Membership>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo => new Role { Id = "role-id", Name = "Administrator", Slug = "admin", MembershipId = callInfo.ArgAt<Membership>(0).Id });
 		
-		this._roleService.DeleteAsync(Arg.Any<Utilizer>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(callInfo => this.Delete("role", callInfo.ArgAt<string>(2)));
+		this._roleService.DeleteAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<CancellationToken>()).Returns(callInfo => this.Delete("role", callInfo.ArgAt<string>(0)));
 		
 		this._userTypeService
-			.CreateAsync(Arg.Any<Utilizer>(), Arg.Any<string>(), Arg.Any<UserType>(), Arg.Any<CancellationToken>())
+			.CreateAsync(Arg.Any<UserType>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo =>
 			{
-				var userType = callInfo.ArgAt<UserType>(2);
+				var userType = callInfo.ArgAt<UserType>(0);
 				userType.Id = "user-type-id";
 				return userType;
 			});
 		
-		this._userTypeService.DeleteAsync(Arg.Any<Utilizer>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(callInfo => this.Delete("user type", callInfo.ArgAt<string>(2)));
+		this._userTypeService.DeleteAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<CancellationToken>()).Returns(callInfo => this.Delete("user type", callInfo.ArgAt<string>(0)));
 		
 		this._userService
-			.CreateAsync(Arg.Any<Utilizer>(), Arg.Any<string>(), Arg.Any<DynamicObject>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+			.CreateAsync(Arg.Any<DynamicObject>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo =>
 			{
-				var user = callInfo.ArgAt<DynamicObject>(2);
+				var user = callInfo.ArgAt<DynamicObject>(0);
 				user.SetValue("_id", "user-id", true);
 				return user;
 			});
 		
-		this._userService.DeleteAsync(Arg.Any<Utilizer>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(callInfo => this.Delete("user", callInfo.ArgAt<string>(2)));
+		this._userService.DeleteAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<CancellationToken>()).Returns(callInfo => this.Delete("user", callInfo.ArgAt<string>(0)));
 		
 		this._applicationService
-			.CreateWithSecretAsync(Arg.Any<Utilizer>(), Arg.Any<string>(), Arg.Any<Application>(), Arg.Any<CancellationToken>())
-			.Returns(callInfo => new ApplicationWithSecret(callInfo.ArgAt<Application>(2), "application-secret"));
+			.CreateWithSecretAsync(Arg.Any<Application>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo => new ApplicationWithSecret(callInfo.ArgAt<Application>(0), "application-secret"));
 	}
 	
 	#endregion
@@ -168,7 +169,7 @@ public class SetupServiceTests
 	{
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(action);
 		Assert.Equal(errorCode, exception.ErrorCode);
-		await this._membershipService.DidNotReceiveWithAnyArgs().CreateAsync(default!, default!);
+		await this._membershipService.DidNotReceiveWithAnyArgs().CreateAsync(null!, default!);
 	}
 	
 	#endregion
@@ -241,7 +242,7 @@ public class SetupServiceTests
 	{
 		this.InsertSetupToken();
 		var membershipCreation = new TaskCompletionSource<Membership>();
-		this._membershipService.CreateAsync(Arg.Any<Utilizer>(), Arg.Any<Membership>(), Arg.Any<CancellationToken>()).Returns(membershipCreation.Task);
+		this._membershipService.CreateAsync(Arg.Any<Membership>(), Arg.Any<Utilizer>(), Arg.Any<CancellationToken>()).Returns(membershipCreation.Task);
 		var service = this.CreateService();
 		
 		var first = this.SetupAsync(service);
@@ -262,10 +263,10 @@ public class SetupServiceTests
 		// Otherwise the installation would count as set up without a usable administrator
 		this.InsertSetupToken();
 		this._userService
-			.CreateAsync(Arg.Any<Utilizer>(), Arg.Any<string>(), Arg.Any<DynamicObject>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+			.CreateAsync(Arg.Any<DynamicObject>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
 			.ThrowsAsync(new InvalidOperationException("user validation failed"));
-		var service = this.CreateService();
 		
+		var service = this.CreateService();
 		await Assert.ThrowsAsync<InvalidOperationException>(() => this.SetupAsync(service));
 		
 		Assert.Equal(["user type", "role", "membership"], this._deleted);
@@ -280,7 +281,7 @@ public class SetupServiceTests
 	{
 		this.InsertSetupToken();
 		this._applicationService
-			.CreateWithSecretAsync(Arg.Any<Utilizer>(), Arg.Any<string>(), Arg.Any<Application>(), Arg.Any<CancellationToken>())
+			.CreateWithSecretAsync(Arg.Any<Application>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<CancellationToken>())
 			.ThrowsAsync(new InvalidOperationException("application validation failed"));
 		
 		await Assert.ThrowsAsync<InvalidOperationException>(() => this.SetupAsync(this.CreateService(), application: new Application { Name = "Server", Role = "admin", MembershipId = string.Empty }));

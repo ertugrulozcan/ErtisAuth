@@ -50,7 +50,7 @@ public class UniqueFieldIndexHelperTests
 	[Fact]
 	public void UniqueFieldsOfTheOriginUserType_HaveNoMembershipIndex()
 	{
-		var indexes = UniqueFieldIndexHelper.GetMembershipIndexes(MembershipId, [NewUserType("Customer", null, UniqueString("email_address"), UniqueString("username"))]);
+		var indexes = UniqueFieldIndexHelper.GetMembershipIndexes([NewUserType("Customer", null, UniqueString("email_address"), UniqueString("username"))], MembershipId);
 		
 		Assert.Empty(indexes);
 	}
@@ -70,7 +70,7 @@ public class UniqueFieldIndexHelperTests
 			NewUserType("Employee", null, UniqueString("code"))
 		};
 		
-		var indexes = UniqueFieldIndexHelper.GetMembershipIndexes(MembershipId, userTypes);
+		var indexes = UniqueFieldIndexHelper.GetMembershipIndexes(userTypes, MembershipId);
 		
 		Assert.Equal(2, indexes.Count);
 		Assert.Contains(indexes, x => x.UserTypes.SequenceEqual(["customer", "gold", "premium"]));
@@ -90,7 +90,7 @@ public class UniqueFieldIndexHelperTests
 			NewUserType("Premium", "Customer Account")
 		};
 		
-		var index = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes(MembershipId, userTypes));
+		var index = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes(userTypes, MembershipId));
 		
 		Assert.Equal(["customer-account", "premium"], index.UserTypes);
 	}
@@ -104,7 +104,7 @@ public class UniqueFieldIndexHelperTests
 			NewUserType("Second", "first", UniqueString("code"))
 		};
 		
-		var indexes = UniqueFieldIndexHelper.GetMembershipIndexes(MembershipId, userTypes);
+		var indexes = UniqueFieldIndexHelper.GetMembershipIndexes(userTypes, MembershipId);
 		
 		Assert.NotEmpty(indexes);
 	}
@@ -114,7 +114,7 @@ public class UniqueFieldIndexHelperTests
 	{
 		var array = new ArrayFieldInfo { Name = "codes", ItemSchema = UniqueString("code") };
 		
-		var indexes = UniqueFieldIndexHelper.GetMembershipIndexes(MembershipId, [NewUserType("Customer", null, array)]);
+		var indexes = UniqueFieldIndexHelper.GetMembershipIndexes([NewUserType("Customer", null, array)], MembershipId);
 		
 		Assert.Empty(indexes);
 	}
@@ -126,7 +126,7 @@ public class UniqueFieldIndexHelperTests
 	[Fact]
 	public void PartialFilter_CoversTheMembershipAndTheUserTypes()
 	{
-		var index = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes(MembershipId, [NewUserType("Customer", null, UniqueString("code"))]));
+		var index = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes([NewUserType("Customer", null, UniqueString("code"))], MembershipId));
 		
 		var expected = new BsonDocument
 		{
@@ -145,7 +145,7 @@ public class UniqueFieldIndexHelperTests
 			new IntegerFieldInfo { Name = "number", IsUnique = true },
 			new BooleanFieldInfo { Name = "flag", IsUnique = true });
 		
-		var indexes = UniqueFieldIndexHelper.GetMembershipIndexes(MembershipId, [userType]).ToDictionary(x => x.Path);
+		var indexes = UniqueFieldIndexHelper.GetMembershipIndexes([userType], MembershipId).ToDictionary(x => x.Path);
 		
 		Assert.Equal(new BsonDocument { { "$type", "string" }, { "$gt", "" } }, indexes["backup_email"].PartialFilterExpression["backup_email"]);
 		Assert.Equal(new BsonDocument("$type", "number"), indexes["number"].PartialFilterExpression["number"]);
@@ -164,9 +164,9 @@ public class UniqueFieldIndexHelperTests
 	{
 		var customer = NewUserType("Customer", null, UniqueString("code"));
 		
-		var first = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes(MembershipId, [customer]));
-		var again = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes(MembershipId, [customer]));
-		var withChild = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes(MembershipId, [customer, NewUserType("Premium", "customer")]));
+		var first = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes([customer], MembershipId));
+		var again = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes([customer], MembershipId));
+		var withChild = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes([customer, NewUserType("Premium", "customer")], MembershipId));
 		
 		Assert.Equal(first.Name, again.Name);
 		Assert.NotEqual(first.Name, withChild.Name);
@@ -199,7 +199,7 @@ public class UniqueFieldIndexHelperTests
 	public void ComputedName_IsParsedBack()
 	{
 		var field = new ObjectFieldInfo([UniqueString("zip_code")]) { Name = "address" };
-		var index = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes(MembershipId, [NewUserType("Customer", null, field)]));
+		var index = Assert.Single(UniqueFieldIndexHelper.GetMembershipIndexes([NewUserType("Customer", null, field)], MembershipId));
 		
 		Assert.True(UniqueFieldIndexHelper.TryParseIndexName(index.Name, out var membershipId, out var path));
 		Assert.Equal(MembershipId, membershipId);

@@ -76,35 +76,35 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 		return membership?.CodePolicy == policy.Slug;
 	}
 	
-	public override async Task<TokenCodePolicy> UpdateAsync(Utilizer utilizer, string membershipId, TokenCodePolicy model, CancellationToken cancellationToken = default)
+	public override async Task<TokenCodePolicy> UpdateAsync(TokenCodePolicy model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		// A renamed policy gets a new slug; the policy in use keeps its slug, so the membership's reference stays valid
-		var current = await this.GetAsync(membershipId, model.Id, cancellationToken: cancellationToken);
+		var current = await this.GetAsync(model.Id, membershipId, cancellationToken: cancellationToken);
 		if (current != null && await this.IsUsedByMembershipAsync(current, membershipId, cancellationToken: cancellationToken))
 		{
 			model.Slug = current.Slug;
 		}
 		
-		return await base.UpdateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		return await base.UpdateAsync(model, membershipId, utilizer, cancellationToken: cancellationToken);
 	}
 	
-	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<bool> DeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		await this.EnsureNotInUseAsync(membershipId, [id], cancellationToken: cancellationToken);
-		return await base.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken);
+		await this.EnsureNotInUseAsync([id], membershipId, cancellationToken: cancellationToken);
+		return await base.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken);
 	}
 	
-	public override async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
+	public override async Task<bool?> BulkDeleteAsync(string[] ids, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		await this.EnsureNotInUseAsync(membershipId, ids, cancellationToken: cancellationToken);
-		return await base.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken: cancellationToken);
+		await this.EnsureNotInUseAsync(ids, membershipId, cancellationToken: cancellationToken);
+		return await base.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken: cancellationToken);
 	}
 	
-	private async Task EnsureNotInUseAsync(string membershipId, IEnumerable<string> ids, CancellationToken cancellationToken = default)
+	private async Task EnsureNotInUseAsync(IEnumerable<string> ids, string membershipId, CancellationToken cancellationToken = default)
 	{
 		foreach (var id in ids)
 		{
-			var policy = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			var policy = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 			if (policy != null && await this.IsUsedByMembershipAsync(policy, membershipId, cancellationToken: cancellationToken))
 			{
 				throw ErtisAuthException.TokenCodePolicyInUse(policy.Slug);

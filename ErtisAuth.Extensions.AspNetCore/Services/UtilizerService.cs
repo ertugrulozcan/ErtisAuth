@@ -49,7 +49,7 @@ public class UtilizerService : IUtilizerService
 			{
 				case Utilizer.UtilizerType.User:
 				{
-					var user = await this._userService.GetUserAsync(claimUtilizer.MembershipId, claimUtilizer.Id, cancellationToken: cancellationToken);
+					var user = await this._userService.GetUserAsync(claimUtilizer.Id, claimUtilizer.MembershipId, cancellationToken: cancellationToken);
 					if (user == null)
 					{
 						throw ErtisAuthException.AccessDenied("Utilizer user not found");
@@ -66,7 +66,7 @@ public class UtilizerService : IUtilizerService
 				}
 				case Utilizer.UtilizerType.Application:
 				{
-					var application = await this._applicationService.GetAsync(claimUtilizer.MembershipId, claimUtilizer.Id, cancellationToken: cancellationToken);
+					var application = await this._applicationService.GetAsync(claimUtilizer.Id, claimUtilizer.MembershipId, cancellationToken: cancellationToken);
 					if (application == null)
 					{
 						throw ErtisAuthException.AccessDenied("Utilizer application not found");

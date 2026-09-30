@@ -144,7 +144,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			throw ErtisAuthException.OtpHostNotConfiguredYet();
 		}
 		
-		var user = await this._userService.GetUserAsync(membershipId, userId, cancellationToken: cancellationToken);
+		var user = await this._userService.GetUserAsync(userId, membershipId, cancellationToken: cancellationToken);
 		if (user == null)
 		{
 			throw ErtisAuthException.UserNotFound(userId, "userId");
@@ -170,7 +170,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			MembershipId = membershipId
 		};
 		
-		var created = await this.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		var created = await this.CreateAsync(model, membershipId, utilizer, cancellationToken: cancellationToken);
 		created.Password = code;
 		return created;
 	}
@@ -262,7 +262,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			var otp = await this._repository.FindOneAsync(x => x.MembershipId == membershipId && x.Token != null && x.Token.Token == resetToken, cancellationToken: cancellationToken);
 			if (otp != null)
 			{
-				await this.DeleteAsync(utilizer, membershipId, otp.Id, cancellationToken: cancellationToken);
+				await this.DeleteAsync(otp.Id, membershipId, utilizer, cancellationToken: cancellationToken);
 			}
 		}
 		catch (Exception ex)

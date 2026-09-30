@@ -60,7 +60,7 @@ public static partial class UniqueFieldIndexHelper
 	/// <summary>
 	/// The indexes of the membership's own unique fields, from all user types of the membership.
 	/// </summary>
-	public static IReadOnlyList<UniqueFieldIndex> GetMembershipIndexes(string membershipId, IEnumerable<UserType> userTypes)
+	public static IReadOnlyList<UniqueFieldIndex> GetMembershipIndexes(IEnumerable<UserType> userTypes, string membershipId)
 	{
 		var genealogy = new UserTypeGenealogy(userTypes);
 		

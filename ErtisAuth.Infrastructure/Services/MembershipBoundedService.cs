@@ -45,8 +45,8 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	#region Query Methods
 	
 	public virtual async Task<IPaginationCollection<dynamic>> QueryAsync(
+		string query,
 		string membershipId, 
-		string query, 
 		int? skip = null, 
 		int? limit = null, 
 		bool? withCount = null, 
@@ -65,10 +65,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	
 	#region Get Methods
 	
-	public virtual async Task<TModel?> GetAsync(
-		string membershipId, 
-		string id, 
-		CancellationToken cancellationToken = default)
+	public virtual async Task<TModel?> GetAsync(string id, string membershipId, CancellationToken cancellationToken = default)
 	{
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
@@ -80,8 +77,8 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	}
 	
 	protected async Task<TModel?> GetAsync(
-		string membershipId, 
 		Expression<Func<TModel, bool>> expression, 
+		string membershipId, 
 		CancellationToken cancellationToken = default)
 	{
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
@@ -114,9 +111,9 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		return await this._repository.FindAsync(x => x.MembershipId == membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
 	}
 	
-	public async Task<T?> GetAsync<T>(string membershipId, string id, CancellationToken cancellationToken = default) where T : class, Core.Models.IHasMembership
+	public async Task<T?> GetAsync<T>(string id, string membershipId, CancellationToken cancellationToken = default) where T : class, Core.Models.IHasMembership
 	{
-		return await this.GetAsync(membershipId, id, cancellationToken: cancellationToken) as T;
+		return await this.GetAsync(id, membershipId, cancellationToken: cancellationToken) as T;
 	}
 	
 	public async Task<IPaginationCollection<T>> GetAsync<T>(
@@ -138,13 +135,13 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	#region Search Methods
 	
 	public async Task<IPaginationCollection<TModel>> SearchAsync(
+		string keyword, 
 		string membershipId, 
-		string keyword,
-		int? skip = null,
-		int? limit = null,
-		bool? withCount = null,
-		string? sortField = null,
-		SortDirection? sortDirection = null,
+		int? skip = null, 
+		int? limit = null, 
+		bool? withCount = null, 
+		string? sortField = null, 
+		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default)
 	{
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
@@ -169,7 +166,7 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	
 	#region Aggregation Methods
 	
-	public async Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default)
+	public async Task<dynamic> AggregateAsync(string aggregationStagesJson, string membershipId, CancellationToken cancellationToken = default)
 	{
 		return await this._repository.AggregateAsync(QueryHelper.InjectMembershipIdToAggregation(aggregationStagesJson, membershipId), cancellationToken: cancellationToken);
 	}

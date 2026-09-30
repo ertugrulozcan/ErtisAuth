@@ -59,7 +59,7 @@ public class TokenCodesController : ControllerBase
 		}
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		await this._tokenCodeService.AuthorizeCodeAsync(code, utilizer, membershipId, cancellationToken: cancellationToken);
+		await this._tokenCodeService.AuthorizeCodeAsync(code, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Ok();
 	}
 	

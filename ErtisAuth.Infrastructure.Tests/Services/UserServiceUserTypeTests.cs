@@ -68,8 +68,8 @@ public class UserServiceUserTypeTests
 			AllowAdditionalProperties = true
 		};
 		
-		this._userTypeService.GetByNameOrSlugAsync(MembershipId, UserTypeName, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(userType);
-		this._userTypeService.GetByNameOrSlugAsync(MembershipId, UserTypeSlug, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(userType);
+		this._userTypeService.GetByNameOrSlugAsync(UserTypeName, MembershipId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(userType);
+		this._userTypeService.GetByNameOrSlugAsync(UserTypeSlug, MembershipId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(userType);
 		
 		this._roleService.GetBySlugAsync("user", MembershipId, Arg.Any<CancellationToken>()).Returns(new Role
 		{
@@ -186,7 +186,7 @@ public class UserServiceUserTypeTests
 			x.password = "P@ssw0rd!";
 		});
 		
-		await this.CreateUserService().CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, model, cancellationToken: TestContext.Current.CancellationToken);
+		await this.CreateUserService().CreateAsync(model, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), cancellationToken: TestContext.Current.CancellationToken);
 		
 		Assert.NotNull(this._persistedDocument);
 		Assert.Equal(UserTypeSlug, this._persistedDocument["user_type"].AsString);
@@ -207,7 +207,7 @@ public class UserServiceUserTypeTests
 			x.user_type = UserTypeName;
 		});
 		
-		await this.CreateUserService().UpdateAsync(Self(), MembershipId, UserId, model, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		await this.CreateUserService().UpdateAsync(model, UserId, MembershipId, Self(), fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
 		
 		Assert.NotNull(this._persistedDocument);
 		Assert.Equal("Johnny", this._persistedDocument["firstname"].AsString);
@@ -217,7 +217,7 @@ public class UserServiceUserTypeTests
 	[Fact]
 	public async Task UpdateAsync_WithoutUserType_KeepsStoredSlug()
 	{
-		await this.CreateUserService().UpdateAsync(Self(), MembershipId, UserId, Model(x => x.firstname = "Johnny"), fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		await this.CreateUserService().UpdateAsync(Model(x => x.firstname = "Johnny"), UserId, MembershipId, Self(), fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
 		
 		Assert.NotNull(this._persistedDocument);
 		Assert.Equal(UserTypeSlug, this._persistedDocument["user_type"].AsString);

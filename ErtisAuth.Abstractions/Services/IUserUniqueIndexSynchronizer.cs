@@ -11,7 +11,7 @@ public interface IUserUniqueIndexSynchronizer
 	/// Creates the missing indexes for the given user types of the membership, without dropping any.
 	/// Throws UniqueFieldHasDuplicates when the users already have duplicate values for a field to be unique.
 	/// </summary>
-	Task EnsureIndexesAsync(string membershipId, IEnumerable<UserType> userTypes, CancellationToken cancellationToken = default);
+	Task EnsureIndexesAsync(IEnumerable<UserType> userTypes, string membershipId, CancellationToken cancellationToken = default);
 	
 	/// <summary>
 	/// Creates the missing indexes and drops the obsolete ones for the saved user types of the membership. Failures are logged, not thrown.

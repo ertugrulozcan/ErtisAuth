@@ -136,7 +136,7 @@ public class UserServicePasswordFlowTests
 				prior = x.ArgAt<object?>(4);
 			});
 		
-		await this.CreateUserService().ChangePasswordAsync(CreateUtilizer(membership), membership.Id, UserId, Password, TestContext.Current.CancellationToken);
+		await this.CreateUserService().ChangePasswordAsync(UserId, membership.Id, Password, CreateUtilizer(membership), TestContext.Current.CancellationToken);
 		
 		Assert.False(Assert.IsType<DynamicObject>(document).ContainsProperty("password_hash"));
 		Assert.False(Assert.IsType<DynamicObject>(prior).ContainsProperty("password_hash"));
@@ -152,7 +152,7 @@ public class UserServicePasswordFlowTests
 		this.SetupStoredUser(membership, "old-hash");
 		var userService = this.CreateUserService();
 		
-		await userService.ChangePasswordAsync(CreateUtilizer(membership), membership.Id, UserId, Password, TestContext.Current.CancellationToken);
+		await userService.ChangePasswordAsync(UserId, membership.Id, Password, CreateUtilizer(membership), TestContext.Current.CancellationToken);
 		
 		Assert.NotNull(this._updatedDocument);
 		var expected = hashAlgorithm == "MD5" ? "8a24367a1f46c141048752f2d5bbd14b" : Sha256OfPassword;
@@ -169,13 +169,13 @@ public class UserServicePasswordFlowTests
 		this.SetupStoredUser(membership, Sha256OfPassword);
 		var userService = this.CreateUserService();
 		
-		await userService.ChangePasswordAsync(CreateUtilizer(membership), membership.Id, UserId, Password, TestContext.Current.CancellationToken);
+		await userService.ChangePasswordAsync(UserId, membership.Id, Password, CreateUtilizer(membership), TestContext.Current.CancellationToken);
 		
 		Assert.NotNull(this._updatedDocument);
 		var storedHash = this._updatedDocument["password_hash"].AsString;
 		Assert.StartsWith(expectedPrefix, storedHash);
-		Assert.True(userService.VerifyPassword(membership, Password, storedHash));
-		Assert.False(userService.VerifyPassword(membership, "wrong-password", storedHash));
+		Assert.True(userService.VerifyPassword(Password, storedHash, membership));
+		Assert.False(userService.VerifyPassword("wrong-password", storedHash, membership));
 	}
 	
 	[Fact]
@@ -185,7 +185,7 @@ public class UserServicePasswordFlowTests
 		this.SetupStoredUser(membership, Sha256OfPassword);
 		var userService = this.CreateUserService();
 		
-		await userService.ChangePasswordAsync(CreateUtilizer(membership), membership.Id, UserId, Password, TestContext.Current.CancellationToken);
+		await userService.ChangePasswordAsync(UserId, membership.Id, Password, CreateUtilizer(membership), TestContext.Current.CancellationToken);
 		
 		Assert.NotNull(this._updatedDocument);
 		Assert.False(this._updatedDocument.Contains("password"));
@@ -200,7 +200,7 @@ public class UserServicePasswordFlowTests
 		var membership = this.SetupMembership("ARGON2ID");
 		var userService = this.CreateUserService();
 		
-		await Assert.ThrowsAsync<ValidationException>(() => userService.ChangePasswordAsync(CreateUtilizer(membership), membership.Id, UserId, newPassword!, TestContext.Current.CancellationToken));
+		await Assert.ThrowsAsync<ValidationException>(() => userService.ChangePasswordAsync(UserId, membership.Id, newPassword!, CreateUtilizer(membership), TestContext.Current.CancellationToken));
 		
 		await this._repository.DidNotReceiveWithAnyArgs().UpdateAsync(null!, null!, null, TestContext.Current.CancellationToken);
 	}
@@ -220,8 +220,8 @@ public class UserServicePasswordFlowTests
 		var userService = this.CreateUserService();
 		var utilizer = CreateUtilizer(membership);
 		
-		Assert.True(await userService.CheckPasswordAsync(utilizer, Password, TestContext.Current.CancellationToken));
-		Assert.False(await userService.CheckPasswordAsync(utilizer, "wrong-password", TestContext.Current.CancellationToken));
+		Assert.True(await userService.CheckPasswordAsync(Password, utilizer, TestContext.Current.CancellationToken));
+		Assert.False(await userService.CheckPasswordAsync("wrong-password", utilizer, TestContext.Current.CancellationToken));
 	}
 	
 	[Theory]
@@ -233,7 +233,7 @@ public class UserServicePasswordFlowTests
 		this.SetupStoredUser(membership, Sha256OfPassword);
 		var userService = this.CreateUserService();
 		
-		Assert.False(await userService.CheckPasswordAsync(CreateUtilizer(membership), password!, TestContext.Current.CancellationToken));
+		Assert.False(await userService.CheckPasswordAsync(password!, CreateUtilizer(membership), TestContext.Current.CancellationToken));
 	}
 	
 	[Fact]
@@ -243,7 +243,7 @@ public class UserServicePasswordFlowTests
 		this.SetupStoredUser(membership, passwordHash: null);
 		var userService = this.CreateUserService();
 		
-		Assert.False(await userService.CheckPasswordAsync(CreateUtilizer(membership), Password, TestContext.Current.CancellationToken));
+		Assert.False(await userService.CheckPasswordAsync(Password, CreateUtilizer(membership), TestContext.Current.CancellationToken));
 	}
 	
 	[Fact]
@@ -252,7 +252,7 @@ public class UserServicePasswordFlowTests
 		var userService = this.CreateUserService();
 		var utilizer = new Utilizer { Id = UserId, Username = "john.doe", MembershipId = "unknown-membership" };
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => userService.CheckPasswordAsync(utilizer, Password, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => userService.CheckPasswordAsync(Password, utilizer, TestContext.Current.CancellationToken));
 		
 		Assert.Equal("MembershipNotFound", exception.ErrorCode);
 	}

@@ -69,7 +69,7 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<User>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var user = await this._userService.GetAsync(membershipId, id);
+		var user = await this._userService.GetAsync(id, membershipId);
 		if (user != null)
 		{
 			return this.Ok(user);
@@ -110,7 +110,7 @@ public class UsersController : QueryControllerBase
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
 			var locale = this.Request.Query.ContainsKey("locale") ? this.Request.Query["locale"].ToString() : null;
-			return await this._userService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, locale, cancellationToken: cancellationToken);
+			return await this._userService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, selectFields, locale, cancellationToken: cancellationToken);
 		}
 		else
 		{
@@ -139,7 +139,7 @@ public class UsersController : QueryControllerBase
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		return this.Ok(await this._userService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+		return this.Ok(await this._userService.SearchAsync(keyword, membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
 	}
 	
 	#endregion
@@ -157,7 +157,7 @@ public class UsersController : QueryControllerBase
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
-		var user = await this._userService.CreateAsync(utilizer, membershipId, model, host, cancellationToken: cancellationToken);
+		var user = await this._userService.CreateAsync(model, membershipId, utilizer, host, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user["_id"]}", user);
 	}
 	
@@ -176,7 +176,7 @@ public class UsersController : QueryControllerBase
 	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] DynamicObject model, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var user = await this._userService.UpdateAsync(utilizer, membershipId, id, model, cancellationToken: cancellationToken);
+		var user = await this._userService.UpdateAsync(model, id, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Ok(user);
 	}
 	
@@ -194,7 +194,7 @@ public class UsersController : QueryControllerBase
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		if (await this._userService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		if (await this._userService.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}
@@ -215,7 +215,7 @@ public class UsersController : QueryControllerBase
 		if (ids != null)
 		{
 			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-			var isDeleted = await this._userService.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
+			var isDeleted = await this._userService.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken);
 			if (isDeleted != null)
 			{
 				if (isDeleted.Value)
@@ -253,7 +253,7 @@ public class UsersController : QueryControllerBase
 	public async Task<IActionResult> ManualActivateUser([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		return this.Ok(await this._userService.ActivateUserByIdAsync(utilizer, membershipId, id, cancellationToken: cancellationToken));
+		return this.Ok(await this._userService.ActivateUserByIdAsync(id, membershipId, utilizer, cancellationToken: cancellationToken));
 	}
 	
 	[HttpGet("{id}/freeze")]
@@ -267,8 +267,8 @@ public class UsersController : QueryControllerBase
 	public async Task<IActionResult> ManualFreezeUser([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		await this._tokenService.RevokeAllAsync(membershipId, id, cancellationToken: cancellationToken);
-		return this.Ok(await this._userService.FreezeUserByIdAsync(utilizer, membershipId, id, cancellationToken: cancellationToken));
+		await this._tokenService.RevokeAllAsync(id, membershipId, cancellationToken: cancellationToken);
+		return this.Ok(await this._userService.FreezeUserByIdAsync(id, membershipId, utilizer, cancellationToken: cancellationToken));
 	}
 	
 	[HttpGet("activation")]
@@ -276,7 +276,7 @@ public class UsersController : QueryControllerBase
 	public async Task<IActionResult> ActivateUser([FromRoute] string membershipId, [FromQuery] string uat, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		return this.Ok(await this._userService.ActivateUserAsync(utilizer, membershipId, uat, cancellationToken: cancellationToken));
+		return this.Ok(await this._userService.ActivateUserAsync(uat, membershipId, utilizer, cancellationToken: cancellationToken));
 	}
 	
 	[HttpPost("resend-activation-mail")]
@@ -299,13 +299,13 @@ public class UsersController : QueryControllerBase
 			return this.EmailAddressRequired();
 		}
 		
-		var user = await this._userService.GetByUsernameOrEmailAddressAsync(membershipId, model.EmailAddress);
+		var user = await this._userService.GetByUsernameOrEmailAddressAsync(model.EmailAddress, membershipId);
 		if (user == null)
 		{
 			return this.UserNotFound(model.EmailAddress);
 		}
 		
-		var emailAddress = await this._userService.SendActivationMailAsync(membershipId, user.Id, host, cancellationToken: cancellationToken);
+		var emailAddress = await this._userService.SendActivationMailAsync(user.Id, membershipId, host, cancellationToken: cancellationToken);
 		if (!string.IsNullOrEmpty(emailAddress))
 		{
 			return this.Ok(new
@@ -339,8 +339,8 @@ public class UsersController : QueryControllerBase
 		}
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		await this._userService.ChangePasswordAsync(utilizer, membershipId, id, model.Password, cancellationToken: cancellationToken);
-		await this.RevokeTokensAfterPasswordChangeAsync(utilizer, membershipId, id, cancellationToken);
+		await this._userService.ChangePasswordAsync(id, membershipId, model.Password, utilizer, cancellationToken: cancellationToken);
+		await this.RevokeTokensAfterPasswordChangeAsync(id, membershipId, utilizer, cancellationToken);
 		return this.Ok();
 	}
 	
@@ -348,13 +348,13 @@ public class UsersController : QueryControllerBase
 	/// Signs the user out on every device after a password change (e.g. after an account takeover),
 	/// except the session in which the user changed its own password.
 	/// </summary>
-	private async Task RevokeTokensAfterPasswordChangeAsync(Utilizer utilizer, string membershipId, string userId, CancellationToken cancellationToken)
+	private async Task RevokeTokensAfterPasswordChangeAsync(string userId, string membershipId, Utilizer utilizer, CancellationToken cancellationToken)
 	{
 		var callersOwnAccessToken = utilizer.Type == Utilizer.UtilizerType.User && utilizer.Id == userId && utilizer.TokenType == SupportedTokenTypes.Bearer
 			? utilizer.Token
 			: null;
 		
-		await this._tokenService.RevokeAllAsync(membershipId, userId, callersOwnAccessToken, cancellationToken: cancellationToken);
+		await this._tokenService.RevokeAllAsync(userId, membershipId, callersOwnAccessToken, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -382,7 +382,7 @@ public class UsersController : QueryControllerBase
 			return this.EmailAddressRequired();
 		}
 		
-		var resetPasswordToken = await this._passwordResetService.ResetPasswordAsync(utilizer, membershipId, model.EmailAddress, host, cancellationToken: cancellationToken);
+		var resetPasswordToken = await this._passwordResetService.ResetPasswordAsync(model.EmailAddress, membershipId, utilizer, host, cancellationToken: cancellationToken);
 		return this.Ok(new
 		{
 			message = "Reset token generated",
@@ -399,7 +399,7 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> VerifyResetToken([FromRoute] string membershipId, [FromQuery] string token, CancellationToken cancellationToken = default)
 	{
-		var user = await this._passwordResetService.VerifyResetTokenAsync(membershipId, token, cancellationToken: cancellationToken);
+		var user = await this._passwordResetService.VerifyResetTokenAsync(token, membershipId, cancellationToken: cancellationToken);
 		return this.Ok(new
 		{
 			email_address = user.EmailAddress
@@ -431,8 +431,8 @@ public class UsersController : QueryControllerBase
 		}
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var user = await this._passwordResetService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password, cancellationToken: cancellationToken);
-		await this.RevokeTokensAfterPasswordChangeAsync(utilizer, membershipId, user.Id, cancellationToken);
+		var user = await this._passwordResetService.SetPasswordAsync(model.UsernameOrEmailAddress, model.Password, model.ResetToken, membershipId, utilizer, cancellationToken: cancellationToken);
+		await this.RevokeTokensAfterPasswordChangeAsync(user.Id, membershipId, utilizer, cancellationToken);
 		await this._oneTimePasswordService.RevokeResetPasswordTokenAsync(utilizer, membershipId, model.ResetToken, cancellationToken: cancellationToken);
 		return this.Ok();
 	}
@@ -456,7 +456,7 @@ public class UsersController : QueryControllerBase
 			return this.Unauthorized();
 		}
 		
-		if (await this._userService.CheckPasswordAsync(utilizer, password, cancellationToken: cancellationToken))
+		if (await this._userService.CheckPasswordAsync(password, utilizer, cancellationToken: cancellationToken))
 		{
 			return this.Ok();
 		}

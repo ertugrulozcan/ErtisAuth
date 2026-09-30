@@ -126,8 +126,8 @@ public class EventServiceTests
 		var own = await service.FireEventAsync(ErtisAuthEventType.UserCreated, CreateUtilizer(), MembershipId, cancellationToken: TestContext.Current.CancellationToken);
 		var other = await service.FireEventAsync(ErtisAuthEventType.UserCreated, CreateUtilizer("5f8a1b2c3d4e5f6a7b8c9dff"), "5f8a1b2c3d4e5f6a7b8c9dff", cancellationToken: TestContext.Current.CancellationToken);
 		
-		Assert.NotNull(await service.GetAsync(MembershipId, own.Id, TestContext.Current.CancellationToken));
-		Assert.Null(await service.GetAsync(MembershipId, other.Id, TestContext.Current.CancellationToken));
+		Assert.NotNull(await service.GetAsync(own.Id, MembershipId, TestContext.Current.CancellationToken));
+		Assert.Null(await service.GetAsync(other.Id, MembershipId, TestContext.Current.CancellationToken));
 		
 		var events = await service.GetAsync(MembershipId, cancellationToken: TestContext.Current.CancellationToken);
 		Assert.Equal(own.Id, Assert.Single(events.Items).Id);
@@ -136,7 +136,7 @@ public class EventServiceTests
 	[Fact]
 	public async Task GetAsync_WithUnknownMembership_ThrowsMembershipNotFound()
 	{
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateService().GetAsync("5f8a1b2c3d4e5f6a7b8c9dff", "5f8a1b2c3d4e5f6a7b8c9d10", TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateService().GetAsync("5f8a1b2c3d4e5f6a7b8c9d10", "5f8a1b2c3d4e5f6a7b8c9dff", TestContext.Current.CancellationToken));
 		
 		Assert.Equal("MembershipNotFound", exception.ErrorCode);
 	}

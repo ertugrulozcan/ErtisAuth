@@ -42,9 +42,9 @@ public interface IGenericCrudService<T>
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default);
 	
-	Task<T> CreateAsync(Utilizer utilizer, T model, CancellationToken cancellationToken = default);
+	Task<T> CreateAsync(T model, Utilizer utilizer, CancellationToken cancellationToken = default);
 	
-	Task<T> UpdateAsync(Utilizer utilizer, T model, CancellationToken cancellationToken = default);
+	Task<T> UpdateAsync(T model, Utilizer utilizer, CancellationToken cancellationToken = default);
 	
 	Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
 	

@@ -99,7 +99,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 		return RandomCodeGenerator.Generate(policy.Length, policy.ContainsLetters, policy.ContainsDigits);
 	}
 	
-	public async Task<TokenCode> AuthorizeCodeAsync(string code, Utilizer utilizer, string membershipId, CancellationToken cancellationToken = default)
+	public async Task<TokenCode> AuthorizeCodeAsync(string code, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		var tokenCode = await this.GetTokenCode(code, membershipId, cancellationToken: cancellationToken);
 		if (tokenCode == null)
@@ -118,7 +118,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 			throw ErtisAuthException.TokenCodeAlreadyAuthorized();
 		}
 		
-		var user = await this._userService.GetUserAsync(membershipId, utilizer.Id!, cancellationToken: cancellationToken);
+		var user = await this._userService.GetUserAsync(utilizer.Id!, membershipId, cancellationToken: cancellationToken);
 		if (user == null)
 		{
 			throw ErtisAuthException.UserNotFound(utilizer.Id ?? string.Empty, "id");

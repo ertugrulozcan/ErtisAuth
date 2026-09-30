@@ -22,7 +22,7 @@ public class PasswordResetServiceTests : BaseActionTokenTests
 	
 	private async Task SetPasswordAsync(string resetLink, string usernameOrEmailAddress)
 	{
-		await this.CreatePasswordResetService().SetPasswordAsync(this.PublicPageApplication(), this._membership.Id, resetLink, usernameOrEmailAddress, NewPassword, TestContext.Current.CancellationToken);
+		await this.CreatePasswordResetService().SetPasswordAsync(usernameOrEmailAddress, NewPassword, resetLink, this._membership.Id, this.PublicPageApplication(), TestContext.Current.CancellationToken);
 	}
 	
 	#endregion
@@ -137,7 +137,7 @@ public class PasswordResetServiceTests : BaseActionTokenTests
 	[Fact]
 	public async Task VerifyResetTokenAsync_WithMalformedLink_IsRejected()
 	{
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreatePasswordResetService().VerifyResetTokenAsync(this._membership.Id, "not-a-reset-link", TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreatePasswordResetService().VerifyResetTokenAsync("not-a-reset-link", this._membership.Id, TestContext.Current.CancellationToken));
 		
 		Assert.Equal("InvalidToken", exception.ErrorCode);
 	}

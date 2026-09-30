@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Bson;
 using NSubstitute;
 
+// ReSharper disable MemberCanBePrivate.Global
 namespace ErtisAuth.Infrastructure.Tests.Services;
 
 /// <summary>
@@ -65,7 +66,7 @@ public abstract class BaseActionTokenTests
 	{
 		this.SetupMembership();
 		
-		this._userTypeService.GetByNameOrSlugAsync(Arg.Any<string>(), "user", Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new UserType
+		this._userTypeService.GetByNameOrSlugAsync("user", Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new UserType
 		{
 			Id = "user-type-id",
 			Name = "user",
@@ -97,7 +98,7 @@ public abstract class BaseActionTokenTests
 			.ReturnsForAnyArgs(x => this.FindUsers(x.ArgAt<string>(0)));
 		
 		this._repository
-			.UpdateAsync(default!, default!, default, default)
+			.UpdateAsync(null!)
 			.ReturnsForAnyArgs(x =>
 			{
 				this._persistedDocument = x.ArgAt<BsonDocument>(0);

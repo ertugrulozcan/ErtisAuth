@@ -112,14 +112,14 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 			}
 		}
 		
-		return await this.CreateAsync(utilizer, membership.Id, new Role
+		return await this.CreateAsync(new Role
 		{
 			Name = "Administrator",
 			Slug = ReservedRoles.Administrator,
 			Description = "Administrator",
 			MembershipId = membership.Id,
 			Permissions = permissions
-		}, cancellationToken: cancellationToken);
+		}, membership.Id, utilizer, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -299,10 +299,10 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	#region Read Methods
 	
-	public override async Task<Role?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<Role?> GetAsync(string id, string membershipId, CancellationToken cancellationToken = default)
 	{
 		var role = this.GetFromCacheById(membershipId, id);
-		return role ?? await base.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+		return role ?? await base.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 	}
 	
 	public async ValueTask<Role?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
@@ -320,14 +320,14 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	#region Create Methods
 	
-	public override async Task<Role> CreateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
+	public override async Task<Role> CreateAsync(Role model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		if (model.Slug is ReservedRoles.Administrator && utilizer.Type != Utilizer.UtilizerType.System)
 		{
 			throw ErtisAuthException.ReservedRoleName(model.Slug);
 		}
 		
-		var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
+		var created = await base.CreateAsync(model, membershipId, utilizer, cancellationToken);
 		await this.RefreshCacheAsync(membershipId);
 		return created;
 	}
@@ -336,9 +336,9 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	#region Update Methods
 	
-	public override async Task<Role> UpdateAsync(Utilizer utilizer, string membershipId, Role model, CancellationToken cancellationToken = default)
+	public override async Task<Role> UpdateAsync(Role model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
+		var updated = await base.UpdateAsync(model, membershipId, utilizer, cancellationToken);
 		await this.RefreshCacheAsync(membershipId);
 		return updated;
 	}
@@ -347,9 +347,9 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	#region Delete Methods
 	
-	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<bool> DeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+		var isDeleted = await base.DeleteAsync(id, membershipId, utilizer, cancellationToken);
 		if (isDeleted)
 		{
 			await this.RefreshCacheAsync(membershipId);	
@@ -358,9 +358,9 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		return isDeleted;
 	}
 	
-	public override async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
+	public override async Task<bool?> BulkDeleteAsync(string[] ids, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		var result = await base.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken: cancellationToken);
+		var result = await base.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken: cancellationToken);
 		await this.RefreshCacheAsync(membershipId);
 		return result;
 	}

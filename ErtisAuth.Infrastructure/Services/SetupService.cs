@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using Ertis.Schema.Dynamics;
 using Ertis.Schema.Types;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
@@ -161,7 +160,7 @@ public class SetupService : ISetupService
 		try
 		{
 			// 1. Membership (created by the system; the membership id of the utilizer is not known yet)
-			membership = await this._membershipService.CreateAsync(Utilizer.GetSystemUtilizer(string.Empty), new Membership
+			membership = await this._membershipService.CreateAsync(new Membership
 			{
 				Name = membershipModel.Name,
 				Slug = membershipModel.Slug,
@@ -170,7 +169,7 @@ public class SetupService : ISetupService
 				ExpiresIn = membershipModel.ExpiresIn,
 				RefreshTokenExpiresIn = membershipModel.RefreshTokenExpiresIn,
 				SecretKey = string.IsNullOrEmpty(membershipModel.SecretKey) ? GenerateRandomSecretKey(32) : membershipModel.SecretKey
-			}, cancellationToken: cancellationToken);
+			}, Utilizer.GetSystemUtilizer(string.Empty), cancellationToken: cancellationToken);
 			
 			var utilizer = Utilizer.GetSystemUtilizer(membership.Id);
 			
@@ -178,7 +177,7 @@ public class SetupService : ISetupService
 			role = await this._roleService.EnsureAdministratorRoleAsync(membership, cancellationToken: cancellationToken);
 			
 			// 3. User type
-			userType = await this._userTypeService.CreateAsync(utilizer, membership.Id, new UserType
+			userType = await this._userTypeService.CreateAsync(new UserType
 			{
 				Name = string.IsNullOrEmpty(userModel.UserType) ? "User" : userModel.UserType,
 				Properties = Array.Empty<IFieldInfo>(),
@@ -186,10 +185,10 @@ public class SetupService : ISetupService
 				AllowAdditionalProperties = false,
 				BaseUserType = UserType.ORIGIN_USER_TYPE_SLUG,
 				MembershipId = membership.Id
-			}, cancellationToken: cancellationToken);
+			}, membership.Id, utilizer, cancellationToken: cancellationToken);
 			
 			// 4. Administrator user
-			var user = await this._userService.CreateAsync(utilizer, membership.Id, new UserWithPassword
+			var user = await this._userService.CreateAsync(new UserWithPassword
 			{
 				Username = userModel.Username,
 				FirstName = userModel.FirstName,
@@ -200,7 +199,7 @@ public class SetupService : ISetupService
 				MembershipId = membership.Id,
 				Password = userModel.Password,
 				IsActive = true
-			}, cancellationToken: cancellationToken);
+			}, membership.Id, utilizer, cancellationToken: cancellationToken);
 			
 			userId = user.TryGetValue<string>("_id", out var id, out _) ? id : null;
 			
@@ -208,13 +207,13 @@ public class SetupService : ISetupService
 			ApplicationWithSecret? application = null;
 			if (applicationModel != null)
 			{
-				application = await this._applicationService.CreateWithSecretAsync(utilizer, membership.Id, new Application
+				application = await this._applicationService.CreateWithSecretAsync(new Application
 				{
 					Name = applicationModel.Name,
 					Slug = applicationModel.Slug,
 					Role = applicationModel.Role,
 					MembershipId = membership.Id
-				}, cancellationToken: cancellationToken);
+				}, membership.Id, utilizer, cancellationToken: cancellationToken);
 			}
 			
 			return new SetupResult
@@ -246,17 +245,17 @@ public class SetupService : ISetupService
 		var steps = new List<(string Resource, Func<Task> Delete)>();
 		if (userId != null)
 		{
-			steps.Add(("user", () => this._userService.DeleteAsync(utilizer, membership.Id, userId)));
+			steps.Add(("user", () => this._userService.DeleteAsync(userId, membership.Id, utilizer)));
 		}
 		
 		if (userType != null)
 		{
-			steps.Add(("user type", () => this._userTypeService.DeleteAsync(utilizer, membership.Id, userType.Id)));
+			steps.Add(("user type", () => this._userTypeService.DeleteAsync(userType.Id, membership.Id, utilizer)));
 		}
 		
 		if (role != null)
 		{
-			steps.Add(("role", () => this._roleService.DeleteAsync(utilizer, membership.Id, role.Id)));
+			steps.Add(("role", () => this._roleService.DeleteAsync(role.Id, membership.Id, utilizer)));
 		}
 		
 		steps.Add(("membership", () => this._membershipService.DeleteAsync(membership.Id)));

@@ -46,8 +46,8 @@ public class TokenServicePasswordLoginTests
 	public TokenServicePasswordLoginTests()
 	{
 		this._userService
-			.VerifyPassword(Arg.Any<Membership>(), Arg.Any<string>(), Arg.Any<string?>())
-			.Returns(x => this._realUserService.VerifyPassword(x.ArgAt<Membership>(0), x.ArgAt<string>(1), x.ArgAt<string?>(2)));
+			.VerifyPassword(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<Membership>())
+			.Returns(x => this._realUserService.VerifyPassword(x.ArgAt<string>(0), x.ArgAt<string?>(1), x.ArgAt<Membership>(2)));
 			
 		this._jwtService
 			.GenerateToken(Arg.Any<TokenClaims>(), Arg.Any<DateTime?>(), Arg.Any<TimeSpan?>(), Arg.Any<System.Text.Encoding?>())
@@ -94,7 +94,7 @@ public class TokenServicePasswordLoginTests
 		};
 		
 		this._userService
-			.GetUserWithPasswordAsync(membership.Id, Username, Username, Arg.Any<CancellationToken>())
+			.GetUserWithPasswordAsync(Username, Username, membership.Id, Arg.Any<CancellationToken>())
 			.Returns(user);
 	}
 	
@@ -139,7 +139,7 @@ public class TokenServicePasswordLoginTests
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.GenerateTokenAsync(Username, "wrong-password", membership.Id, cancellationToken: TestContext.Current.CancellationToken));
 		
 		AssertInvalidCredentials(exception);
-		await this._activeTokenService.DidNotReceiveWithAnyArgs().CreateAsync(default!, default!, default!, default, default, TestContext.Current.CancellationToken);
+		await this._activeTokenService.DidNotReceiveWithAnyArgs().CreateAsync(null!, null!, null!, null, null, TestContext.Current.CancellationToken);
 	}
 	
 	[Fact]
@@ -207,7 +207,7 @@ public class TokenServicePasswordLoginTests
 		AssertInvalidCredentials(exception);
 		
 		// A comparable hashing cost is spent so that response times do not reveal whether the user exists
-		this._userService.Received(1).CalculatePasswordHash(membership, Password);
+		this._userService.Received(1).CalculatePasswordHash(Password, membership);
 	}
 	
 	[Fact]
@@ -234,7 +234,7 @@ public class TokenServicePasswordLoginTests
 		
 		Assert.Equal(HttpStatusCode.Unauthorized, exception.StatusCode);
 		Assert.Equal("UserInactive", exception.ErrorCode);
-		await this._activeTokenService.DidNotReceiveWithAnyArgs().CreateAsync(default!, default!, default!, default, default, TestContext.Current.CancellationToken);
+		await this._activeTokenService.DidNotReceiveWithAnyArgs().CreateAsync(null!, null!, null!, null, null, TestContext.Current.CancellationToken);
 	}
 	
 	[Fact]

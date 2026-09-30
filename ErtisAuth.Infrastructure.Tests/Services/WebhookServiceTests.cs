@@ -1,7 +1,5 @@
 using System.Net;
-using System.Text.Json;
 using System.Text.Json.Nodes;
-using Ertis.Core.Collections;
 using Ertis.Core.Exceptions;
 using Ertis.Core.Models.Response;
 using Ertis.Net.Http;
@@ -58,6 +56,7 @@ public class WebhookServiceTests
 	
 	public WebhookServiceTests()
 	{
+		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		this._webhooks = InMemoryRepository.Setup(this._repository, x => x.Id ??= ObjectId.GenerateNewId().ToString());
 		
 		var membership = TestServiceFactory.CreateMembership();
@@ -77,7 +76,7 @@ public class WebhookServiceTests
 						JsonNode.Parse(((SystemJsonRequestBody) callInfo.ArgAt<IRequestBody>(4)).Json ?? "null")));
 				}
 				
-				return (IResponseResult) new ResponseResult(this._responseStatusCode);
+				return new ResponseResult(this._responseStatusCode);
 			});
 		
 		this._eventService
@@ -131,6 +130,7 @@ public class WebhookServiceTests
 	
 	private void AddWebhook(Webhook webhook)
 	{
+		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		webhook.Id ??= ObjectId.GenerateNewId().ToString();
 		this._webhooks.Add(webhook);
 	}
@@ -186,7 +186,7 @@ public class WebhookServiceTests
 	[Fact]
 	public async Task CreateAsync_WithValidWebhook_InsertsAndFiresWebhookCreated()
 	{
-		var created = await this.CreateService().CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, CreateWebhook(), TestContext.Current.CancellationToken);
+		var created = await this.CreateService().CreateAsync(CreateWebhook(), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		
 		Assert.Equal(created.Id, Assert.Single(this._webhooks).Id);
 		await this._eventService.Received(1).FireEventAsync(ErtisAuthEventType.WebhookCreated, Arg.Any<Utilizer>(), MembershipId, Arg.Any<object?>(), Arg.Any<object?>(), Arg.Any<CancellationToken>());
@@ -203,7 +203,7 @@ public class WebhookServiceTests
 		webhook.Event = eventName;
 		webhook.Request!.Method = method;
 		
-		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateService().CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, webhook, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateService().CreateAsync(webhook, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		
 		Assert.Contains(exception.Errors!, x => x.StartsWith(expectedErrorStart));
 		Assert.Empty(this._webhooks);
@@ -215,7 +215,7 @@ public class WebhookServiceTests
 		var webhook = CreateWebhook();
 		webhook.Status = null;
 		
-		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateService().CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, webhook, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateService().CreateAsync(webhook, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		
 		Assert.Contains("status is a required field", exception.Errors!);
 	}
@@ -224,9 +224,9 @@ public class WebhookServiceTests
 	public async Task CreateAsync_WithExistingName_ThrowsWebhookWithSameNameAlreadyExists()
 	{
 		var service = this.CreateService();
-		await service.CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, CreateWebhook(), TestContext.Current.CancellationToken);
+		await service.CreateAsync(CreateWebhook(), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => service.CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, CreateWebhook(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => service.CreateAsync(CreateWebhook(), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		
 		Assert.Equal(HttpStatusCode.Conflict, exception.StatusCode);
 		Assert.Single(this._webhooks);
@@ -236,13 +236,13 @@ public class WebhookServiceTests
 	public async Task UpdateAsync_RenamingToAnExistingName_Throws()
 	{
 		var service = this.CreateService();
-		await service.CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, CreateWebhook(name: "First"), TestContext.Current.CancellationToken);
-		var second = await service.CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, CreateWebhook(name: "Second"), TestContext.Current.CancellationToken);
+		await service.CreateAsync(CreateWebhook(name: "First"), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
+		var second = await service.CreateAsync(CreateWebhook(name: "Second"), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		
 		var update = CreateWebhook(name: "First");
 		update.Id = second.Id;
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => service.UpdateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, update, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => service.UpdateAsync(update, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		
 		Assert.Equal(HttpStatusCode.Conflict, exception.StatusCode);
 	}
@@ -251,7 +251,7 @@ public class WebhookServiceTests
 	public async Task UpdateAsync_KeepsOmittedFields()
 	{
 		var service = this.CreateService();
-		var created = await service.CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, CreateWebhook(tryCount: 3), TestContext.Current.CancellationToken);
+		var created = await service.CreateAsync(CreateWebhook(tryCount: 3), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		var update = new Webhook
 		{
 			Id = created.Id,
@@ -261,7 +261,7 @@ public class WebhookServiceTests
 			MembershipId = MembershipId
 		};
 		
-		var updated = await service.UpdateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, update, TestContext.Current.CancellationToken);
+		var updated = await service.UpdateAsync(update, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		
 		Assert.Equal("Updated description", updated.Description);
 		Assert.Equal(WebhookStatus.Active, updated.Status);

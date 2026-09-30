@@ -48,7 +48,7 @@ public class ProvidersController : ControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<ActionResult<Provider>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var provider = await this._providerService.GetAsync(membershipId, id);
+		var provider = await this._providerService.GetAsync(id, membershipId);
 		if (provider != null)
 		{
 			return this.Ok(provider);
@@ -107,7 +107,7 @@ public class ProvidersController : ControllerBase
 		if (Enum.TryParse<KnownProviders>(model.Name, true, out var providerType) && providerType != KnownProviders.ErtisAuth)
 		{
 			// Omitted flags and private key keep their current values
-			var current = model.IsActive == null || model.TrustEmail == null || model.PrivateKey == null ? await this._providerService.GetAsync(membershipId, id, cancellationToken: cancellationToken) : null;
+			var current = model.IsActive == null || model.TrustEmail == null || model.PrivateKey == null ? await this._providerService.GetAsync(id, membershipId, cancellationToken: cancellationToken) : null;
 			var providerModel = new Provider(providerType)
 			{
 				Id = id,
@@ -126,7 +126,7 @@ public class ProvidersController : ControllerBase
 			};
 			
 			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-			var providerInstance = await this._providerService.UpdateAsync(utilizer, membershipId, providerModel, cancellationToken: cancellationToken);
+			var providerInstance = await this._providerService.UpdateAsync(providerModel, membershipId, utilizer, cancellationToken: cancellationToken);
 			return this.Ok(providerInstance);
 		}
 		else
@@ -145,7 +145,7 @@ public class ProvidersController : ControllerBase
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		if (await this._providerService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		if (await this._providerService.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}

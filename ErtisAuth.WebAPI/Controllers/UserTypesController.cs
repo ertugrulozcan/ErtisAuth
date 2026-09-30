@@ -55,7 +55,7 @@ public class UserTypesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<UserType>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var userType = await this._userTypeService.GetAsync(membershipId, id);
+		var userType = await this._userTypeService.GetAsync(id, membershipId);
 		if (userType != null)
 		{
 			return this.Ok(userType);
@@ -75,7 +75,7 @@ public class UserTypesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<UserType>> GetFieldInfoOwnerRelations([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var relations = await this._userTypeService.GetFieldInfoOwnerRelationsAsync(membershipId, id, cancellationToken: cancellationToken);
+		var relations = await this._userTypeService.GetFieldInfoOwnerRelationsAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (relations != null)
 		{
 			return this.Ok(relations);
@@ -113,7 +113,7 @@ public class UserTypesController : QueryControllerBase
 		var allUserTypes = new List<UserType>();
 		allUserTypes.AddRange(userTypes.Items);
 		
-		var originUserType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, UserType.ORIGIN_USER_TYPE_SLUG, cancellationToken: cancellationToken);
+		var originUserType = await this._userTypeService.GetByNameOrSlugAsync(UserType.ORIGIN_USER_TYPE_SLUG, membershipId, cancellationToken: cancellationToken);
 		if (originUserType != null)
 		{
 			allUserTypes.Add(originUserType);	
@@ -144,7 +144,7 @@ public class UserTypesController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this._userTypeService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._userTypeService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -167,7 +167,7 @@ public class UserTypesController : QueryControllerBase
 	{
 		var userTypeModel = ToUserType(membershipId, null, model.Name, model.Slug, model.Description, model.Properties, model.AllowAdditionalProperties, model.IsAbstract, model.IsSealed, model.BaseUserType);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var userType = await this._userTypeService.CreateAsync(utilizer, membershipId, userTypeModel, cancellationToken: cancellationToken);
+		var userType = await this._userTypeService.CreateAsync(userTypeModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{userType.Id}", userType);
 	}
 	
@@ -182,7 +182,7 @@ public class UserTypesController : QueryControllerBase
 	{
 		var userTypeModel = ToUserType(membershipId, id, model.Name, model.Slug, model.Description, model.Properties, model.AllowAdditionalProperties, model.IsAbstract, model.IsSealed, model.BaseUserType);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var userType = await this._userTypeService.UpdateAsync(utilizer, membershipId, userTypeModel, cancellationToken: cancellationToken);
+		var userType = await this._userTypeService.UpdateAsync(userTypeModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Ok(userType);
 	}
 	
@@ -234,7 +234,7 @@ public class UserTypesController : QueryControllerBase
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		if (await this._userTypeService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		if (await this._userTypeService.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}

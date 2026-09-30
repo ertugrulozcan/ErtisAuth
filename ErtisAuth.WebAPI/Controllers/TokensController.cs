@@ -58,7 +58,7 @@ public class TokensController : ControllerBase
 		{
 			if (token.TokenType == SupportedTokenTypes.Bearer)
 			{
-				var user = await this._userService.GetAsync(utilizer.MembershipId, utilizer.Id);
+				var user = await this._userService.GetAsync(utilizer.Id, utilizer.MembershipId);
 				if (user != null)
 				{
 					return this.Ok(user);
@@ -89,7 +89,7 @@ public class TokensController : ControllerBase
 		{
 			if (token.TokenType == SupportedTokenTypes.Bearer)
 			{
-				var user = await this._userService.GetAsync(utilizer.MembershipId, utilizer.Id);
+				var user = await this._userService.GetAsync(utilizer.Id, utilizer.MembershipId);
 				if (user != null)
 				{
 					return this.Ok(user);

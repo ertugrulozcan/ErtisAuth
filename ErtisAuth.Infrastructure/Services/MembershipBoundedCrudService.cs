@@ -67,7 +67,7 @@ public abstract class MembershipBoundedCrudService<TModel> :
 	
 	#region Create Methods
 	
-	public virtual async Task<TModel> CreateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
+	public virtual async Task<TModel> CreateAsync(TModel model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		// Check membership
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
@@ -112,7 +112,7 @@ public abstract class MembershipBoundedCrudService<TModel> :
 	
 	#region Update Methods
 	
-	public virtual async Task<TModel> UpdateAsync(Utilizer utilizer, string membershipId, TModel model, CancellationToken cancellationToken = default)
+	public virtual async Task<TModel> UpdateAsync(TModel model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		// Check membership
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
@@ -126,7 +126,7 @@ public abstract class MembershipBoundedCrudService<TModel> :
 		}
 		
 		// Overwrite
-		var current = await this.GetAsync(membershipId, model.Id, cancellationToken: cancellationToken);
+		var current = await this.GetAsync(model.Id, membershipId, cancellationToken: cancellationToken);
 		if (current == null)
 		{
 			throw this.GetNotFoundError(model.Id);
@@ -212,9 +212,9 @@ public abstract class MembershipBoundedCrudService<TModel> :
 	
 	#region Delete Methods
 	
-	public virtual async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	public virtual async Task<bool> DeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+		var current = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (current != null)
 		{
 			var isDeleted = await this._repository.DeleteAsync(id, cancellationToken: cancellationToken);
@@ -231,14 +231,14 @@ public abstract class MembershipBoundedCrudService<TModel> :
 		}
 	}
 	
-	public virtual async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
+	public virtual async Task<bool?> BulkDeleteAsync(string[] ids, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		var isAllDeleted = true;
 		var isAllFailed = true;
 		
 		foreach (var id in ids)
 		{
-			var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			var current = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 			if (current != null)
 			{
 				var isDeleted = await this._repository.DeleteAsync(id, cancellationToken: cancellationToken);

@@ -70,7 +70,7 @@ public class ApplicationsController : QueryControllerBase
 		};
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var app = await this._applicationService.CreateWithSecretAsync(utilizer, membershipId, applicationModel, cancellationToken: cancellationToken);
+		var app = await this._applicationService.CreateWithSecretAsync(applicationModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{app.Id}", app);
 	}
@@ -84,7 +84,7 @@ public class ApplicationsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<ActionResult<Application>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var app = await this._applicationService.GetAsync(membershipId, id);
+		var app = await this._applicationService.GetAsync(id, membershipId);
 		if (app != null)
 		{
 			return this.Ok(app);
@@ -117,7 +117,7 @@ public class ApplicationsController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this._applicationService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._applicationService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -142,7 +142,7 @@ public class ApplicationsController : QueryControllerBase
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		return this.Ok(await this._applicationService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+		return this.Ok(await this._applicationService.SearchAsync(keyword, membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
 	}
 	
 	#endregion
@@ -164,7 +164,7 @@ public class ApplicationsController : QueryControllerBase
 		};
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var app = await this._applicationService.UpdateAsync(utilizer, membershipId, applicationModel, cancellationToken: cancellationToken);
+		var app = await this._applicationService.UpdateAsync(applicationModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Ok(app);
 	}
 	
@@ -182,7 +182,7 @@ public class ApplicationsController : QueryControllerBase
 	public async Task<IActionResult> RotateSecret([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var app = await this._applicationService.RotateSecretAsync(utilizer, membershipId, id, cancellationToken: cancellationToken);
+		var app = await this._applicationService.RotateSecretAsync(id, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Ok(app);
 	}
 	
@@ -196,7 +196,7 @@ public class ApplicationsController : QueryControllerBase
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		if (await this._applicationService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		if (await this._applicationService.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}
@@ -217,7 +217,7 @@ public class ApplicationsController : QueryControllerBase
 		if (ids != null)
 		{
 			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-			var isDeleted = await this._applicationService.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
+			var isDeleted = await this._applicationService.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken);
 			if (isDeleted != null)
 			{
 				if (isDeleted.Value)

@@ -4,9 +4,9 @@ namespace ErtisAuth.Abstractions.Services;
 
 public interface IUserTypeService : IMembershipBoundedCrudService<UserType>
 {
-	Task<UserType?> GetByNameOrSlugAsync(string membershipId, string nameOrSlug, bool forceGetFreshData = false, CancellationToken cancellationToken = default);
+	Task<UserType?> GetByNameOrSlugAsync(string nameOrSlug, string membershipId, bool forceGetFreshData = false, CancellationToken cancellationToken = default);
 	
-	Task<bool> IsInheritFromAsync(string membershipId, string childUserTypeName, string parentUserTypeName, CancellationToken cancellationToken = default);
+	Task<bool> IsInheritFromAsync(string childUserTypeName, string parentUserTypeName, string membershipId, CancellationToken cancellationToken = default);
 	
-	Task<Dictionary<string, List<string>>?> GetFieldInfoOwnerRelationsAsync(string membershipId, string id, CancellationToken cancellationToken = default);
+	Task<Dictionary<string, List<string>>?> GetFieldInfoOwnerRelationsAsync(string id, string membershipId, CancellationToken cancellationToken = default);
 }

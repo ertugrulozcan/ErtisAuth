@@ -23,7 +23,7 @@ public interface IDynamicObjectCrudService
 	
     Task<DynamicObject> CreateAsync(DynamicObject model, CancellationToken cancellationToken = default);
 	
-    Task<DynamicObject?> UpdateAsync(string id, DynamicObject model, CancellationToken cancellationToken = default);
+    Task<DynamicObject?> UpdateAsync(DynamicObject model, string id, CancellationToken cancellationToken = default);
 	
     Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
 	
@@ -38,5 +38,5 @@ public interface IDynamicObjectCrudService
         string? language = null, 
         CancellationToken cancellationToken = default);
 	
-    Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default);
+    Task<dynamic> AggregateAsync(string aggregationStagesJson, string membershipId, CancellationToken cancellationToken = default);
 }

@@ -1,7 +1,5 @@
 using Ertis.Schema.Dynamics;
 using System.Net;
-using System.Text.Json;
-using Ertis.Core.Collections;
 using Ertis.Core.Exceptions;
 using Ertis.Net.Rest;
 using ErtisAuth.Abstractions.Services;
@@ -367,7 +365,7 @@ public class MailHookServiceTests
 		var mailHook = CreateMailHook(status: status);
 		mailHook.Event = eventName;
 		
-		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateService().CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, mailHook, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateService().CreateAsync(mailHook, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		
 		Assert.Contains(exception.Errors!, x => x.StartsWith(expectedErrorStart));
 	}
@@ -376,9 +374,9 @@ public class MailHookServiceTests
 	public async Task CreateAsync_WithExistingName_ThrowsConflict()
 	{
 		var service = this.CreateService();
-		await service.CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, CreateMailHook(), TestContext.Current.CancellationToken);
+		await service.CreateAsync(CreateMailHook(), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuth.Core.Exceptions.ErtisAuthException>(() => service.CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, CreateMailHook(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuth.Core.Exceptions.ErtisAuthException>(() => service.CreateAsync(CreateMailHook(), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		
 		Assert.Equal(HttpStatusCode.Conflict, exception.StatusCode);
 	}
@@ -387,11 +385,11 @@ public class MailHookServiceTests
 	public async Task UpdateAsync_WithoutRecipients_ThrowsValidationError()
 	{
 		var service = this.CreateService();
-		var created = await service.CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, CreateMailHook(), TestContext.Current.CancellationToken);
+		var created = await service.CreateAsync(CreateMailHook(), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		var update = CreateMailHook(sendToUtilizer: false, recipients: []);
 		update.Id = created.Id;
 		
-		var exception = await Assert.ThrowsAsync<ValidationException>(() => service.UpdateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, update, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ValidationException>(() => service.UpdateAsync(update, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		
 		Assert.Contains("Recipients list is empty", exception.Errors!);
 	}

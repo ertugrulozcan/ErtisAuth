@@ -53,7 +53,7 @@ public class MembershipsController : QueryControllerBase
 	public async Task<IActionResult> Create([FromBody] CreateMembershipFormModel model, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var membership = await this._membershipService.CreateAsync(utilizer, ToMembership(model), cancellationToken: cancellationToken);
+		var membership = await this._membershipService.CreateAsync(ToMembership(model), utilizer, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{membership.Id}", membership);
 	}
 	
@@ -132,7 +132,7 @@ public class MembershipsController : QueryControllerBase
 		// The route id is the one authorized (RbacObject), so it is the one updated
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var membership = ToMembership(id, model);
-		return this.Ok(await this._membershipService.UpdateAsync(utilizer, membership, cancellationToken: cancellationToken));
+		return this.Ok(await this._membershipService.UpdateAsync(membership, utilizer, cancellationToken: cancellationToken));
 	}
 	
 	#endregion

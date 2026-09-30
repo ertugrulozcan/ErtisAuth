@@ -45,7 +45,7 @@ public class EventsController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<ActionResult<ErtisAuthEvent>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var ertisAuthEvent = await this._eventService.GetAsync(membershipId, id);
+		var ertisAuthEvent = await this._eventService.GetAsync(id, membershipId);
 		if (ertisAuthEvent != null)
 		{
 			return this.Ok(ertisAuthEvent);
@@ -78,7 +78,7 @@ public class EventsController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this._eventService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._eventService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{

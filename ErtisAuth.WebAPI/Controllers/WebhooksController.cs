@@ -83,7 +83,7 @@ public class WebhooksController : QueryControllerBase
 		};
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var webhook = await this._webhookService.CreateAsync(utilizer, membershipId, webhookModel, cancellationToken: cancellationToken);
+		var webhook = await this._webhookService.CreateAsync(webhookModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{webhook.Id}", webhook);
 	}
 	
@@ -100,7 +100,7 @@ public class WebhooksController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<Webhook>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var webhook = await this._webhookService.GetAsync(membershipId, id);
+		var webhook = await this._webhookService.GetAsync(id, membershipId);
 		if (webhook != null)
 		{
 			return this.Ok(webhook);
@@ -142,7 +142,7 @@ public class WebhooksController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this._webhookService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._webhookService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -182,7 +182,7 @@ public class WebhooksController : QueryControllerBase
 		};
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var webhook = await this._webhookService.UpdateAsync(utilizer, membershipId, webhookModel, cancellationToken: cancellationToken);
+		var webhook = await this._webhookService.UpdateAsync(webhookModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Ok(webhook);
 	}
 	
@@ -200,7 +200,7 @@ public class WebhooksController : QueryControllerBase
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		if (await this._webhookService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		if (await this._webhookService.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}
@@ -221,7 +221,7 @@ public class WebhooksController : QueryControllerBase
 		if (ids != null)
 		{
 			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-			var isDeleted = await this._webhookService.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
+			var isDeleted = await this._webhookService.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken);
 			if (isDeleted != null)
 			{
 				if (isDeleted.Value)

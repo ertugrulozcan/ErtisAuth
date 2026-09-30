@@ -22,61 +22,61 @@ public interface IUserService : IDeletableMembershipBoundedService
     
     #region Methods
     
-    Task<User?> GetUserAsync(string membershipId, string id, CancellationToken cancellationToken = default);
+    Task<User?> GetUserAsync(string id, string membershipId, CancellationToken cancellationToken = default);
     
-    Task<DynamicObject?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default);
+    Task<DynamicObject?> GetAsync(string id, string membershipId, CancellationToken cancellationToken = default);
     
     Task<IPaginationCollection<DynamicObject>> GetAsync(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string? orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default);
     
-    Task<User?> GetByUsernameOrEmailAddressAsync(string membershipId, string usernameOrEmailAddress);
+    Task<User?> GetByUsernameOrEmailAddressAsync(string usernameOrEmailAddress, string membershipId);
     
-    Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, string? host = null, CancellationToken cancellationToken = default);
-	
-    Task<string?> SendActivationMailAsync(string membershipId, string userId, string? host = null, CancellationToken cancellationToken = default);
+    Task<DynamicObject> CreateAsync(DynamicObject model, string membershipId, Utilizer utilizer, string? host = null, CancellationToken cancellationToken = default);
     
-    Task<DynamicObject?> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true, CancellationToken cancellationToken = default);
+    Task<DynamicObject?> UpdateAsync(DynamicObject model, string userId, string membershipId, Utilizer utilizer, bool fireEvent = true, CancellationToken cancellationToken = default);
+    
+    Task<string?> SendActivationMailAsync(string userId, string membershipId, string? host = null, CancellationToken cancellationToken = default);
     
     Task<IPaginationCollection<DynamicObject>> QueryAsync(
-        string membershipId, 
         string query,
-        int? skip = null,
-        int? limit = null,
-        bool? withCount = null,
-        string? orderBy = null,
-        SortDirection? sortDirection = null,
+        string membershipId, 
+        int? skip = null, 
+        int? limit = null, 
+        bool? withCount = null, 
+        string? orderBy = null, 
+        SortDirection? sortDirection = null, 
         IDictionary<string, bool>? selectFields = null, 
         string? locale = null, 
         CancellationToken cancellationToken = default);
     
     Task<IPaginationCollection<DynamicObject>> SearchAsync(
-        string membershipId, 
         string keyword, 
+        string membershipId, 
         int? skip = null, 
-        int? limit = null,
+        int? limit = null, 
         bool? withCount = null, 
         string? sortField = null, 
         SortDirection? sortDirection = null, 
         CancellationToken cancellationToken = default);
     
-    Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string membershipId, string id, CancellationToken cancellationToken = default);
+    Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string id, string membershipId, CancellationToken cancellationToken = default);
     
-    Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string membershipId, string username, string email, CancellationToken cancellationToken = default);
+    Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string username, string email, string membershipId, CancellationToken cancellationToken = default);
     
-    string CalculatePasswordHash(Membership membership, string password);
+    string CalculatePasswordHash(string password, Membership membership);
 
-    bool VerifyPassword(Membership membership, string password, string? passwordHash);
+    bool VerifyPassword(string password, string? passwordHash, Membership membership);
 
-    Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default);
+    Task<DynamicObject> ChangePasswordAsync(string userId, string membershipId, string newPassword, Utilizer utilizer, CancellationToken cancellationToken = default);
     
-    Task<bool> CheckPasswordAsync(Utilizer utilizer, string password, CancellationToken cancellationToken = default);
+    Task<bool> CheckPasswordAsync(string password, Utilizer utilizer, CancellationToken cancellationToken = default);
     
-    Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default);
+    Task<dynamic> AggregateAsync(string aggregationStagesJson, string membershipId, CancellationToken cancellationToken = default);
     
-    Task<User?> ActivateUserAsync(Utilizer utilizer, string membershipId, string activationCode, CancellationToken cancellationToken = default);
+    Task<User?> ActivateUserAsync(string activationCode, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default);
     
-    Task<User?> ActivateUserByIdAsync(Utilizer utilizer, string membershipId, string userId, CancellationToken cancellationToken = default);
+    Task<User?> ActivateUserByIdAsync(string userId, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default);
     
-    Task<User?> FreezeUserByIdAsync(Utilizer utilizer, string membershipId, string userId, CancellationToken cancellationToken = default);
+    Task<User?> FreezeUserByIdAsync(string userId, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default);
     
     #endregion
 }

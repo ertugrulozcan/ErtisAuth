@@ -63,8 +63,8 @@ public class RoleServiceCacheTests
 	private async Task<RoleService> CreateRoleServiceWithCachedRolesAsync()
 	{
 		var roleService = this.CreateRoleService();
-		await roleService.CreateAsync(this._utilizer, this._membership.Id, this.NewRole("role-1", "Editor"), TestContext.Current.CancellationToken);
-		await roleService.CreateAsync(this._utilizer, this._membership.Id, this.NewRole("role-2", "Viewer"), TestContext.Current.CancellationToken);
+		await roleService.CreateAsync(this.NewRole("role-1", "Editor"), this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
+		await roleService.CreateAsync(this.NewRole("role-2", "Viewer"), this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 		return roleService;
 	}
 	
@@ -78,10 +78,10 @@ public class RoleServiceCacheTests
 		var roleService = await this.CreateRoleServiceWithCachedRolesAsync();
 		Assert.NotNull(await roleService.GetBySlugAsync("editor", this._membership.Id, TestContext.Current.CancellationToken));
 		
-		await roleService.BulkDeleteAsync(this._utilizer, this._membership.Id, ["role-1"], TestContext.Current.CancellationToken);
+		await roleService.BulkDeleteAsync(["role-1"], this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 		
 		Assert.Null(await roleService.GetBySlugAsync("editor", this._membership.Id, TestContext.Current.CancellationToken));
-		Assert.Null(await roleService.GetAsync(this._membership.Id, "role-1", TestContext.Current.CancellationToken));
+		Assert.Null(await roleService.GetAsync("role-1", this._membership.Id, TestContext.Current.CancellationToken));
 		Assert.NotNull(await roleService.GetBySlugAsync("viewer", this._membership.Id, TestContext.Current.CancellationToken));
 	}
 	
@@ -90,7 +90,7 @@ public class RoleServiceCacheTests
 	{
 		var roleService = await this.CreateRoleServiceWithCachedRolesAsync();
 		
-		await roleService.DeleteAsync(this._utilizer, this._membership.Id, "role-1", TestContext.Current.CancellationToken);
+		await roleService.DeleteAsync("role-1", this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 		
 		Assert.Null(await roleService.GetBySlugAsync("editor", this._membership.Id, TestContext.Current.CancellationToken));
 	}

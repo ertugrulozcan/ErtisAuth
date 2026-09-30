@@ -9,7 +9,7 @@ namespace ErtisAuth.Abstractions.Services;
 /// </summary>
 public interface IPasswordResetService
 {
-	Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default);
+	Task<ResetPasswordToken> ResetPasswordAsync(string emailAddress, string membershipId, Utilizer utilizer, string host, CancellationToken cancellationToken = default);
 	
 	Task<ResetPasswordToken> GenerateResetPasswordTokenAsync(
 		User user,
@@ -18,7 +18,7 @@ public interface IPasswordResetService
 		ResetPasswordToken.ResetPasswordTokenPurpose purpose = ResetPasswordToken.ResetPasswordTokenPurpose.ResetPassword,
 		CancellationToken cancellationToken = default);
 	
-	Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default);
+	Task<User> VerifyResetTokenAsync(string resetToken, string membershipId, CancellationToken cancellationToken = default);
 	
-	Task<User> SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default);
+	Task<User> SetPasswordAsync(string usernameOrEmailAddress, string password, string resetToken, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default);
 }

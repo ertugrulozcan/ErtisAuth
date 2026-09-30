@@ -62,7 +62,7 @@ public class UserServiceUpdateProtectionTests
 		foreach (var userTypeName in new[] { "user", "premium" })
 		{
 			this._userTypeService
-				.GetByNameOrSlugAsync(MembershipId, userTypeName, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+				.GetByNameOrSlugAsync(userTypeName, MembershipId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
 				.Returns(new UserType
 				{
 					Id = $"{userTypeName}-type-id",
@@ -193,7 +193,7 @@ public class UserServiceUpdateProtectionTests
 	
 	private async Task<DynamicObject?> UpdateAsync(Utilizer utilizer, DynamicObject model)
 	{
-		return await this.CreateUserService().UpdateAsync(utilizer, MembershipId, UserId, model, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		return await this.CreateUserService().UpdateAsync(model, UserId, MembershipId, utilizer, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	private async Task AssertAccessDeniedAsync(Utilizer utilizer, DynamicObject model)

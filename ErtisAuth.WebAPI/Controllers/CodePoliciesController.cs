@@ -68,7 +68,7 @@ public class CodePoliciesController : QueryControllerBase
 		
 		var policyModel = ToTokenCodePolicy(membershipId, null, model.Name, model.Slug, model.Description, model.Length, model.ContainsLetters, model.ContainsDigits, model.ExpiresIn);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var policy = await this._codePolicyService.CreateAsync(utilizer, membershipId, policyModel, cancellationToken: cancellationToken);
+		var policy = await this._codePolicyService.CreateAsync(policyModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{policy.Id}", policy);
 	}
 	
@@ -85,7 +85,7 @@ public class CodePoliciesController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<TokenCodePolicy>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var policy = await this._codePolicyService.GetAsync(membershipId, id);
+		var policy = await this._codePolicyService.GetAsync(id, membershipId);
 		if (policy != null)
 		{
 			return this.Ok(policy);
@@ -127,7 +127,7 @@ public class CodePoliciesController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this._codePolicyService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._codePolicyService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -151,7 +151,7 @@ public class CodePoliciesController : QueryControllerBase
 	{
 		var policyModel = ToTokenCodePolicy(membershipId, id, model.Name, model.Slug, model.Description, model.Length, model.ContainsLetters, model.ContainsDigits, model.ExpiresIn);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var policy = await this._codePolicyService.UpdateAsync(utilizer, membershipId, policyModel, cancellationToken: cancellationToken);
+		var policy = await this._codePolicyService.UpdateAsync(policyModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Ok(policy);
 	}
 	
@@ -196,7 +196,7 @@ public class CodePoliciesController : QueryControllerBase
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		if (await this._codePolicyService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		if (await this._codePolicyService.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}
@@ -217,7 +217,7 @@ public class CodePoliciesController : QueryControllerBase
 		if (ids != null)
 		{
 			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-			var isDeleted = await this._codePolicyService.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
+			var isDeleted = await this._codePolicyService.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken);
 			if (isDeleted != null)
 			{
 				if (isDeleted.Value)

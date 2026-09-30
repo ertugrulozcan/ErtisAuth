@@ -59,20 +59,21 @@ public class ProviderServiceLoginTests
 	
 	public ProviderServiceLoginTests()
 	{
+		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		this._providers = InMemoryRepository.Setup(this._repository, x => x.Id ??= Guid.NewGuid().ToString("N")[..24]);
 		this._membershipService.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(callInfo => CreateMembership(callInfo.ArgAt<string>(0)));
 		
 		this._userService
-			.QueryAsync(MembershipId, Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<bool?>(), Arg.Any<string?>(), Arg.Any<SortDirection?>(), Arg.Any<IDictionary<string, bool>?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-			.Returns(callInfo => this.QueryUsers(callInfo.ArgAt<string>(1)));
+			.QueryAsync(Arg.Any<string>(), MembershipId, Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<bool?>(), Arg.Any<string?>(), Arg.Any<SortDirection?>(), Arg.Any<IDictionary<string, bool>?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo => this.QueryUsers(callInfo.ArgAt<string>(0)));
 		
 		this._userService
-			.CreateAsync(Arg.Any<Utilizer>(), MembershipId, Arg.Any<DynamicObject>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-			.Returns(callInfo => this.StoreUser(callInfo.ArgAt<DynamicObject>(2), Guid.NewGuid().ToString("N")[..24]));
+			.CreateAsync(Arg.Any<DynamicObject>(), MembershipId, Arg.Any<Utilizer>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo => this.StoreUser(callInfo.ArgAt<DynamicObject>(0), Guid.NewGuid().ToString("N")[..24]));
 		
 		this._userService
-			.UpdateAsync(Arg.Any<Utilizer>(), MembershipId, Arg.Any<string>(), Arg.Any<DynamicObject>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-			.Returns(callInfo => this.StoreUser(callInfo.ArgAt<DynamicObject>(3), callInfo.ArgAt<string>(2)));
+			.UpdateAsync(Arg.Any<DynamicObject>(), Arg.Any<string>(), MembershipId, Arg.Any<Utilizer>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo => this.StoreUser(callInfo.ArgAt<DynamicObject>(0), callInfo.ArgAt<string>(1)));
 		
 		this._tokenService
 			.GenerateTokenAsync(Arg.Any<User>(), MembershipId, Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
@@ -125,6 +126,7 @@ public class ProviderServiceLoginTests
 		});
 	}
 	
+	// ReSharper disable once UnusedMethodReturnValue.Local
 	private User AddUser(string id, string email, bool isActive = true, ProviderAccountInfo[]? connectedAccounts = null)
 	{
 		var user = new User
@@ -266,7 +268,7 @@ public class ProviderServiceLoginTests
 		await this.LoginAsync(this.CreateService(), CreateRequest(email: null));
 		
 		Assert.NotEqual("5f8a1b2c3d4e5f6a7b8c9d01", this._tokenOwner?.Id);
-		await this._userService.DidNotReceive().QueryAsync(MembershipId, Arg.Is<string>(x => x.Contains("email_address")), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<bool?>(), Arg.Any<string?>(), Arg.Any<SortDirection?>(), Arg.Any<IDictionary<string, bool>?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
+		await this._userService.DidNotReceive().QueryAsync(Arg.Is<string>(x => x.Contains("email_address")), MembershipId, Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<bool?>(), Arg.Any<string?>(), Arg.Any<SortDirection?>(), Arg.Any<IDictionary<string, bool>?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
 	}
 	
 	[Fact]
@@ -354,7 +356,7 @@ public class ProviderServiceLoginTests
 			PrivateKey = "-----BEGIN PRIVATE KEY-----updated"
 		};
 		
-		await this.CreateService().UpdateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, update, TestContext.Current.CancellationToken);
+		await this.CreateService().UpdateAsync(update, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		
 		var json = System.Text.Json.JsonSerializer.Serialize(new { document, prior });
 		Assert.DoesNotContain("BEGIN PRIVATE KEY", json);
@@ -400,7 +402,7 @@ public class ProviderServiceLoginTests
 			DefaultUserType = "base-user"
 		};
 		
-		var updated = await this.CreateService().UpdateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, update, TestContext.Current.CancellationToken);
+		var updated = await this.CreateService().UpdateAsync(update, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		
 		Assert.Equal(newIsActive, updated.IsActive);
 		Assert.Equal(newIsActive, Assert.Single(this._providers).IsActive);
@@ -422,7 +424,7 @@ public class ProviderServiceLoginTests
 		
 		public string? AvatarUrl => null;
 		
-		public string? AccessToken => "provider-access-token";
+		public string AccessToken => "provider-access-token";
 		
 		public bool IsValid() => true;
 		

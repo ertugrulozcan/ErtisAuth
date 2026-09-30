@@ -116,7 +116,7 @@ public partial class DynamicObjectCrudService : IDynamicObjectCrudService
 	
 	#region Update Methods
 	
-	public virtual async Task<DynamicObject?> UpdateAsync(string id, DynamicObject model, CancellationToken cancellationToken = default)
+	public virtual async Task<DynamicObject?> UpdateAsync(DynamicObject model, string id, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -161,7 +161,7 @@ public partial class DynamicObjectCrudService : IDynamicObjectCrudService
 	
 	#region Aggregation Methods
 	
-	public async Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default)
+	public async Task<dynamic> AggregateAsync(string aggregationStagesJson, string membershipId, CancellationToken cancellationToken = default)
 	{
 		return await this._repository.AggregateAsync(QueryHelper.InjectMembershipIdToAggregation(aggregationStagesJson, membershipId), cancellationToken: cancellationToken);
 	}

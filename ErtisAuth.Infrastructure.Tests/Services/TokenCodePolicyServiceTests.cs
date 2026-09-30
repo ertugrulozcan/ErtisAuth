@@ -40,6 +40,7 @@ public class TokenCodePolicyServiceTests
 	
 	public TokenCodePolicyServiceTests()
 	{
+		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		this._policies = InMemoryRepository.Setup(this._repository, x => x.Id ??= ObjectId.GenerateNewId().ToString());
 		
 		this._membership = TestServiceFactory.CreateMembership();
@@ -63,7 +64,7 @@ public class TokenCodePolicyServiceTests
 	
 	private Task<TokenCodePolicy> CreateAsync(TokenCodePolicyService service, TokenCodePolicy policy)
 	{
-		return service.CreateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, policy, TestContext.Current.CancellationToken);
+		return service.CreateAsync(policy, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 	}
 	
 	#endregion
@@ -112,7 +113,7 @@ public class TokenCodePolicyServiceTests
 		var policy = await this.CreateAsync(service, CreatePolicy());
 		this._membership.CodePolicy = policy.Slug;
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => service.DeleteAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, policy.Id, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => service.DeleteAsync(policy.Id, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("TokenCodePolicyInUse", exception.ErrorCode);
 		Assert.Single(this._policies);
@@ -125,7 +126,7 @@ public class TokenCodePolicyServiceTests
 		var policy = await this.CreateAsync(service, CreatePolicy());
 		this._membership.CodePolicy = "another-policy";
 		
-		Assert.True(await service.DeleteAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, policy.Id, TestContext.Current.CancellationToken));
+		Assert.True(await service.DeleteAsync(policy.Id, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		Assert.Empty(this._policies);
 	}
 	
@@ -133,11 +134,13 @@ public class TokenCodePolicyServiceTests
 	public async Task BulkDeleteAsync_IncludingThePolicyOfTheMembership_DeletesNothing()
 	{
 		var service = this.CreateService();
+		
+		// ReSharper disable once RedundantArgumentDefaultValue
 		var used = await this.CreateAsync(service, CreatePolicy("TV Code"));
 		var unused = await this.CreateAsync(service, CreatePolicy("Legacy Code"));
 		this._membership.CodePolicy = used.Slug;
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => service.BulkDeleteAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, [unused.Id, used.Id], TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => service.BulkDeleteAsync([unused.Id, used.Id], MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("TokenCodePolicyInUse", exception.ErrorCode);
 		Assert.Equal(2, this._policies.Count);
@@ -147,12 +150,14 @@ public class TokenCodePolicyServiceTests
 	public async Task UpdateAsync_RenamingThePolicyOfTheMembership_KeepsItsSlug()
 	{
 		var service = this.CreateService();
+		
+		// ReSharper disable once RedundantArgumentDefaultValue
 		var policy = await this.CreateAsync(service, CreatePolicy("TV Code"));
 		this._membership.CodePolicy = policy.Slug;
 		var update = CreatePolicy("Smart TV Code", length: 8);
 		update.Id = policy.Id;
 		
-		var updated = await service.UpdateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, update, TestContext.Current.CancellationToken);
+		var updated = await service.UpdateAsync(update, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		
 		Assert.Equal("Smart TV Code", updated.Name);
 		Assert.Equal("tv-code", updated.Slug);
@@ -163,11 +168,13 @@ public class TokenCodePolicyServiceTests
 	public async Task UpdateAsync_RenamingAnUnusedPolicy_ChangesItsSlug()
 	{
 		var service = this.CreateService();
+		
+		// ReSharper disable once RedundantArgumentDefaultValue
 		var policy = await this.CreateAsync(service, CreatePolicy("TV Code"));
 		var update = CreatePolicy("Smart TV Code");
 		update.Id = policy.Id;
 		
-		var updated = await service.UpdateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, update, TestContext.Current.CancellationToken);
+		var updated = await service.UpdateAsync(update, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		
 		Assert.Equal("smart-tv-code", updated.Slug);
 	}

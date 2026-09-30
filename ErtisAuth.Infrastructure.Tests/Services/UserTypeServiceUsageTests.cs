@@ -1,4 +1,3 @@
-using Ertis.Core.Collections;
 using Ertis.Core.Exceptions;
 using Ertis.Schema.Types;
 using ErtisAuth.Abstractions.Services;
@@ -109,7 +108,7 @@ public class UserTypeServiceUsageTests
 	
 	private async Task<UserType> UpdateAsync(UserType model)
 	{
-		return await this.CreateUserTypeService().UpdateAsync(this._utilizer, this._membership.Id, model, TestContext.Current.CancellationToken);
+		return await this.CreateUserTypeService().UpdateAsync(model, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 	}
 	
 	private UserType StoredUserType => this._userTypes.Single(x => x.Id == UserTypeId);
@@ -123,7 +122,7 @@ public class UserTypeServiceUsageTests
 	{
 		this._userCount = 3;
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateUserTypeService().DeleteAsync(this._utilizer, this._membership.Id, UserTypeId, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateUserTypeService().DeleteAsync(UserTypeId, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken));
 		
 		Assert.Equal("UserTypeCanNotBeDelete", exception.ErrorCode);
 		Assert.Contains(this._userTypes, x => x.Id == UserTypeId);
@@ -134,7 +133,7 @@ public class UserTypeServiceUsageTests
 	{
 		this.SetupInheritedUserType();
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateUserTypeService().DeleteAsync(this._utilizer, this._membership.Id, UserTypeId, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateUserTypeService().DeleteAsync(UserTypeId, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken));
 		
 		Assert.Equal("UserTypeCanNotBeDelete", exception.ErrorCode);
 		Assert.Contains(this._userTypes, x => x.Id == UserTypeId);
@@ -143,7 +142,7 @@ public class UserTypeServiceUsageTests
 	[Fact]
 	public async Task DeleteAsync_WhenNotInUse_DeletesUserType()
 	{
-		Assert.True(await this.CreateUserTypeService().DeleteAsync(this._utilizer, this._membership.Id, UserTypeId, TestContext.Current.CancellationToken));
+		Assert.True(await this.CreateUserTypeService().DeleteAsync(UserTypeId, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken));
 		
 		Assert.DoesNotContain(this._userTypes, x => x.Id == UserTypeId);
 	}

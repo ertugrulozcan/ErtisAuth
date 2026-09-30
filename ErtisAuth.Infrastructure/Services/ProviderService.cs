@@ -144,11 +144,11 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 				{
 					if (providers.Items.All(x => !string.IsNullOrEmpty(x.Name) && x.Name != providerType.ToString()))
 					{
-						await this.CreateAsync(utilizer, membershipId, new Provider(providerType)
+						await this.CreateAsync(new Provider(providerType)
 						{
 							MembershipId = membershipId,
 							IsActive = false
-						}, cancellationToken: cancellationToken);
+						}, membershipId, utilizer, cancellationToken: cancellationToken);
 					}
 				}
 				catch (Exception ex)
@@ -317,9 +317,9 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Create Methods
 	
-	public override async Task<Provider> CreateAsync(Utilizer utilizer, string membershipId, Provider model, CancellationToken cancellationToken = default)
+	public override async Task<Provider> CreateAsync(Provider model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
+		var created = await base.CreateAsync(model, membershipId, utilizer, cancellationToken);
 		this.PurgeAllCache(membershipId);
 		return created;
 	}
@@ -328,9 +328,9 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Update Methods
 	
-	public override async Task<Provider> UpdateAsync(Utilizer utilizer, string membershipId, Provider model, CancellationToken cancellationToken = default)
+	public override async Task<Provider> UpdateAsync(Provider model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
+		var updated = await base.UpdateAsync(model, membershipId, utilizer, cancellationToken);
 		this.PurgeAllCache(membershipId);
 		return updated;
 	}
@@ -339,9 +339,9 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Delete Methods
 	
-	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<bool> DeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+		var isDeleted = await base.DeleteAsync(id, membershipId, utilizer, cancellationToken);
 		if (isDeleted)
 		{
 			this.PurgeAllCache(membershipId);	
@@ -356,7 +356,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	public async Task<BearerToken> LoginAsync(IProviderLoginRequest request, string membershipId, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default)
 	{
-		var provider = await this.GetAsync(membershipId, x => x.MembershipId == membershipId && x.Name == request.Provider.ToString(), cancellationToken: cancellationToken);
+		var provider = await this.GetAsync(x => x.MembershipId == membershipId && x.Name == request.Provider.ToString(), membershipId, cancellationToken: cancellationToken);
 		if (provider != null)
 		{
 			if (provider.IsActive)
@@ -378,7 +378,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 						throw ErtisAuthException.UserInactive(user?.Id ?? string.Empty);
 					}
 					
-					var userType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, (isNewUser ? provider.DefaultUserType : user?.UserType)!, cancellationToken: cancellationToken);
+					var userType = await this._userTypeService.GetByNameOrSlugAsync((isNewUser ? provider.DefaultUserType : user?.UserType)!, membershipId, cancellationToken: cancellationToken);
 					
 					this.EnsureConnectedAccounts(user!, request, provider);
 					var dynamicUser = new DynamicObject(user!);
@@ -386,8 +386,8 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 					
 					var utilizer = Utilizer.GetSystemUtilizer(membershipId);
 					var upsertedUser = isNewUser ?
-						await this._userService.CreateAsync(utilizer, membershipId, dynamicUser, cancellationToken: cancellationToken) :
-						await this._userService.UpdateAsync(utilizer, membershipId, user!.Id, dynamicUser, false, cancellationToken: cancellationToken);
+						await this._userService.CreateAsync(dynamicUser, membershipId, utilizer, cancellationToken: cancellationToken) :
+						await this._userService.UpdateAsync(dynamicUser, user!.Id, membershipId, utilizer, false, cancellationToken: cancellationToken);
 					
 					return await this._tokenService.GenerateTokenAsync(upsertedUser?.Deserialize<User>()!, membershipId, ipAddress, userAgent, cancellationToken: cancellationToken);
 				}
@@ -420,7 +420,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 				{
 					if (!string.IsNullOrEmpty(accountInfo.Token))
 					{
-						var provider = await this.GetAsync(user.MembershipId, x => x.MembershipId == user.MembershipId && x.Name == accountInfo.Provider, cancellationToken: cancellationToken);
+						var provider = await this.GetAsync(x => x.MembershipId == user.MembershipId && x.Name == accountInfo.Provider, user.MembershipId, cancellationToken: cancellationToken);
 						if (provider is { IsActive: true })
 						{
 							var providerAuthenticator = this._authenticatorFactory.GetAuthenticator(provider);
@@ -452,7 +452,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 					var dynamicUser = new DynamicObject(user);
 					
 					var utilizer = Utilizer.GetSystemUtilizer(user.MembershipId);
-					await this._userService.UpdateAsync(utilizer, user.MembershipId, user.Id, dynamicUser, false, cancellationToken: cancellationToken);	
+					await this._userService.UpdateAsync(dynamicUser, user.Id, user.MembershipId, utilizer, false, cancellationToken: cancellationToken);	
 				}
 			}
 		}
@@ -469,7 +469,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 			QueryBuilder.Equals("connected_accounts.Provider", provider.Name), 
 			QueryBuilder.Equals("connected_accounts.UserId", request.UserId)).ToString();
 		
-		var queryUsersResult = await this._userService.QueryAsync(membershipId, query, 0, 1, cancellationToken: cancellationToken);
+		var queryUsersResult = await this._userService.QueryAsync(query, membershipId, 0, 1, cancellationToken: cancellationToken);
 		if (queryUsersResult.Items.Any())
 		{
 			var dynamicUser = queryUsersResult.Items.First();
@@ -485,7 +485,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 			QueryBuilder.Equals("membership_id", membershipId), 
 			QueryBuilder.Equals("email_address", request.EmailAddress)).ToString();
 		
-		var queryUsers2Result = await this._userService.QueryAsync(membershipId, query2, 0, 1, cancellationToken: cancellationToken);
+		var queryUsers2Result = await this._userService.QueryAsync(query2, membershipId, 0, 1, cancellationToken: cancellationToken);
 		if (queryUsers2Result.Items.Any())
 		{
 			// Linking to an existing account by email is safe only if the provider verified the email or it's trusted explicitly

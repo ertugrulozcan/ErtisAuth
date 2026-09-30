@@ -65,7 +65,7 @@ public class MembershipServiceCacheTests
 		Assert.NotNull(await membershipService.GetBySecretKeyAsync(OldSecretKey, TestContext.Current.CancellationToken));
 		Assert.NotNull(await membershipService.GetAsync(this._membership.Id, TestContext.Current.CancellationToken));
 		
-		await membershipService.UpdateAsync(Utilizer.GetSystemUtilizer(string.Empty), this.NewMembership(NewSecretKey), TestContext.Current.CancellationToken);
+		await membershipService.UpdateAsync(this.NewMembership(NewSecretKey), Utilizer.GetSystemUtilizer(string.Empty), TestContext.Current.CancellationToken);
 		
 		Assert.Null(await membershipService.GetBySecretKeyAsync(OldSecretKey, TestContext.Current.CancellationToken));
 		Assert.Equal(this._membership.Id, (await membershipService.GetBySecretKeyAsync(NewSecretKey, TestContext.Current.CancellationToken))?.Id);

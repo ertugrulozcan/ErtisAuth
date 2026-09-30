@@ -8,7 +8,7 @@ namespace ErtisAuth.Abstractions.Services;
 
 public interface IMembershipBoundedService
 {
-	Task<TModel?> GetAsync<TModel>(string membershipId, string id, CancellationToken cancellationToken = default) where TModel : class, IHasMembership;
+	Task<TModel?> GetAsync<TModel>(string id, string membershipId, CancellationToken cancellationToken = default) where TModel : class, IHasMembership;
 	
 	Task<IPaginationCollection<TModel>> GetAsync<TModel>(
 		string membershipId, 
@@ -24,8 +24,8 @@ public interface IMembershipBoundedService
 public interface IMembershipBoundedService<TModel> : IMembershipBoundedService where TModel : IHasMembership
 {
 	Task<IPaginationCollection<dynamic>> QueryAsync(
+		string query,
 		string membershipId, 
-		string query, 
 		int? skip = null, 
 		int? limit = null,
 		bool? withCount = null, 
@@ -34,7 +34,7 @@ public interface IMembershipBoundedService<TModel> : IMembershipBoundedService w
 		IDictionary<string, bool>? selectFields = null, 
 		CancellationToken cancellationToken = default);
 	
-	Task<TModel?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default);
+	Task<TModel?> GetAsync(string id, string membershipId, CancellationToken cancellationToken = default);
 	
 	Task<IPaginationCollection<TModel>> GetAsync(
 		string membershipId, 
@@ -46,8 +46,8 @@ public interface IMembershipBoundedService<TModel> : IMembershipBoundedService w
 		CancellationToken cancellationToken = default);
 	
 	Task<IPaginationCollection<TModel>> SearchAsync(
-		string membershipId, 
 		string keyword, 
+		string membershipId, 
 		int? skip = null, 
 		int? limit = null,
 		bool? withCount = null, 
@@ -55,5 +55,5 @@ public interface IMembershipBoundedService<TModel> : IMembershipBoundedService w
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default);
 	
-	Task<dynamic> AggregateAsync(string membershipId, string aggregationStagesJson, CancellationToken cancellationToken = default);
+	Task<dynamic> AggregateAsync(string aggregationStagesJson, string membershipId, CancellationToken cancellationToken = default);
 }

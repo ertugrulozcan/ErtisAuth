@@ -68,7 +68,7 @@ public class MailHooksController : QueryControllerBase
 		
 		var mailHookModel = ToMailHook(membershipId, null, model.Name, model.Slug, model.Description, model.Event, model.Status, model.MailSubject, model.MailTemplate, model.FromName, model.FromAddress, model.SendToUtilizer, model.Recipients, model.MailProvider, model.Variables);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var mailHook = await this._mailHookService.CreateAsync(utilizer, membershipId, mailHookModel, cancellationToken: cancellationToken);
+		var mailHook = await this._mailHookService.CreateAsync(mailHookModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{mailHook.Id}", mailHook);
 	}
 	
@@ -85,7 +85,7 @@ public class MailHooksController : QueryControllerBase
 	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<ActionResult<MailHook>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var mailHook = await this._mailHookService.GetAsync(membershipId, id);
+		var mailHook = await this._mailHookService.GetAsync(id, membershipId);
 		if (mailHook != null)
 		{
 			return this.Ok(mailHook);
@@ -127,7 +127,7 @@ public class MailHooksController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this._mailHookService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._mailHookService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -152,7 +152,7 @@ public class MailHooksController : QueryControllerBase
 		// The route id, not an id in the body, identifies the updated mail hook (RBAC checks the route id)
 		var mailHookModel = ToMailHook(membershipId, id, model.Name, model.Slug, model.Description, model.Event, model.Status, model.MailSubject, model.MailTemplate, model.FromName, model.FromAddress, model.SendToUtilizer, model.Recipients, model.MailProvider, model.Variables);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var mailHook = await this._mailHookService.UpdateAsync(utilizer, membershipId, mailHookModel, cancellationToken: cancellationToken);
+		var mailHook = await this._mailHookService.UpdateAsync(mailHookModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Ok(mailHook);
 	}
 	
@@ -218,7 +218,7 @@ public class MailHooksController : QueryControllerBase
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		if (await this._mailHookService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		if (await this._mailHookService.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}
@@ -239,7 +239,7 @@ public class MailHooksController : QueryControllerBase
 		if (ids != null)
 		{
 			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-			var isDeleted = await this._mailHookService.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
+			var isDeleted = await this._mailHookService.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken);
 			if (isDeleted != null)
 			{
 				if (isDeleted.Value)

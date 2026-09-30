@@ -64,9 +64,9 @@ public class TokenServiceRevokeTests
 		};
 		
 		this._user = user;
-		this._userService.GetUserAsync(this._membership.Id, UserId, Arg.Any<CancellationToken>()).Returns(user);
-		this._userService.GetUserWithPasswordAsync(this._membership.Id, user.Username, user.Username, Arg.Any<CancellationToken>()).Returns(user);
-		this._userService.VerifyPassword(this._membership, Password, user.PasswordHash).Returns(true);
+		this._userService.GetUserAsync(UserId, this._membership.Id, Arg.Any<CancellationToken>()).Returns(user);
+		this._userService.GetUserWithPasswordAsync(user.Username, user.Username, this._membership.Id, Arg.Any<CancellationToken>()).Returns(user);
+		this._userService.VerifyPassword(Password, user.PasswordHash, this._membership).Returns(true);
 		
 		this._activeTokenService
 			.CreateAsync(Arg.Any<BearerToken>(), Arg.Any<User>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
@@ -236,7 +236,7 @@ public class TokenServiceRevokeTests
 		var token = await this.GenerateTokenAsync(tokenService);
 		var otherToken = await this.GenerateTokenAsync(tokenService);
 		
-		await tokenService.RevokeAllAsync(this._membership.Id, UserId, cancellationToken: TestContext.Current.CancellationToken);
+		await tokenService.RevokeAllAsync(UserId, this._membership.Id, cancellationToken: TestContext.Current.CancellationToken);
 		
 		this.AssertRevoked(token);
 		this.AssertRevoked(otherToken);

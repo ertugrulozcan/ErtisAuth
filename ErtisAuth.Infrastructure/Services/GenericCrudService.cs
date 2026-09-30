@@ -120,7 +120,7 @@ public abstract class GenericCrudService<TModel> :
 	
 	#region Create Methods
 	
-	public virtual async Task<TModel> CreateAsync(Utilizer utilizer, TModel model, CancellationToken cancellationToken = default)
+	public virtual async Task<TModel> CreateAsync(TModel model, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -162,7 +162,7 @@ public abstract class GenericCrudService<TModel> :
 	
 	#region Update Methods
 	
-	public virtual async Task<TModel> UpdateAsync(Utilizer utilizer, TModel model, CancellationToken cancellationToken = default)
+	public virtual async Task<TModel> UpdateAsync(TModel model, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		try
 		{

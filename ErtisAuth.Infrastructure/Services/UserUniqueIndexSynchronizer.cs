@@ -50,9 +50,9 @@ public partial class UserUniqueIndexSynchronizer : IUserUniqueIndexSynchronizer
 	
 	#region Methods
 	
-	public async Task EnsureIndexesAsync(string membershipId, IEnumerable<UserType> userTypes, CancellationToken cancellationToken = default)
+	public async Task EnsureIndexesAsync(IEnumerable<UserType> userTypes, string membershipId, CancellationToken cancellationToken = default)
 	{
-		var desiredIndexes = UniqueFieldIndexHelper.GetMembershipIndexes(membershipId, userTypes);
+		var desiredIndexes = UniqueFieldIndexHelper.GetMembershipIndexes(userTypes, membershipId);
 		var currentIndexNames = await this._userRepository.GetIndexNamesAsync(UniqueFieldIndexHelper.GetMembershipIndexNamePrefix(membershipId), cancellationToken: cancellationToken);
 		foreach (var index in desiredIndexes.Where(x => !currentIndexNames.Contains(x.Name)))
 		{
@@ -66,7 +66,7 @@ public partial class UserUniqueIndexSynchronizer : IUserUniqueIndexSynchronizer
 		{
 			var userTypes = (await this._userTypeRepository.FindAsync(x => x.MembershipId == membershipId, sorting: null, cancellationToken: cancellationToken)).Items.ToArray();
 			var currentIndexNames = await this._userRepository.GetIndexNamesAsync(UniqueFieldIndexHelper.GetMembershipIndexNamePrefix(membershipId), cancellationToken: cancellationToken);
-			await this.SynchronizeAsync(UniqueFieldIndexHelper.GetMembershipIndexes(membershipId, userTypes), currentIndexNames, cancellationToken: cancellationToken);
+			await this.SynchronizeAsync(UniqueFieldIndexHelper.GetMembershipIndexes(userTypes, membershipId), currentIndexNames, cancellationToken: cancellationToken);
 		}
 		catch (Exception ex)
 		{
@@ -97,7 +97,7 @@ public partial class UserUniqueIndexSynchronizer : IUserUniqueIndexSynchronizer
 			
 			foreach (var membershipId in userTypesByMembership.Keys.Union(currentIndexNamesByMembership.Keys))
 			{
-				var desiredIndexes = UniqueFieldIndexHelper.GetMembershipIndexes(membershipId, userTypesByMembership.GetValueOrDefault(membershipId) ?? []);
+				var desiredIndexes = UniqueFieldIndexHelper.GetMembershipIndexes(userTypesByMembership.GetValueOrDefault(membershipId) ?? [], membershipId);
 				await this.SynchronizeAsync(desiredIndexes, currentIndexNamesByMembership.GetValueOrDefault(membershipId) ?? [], cancellationToken: cancellationToken);
 			}
 		}

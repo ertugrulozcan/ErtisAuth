@@ -136,7 +136,7 @@ public class ApplicationServiceSecretTests
 	
 	private async Task<ApplicationWithSecret> CreateWithSecretAsync(ApplicationService applicationService)
 	{
-		return await applicationService.CreateWithSecretAsync(this._utilizer, this._membership.Id, this.NewApplicationModel(), TestContext.Current.CancellationToken);
+		return await applicationService.CreateWithSecretAsync(this.NewApplicationModel(), this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 	}
 	
 	private string? StoredSecretHash(string applicationId)
@@ -187,7 +187,7 @@ public class ApplicationServiceSecretTests
 		var model = this.NewApplicationModel();
 		model.Role = "unknown-role";
 		
-		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateApplicationService().CreateWithSecretAsync(this._utilizer, this._membership.Id, model, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateApplicationService().CreateWithSecretAsync(model, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken));
 		
 		Assert.NotNull(exception.Errors);
 		Assert.Contains("Role is invalid. There is no role named 'unknown-role'", exception.Errors);
@@ -203,7 +203,7 @@ public class ApplicationServiceSecretTests
 		var applicationService = this.CreateApplicationService();
 		var created = await this.CreateWithSecretAsync(applicationService);
 		
-		var rotated = await applicationService.RotateSecretAsync(this._utilizer, this._membership.Id, created.Id, TestContext.Current.CancellationToken);
+		var rotated = await applicationService.RotateSecretAsync(created.Id, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 		
 		Assert.NotEqual(created.Secret, rotated.Secret);
 		var storedHash = this.StoredSecretHash(created.Id);
@@ -217,7 +217,7 @@ public class ApplicationServiceSecretTests
 		var applicationService = this.CreateApplicationService();
 		var created = await this.CreateWithSecretAsync(applicationService);
 		
-		var rotated = await applicationService.RotateSecretAsync(this._utilizer, this._membership.Id, created.Id, TestContext.Current.CancellationToken);
+		var rotated = await applicationService.RotateSecretAsync(created.Id, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 		
 		Assert.Equal(created.Id, rotated.Id);
 		Assert.Equal(created.Name, rotated.Name);
@@ -234,7 +234,7 @@ public class ApplicationServiceSecretTests
 		var cached = await applicationService.GetByIdAsync(created.Id, TestContext.Current.CancellationToken);
 		Assert.True(ApplicationSecretHelper.VerifySecret(created.Secret, cached?.SecretHash));
 		
-		var rotated = await applicationService.RotateSecretAsync(this._utilizer, this._membership.Id, created.Id, TestContext.Current.CancellationToken);
+		var rotated = await applicationService.RotateSecretAsync(created.Id, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 		
 		var current = await applicationService.GetByIdAsync(created.Id, TestContext.Current.CancellationToken);
 		Assert.True(ApplicationSecretHelper.VerifySecret(rotated.Secret, current?.SecretHash));
@@ -247,7 +247,7 @@ public class ApplicationServiceSecretTests
 		var applicationService = this.CreateApplicationService();
 		var created = await this.CreateWithSecretAsync(applicationService);
 		
-		var rotated = await applicationService.RotateSecretAsync(this._utilizer, this._membership.Id, created.Id, TestContext.Current.CancellationToken);
+		var rotated = await applicationService.RotateSecretAsync(created.Id, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 		
 		var eventCall = this._eventService.ReceivedCalls().Single(x => x.GetArguments().Contains(ErtisAuthEventType.ApplicationUpdated));
 		Assert.DoesNotContain(eventCall.GetArguments(), x => x is ApplicationWithSecret);
@@ -261,7 +261,7 @@ public class ApplicationServiceSecretTests
 		var created = await this.CreateWithSecretAsync(applicationService);
 		this._applications.Single(x => x.Id == created.Id).MembershipId = "another-membership-id";
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => applicationService.RotateSecretAsync(this._utilizer, this._membership.Id, created.Id, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => applicationService.RotateSecretAsync(created.Id, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken));
 		
 		Assert.Equal("ApplicationNotFound", exception.ErrorCode);
 	}
@@ -280,7 +280,7 @@ public class ApplicationServiceSecretTests
 		var update = this.NewApplicationModel("Renamed App");
 		update.Id = created.Id;
 		update.SecretHash = ApplicationSecretHelper.HashSecret("attacker-chosen-secret");
-		await applicationService.UpdateAsync(this._utilizer, this._membership.Id, update, TestContext.Current.CancellationToken);
+		await applicationService.UpdateAsync(update, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 		
 		Assert.Equal("Renamed App", this._applications.Single(x => x.Id == created.Id).Name);
 		Assert.Equal(storedHash, this.StoredSecretHash(created.Id));
@@ -295,7 +295,7 @@ public class ApplicationServiceSecretTests
 		var update = this.NewApplicationModel();
 		update.Id = created.Id;
 		
-		var exception = await Assert.ThrowsAsync<ValidationException>(() => applicationService.UpdateAsync(this._utilizer, this._membership.Id, update, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ValidationException>(() => applicationService.UpdateAsync(update, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken));
 		Assert.Equal("IdenticalDocumentError", exception.ErrorCode);
 	}
 	
@@ -313,7 +313,7 @@ public class ApplicationServiceSecretTests
 			.DeleteAsync(created.Id, Arg.Any<CancellationToken>())
 			.Returns(_ => this._applications.RemoveAll(x => x.Id == created.Id) > 0);
 		
-		await applicationService.DeleteAsync(this._utilizer, this._membership.Id, created.Id, TestContext.Current.CancellationToken);
+		await applicationService.DeleteAsync(created.Id, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 		
 		Assert.Null(await applicationService.GetByIdAsync(created.Id, TestContext.Current.CancellationToken));
 	}
@@ -328,7 +328,7 @@ public class ApplicationServiceSecretTests
 			.DeleteAsync(created.Id, Arg.Any<CancellationToken>())
 			.Returns(_ => this._applications.RemoveAll(x => x.Id == created.Id) > 0);
 		
-		await applicationService.BulkDeleteAsync(this._utilizer, this._membership.Id, [created.Id], TestContext.Current.CancellationToken);
+		await applicationService.BulkDeleteAsync([created.Id], this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 		
 		Assert.Null(await applicationService.GetByIdAsync(created.Id, TestContext.Current.CancellationToken));
 	}
@@ -339,7 +339,7 @@ public class ApplicationServiceSecretTests
 	
 	private async Task<IDictionary<string, bool>?> QuerySelectFieldsAsync(ApplicationService applicationService, IDictionary<string, bool>? selectFields)
 	{
-		await applicationService.QueryAsync(this._membership.Id, "{}", selectFields: selectFields, cancellationToken: TestContext.Current.CancellationToken);
+		await applicationService.QueryAsync("{}", this._membership.Id, selectFields: selectFields, cancellationToken: TestContext.Current.CancellationToken);
 		var queryCall = this._repository.ReceivedCalls().Last(x => x.GetMethodInfo().Name == nameof(IApplicationRepository.QueryAsync));
 		return queryCall.GetArguments().OfType<IDictionary<string, bool>>().SingleOrDefault();
 	}

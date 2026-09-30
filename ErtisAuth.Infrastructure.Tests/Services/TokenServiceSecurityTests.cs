@@ -79,9 +79,9 @@ public class TokenServiceSecurityTests
 			PasswordHash = "0e44ce7308af2b3de5232e4616403ce7d49ba2aec83f79c196409556422a4927"
 		};
 		
-		this._userService.GetUserAsync(membership.Id, UserId, Arg.Any<CancellationToken>()).Returns(user);
-		this._userService.GetUserWithPasswordAsync(membership.Id, user.Username, user.Username, Arg.Any<CancellationToken>()).Returns(user);
-		this._userService.VerifyPassword(membership, "P@ssw0rd!", user.PasswordHash).Returns(true);
+		this._userService.GetUserAsync(UserId, membership.Id, Arg.Any<CancellationToken>()).Returns(user);
+		this._userService.GetUserWithPasswordAsync(user.Username, user.Username, membership.Id, Arg.Any<CancellationToken>()).Returns(user);
+		this._userService.VerifyPassword("P@ssw0rd!", user.PasswordHash, membership).Returns(true);
 		return (membership, user);
 	}
 	

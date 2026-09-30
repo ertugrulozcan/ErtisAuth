@@ -57,7 +57,7 @@ public class PasswordResetService : IPasswordResetService
 	
 	#region Reset Password
 	
-	public async Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default)
+	public async Task<ResetPasswordToken> ResetPasswordAsync(string emailAddress, string membershipId, Utilizer utilizer, string host, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(emailAddress))
 		{
@@ -65,7 +65,7 @@ public class PasswordResetService : IPasswordResetService
 		}
 		
 		var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-		var user = await this._userService.GetByUsernameOrEmailAddressAsync(membershipId, emailAddress);
+		var user = await this._userService.GetByUsernameOrEmailAddressAsync(emailAddress, membershipId);
 		if (user == null)
 		{
 			throw ErtisAuthException.UserNotFound(emailAddress, "email_address");
@@ -84,12 +84,12 @@ public class PasswordResetService : IPasswordResetService
 		
 		await this._eventService.FireEventAsync(ErtisAuthEventType.UserPasswordReset, user, membershipId, eventPayload, cancellationToken: cancellationToken);
 		
-		await this.SendResetPasswordMailAsync(resetPasswordToken, membership, user, host, cancellationToken: cancellationToken);
+		await this.SendResetPasswordMailAsync(resetPasswordToken, user, membership, host, cancellationToken: cancellationToken);
 		
 		return resetPasswordToken;
 	}
 	
-	private async Task SendResetPasswordMailAsync(ResetPasswordToken resetPasswordToken, Membership membership, User user, string? host = null, CancellationToken cancellationToken = default)
+	private async Task SendResetPasswordMailAsync(ResetPasswordToken resetPasswordToken, User user, Membership membership, string? host = null, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(host))
 		{
@@ -156,7 +156,7 @@ public class PasswordResetService : IPasswordResetService
 		// The token is bound to the current password, so that it can be used only once (using it changes the password)
 		var passwordHash = user is UserWithPasswordHash userWithPasswordHash
 			? userWithPasswordHash.PasswordHash
-			: (await this._userService.GetUserWithPasswordAsync(membership.Id, user.Id, cancellationToken: cancellationToken))?.PasswordHash;
+			: (await this._userService.GetUserWithPasswordAsync(user.Id, membership.Id, cancellationToken: cancellationToken))?.PasswordHash;
 		
 		var tokenClaims = new TokenClaims(Guid.NewGuid().ToString(), user, membership, resetPasswordTokenTTL);
 		tokenClaims.AddClaim(ActionTokens.TokenTypeClaim, ActionTokens.ResetPasswordTokenType);
@@ -171,13 +171,13 @@ public class PasswordResetService : IPasswordResetService
 		return new ResetPasswordToken(resetToken, resetPasswordTokenTTL);
 	}
 	
-	public async Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default)
+	public async Task<User> VerifyResetTokenAsync(string resetToken, string membershipId, CancellationToken cancellationToken = default)
 	{
 		var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
 		var token = ActionTokenLinkHelper.Decode(membershipId, resetToken) ?? throw ErtisAuthException.InvalidToken();
 		var securityToken = await this._jwtService.ValidateActionTokenAsync(token, membership, ActionTokens.ResetPasswordTokenType);
 		
-		var user = await this._userService.GetUserWithPasswordAsync(membershipId, securityToken.Subject, cancellationToken: cancellationToken);
+		var user = await this._userService.GetUserWithPasswordAsync(securityToken.Subject, membershipId, cancellationToken: cancellationToken);
 		if (user == null)
 		{
 			throw ErtisAuthException.UserNotFound(securityToken.Subject, "_id");
@@ -209,7 +209,7 @@ public class PasswordResetService : IPasswordResetService
 	
 	#region Set Password
 	
-	public async Task<User> SetPasswordAsync(Utilizer utilizer, string membershipId, string resetToken, string usernameOrEmailAddress, string password, CancellationToken cancellationToken = default)
+	public async Task<User> SetPasswordAsync(string usernameOrEmailAddress, string password, string resetToken, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(usernameOrEmailAddress))
 		{
@@ -221,9 +221,9 @@ public class PasswordResetService : IPasswordResetService
 		
 		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
 		
-		var tokenOwner = await this.VerifyResetTokenAsync(membershipId, resetToken, cancellationToken: cancellationToken);
+		var tokenOwner = await this.VerifyResetTokenAsync(resetToken, membershipId, cancellationToken: cancellationToken);
 		
-		var user = await this._userService.GetUserWithPasswordAsync(membershipId, usernameOrEmailAddress, usernameOrEmailAddress, cancellationToken: cancellationToken);
+		var user = await this._userService.GetUserWithPasswordAsync(usernameOrEmailAddress, usernameOrEmailAddress, membershipId, cancellationToken: cancellationToken);
 		if (user == null)
 		{
 			throw ErtisAuthException.UserNotFound(usernameOrEmailAddress, "username or email_address");
@@ -235,7 +235,7 @@ public class PasswordResetService : IPasswordResetService
 			throw ErtisAuthException.InvalidToken();
 		}
 		
-		await this._userService.ChangePasswordAsync(utilizer, membershipId, user.Id, password, cancellationToken: cancellationToken);
+		await this._userService.ChangePasswordAsync(user.Id, membershipId, password, utilizer, cancellationToken: cancellationToken);
 		return user;
 	}
 	

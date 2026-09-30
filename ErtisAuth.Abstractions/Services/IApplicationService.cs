@@ -13,10 +13,10 @@ public interface IApplicationService : IMembershipBoundedCrudService<Application
 	/// <summary>
 	/// Creates the application with a newly generated secret; the plain secret is only returned here.
 	/// </summary>
-	Task<ApplicationWithSecret> CreateWithSecretAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default);
+	Task<ApplicationWithSecret> CreateWithSecretAsync(Application model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default);
 	
 	/// <summary>
 	/// Replaces the application secret with a newly generated one; the previous secret is revoked immediately.
 	/// </summary>
-	Task<ApplicationWithSecret> RotateSecretAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default);
+	Task<ApplicationWithSecret> RotateSecretAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default);
 }

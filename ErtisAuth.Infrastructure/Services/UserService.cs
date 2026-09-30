@@ -89,21 +89,21 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
     #region Event Methods
 	
-    private async Task FireOnCreatedEvent(string membershipId, Utilizer utilizer, DynamicObject inserted)
+    private async Task FireOnCreatedEvent(DynamicObject inserted, string membershipId, Utilizer utilizer)
 	{
-		await this._eventService.FireEventAsync(ErtisAuthEventType.UserCreated, utilizer, membershipId, inserted);
+		await this._eventService.FireEventAsync(ErtisAuthEventType.UserCreated, utilizer, membershipId, document: inserted);
         this.OnCreated?.Invoke(this, new CreateResourceEventArgs<DynamicObject>(utilizer, inserted, membershipId));
     }
 	
-    private async Task FireOnUpdatedEvent(string membershipId, Utilizer utilizer, DynamicObject prior, DynamicObject updated)
+    private async Task FireOnUpdatedEvent(DynamicObject prior, DynamicObject updated, string membershipId, Utilizer utilizer)
     {
-		await this._eventService.FireEventAsync(ErtisAuthEventType.UserUpdated, utilizer, membershipId, updated, prior);
+		await this._eventService.FireEventAsync(ErtisAuthEventType.UserUpdated, utilizer, membershipId, document: updated, prior);
         this.OnUpdated?.Invoke(this, new UpdateResourceEventArgs<DynamicObject>(utilizer, prior, updated, membershipId));
     }
 	
-    private async Task FireOnDeletedEvent(string membershipId, Utilizer utilizer, DynamicObject deleted)
+    private async Task FireOnDeletedEvent(DynamicObject deleted, string membershipId, Utilizer utilizer)
     {
-		await this._eventService.FireEventAsync(ErtisAuthEventType.UserDeleted, utilizer, membershipId, null, deleted);
+		await this._eventService.FireEventAsync(ErtisAuthEventType.UserDeleted, utilizer, membershipId, document: null, prior: deleted);
         this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<DynamicObject>(utilizer, deleted, membershipId));
     }
 	
@@ -147,7 +147,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     {
         if (model.TryGetValue<string>("user_type", out var userTypeName, out _) && !string.IsNullOrEmpty(userTypeName))
         {
-            var userType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, userTypeName, true, cancellationToken: cancellationToken);
+            var userType = await this._userTypeService.GetByNameOrSlugAsync(userTypeName, membershipId, true, cancellationToken: cancellationToken);
             if (userType == null)
             {
 	            throw ErtisAuthException.UserTypeNotFound(userTypeName, "name");
@@ -157,7 +157,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
         else if (current != null && current.TryGetValue<string>("user_type", out var currentUserTypeName, out _) && !string.IsNullOrEmpty(currentUserTypeName))
         {
-	        var userType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, currentUserTypeName, true, cancellationToken: cancellationToken);
+	        var userType = await this._userTypeService.GetByNameOrSlugAsync(currentUserTypeName, membershipId, true, cancellationToken: cancellationToken);
 	        if (userType == null)
 	        {
 		        throw ErtisAuthException.UserTypeNotFound(userTypeName ?? string.Empty, "name");
@@ -167,7 +167,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
         else if (fallbackWithOriginUserType)
 		{
-			var fallbackUserType = await this._userTypeService.GetByNameOrSlugAsync(membershipId, "user", true, cancellationToken: cancellationToken);
+			var fallbackUserType = await this._userTypeService.GetByNameOrSlugAsync("user", membershipId, true, cancellationToken: cancellationToken);
 			return fallbackUserType ?? throw ErtisAuthException.UserTypeRequired();
 		}
         else
@@ -190,7 +190,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
     }
     
-    private async Task EnsureUserTypeAsync(string membershipId, UserType userType, DynamicObject model, string? userId, string? currentUserTypeSlug)
+    private async Task EnsureUserTypeAsync(UserType userType, DynamicObject model, string? userId, string? currentUserTypeSlug, string membershipId)
     {
         // Check IsAbstract
         if (userType.IsAbstract)
@@ -215,7 +215,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 		
         // User model validation
         var validationContext = new FieldValidationContext(model);
-        if (!userType.ValidateContent(model, validationContext) || !await this.CheckUniquePropertiesAsync(membershipId, userType, model, userId, validationContext))
+        if (!userType.ValidateContent(model, validationContext) || !await this.CheckUniquePropertiesAsync(userType, model, userId, membershipId, validationContext))
         {
             throw new CumulativeValidationException(validationContext.Errors);
         }
@@ -226,7 +226,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     /// the unique fields of the origin user type among all users of the membership, the others among the users of the user type
     /// declaring the field unique and its descendants. The indexes are the final guard; this check reports all violations at once.
     /// </summary>
-    private async Task<bool> CheckUniquePropertiesAsync(string membershipId, UserType userType, DynamicObject model, string? userId, IValidationContext validationContext)
+    private async Task<bool> CheckUniquePropertiesAsync(UserType userType, DynamicObject model, string? userId, string membershipId, IValidationContext validationContext)
     {
         var isValid = true;
         IReadOnlyList<UniqueFieldIndex>? membershipIndexes = null;
@@ -276,7 +276,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     private async Task<IReadOnlyList<UniqueFieldIndex>> GetMembershipUniqueIndexesAsync(string membershipId)
     {
         var userTypes = await this._userTypeService.GetAsync(membershipId, null, null, false, null, null);
-        return UniqueFieldIndexHelper.GetMembershipIndexes(membershipId, userTypes.Items);
+        return UniqueFieldIndexHelper.GetMembershipIndexes(userTypes.Items, membershipId);
     }
     
     private static FieldValidationException GetUniqueConstraintError(IFieldInfo uniqueProperty)
@@ -329,7 +329,8 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
     #region Role Methods
 	
-    private async Task<Role> EnsureRoleAsync(DynamicObject model, string membershipId, CancellationToken cancellationToken = default)
+	// ReSharper disable once UnusedMethodReturnValue.Local
+	private async Task<Role> EnsureRoleAsync(DynamicObject model, string membershipId, CancellationToken cancellationToken = default)
     {
         var roleSlug = model.GetValue<string>("role");
         if (string.IsNullOrEmpty(roleSlug))
@@ -447,7 +448,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     /// </summary>
     private async Task<object?> ResolveReferenceAsync(UserType userType, ReferenceFieldInfo referenceProperty, string referenceId, CancellationToken cancellationToken = default)
     {
-        var referenceItem = await this.GetAsync(userType.MembershipId, referenceId, cancellationToken: cancellationToken);
+        var referenceItem = await this.GetAsync(referenceId, userType.MembershipId, cancellationToken: cancellationToken);
         if (referenceItem == null)
         {
             throw new FieldValidationException(
@@ -467,7 +468,7 @@ public class UserService : DynamicObjectCrudService, IUserService
                 referenceProperty);
         }
         
-        if (!await this._userTypeService.IsInheritFromAsync(userType.MembershipId, referenceItemUserType, referenceProperty.ContentType, cancellationToken: cancellationToken))
+        if (!await this._userTypeService.IsInheritFromAsync(referenceItemUserType, referenceProperty.ContentType, userType.MembershipId, cancellationToken: cancellationToken))
         {
             throw new FieldValidationException(
                 $"This reference-type field only can bind contents from '{referenceProperty.ContentType}' content-type or inherited from '{referenceProperty.ContentType}' content-type. ('{referenceProperty.Name}')",
@@ -532,11 +533,11 @@ public class UserService : DynamicObjectCrudService, IUserService
     {
         if (!string.IsNullOrEmpty(password))
         {
-	        model.SetValue("password_hash", this.CalculatePasswordHash(membership, password), true);
+	        model.SetValue("password_hash", this.CalculatePasswordHash(password, membership), true);
         }
     }
     
-	public async Task<bool> CheckPasswordAsync(Utilizer utilizer, string password, CancellationToken cancellationToken = default)
+	public async Task<bool> CheckPasswordAsync(string password, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(password))
 		{
@@ -549,16 +550,16 @@ public class UserService : DynamicObjectCrudService, IUserService
 			throw ErtisAuthException.MembershipNotFound(utilizer.MembershipId);
 		}
 		
-		var user = await this.GetUserWithPasswordAsync(membership, utilizer.Id);
+		var user = await this.GetUserWithPasswordAsync(utilizer.Id, membership);
 		if (user == null)
 		{
 			throw ErtisAuthException.UserNotFound(utilizer.Id, "_id");
 		}
 		
-		return this.VerifyPassword(membership, password, user.PasswordHash);
+		return this.VerifyPassword(password, user.PasswordHash, membership);
 	}
 	
-	public string CalculatePasswordHash(Membership membership, string password)
+	public string CalculatePasswordHash(string password, Membership membership)
 	{
 		if (string.IsNullOrEmpty(password))
 		{
@@ -568,7 +569,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 		return PasswordHasher.HashPassword(password, membership.GetHashAlgorithm(), membership.GetEncoding());
 	}
 	
-	public bool VerifyPassword(Membership membership, string password, string? passwordHash)
+	public bool VerifyPassword(string password, string? passwordHash, Membership membership)
 	{
 		if (string.IsNullOrEmpty(password) || string.IsNullOrWhiteSpace(passwordHash))
 		{
@@ -582,7 +583,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
 	#region Change Password
 	
-	public async Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default)
+	public async Task<DynamicObject> ChangePasswordAsync(string userId, string membershipId, string newPassword, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(newPassword))
 		{
@@ -598,7 +599,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 			throw ErtisAuthException.MembershipNotFound(membershipId);
 		}
 		
-		var user = await this.GetByIdAsync(membership.Id, userId);
+		var user = await this.GetByIdAsync(userId, membership.Id);
 		if (user == null)
 		{
 			throw ErtisAuthException.UserNotFound(userId, "_id");
@@ -611,11 +612,11 @@ public class UserService : DynamicObjectCrudService, IUserService
 		user.RemoveProperty("membership_id");
 		user.SetValue("membership_id", membershipId, true);
 		
-		var passwordHash = this.CalculatePasswordHash(membership, newPassword);
+		var passwordHash = this.CalculatePasswordHash(newPassword, membership);
 		user.SetValue("password_hash", passwordHash, true);
 		EnsureSys(user, utilizer, prior);
 		
-		var updatedUser = await base.UpdateAsync(userId, user, cancellationToken: cancellationToken);
+		var updatedUser = await base.UpdateAsync(user, userId, cancellationToken: cancellationToken);
 		
 		// Events are readable (events.read) and forwarded to webhooks and mail hooks: no password hashes
 		prior.HidePasswordHash();
@@ -643,18 +644,18 @@ public class UserService : DynamicObjectCrudService, IUserService
     
     #region Read Methods
     
-    public async Task<DynamicObject?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+    public async Task<DynamicObject?> GetAsync(string id, string membershipId, CancellationToken cancellationToken = default)
     {
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        var user = await this.GetByIdAsync(membershipId, id);
+        var user = await this.GetByIdAsync(id, membershipId);
 		
 		user?.RemoveProperty("password_hash");
 		return user;
     }
     
-    public async Task<User?> GetUserAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+    public async Task<User?> GetUserAsync(string id, string membershipId, CancellationToken cancellationToken = default)
     {
-        var dynamicObject = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+        var dynamicObject = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
         return dynamicObject?.Deserialize<User>();
     }
     
@@ -679,8 +680,8 @@ public class UserService : DynamicObjectCrudService, IUserService
 	}
     
     public async Task<IPaginationCollection<DynamicObject>> QueryAsync(
-        string membershipId,
-        string query, 
+		string query, 
+		string membershipId,
         int? skip = null, 
         int? limit = null, 
         bool? withCount = null,
@@ -698,8 +699,8 @@ public class UserService : DynamicObjectCrudService, IUserService
     }
     
     public async Task<IPaginationCollection<DynamicObject>> SearchAsync(
-        string membershipId,
-        string keyword,
+		string keyword,
+		string membershipId,
         int? skip = null,
         int? limit = null,
         bool? withCount = null,
@@ -714,18 +715,18 @@ public class UserService : DynamicObjectCrudService, IUserService
 		return results.HidePasswordHash();
     }
     
-    public async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+    public async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string id, string membershipId, CancellationToken cancellationToken = default)
     {
-        return await this.GetUserWithPasswordAsync(await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken), id);
+        return await this.GetUserWithPasswordAsync(id, await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken));
     }
     
-    private async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(Membership membership, string id)
+    private async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string id, Membership membership)
     {
         var dynamicObject = await base.FindOneAsync(QueryBuilder.Equals("membership_id", membership.Id), QueryBuilder.Equals("_id", QueryBuilder.ObjectId(id)));
         return dynamicObject?.Deserialize<UserWithPasswordHash>();
     }
     
-    public async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string membershipId, string username, string email, CancellationToken cancellationToken = default)
+    public async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string username, string email, string membershipId, CancellationToken cancellationToken = default)
     {
         var dynamicObject = await this.FindOneAsync(
 	        QueryBuilder.And(
@@ -742,7 +743,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         return dynamicObject?.Deserialize<UserWithPasswordHash>();
     }
     
-    private async Task<DynamicObject?> GetByIdAsync(string membershipId, string userId)
+    private async Task<DynamicObject?> GetByIdAsync(string userId, string membershipId)
     {
         return await base.FindOneAsync(
 	        QueryBuilder.Equals("membership_id", membershipId),
@@ -750,13 +751,13 @@ public class UserService : DynamicObjectCrudService, IUserService
         );
     }
     
-    private async Task<DynamicObject> EnsureUserAsync(string membershipId, string userId)
+    private async Task<DynamicObject> EnsureUserAsync(string userId, string membershipId)
     {
-        var current = await this.GetByIdAsync(membershipId, userId);
+        var current = await this.GetByIdAsync(userId, membershipId);
         return current ?? throw ErtisAuthException.UserNotFound(userId, "_id");
     }
     
-    public async Task<User?> GetByUsernameOrEmailAddressAsync(string membershipId, string usernameOrEmailAddress)
+    public async Task<User?> GetByUsernameOrEmailAddressAsync(string usernameOrEmailAddress, string membershipId)
     {
         var dynamicObject = await this.FindOneAsync(
 	        QueryBuilder.And(
@@ -776,12 +777,12 @@ public class UserService : DynamicObjectCrudService, IUserService
     #region Validation Methods
 	
     private async Task EnsureAndValidateAsync(
-        Utilizer utilizer, 
-        string membershipId, 
-        string? id, 
         UserType userType,
         DynamicObject model, 
-        DynamicObject? current, 
+        DynamicObject? current,
+		string? id,
+		string membershipId,
+		Utilizer utilizer, 
         CancellationToken cancellationToken = default)
     {
         this.EnsureMembershipId(model, membershipId);
@@ -789,7 +790,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         EnsureSys(model, utilizer, current);
         this.EnsureUbacs(model);
         
-        await this.EnsureUserTypeAsync(membershipId, userType, model, id, current?.GetValue<string>("user_type"));
+        await this.EnsureUserTypeAsync(userType, model, id, current?.GetValue<string>("user_type"), membershipId);
         await this.EmbedReferencesAsync(userType, model, cancellationToken: cancellationToken);
         await this.EnsureRoleAsync(model, membershipId, cancellationToken: cancellationToken);
     }
@@ -798,7 +799,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     
     #region Create Methods
     
-    public async Task<DynamicObject> CreateAsync(Utilizer utilizer, string membershipId, DynamicObject model, string? host = null, CancellationToken cancellationToken = default)
+    public async Task<DynamicObject> CreateAsync(DynamicObject model, string membershipId, Utilizer utilizer, string? host = null, CancellationToken cancellationToken = default)
     {
         var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
         
@@ -817,7 +818,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         var userType = await this.GetUserTypeAsync(model, null, membershipId, sourceProvider == KnownProviders.ErtisAuth, cancellationToken: cancellationToken);
         NormalizeUserType(model, userType, isCreate: true);
         this.EnsureManagedProperties(model, membershipId);
-        await this.EnsureAndValidateAsync(utilizer, membershipId, null, userType, model, null, cancellationToken: cancellationToken);
+        await this.EnsureAndValidateAsync(userType, model, null, null, membershipId, utilizer, cancellationToken: cancellationToken);
         
         if (sourceProvider == KnownProviders.ErtisAuth && !string.IsNullOrEmpty(password))
         {
@@ -836,7 +837,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         
 		created.HidePasswordHash();
 		
-		await this.FireOnCreatedEvent(membershipId, utilizer, created);
+		await this.FireOnCreatedEvent(created, membershipId, utilizer);
 		
 		// SendActivationMail
 		if (activationMailHook != null)
@@ -851,10 +852,10 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
     #region User Activation Methods
 	
-    public async Task<string?> SendActivationMailAsync(string membershipId, string userId, string? host = null, CancellationToken cancellationToken = default)
+    public async Task<string?> SendActivationMailAsync(string userId, string membershipId, string? host = null, CancellationToken cancellationToken = default)
     {
         var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        var user = await this.GetUserAsync(membershipId, userId, cancellationToken);
+        var user = await this.GetUserAsync(userId, membershipId, cancellationToken);
         if (user == null)
         {
 	        throw ErtisAuthException.UserNotFound(userId, "_id");
@@ -959,14 +960,14 @@ public class UserService : DynamicObjectCrudService, IUserService
         return ActionTokenLinkHelper.GenerateLink(host, ActionTokenLinkHelper.ActivationQueryParameter, membershipId, activationToken.Token);
     }
     
-    public async Task<User?> ActivateUserAsync(Utilizer utilizer, string membershipId, string activationCode, CancellationToken cancellationToken = default)
+    public async Task<User?> ActivateUserAsync(string activationCode, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
     {
         var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
         var token = ActionTokenLinkHelper.Decode(membershipId, activationCode) ?? throw ErtisAuthException.InvalidToken();
         var securityToken = await this._jwtService.ValidateActionTokenAsync(token, membership, ActionTokens.ActivationTokenType);
         
         var userId = securityToken.Subject;
-        var user = await this.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
+        var user = await this.GetAsync(userId, membershipId, cancellationToken: cancellationToken);
         if (user == null)
         {
 	        throw ErtisAuthException.UserNotFound(userId, "_id");
@@ -986,7 +987,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
         
         user.SetValue("is_active", true, true);
-        var updated = await this.UpdateAsync(utilizer, membershipId, userId, user, false, cancellationToken: cancellationToken);
+        var updated = await this.UpdateAsync(user, userId, membershipId, utilizer, false, cancellationToken: cancellationToken);
         return updated?.Deserialize<User>();
     }
     
@@ -1008,10 +1009,10 @@ public class UserService : DynamicObjectCrudService, IUserService
 		return new DateTime(dateTime.Ticks - dateTime.Ticks % TimeSpan.TicksPerSecond, dateTime.Kind);
 	}
 	
-    public async Task<User?> ActivateUserByIdAsync(Utilizer utilizer, string membershipId, string userId, CancellationToken cancellationToken = default)
+    public async Task<User?> ActivateUserByIdAsync(string userId, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
     {
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        var user = await this.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
+        var user = await this.GetAsync(userId, membershipId, cancellationToken: cancellationToken);
         if (user != null)
         {
 	        if (user.TryGetValue<bool>("is_active", out var isActive, out _) && isActive)
@@ -1020,7 +1021,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 	        }
 	        
 	        user.SetValue("is_active", true, true);
-	        var updated = await this.UpdateAsync(utilizer, membershipId, userId, user, cancellationToken: cancellationToken);
+	        var updated = await this.UpdateAsync(user, userId, membershipId, utilizer, cancellationToken: cancellationToken);
 	        return updated?.Deserialize<User>();
         }
         else
@@ -1029,10 +1030,10 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
     }
     
-    public async Task<User?> FreezeUserByIdAsync(Utilizer utilizer, string membershipId, string userId, CancellationToken cancellationToken = default)
+    public async Task<User?> FreezeUserByIdAsync(string userId, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
     {
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        var user = await this.GetAsync(membershipId, userId, cancellationToken: cancellationToken);
+        var user = await this.GetAsync(userId, membershipId, cancellationToken: cancellationToken);
         if (user != null)
         {
 	        if (user.TryGetValue<bool>("is_active", out var isActive, out _) && !isActive)
@@ -1041,7 +1042,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 	        }
 	        
 	        user.SetValue("is_active", false, true);
-	        var updated = await this.UpdateAsync(utilizer, membershipId, userId, user, cancellationToken: cancellationToken);
+	        var updated = await this.UpdateAsync(user, userId, membershipId, utilizer, cancellationToken: cancellationToken);
 	        return updated?.Deserialize<User>();
         }
         else
@@ -1054,24 +1055,24 @@ public class UserService : DynamicObjectCrudService, IUserService
     
     #region Update Methods
 	
-    public async Task<DynamicObject?> UpdateAsync(Utilizer utilizer, string membershipId, string userId, DynamicObject model, bool fireEvent = true, CancellationToken cancellationToken = default)
+    public async Task<DynamicObject?> UpdateAsync(DynamicObject model, string userId, string membershipId, Utilizer utilizer, bool fireEvent = true, CancellationToken cancellationToken = default)
     {
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
         this.EnsureEmailAddress(model);
-        var current = await this.EnsureUserAsync(membershipId, userId);
+        var current = await this.EnsureUserAsync(userId, membershipId);
 		this.EnsureServerManagedProperties(model, utilizer);
         var userType = await this.GetUserTypeAsync(model, current, membershipId, cancellationToken: cancellationToken);
         NormalizeUserType(model, userType);
         this.EnsureManagedProperties(model, membershipId);
         model = this.SyncModel(current, model);
-		await this.CheckPrivilegedPropertiesAsync(utilizer, userId, model, current, cancellationToken: cancellationToken);
+		await this.CheckPrivilegedPropertiesAsync(model, current, userId, utilizer, cancellationToken: cancellationToken);
         this.EnsurePasswordHash(model, current);
-        await this.EnsureAndValidateAsync(utilizer, membershipId, userId, userType, model, current, cancellationToken: cancellationToken);
+        await this.EnsureAndValidateAsync(userType, model, current, userId, membershipId, utilizer, cancellationToken: cancellationToken);
         
         DynamicObject? updated;
         try
         {
-	        updated = await base.UpdateAsync(userId, model, cancellationToken: cancellationToken);
+	        updated = await base.UpdateAsync(model, userId, cancellationToken: cancellationToken);
         }
         catch (DuplicateKeyException ex) when (TryGetUniqueConstraintError(ex, userType, out var error))
         {
@@ -1088,7 +1089,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 		
         if (fireEvent)
         {
-	        await this.FireOnUpdatedEvent(membershipId, utilizer, current, updated);
+	        await this.FireOnUpdatedEvent(current, updated, membershipId, utilizer);
         }
         
         return updated;
@@ -1133,7 +1134,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 		}
 	}
 	
-	private async Task CheckPrivilegedPropertiesAsync(Utilizer utilizer, string userId, DynamicObject model, DynamicObject current, CancellationToken cancellationToken = default)
+	private async Task CheckPrivilegedPropertiesAsync(DynamicObject model, DynamicObject current, string userId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		if (utilizer.Type == Utilizer.UtilizerType.System)
 		{
@@ -1187,9 +1188,9 @@ public class UserService : DynamicObjectCrudService, IUserService
     
     #region Delete Methods
 	
-    public async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
     {
-        var current = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+        var current = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
         if (current == null)
         {
             throw ErtisAuthException.UserNotFound(id, "_id");
@@ -1200,13 +1201,13 @@ public class UserService : DynamicObjectCrudService, IUserService
         var isDeleted = await base.DeleteAsync(id, cancellationToken: cancellationToken);
         if (isDeleted)
         {
-            await this.FireOnDeletedEvent(membershipId, utilizer, current);
+            await this.FireOnDeletedEvent(current, membershipId, utilizer);
         }
         
         return isDeleted;
     }
 	
-    public async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
+    public async Task<bool?> BulkDeleteAsync(string[] ids, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
     {
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
 		

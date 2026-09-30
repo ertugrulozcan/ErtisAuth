@@ -369,21 +369,23 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	
 	public async Task<MailHook?> GetUserActivationMailHookAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
-		return await this.GetAsync(membershipId, x =>
+		return await this.GetAsync(x =>
 				x.Name == USER_ACTIVATION_MAIL_HOOK_NAME &&
 				x.MembershipId == membershipId &&
 				x.Event == ErtisAuthEventType.UserCreated.ToString() &&
-				x.Status == "active",
+				x.Status == "active", 
+			membershipId, 
 			cancellationToken: cancellationToken);
 	}
 	
 	public async Task<MailHook?> GetResetPasswordMailHookAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
-		return await this.GetAsync(membershipId, x =>
+		return await this.GetAsync(x =>
 				x.Name == RESET_PASSWORD_MAIL_HOOK_NAME &&
 				x.MembershipId == membershipId &&
 				x.Event == ErtisAuthEventType.UserPasswordReset.ToString() &&
-				x.Status == "active",
+				x.Status == "active", 
+			membershipId, 
 			cancellationToken: cancellationToken);
 	}
 	

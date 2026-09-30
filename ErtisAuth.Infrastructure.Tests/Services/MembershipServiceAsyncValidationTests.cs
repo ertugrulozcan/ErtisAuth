@@ -57,7 +57,7 @@ public class MembershipServiceAsyncValidationTests
 		var membership = TestServiceFactory.CreateMembership("SHA2-256");
 		membership.Id = "another-membership-id";
 		
-		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateMembershipService().CreateAsync(Utilizer.GetSystemUtilizer(string.Empty), membership, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateMembershipService().CreateAsync(membership, Utilizer.GetSystemUtilizer(string.Empty), TestContext.Current.CancellationToken));
 		
 		Assert.NotNull(exception.Errors);
 		Assert.Contains(exception.Errors, x => x.Contains(membership.Name));
@@ -70,7 +70,7 @@ public class MembershipServiceAsyncValidationTests
 		var update = TestServiceFactory.CreateMembership("SHA2-256");
 		update.ExpiresIn = 7200;
 		
-		await this.CreateMembershipService().UpdateAsync(Utilizer.GetSystemUtilizer(string.Empty), update, TestContext.Current.CancellationToken);
+		await this.CreateMembershipService().UpdateAsync(update, Utilizer.GetSystemUtilizer(string.Empty), TestContext.Current.CancellationToken);
 		
 		Assert.Equal(7200, update.ExpiresIn);
 		this.AssertNoBlockingSlugLookup();

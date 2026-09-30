@@ -45,7 +45,7 @@ public class ActiveTokensController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<ActionResult<ActiveToken>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var activeToken = await this._activeTokenService.GetAsync(membershipId, id);
+		var activeToken = await this._activeTokenService.GetAsync(id, membershipId);
 		if (activeToken != null)
 		{
 			return this.Ok(activeToken);
@@ -78,7 +78,7 @@ public class ActiveTokensController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this._activeTokenService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._activeTokenService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -90,7 +90,7 @@ public class ActiveTokensController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<IActionResult> Aggregate([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
-		var aggregationResults = await this._activeTokenService.AggregateAsync(membershipId, await this.ExtractRequestBodyAsync(cancellationToken: cancellationToken), cancellationToken: cancellationToken);
+		var aggregationResults = await this._activeTokenService.AggregateAsync(await this.ExtractRequestBodyAsync(cancellationToken: cancellationToken), membershipId, cancellationToken: cancellationToken);
 		return this.Ok(aggregationResults);
 	}
 	

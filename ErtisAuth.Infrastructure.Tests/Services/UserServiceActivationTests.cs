@@ -16,7 +16,7 @@ public class UserServiceActivationTests : BaseActionTokenTests
 	
 	private async Task<User?> ActivateAsync(string token)
 	{
-		return await this.CreateUserService().ActivateUserAsync(this.PublicPageApplication(), this._membership.Id, this.Link(token), TestContext.Current.CancellationToken);
+		return await this.CreateUserService().ActivateUserAsync(this.Link(token), this._membership.Id, this.PublicPageApplication(), TestContext.Current.CancellationToken);
 	}
 	
 	[Fact]

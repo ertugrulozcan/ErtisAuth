@@ -80,7 +80,7 @@ public class UserTypeServiceCacheTests
 	
 	private async Task<UserType?> GetByNameOrSlugAsync(UserTypeService userTypeService, string nameOrSlug)
 	{
-		return await userTypeService.GetByNameOrSlugAsync(this._membership.Id, nameOrSlug, cancellationToken: TestContext.Current.CancellationToken);
+		return await userTypeService.GetByNameOrSlugAsync(nameOrSlug, this._membership.Id, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	#endregion
@@ -94,7 +94,7 @@ public class UserTypeServiceCacheTests
 		Assert.NotNull(await this.GetByNameOrSlugAsync(userTypeService, "Customer"));
 		Assert.NotNull(await this.GetByNameOrSlugAsync(userTypeService, "customer"));
 		
-		await userTypeService.UpdateAsync(this._utilizer, this._membership.Id, this.NewUserType("Client"), TestContext.Current.CancellationToken);
+		await userTypeService.UpdateAsync(this.NewUserType("Client"), this._membership.Id, this._utilizer, TestContext.Current.CancellationToken);
 		
 		Assert.Null(await this.GetByNameOrSlugAsync(userTypeService, "Customer"));
 		Assert.Null(await this.GetByNameOrSlugAsync(userTypeService, "customer"));
@@ -112,7 +112,7 @@ public class UserTypeServiceCacheTests
 		Assert.NotNull(await this.GetByNameOrSlugAsync(userTypeService, "Customer"));
 		Assert.NotNull(await this.GetByNameOrSlugAsync(userTypeService, "customer"));
 		
-		Assert.True(await userTypeService.DeleteAsync(this._utilizer, this._membership.Id, UserTypeId, TestContext.Current.CancellationToken));
+		Assert.True(await userTypeService.DeleteAsync(UserTypeId, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken));
 		
 		Assert.Null(await this.GetByNameOrSlugAsync(userTypeService, "Customer"));
 		Assert.Null(await this.GetByNameOrSlugAsync(userTypeService, "customer"));

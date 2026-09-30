@@ -77,7 +77,7 @@ public class RolesController : QueryControllerBase
 		};
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var role = await this._roleService.CreateAsync(utilizer, membershipId, roleModel, cancellationToken: cancellationToken);
+		var role = await this._roleService.CreateAsync(roleModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{role.Id}", role);
 	}
 	
@@ -90,7 +90,7 @@ public class RolesController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<ActionResult<Role>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var role = await this._roleService.GetAsync(membershipId, id);
+		var role = await this._roleService.GetAsync(id, membershipId);
 		if (role != null)
 		{
 			return this.Ok(role);
@@ -123,7 +123,7 @@ public class RolesController : QueryControllerBase
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
-			return await this._roleService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
+			return await this._roleService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);	
 		}
 		else
 		{
@@ -148,7 +148,7 @@ public class RolesController : QueryControllerBase
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
-		return this.Ok(await this._roleService.SearchAsync(membershipId, keyword, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+		return this.Ok(await this._roleService.SearchAsync(keyword, membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
 	}
 	
 	#endregion
@@ -172,7 +172,7 @@ public class RolesController : QueryControllerBase
 		};
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var role = await this._roleService.UpdateAsync(utilizer, membershipId, roleModel, cancellationToken: cancellationToken);
+		var role = await this._roleService.UpdateAsync(roleModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Ok(role);
 	}
 	
@@ -186,7 +186,7 @@ public class RolesController : QueryControllerBase
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		if (await this._roleService.DeleteAsync(utilizer, membershipId, id, cancellationToken: cancellationToken))
+		if (await this._roleService.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}
@@ -207,7 +207,7 @@ public class RolesController : QueryControllerBase
 		if (ids != null)
 		{
 			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-			var isDeleted = await this._roleService.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken);
+			var isDeleted = await this._roleService.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken);
 			if (isDeleted != null)
 			{
 				if (isDeleted.Value)
@@ -238,7 +238,7 @@ public class RolesController : QueryControllerBase
 	[RbacAction(Rbac.CrudActions.Read)]
 	public async Task<IActionResult> CheckPermissionByRole([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var role = await this._roleService.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+		var role = await this._roleService.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (role != null)
 		{
 			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);

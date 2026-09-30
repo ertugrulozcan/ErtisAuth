@@ -61,7 +61,7 @@ public class TokenCodeServiceTests
 		
 		foreach (var userId in new[] { UserId, OtherUserId })
 		{
-			this._userService.GetUserAsync(MembershipId, userId, Arg.Any<CancellationToken>()).Returns(new User
+			this._userService.GetUserAsync(userId, MembershipId, Arg.Any<CancellationToken>()).Returns(new User
 			{
 				Id = userId,
 				Username = userId,
@@ -92,7 +92,7 @@ public class TokenCodeServiceTests
 	
 	private Task<TokenCode> AuthorizeAsync(TokenCodeService service, string code, string userId = UserId)
 	{
-		return service.AuthorizeCodeAsync(code, UserUtilizer(userId), MembershipId, TestContext.Current.CancellationToken);
+		return service.AuthorizeCodeAsync(code, MembershipId, UserUtilizer(userId), TestContext.Current.CancellationToken);
 	}
 	
 	private Task<BearerToken> GenerateTokenAsync(TokenCodeService service, string code)

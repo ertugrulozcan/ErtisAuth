@@ -418,11 +418,11 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	{
 		if (exclude == null)
 		{
-			return await this.GetWebhookByNameAsync(model.Name, membershipId) != null;	
+			return await this.GetByNameAsync(model.Name, membershipId) != null;	
 		}
 		else
 		{
-			var current = await this.GetWebhookByNameAsync(model.Name, membershipId);
+			var current = await this.GetByNameAsync(model.Name, membershipId);
 			if (current != null)
 			{
 				return current.Name != exclude.Name;	
@@ -444,7 +444,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		return ErtisAuthException.WebhookNotFound(id);
 	}
 	
-	private async Task<Webhook?> GetWebhookByNameAsync(string name, string membershipId)
+	private async Task<Webhook?> GetByNameAsync(string name, string membershipId)
 	{
 		return await this._repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
 	}

@@ -259,8 +259,8 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	#region Query Methods
 	
 	public override async Task<IPaginationCollection<dynamic>> QueryAsync(
-		string membershipId, 
 		string query, 
+		string membershipId, 
 		int? skip = null, 
 		int? limit = null, 
 		bool? withCount = null, 
@@ -269,7 +269,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		IDictionary<string, bool>? selectFields = null, 
 		CancellationToken cancellationToken = default)
 	{
-		return await base.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, ExcludeSecretHash(selectFields), cancellationToken: cancellationToken);
+		return await base.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, ExcludeSecretHash(selectFields), cancellationToken: cancellationToken);
 	}
 	
 	/// <summary>
@@ -300,12 +300,12 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	#region Read Methods
 	
-	public override async Task<Application?> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<Application?> GetAsync(string id, string membershipId, CancellationToken cancellationToken = default)
 	{
 		var cacheKey = GetCacheKey(membershipId, id);
 		if (!this._memoryCache.TryGetValue<Application>(cacheKey, out var application))
 		{
-			application = await base.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+			application = await base.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 			if (application == null)
 			{
 				return null;
@@ -360,18 +360,18 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	#region Create Methods
 	
-	public override async Task<Application> CreateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
+	public override async Task<Application> CreateAsync(Application model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
+		var created = await base.CreateAsync(model, membershipId, utilizer, cancellationToken);
 		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
 		return created;
 	}
 	
-	public async Task<ApplicationWithSecret> CreateWithSecretAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
+	public async Task<ApplicationWithSecret> CreateWithSecretAsync(Application model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		var secret = ApplicationSecretHelper.GenerateSecret();
 		model.SecretHash = ApplicationSecretHelper.HashSecret(secret);
-		var created = await this.CreateAsync(utilizer, membershipId, model, cancellationToken: cancellationToken);
+		var created = await this.CreateAsync(model, membershipId, utilizer, cancellationToken: cancellationToken);
 		return new ApplicationWithSecret(created, secret);
 	}
 	
@@ -379,14 +379,14 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	#region Update Methods
 	
-	public override async Task<Application> UpdateAsync(Utilizer utilizer, string membershipId, Application model, CancellationToken cancellationToken = default)
+	public override async Task<Application> UpdateAsync(Application model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
+		var updated = await base.UpdateAsync(model, membershipId, utilizer, cancellationToken);
 		await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
 		return updated;
 	}
 	
-	public async Task<ApplicationWithSecret> RotateSecretAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	public async Task<ApplicationWithSecret> RotateSecretAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
@@ -428,9 +428,9 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	#region Delete Methods
 	
-	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<bool> DeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
+		var isDeleted = await base.DeleteAsync(id, membershipId, utilizer, cancellationToken);
 		if (isDeleted)
 		{
 			// The deleted application is no longer listed by PurgeAllCacheAsync, so its own entries are removed explicitly
@@ -441,9 +441,9 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		return isDeleted;
 	}
 	
-	public override async Task<bool?> BulkDeleteAsync(Utilizer utilizer, string membershipId, string[] ids, CancellationToken cancellationToken = default)
+	public override async Task<bool?> BulkDeleteAsync(string[] ids, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		var result = await base.BulkDeleteAsync(utilizer, membershipId, ids, cancellationToken: cancellationToken);
+		var result = await base.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken: cancellationToken);
 		foreach (var id in ids)
 		{
 			this.PurgeCache(membershipId, id);

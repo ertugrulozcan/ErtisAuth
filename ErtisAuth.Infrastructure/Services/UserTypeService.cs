@@ -302,7 +302,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
     
     #region Methods
 	
-    public async Task<Dictionary<string, List<string>>?> GetFieldInfoOwnerRelationsAsync(string membershipId, string id, CancellationToken cancellationToken = default)
+    public async Task<Dictionary<string, List<string>>?> GetFieldInfoOwnerRelationsAsync(string id, string membershipId, CancellationToken cancellationToken = default)
     {
         var fieldInfoOwnerRelationDictionary = new Dictionary<string, List<string>>();
 		
@@ -317,7 +317,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
         }
         else
         {
-	        userType = await base.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+	        userType = await base.GetAsync(id, membershipId, cancellationToken: cancellationToken);
         }
         
         if (userType == null)
@@ -348,9 +348,10 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
     {
         var ancestors = new List<UserType> { userType };
         var pivotUserType = userType;
+		
         do
         {
-	        pivotUserType = pivotUserType.BaseUserType != null ? await this.GetBaseUserTypeAsync(userType.MembershipId, pivotUserType.BaseUserType, cancellationToken: cancellationToken) : null;
+	        pivotUserType = pivotUserType.BaseUserType != null ? await this.GetBaseUserTypeAsync(pivotUserType.BaseUserType, userType.MembershipId, cancellationToken: cancellationToken) : null;
 	        if (pivotUserType != null)
 	        {
 		        ancestors.Add(pivotUserType);
@@ -390,7 +391,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	        model.BaseUserType = OriginUserType.Slug;
         }
 		
-        var baseUserType = await this.GetBaseUserTypeAsync(model.MembershipId, model.BaseUserType, cancellationToken: cancellationToken);
+        var baseUserType = await this.GetBaseUserTypeAsync(model.BaseUserType, model.MembershipId, cancellationToken: cancellationToken);
         if (baseUserType == null)
         {
 	        throw ErtisAuthException.InheritedTypeNotFound(model.BaseUserType);
@@ -406,7 +407,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
         return model;
     }
 	
-    private async Task<UserType?> GetBaseUserTypeAsync(string membershipId, string baseUserTypeName, CancellationToken cancellationToken = default)
+    private async Task<UserType?> GetBaseUserTypeAsync(string baseUserTypeName, string membershipId, CancellationToken cancellationToken = default)
     {
         if (baseUserTypeName == OriginUserType.Name || baseUserTypeName == OriginUserType.Slug)
         {
@@ -417,10 +418,10 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	        }
         }
 		
-        return await this.GetByNameOrSlugAsync(membershipId, baseUserTypeName, cancellationToken: cancellationToken);
+        return await this.GetByNameOrSlugAsync(baseUserTypeName, membershipId, cancellationToken: cancellationToken);
     }
 	
-    public async Task<UserType?> GetByNameOrSlugAsync(string membershipId, string nameOrSlug, bool forceGetFreshData = false, CancellationToken cancellationToken = default)
+    public async Task<UserType?> GetByNameOrSlugAsync(string nameOrSlug, string membershipId, bool forceGetFreshData = false, CancellationToken cancellationToken = default)
 	{
 		if (nameOrSlug == OriginUserType.Name || nameOrSlug == OriginUserType.Slug)
 		{
@@ -433,14 +434,14 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		
 		if (forceGetFreshData)
 		{
-			return await this.GetAsync(membershipId, x => x.Name == nameOrSlug || x.Slug == nameOrSlug, cancellationToken: cancellationToken);
+			return await this.GetAsync(x => x.Name == nameOrSlug || x.Slug == nameOrSlug, membershipId, cancellationToken: cancellationToken);
 		}
 		else
 		{
 			var cacheKey = GetCacheKey(membershipId, nameOrSlug);
 			if (!this._memoryCache.TryGetValue<UserType>(cacheKey, out var userType))
 			{
-				userType = await this.GetAsync(membershipId, x => x.Name == nameOrSlug || x.Slug == nameOrSlug, cancellationToken: cancellationToken);
+				userType = await this.GetAsync(x => x.Name == nameOrSlug || x.Slug == nameOrSlug, membershipId, cancellationToken: cancellationToken);
 				if (userType == null)
 				{
 					return null;
@@ -453,7 +454,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		}
 	}
 	
-    public async Task<bool> IsInheritFromAsync(string membershipId, string childUserTypeName, string parentUserTypeName, CancellationToken cancellationToken = default)
+    public async Task<bool> IsInheritFromAsync(string childUserTypeName, string parentUserTypeName, string membershipId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(childUserTypeName))
         {
@@ -539,11 +540,11 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		
 		if (exclude == null)
 		{
-			return await this.GetByNameOrSlugAsync(membershipId, model.Name, cancellationToken: cancellationToken) != null;	
+			return await this.GetByNameOrSlugAsync(model.Name, membershipId, cancellationToken: cancellationToken) != null;	
 		}
 		else
 		{
-			var current = await this.GetByNameOrSlugAsync(membershipId, model.Name, cancellationToken: cancellationToken);
+			var current = await this.GetByNameOrSlugAsync(model.Name, membershipId, cancellationToken: cancellationToken);
 			if (current != null)
 			{
 				return current.Name != exclude.Name;	
@@ -585,15 +586,15 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
 	#region Create Methods
 	
-	public override async Task<UserType> CreateAsync(Utilizer utilizer, string membershipId, UserType model, CancellationToken cancellationToken = default)
+	public override async Task<UserType> CreateAsync(UserType model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		await this._changeLock.WaitAsync(cancellationToken);
 		try
 		{
 			var userTypes = await this.GetAllAsync(membershipId, cancellationToken: cancellationToken);
-			await this.EnsureUniqueIndexesAsync(membershipId, userTypes.Append(model), cancellationToken: cancellationToken);
+			await this.EnsureUniqueIndexesAsync(userTypes.Append(model), membershipId, cancellationToken: cancellationToken);
 			
-			var created = await base.CreateAsync(utilizer, membershipId, model, cancellationToken);
+			var created = await base.CreateAsync(model, membershipId, utilizer, cancellationToken);
 			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
 			return created;
 		}
@@ -610,20 +611,20 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
 	#region Update Methods
 	
-	public override async Task<UserType> UpdateAsync(Utilizer utilizer, string membershipId, UserType model, CancellationToken cancellationToken = default)
+	public override async Task<UserType> UpdateAsync(UserType model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		await this._changeLock.WaitAsync(cancellationToken);
 		try
 		{
 			// The name or slug may change, so the entries of the prior version are removed explicitly
-			var prior = await this.GetAsync(membershipId, model.Id, cancellationToken: cancellationToken);
-			await this.KeepSlugIfInUseAsync(membershipId, model, prior, cancellationToken: cancellationToken);
+			var prior = await this.GetAsync(model.Id, membershipId, cancellationToken: cancellationToken);
+			await this.KeepSlugIfInUseAsync(model, prior, membershipId, cancellationToken: cancellationToken);
 			
 			var userTypes = await this.GetAllAsync(membershipId, cancellationToken: cancellationToken);
-			await this.EnsureUniqueIndexesAsync(membershipId, userTypes.Where(x => x.Id != model.Id).Append(model), cancellationToken: cancellationToken);
+			await this.EnsureUniqueIndexesAsync(userTypes.Where(x => x.Id != model.Id).Append(model), membershipId, cancellationToken: cancellationToken);
 			
-			var updated = await base.UpdateAsync(utilizer, membershipId, model, cancellationToken);
-			this.PurgeCache(membershipId, prior);
+			var updated = await base.UpdateAsync(model, membershipId, utilizer, cancellationToken);
+			this.PurgeCache(prior, membershipId);
 			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
 			return updated;
 		}
@@ -641,14 +642,14 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	/// in use can not change; the name still can. A slug which is not sent is derived from the name, so the prior slug
 	/// is kept instead of rejecting the update.
 	/// </summary>
-	private async Task KeepSlugIfInUseAsync(string membershipId, UserType model, UserType? prior, CancellationToken cancellationToken = default)
+	private async Task KeepSlugIfInUseAsync(UserType model, UserType? prior, string membershipId, CancellationToken cancellationToken = default)
 	{
 		if (prior == null || model.Slug == prior.Slug)
 		{
 			return;
 		}
 		
-		var usages = await this.CheckUsagesAsync(membershipId, prior, cancellationToken: cancellationToken);
+		var usages = await this.CheckUsagesAsync(prior, membershipId, cancellationToken: cancellationToken);
 		if (usages.Count > 0)
 		{
 			model.Slug = prior.Slug;
@@ -659,7 +660,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
 	#region Delete Methods
 	
-	public override async Task<bool> DeleteAsync(Utilizer utilizer, string membershipId, string id, CancellationToken cancellationToken = default)
+	public override async Task<bool> DeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		// Is Deletable?
 		var errors = await this.CheckDeletableAsync(id, membershipId, cancellationToken: cancellationToken);
@@ -672,9 +673,9 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		try
 		{
 			// The deleted user type is no longer listed by PurgeAllCacheAsync, so its own entries are removed explicitly
-			var prior = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
-			var isDeleted = await base.DeleteAsync(utilizer, membershipId, id, cancellationToken);
-			this.PurgeCache(membershipId, prior);
+			var prior = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
+			var isDeleted = await base.DeleteAsync(id, membershipId, utilizer, cancellationToken);
+			this.PurgeCache(prior, membershipId);
 			await this.PurgeAllCacheAsync(membershipId, cancellationToken: cancellationToken);
 			return isDeleted;
 		}
@@ -694,20 +695,20 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 			return new [] { "Origin user-type is immutable, you can not delete it." };
 		}
 		
-		var userType = await this.GetAsync(membershipId, id, cancellationToken: cancellationToken);
+		var userType = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (userType == null)
 		{
 			throw ErtisAuthException.UserTypeNotFound(id, "_id");
 		}
 		
-		var usages = await this.CheckUsagesAsync(membershipId, userType, cancellationToken: cancellationToken);
+		var usages = await this.CheckUsagesAsync(userType, membershipId, cancellationToken: cancellationToken);
 		return usages.Count > 0 ? usages : null;
 	}
 	
 	/// <summary>
 	/// Lists what refers to the user type by its slug: inherited user types (baseType) and users (user_type).
 	/// </summary>
-	private async Task<List<string>> CheckUsagesAsync(string membershipId, UserType userType, CancellationToken cancellationToken = default)
+	private async Task<List<string>> CheckUsagesAsync(UserType userType, string membershipId, CancellationToken cancellationToken = default)
 	{
 		var usages = new List<string>();
 		
@@ -741,9 +742,9 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	/// Builds the unique indexes needed by the user types after the change, before the change is saved:
 	/// a field can not become unique while the users already have duplicate values for it.
 	/// </summary>
-	private async Task EnsureUniqueIndexesAsync(string membershipId, IEnumerable<UserType> userTypes, CancellationToken cancellationToken = default)
+	private async Task EnsureUniqueIndexesAsync(IEnumerable<UserType> userTypes, string membershipId, CancellationToken cancellationToken = default)
 	{
-		await this._uniqueIndexSynchronizer.EnsureIndexesAsync(membershipId, userTypes, cancellationToken: cancellationToken);
+		await this._uniqueIndexSynchronizer.EnsureIndexesAsync(userTypes, membershipId, cancellationToken: cancellationToken);
 	}
 	
 	#endregion
@@ -765,14 +766,14 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		var userTypes = await this.GetAsync(membershipId, null, null, cancellationToken: cancellationToken);
 		foreach (var userType in userTypes.Items)
 		{
-			this.PurgeCache(membershipId, userType);
+			this.PurgeCache(userType, membershipId);
 		}
 	}
 	
 	/// <summary>
 	/// User types are cached by both name and slug.
 	/// </summary>
-	private void PurgeCache(string membershipId, UserType? userType)
+	private void PurgeCache(UserType? userType, string membershipId)
 	{
 		if (userType == null)
 		{

@@ -135,7 +135,7 @@ public class TokenService : ITokenService
 			var userId = securityToken.Subject;
 			if (!string.IsNullOrEmpty(userId))
 			{
-				return await this._userService.GetUserAsync(membershipId, userId, cancellationToken: cancellationToken);
+				return await this._userService.GetUserAsync(userId, membershipId, cancellationToken: cancellationToken);
 			}
 			else
 			{
@@ -171,16 +171,16 @@ public class TokenService : ITokenService
 		}
 		
 		// Check user
-		var user = await this._userService.GetUserWithPasswordAsync(membership.Id, username, username, cancellationToken: cancellationToken);
+		var user = await this._userService.GetUserWithPasswordAsync(username, username, membership.Id, cancellationToken: cancellationToken);
 		if (user == null)
 		{
 			// Spend a comparable hashing cost so that response times do not reveal whether the user exists
-			this._userService.CalculatePasswordHash(membership, password);
+			this._userService.CalculatePasswordHash(password, membership);
 			throw ErtisAuthException.InvalidCredentials();
 		}
 
 		// Check password before the account status, so that the status is not revealed to callers without valid credentials
-		if (!this._userService.VerifyPassword(membership, password, user.PasswordHash))
+		if (!this._userService.VerifyPassword(password, user.PasswordHash, membership))
 		{
 			throw ErtisAuthException.InvalidCredentials();
 		}
@@ -273,7 +273,7 @@ public class TokenService : ITokenService
 		}
 		
 		// Check user
-		var currentUser = await this._userService.GetUserAsync(membership.Id, user.Id, cancellationToken: cancellationToken);
+		var currentUser = await this._userService.GetUserAsync(user.Id, membership.Id, cancellationToken: cancellationToken);
 		if (currentUser == null)
 		{
 			throw ErtisAuthException.UserNotFound(user.Id, "id");
@@ -553,7 +553,7 @@ public class TokenService : ITokenService
 			throw ErtisAuthException.InvalidToken();
 		}
 		
-		var user = await this._userService.GetUserAsync(membership.Id, userId, cancellationToken: cancellationToken);
+		var user = await this._userService.GetUserAsync(userId, membership.Id, cancellationToken: cancellationToken);
 		if (user == null)
 		{
 			// User not found!
@@ -626,14 +626,15 @@ public class TokenService : ITokenService
 		return true;
 	}
 	
-	public async Task RevokeAllAsync(string membershipId, string userId, string? exceptAccessToken = null, bool fireEvent = true, CancellationToken cancellationToken = default)
+	public async Task RevokeAllAsync(string userId, string membershipId, string? exceptAccessToken = null, bool fireEvent = true, CancellationToken cancellationToken = default)
 	{
 		var activeTokens = (await this._activeTokenService.GetActiveTokensByUser(userId, membershipId, cancellationToken: cancellationToken))
 			.Where(x => exceptAccessToken == null || x.AccessToken != exceptAccessToken)
 			.ToArray();
+		
 		if (activeTokens.Any())
 		{
-			var user = await this._userService.GetUserAsync(membershipId, userId, cancellationToken: cancellationToken);
+			var user = await this._userService.GetUserAsync(userId, membershipId, cancellationToken: cancellationToken);
 			if (user == null)
 			{
 				throw ErtisAuthException.UserNotFound(userId, "_id");

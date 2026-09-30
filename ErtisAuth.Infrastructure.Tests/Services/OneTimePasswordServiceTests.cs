@@ -89,7 +89,7 @@ public class OneTimePasswordServiceTests
 		};
 		
 		this._membershipService.GetAsync(MembershipId, Arg.Any<CancellationToken>()).Returns(this._membership);
-		this._userService.GetUserAsync(MembershipId, UserId, Arg.Any<CancellationToken>()).Returns(new User
+		this._userService.GetUserAsync(UserId, MembershipId, Arg.Any<CancellationToken>()).Returns(new User
 		{
 			Id = UserId,
 			Username = Username,

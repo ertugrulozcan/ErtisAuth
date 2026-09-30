@@ -45,7 +45,7 @@ public class UserServicePasswordHashTests
 		var userService = TestServiceFactory.CreateUserService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		var hash = userService.CalculatePasswordHash(membership, Password);
+		var hash = userService.CalculatePasswordHash(Password, membership);
 		
 		Assert.Equal(expectedHash, hash);
 	}
@@ -64,7 +64,7 @@ public class UserServicePasswordHashTests
 		var userService = TestServiceFactory.CreateUserService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		var hash = userService.CalculatePasswordHash(membership, Password);
+		var hash = userService.CalculatePasswordHash(Password, membership);
 		
 		Assert.Equal(Sha256OfPassword, hash);
 	}
@@ -77,7 +77,7 @@ public class UserServicePasswordHashTests
 		var userService = TestServiceFactory.CreateUserService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		var hash = userService.CalculatePasswordHash(membership, Password);
+		var hash = userService.CalculatePasswordHash(Password, membership);
 		
 		Assert.Equal("f85c8eeee9d3e814996f813ce1b89f144f0737b36813e7eccf0f8373260e4676", hash);
 	}
@@ -103,7 +103,7 @@ public class UserServicePasswordHashTests
 		var userService = TestServiceFactory.CreateUserService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		var exception = Assert.Throws<ErtisAuthException>(() => userService.CalculatePasswordHash(membership, Password));
+		var exception = Assert.Throws<ErtisAuthException>(() => userService.CalculatePasswordHash(Password, membership));
 		
 		Assert.Equal("MembershipHashAlgorithmInvalid", exception.ErrorCode);
 	}
@@ -118,10 +118,10 @@ public class UserServicePasswordHashTests
 		var userService = TestServiceFactory.CreateUserService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		var hash = userService.CalculatePasswordHash(membership, Password);
+		var hash = userService.CalculatePasswordHash(Password, membership);
 		
 		Assert.StartsWith(expectedPrefix, hash);
-		Assert.True(userService.VerifyPassword(membership, Password, hash));
+		Assert.True(userService.VerifyPassword(Password, hash, membership));
 	}
 	
 	#endregion
@@ -142,7 +142,7 @@ public class UserServicePasswordHashTests
 		var userService = TestServiceFactory.CreateUserService();
 		var membership = TestServiceFactory.CreateMembership("SHA2-256", defaultEncoding);
 		
-		var hash = userService.CalculatePasswordHash(membership, UnicodePassword);
+		var hash = userService.CalculatePasswordHash(UnicodePassword, membership);
 		
 		Assert.Equal(expectedHash, hash);
 	}
@@ -159,7 +159,7 @@ public class UserServicePasswordHashTests
 		var userService = TestServiceFactory.CreateUserService();
 		var membership = TestServiceFactory.CreateMembership("SHA2-256");
 		
-		var hash = userService.CalculatePasswordHash(membership, password!);
+		var hash = userService.CalculatePasswordHash(password!, membership);
 		
 		Assert.Equal(password, hash);
 	}
@@ -170,7 +170,7 @@ public class UserServicePasswordHashTests
 		var userService = TestServiceFactory.CreateUserService();
 		var membership = TestServiceFactory.CreateMembership("SHA2-256");
 		
-		var hash = userService.CalculatePasswordHash(membership, " ");
+		var hash = userService.CalculatePasswordHash(" ", membership);
 		
 		Assert.Equal("36a9e7f1c95b82ffb99743e0c5c4ce95d83c9a430aac59f84ef3cbfab6145068", hash);
 	}
@@ -181,8 +181,8 @@ public class UserServicePasswordHashTests
 		var userService = TestServiceFactory.CreateUserService();
 		var membership = TestServiceFactory.CreateMembership("SHA2-256");
 		
-		var first = userService.CalculatePasswordHash(membership, Password);
-		var second = userService.CalculatePasswordHash(membership, Password);
+		var first = userService.CalculatePasswordHash(Password, membership);
+		var second = userService.CalculatePasswordHash(Password, membership);
 		
 		Assert.Equal(first, second);
 	}
