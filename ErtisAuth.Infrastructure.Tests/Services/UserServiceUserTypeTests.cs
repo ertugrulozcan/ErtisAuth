@@ -1,4 +1,5 @@
 using System.Dynamic;
+using System.Globalization;
 using Ertis.Core.Collections;
 using DynamicObject = Ertis.Schema.Dynamics.DynamicObject;
 using ErtisAuth.Abstractions.Services;
@@ -190,6 +191,38 @@ public class UserServiceUserTypeTests
 		
 		Assert.NotNull(this._persistedDocument);
 		Assert.Equal(UserTypeSlug, this._persistedDocument["user_type"].AsString);
+	}
+	
+	/// <summary>
+	/// The email address is lowercased culture invariantly: in tr-TR the lowercase of 'I' is the dotless 'ı'
+	/// (the mails would go to another address, and the same address could be registered twice).
+	/// </summary>
+	[Fact]
+	public async Task CreateAsync_InTurkishCulture_LowercasesTheEmailAddressInvariantly()
+	{
+		var model = Model(x =>
+		{
+			x.username = "jane.doe";
+			x.email_address = "JANE.INFO@EXAMPLE.COM";
+			x.firstname = "Jane";
+			x.role = "user";
+			x.user_type = UserTypeSlug;
+			x.password = "P@ssw0rd!";
+		});
+		
+		var previousCulture = CultureInfo.CurrentCulture;
+		try
+		{
+			CultureInfo.CurrentCulture = new CultureInfo("tr-TR");
+			await this.CreateUserService().CreateAsync(model, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), cancellationToken: TestContext.Current.CancellationToken);
+		}
+		finally
+		{
+			CultureInfo.CurrentCulture = previousCulture;
+		}
+		
+		Assert.NotNull(this._persistedDocument);
+		Assert.Equal("jane.info@example.com", this._persistedDocument["email_address"].AsString);
 	}
 	
 	#endregion

@@ -231,7 +231,7 @@ public class MembershipsController : QueryControllerBase
 			encodings = System.Text.Encoding.GetEncodings().Select(x => new
 			{
 				displayName = x.DisplayName,
-				name = x.Name.ToUpper()
+				name = x.Name.ToUpperInvariant()
 			}).ToArray(),
 			defaultEncoding = Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName,
 			hashAlgorithms = Enum.GetNames<HashAlgorithms>().Select(x => x.Replace('_', '-')).ToArray(),
@@ -249,7 +249,7 @@ public class MembershipsController : QueryControllerBase
 		return this.Ok(encodings.Select(x => new
 		{
 			displayName = x.DisplayName,
-			name = x.Name.ToUpper()
+			name = x.Name.ToUpperInvariant()
 		}).ToArray());
 	}
 	

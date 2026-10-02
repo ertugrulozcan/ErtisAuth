@@ -94,8 +94,8 @@ public struct Utilizer
 			return UtilizerType.None;
 		}
 		
-		type = type.ToLower();
-		type = char.ToUpper(type[0]) + type.Substring(1);
+		type = type.ToLowerInvariant();
+		type = char.ToUpperInvariant(type[0]) + type.Substring(1);
 		
 		if (Enum.GetNames(typeof(UtilizerType)).Any(x => x == type))
 		{

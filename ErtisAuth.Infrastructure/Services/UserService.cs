@@ -321,7 +321,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     {
         if (model.TryGetValue<string>("email_address", out var emailAddress) && !string.IsNullOrEmpty(emailAddress))
         {
-	        model.SetValue("email_address", emailAddress.ToLower());
+	        model.SetValue("email_address", emailAddress.ToLowerInvariant());
         }
     }
     
@@ -733,9 +733,9 @@ public class UserService : DynamicObjectCrudService, IUserService
 		        QueryBuilder.Equals("membership_id", membershipId), 
 		        QueryBuilder.Or(
 			        QueryBuilder.Equals("username", username),
-			        QueryBuilder.Equals("email_address", email.ToLower()),
+			        QueryBuilder.Equals("email_address", email.ToLowerInvariant()),
 			        QueryBuilder.Equals("username", email),
-			        QueryBuilder.Equals("email_address", username.ToLower())
+			        QueryBuilder.Equals("email_address", username.ToLowerInvariant())
 			    )
 		    )
 	    );
@@ -764,7 +764,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 		        QueryBuilder.Equals("membership_id", membershipId), 
 		        QueryBuilder.Or(
 			        QueryBuilder.Equals("username", usernameOrEmailAddress),
-			        QueryBuilder.Equals("email_address", usernameOrEmailAddress.ToLower())
+			        QueryBuilder.Equals("email_address", usernameOrEmailAddress.ToLowerInvariant())
 		        )
 	        )
         );

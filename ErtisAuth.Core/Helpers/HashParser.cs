@@ -17,7 +17,7 @@ public static class HashParser
 			return false;
 		}
 		
-		algorithmName = algorithmName.ToUpper();
+		algorithmName = algorithmName.ToUpperInvariant();
 		var segments = algorithmName.Split('-');
 		var algorithmNameSegment = segments.FirstOrDefault();
 		var specificOutputSize = 0;

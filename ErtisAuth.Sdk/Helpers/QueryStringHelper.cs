@@ -27,7 +27,7 @@ internal static class QueryStringHelper
 		
 		if (withCount != null)
 		{
-			queryString.Add("with_count", withCount.Value.ToString().ToLower());
+			queryString.Add("with_count", withCount.Value.ToString().ToLowerInvariant());
 		}
 		
 		if (!string.IsNullOrEmpty(orderBy))
@@ -63,7 +63,7 @@ internal static class QueryStringHelper
 		
 		if (withCount != null)
 		{
-			queryString.Add("with_count", withCount.Value.ToString().ToLower());
+			queryString.Add("with_count", withCount.Value.ToString().ToLowerInvariant());
 		}
 		
 		if (sorting != null)
