@@ -303,10 +303,9 @@ public class MemberUserTypeTests : IClassFixture<ErtisAuthInstance>
 	}
 	
 	/// <summary>
-	/// Acceptance test: integer minimum/maximum are read from the schema but not enforced by Ertis.Schema, at any depth
-	/// (string maxLength, enums and additional properties are). To be enabled with the Ertis.Schema fix.
+	/// Integer minimum/maximum are enforced deep inside arrays and objects, like string maxLength, enums and additional properties.
 	/// </summary>
-	[Fact(Skip = "Ertis.Schema does not enforce integer minimum/maximum (Ertis package backlog)")]
+	[Fact]
 	public async Task Member_WithPercentageOutOfRange_IsRejected()
 	{
 		var body = MemberBody();

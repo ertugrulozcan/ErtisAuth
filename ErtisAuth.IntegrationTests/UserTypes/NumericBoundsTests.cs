@@ -16,8 +16,6 @@ public class NumericBoundsTests : IClassFixture<ErtisAuthInstance>
 	
 	private const string UserTypeSlug = "bounded";
 	
-	private const string SkipReason = "Ertis.Schema does not enforce numeric bounds yet (Ertis package backlog); enable with the fixed version";
-	
 	#endregion
 	
 	#region Fields
@@ -148,7 +146,7 @@ public class NumericBoundsTests : IClassFixture<ErtisAuthInstance>
 		await ResourceClient.AssertStatusAsync(response, HttpStatusCode.Created);
 	}
 	
-	[Theory(Skip = SkipReason)]
+	[Theory]
 	[InlineData("integer_range", -1)]
 	[InlineData("integer_range", 101)]
 	[InlineData("integer_exclusive", 0)]
