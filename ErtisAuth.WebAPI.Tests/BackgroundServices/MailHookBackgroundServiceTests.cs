@@ -1,7 +1,6 @@
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Infrastructure.Services;
-using ErtisAuth.WebAPI.BackgroundServices;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 

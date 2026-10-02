@@ -5,7 +5,6 @@ using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Extensions.AspNetCore.Middleware;
 using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Infrastructure.Services;
-using ErtisAuth.WebAPI.BackgroundServices;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ErtisAuth.WebAPI.Extensions;

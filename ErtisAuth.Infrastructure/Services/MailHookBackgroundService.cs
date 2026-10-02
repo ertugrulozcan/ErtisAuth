@@ -1,7 +1,8 @@
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Mailing;
+using Microsoft.Extensions.Logging;
 
-namespace ErtisAuth.WebAPI.BackgroundServices;
+namespace ErtisAuth.Infrastructure.Services;
 
 /// <summary>
 /// Sends the queued hook mails (the mail providers rate limit the connections, so only a few are sent at once)

@@ -1,7 +1,8 @@
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Webhooks;
+using Microsoft.Extensions.Logging;
 
-namespace ErtisAuth.WebAPI.BackgroundServices;
+namespace ErtisAuth.Infrastructure.Services;
 
 /// <summary>
 /// Executes the queued webhook calls (a slow receiver holds a slot until its timeout, so more calls than mails run at once)

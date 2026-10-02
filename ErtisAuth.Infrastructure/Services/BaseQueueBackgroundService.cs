@@ -1,6 +1,8 @@
 using ErtisAuth.Abstractions.Services;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace ErtisAuth.WebAPI.BackgroundServices;
+namespace ErtisAuth.Infrastructure.Services;
 
 /// <summary>
 /// Processes the items of a background queue with a bounded concurrency.
