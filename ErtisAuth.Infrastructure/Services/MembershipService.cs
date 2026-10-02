@@ -15,6 +15,12 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	private const string CACHE_KEY = "memberships";
 	
+	/// <summary>
+	/// The tokens are signed with HMAC-SHA256 by the secret key, which requires a key of at least 256 bits
+	/// (a shorter key can't sign any token: every login of the membership would fail)
+	/// </summary>
+	private const int MIN_SECRET_KEY_BYTE_COUNT = 32;
+	
 	#endregion
 	
 	#region Services
@@ -85,6 +91,11 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		if (string.IsNullOrEmpty(model.SecretKey))
 		{
 			errorList.Add("secret_key is a required field");
+		}
+		else if (model.IsEncodingValid() && model.GetEncoding().GetByteCount(model.SecretKey) < MIN_SECRET_KEY_BYTE_COUNT)
+		{
+			// Measured in the encoding of the membership, the key is converted to bytes by it
+			errorList.Add($"secret_key must be at least {MIN_SECRET_KEY_BYTE_COUNT} bytes ({MIN_SECRET_KEY_BYTE_COUNT * 8} bits) in the encoding of the membership");
 		}
 
 		if (string.IsNullOrEmpty(model.HashAlgorithm))

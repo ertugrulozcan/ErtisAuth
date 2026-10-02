@@ -153,10 +153,12 @@ public class ErtisAuthInstance : IAsyncLifetime
 		await this.Database.GetCollection<BsonDocument>("setup").InsertOneAsync(new BsonDocument("token", token));
 	}
 	
-	public async Task<HttpResponseMessage> PostSetupAsync(string? token = SetupToken)
+	/// <param name="token"></param>
+	/// <param name="body">Another setup request than <see cref="SetupRequest"/></param>
+	public async Task<HttpResponseMessage> PostSetupAsync(string? token = SetupToken, object? body = null)
 	{
 		using var request = new HttpRequestMessage(HttpMethod.Post, "/setup");
-		request.Content = JsonContent.Create(SetupRequest);
+		request.Content = JsonContent.Create(body ?? SetupRequest);
 		
 		if (token != null)
 		{

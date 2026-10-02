@@ -11,7 +11,7 @@ using NSubstitute;
 namespace ErtisAuth.Infrastructure.Tests.Services;
 
 /// <summary>
-/// Hash algorithm and encoding validation on membership create/update.
+/// Hash algorithm, encoding and secret key validation on membership create/update.
 /// </summary>
 public class MembershipServiceValidationTests
 {
@@ -167,6 +167,58 @@ public class MembershipServiceValidationTests
 		
 		Assert.Equal(OtpPasswordPolicy.DefaultMaxAttempts, fromBson.MaxAttempts);
 		Assert.Equal(OtpPasswordPolicy.DefaultMaxAttempts, fromJson!.MaxAttempts);
+	}
+	
+	#endregion
+	
+	#region Secret Key
+	
+	private const string ShortSecretKeyError = "secret_key must be at least 32 bytes (256 bits) in the encoding of the membership";
+	
+	/// <summary>
+	/// HMAC-SHA256 can't sign a token with a key shorter than 256 bits: every login of the membership would fail
+	/// </summary>
+	[Theory]
+	[InlineData("secret", null)]
+	[InlineData("0123456789abcdef0123456789abcde", "utf-8")]
+	[InlineData("0123456789abcde", "utf-16")]
+	public async Task CreateAsync_WithSecretKeyShorterThan32Bytes_ThrowsValidationError(string secretKey, string? defaultEncoding)
+	{
+		var membershipService = this.CreateMembershipService();
+		var membership = TestServiceFactory.CreateMembership("ARGON2ID", defaultEncoding);
+		membership.SecretKey = secretKey;
+		
+		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, Utilizer.GetSystemUtilizer(string.Empty), TestContext.Current.CancellationToken), ShortSecretKeyError);
+		await this._repository.DidNotReceiveWithAnyArgs().InsertAsync(null!, cancellationToken: TestContext.Current.CancellationToken);
+	}
+	
+	/// <summary>
+	/// The length is measured in the encoding of the membership (16 characters are 32 bytes in UTF-16)
+	/// </summary>
+	[Theory]
+	[InlineData("0123456789abcdef0123456789abcdef", "utf-8")]
+	[InlineData("0123456789abcdef", "utf-16")]
+	public async Task CreateAsync_WithSecretKeyOf32Bytes_InsertsMembership(string secretKey, string defaultEncoding)
+	{
+		var membershipService = this.CreateMembershipService();
+		var membership = TestServiceFactory.CreateMembership("ARGON2ID", defaultEncoding);
+		membership.SecretKey = secretKey;
+		
+		await membershipService.CreateAsync(membership, Utilizer.GetSystemUtilizer(string.Empty), TestContext.Current.CancellationToken);
+		
+		await this._repository.Received(1).InsertAsync(membership, Arg.Any<InsertOptions?>(), Arg.Any<CancellationToken>());
+	}
+	
+	[Fact]
+	public async Task UpdateAsync_WithSecretKeyShorterThan32Bytes_ThrowsValidationError()
+	{
+		var current = TestServiceFactory.CreateMembership("ARGON2ID");
+		this._repository.FindOneAsync(current.Id, Arg.Any<CancellationToken>()).Returns(current);
+		var membershipService = this.CreateMembershipService();
+		var update = TestServiceFactory.CreateMembership("ARGON2ID");
+		update.SecretKey = "secret";
+		
+		await AssertValidationErrorAsync(() => membershipService.UpdateAsync(update, Utilizer.GetSystemUtilizer(string.Empty), TestContext.Current.CancellationToken), ShortSecretKeyError);
 	}
 	
 	#endregion
