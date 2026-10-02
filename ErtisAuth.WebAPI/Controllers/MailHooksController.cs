@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
-[Tags("Mail Hooks")]
+[Tags("Mailhooks")]
 [Authorized]
 [RbacResource("mailhooks")]
 [MembershipRoute("mailhooks")]
