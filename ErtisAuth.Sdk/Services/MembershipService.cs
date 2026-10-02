@@ -1,5 +1,5 @@
 using Ertis.Core.Collections;
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using ErtisAuth.Core.Models.Identity;
@@ -27,7 +27,7 @@ public class MembershipService : BaseRestService, IMembershipService
 	/// </summary>
 	/// <param name="ertisAuthOptions"></param>
 	/// <param name="restHandler"></param>
-	public MembershipService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(restHandler)
+	public MembershipService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(restHandler)
 	{
 		this.AuthApiBaseUrl = ertisAuthOptions.BaseUrl;
 	}

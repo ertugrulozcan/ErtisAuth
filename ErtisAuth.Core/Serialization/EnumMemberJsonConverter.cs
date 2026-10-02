@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace ErtisAuth.Core.Serialization;
 
 /// <summary>
-/// System.Text.Json counterpart of Newtonsoft's StringEnumConverter: writes the [EnumMember] value (e.g. "active"),
+/// Writes the [EnumMember] value (e.g. "active"),
 /// reads the [EnumMember] value and the enum name case-insensitively. JsonStringEnumConverter ignores [EnumMember],
 /// and JsonStringEnumMemberName would reject "Active".
 /// </summary>

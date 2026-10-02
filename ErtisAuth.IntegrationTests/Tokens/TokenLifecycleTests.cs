@@ -18,6 +18,10 @@ public class TokenLifecycleTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public TokenLifecycleTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

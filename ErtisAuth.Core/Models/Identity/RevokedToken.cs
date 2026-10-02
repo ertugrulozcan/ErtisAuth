@@ -1,44 +1,38 @@
 using System.Text.Json.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
-using Newtonsoft.Json;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Core.Models.Identity;
 
 public class RevokedToken : MembershipBoundedResource
 {
 	#region Properties
 	
-	[JsonProperty("token")]
 	[JsonPropertyName("token")]
 	[BsonElement("token")]
 	public string? Token { get; set; }
 	
-	[JsonProperty("user_id")]
 	[JsonPropertyName("user_id")]
 	[BsonElement("user_id")]
 	public string? UserId { get; set; }
 	
-	[JsonProperty("username")]
 	[JsonPropertyName("username")]
 	[BsonElement("username")]
 	public string? UserName { get; set; }
 	
-	[JsonProperty("email_address")]
 	[JsonPropertyName("email_address")]
 	[BsonElement("email_address")]
 	public string? EmailAddress { get; set; }
 	
-	[JsonProperty("first_name")]
 	[JsonPropertyName("first_name")]
 	[BsonElement("first_name")]
 	public string? FirstName { get; set; }
 	
-	[JsonProperty("last_name")]
 	[JsonPropertyName("last_name")]
 	[BsonElement("last_name")]
 	public string? LastName { get; set; }
 	
-	[JsonProperty("token_type")]
 	[JsonPropertyName("token_type")]
 	[BsonElement("token_type")]
 	public string? TokenType { get; set; }
@@ -47,12 +41,10 @@ public class RevokedToken : MembershipBoundedResource
 	/// The expiry of the revoked token itself; the revocation is needed until then.
 	/// The TTL index of the collection deletes the record after this time.
 	/// </summary>
-	[JsonProperty("retain_until")]
 	[JsonPropertyName("retain_until")]
 	[BsonElement("retain_until")]
 	public DateTime RetainUntil { get; set; }
 	
-	[JsonProperty("revoked_at")]
 	[JsonPropertyName("revoked_at")]
 	[BsonElement("revoked_at")]
 	public DateTime RevokedAt { get; set; }

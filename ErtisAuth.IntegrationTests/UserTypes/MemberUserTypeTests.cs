@@ -38,6 +38,10 @@ public class MemberUserTypeTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public MemberUserTypeTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;
@@ -234,6 +238,7 @@ public class MemberUserTypeTests : IClassFixture<ErtisAuthInstance>
 	[Fact]
 	public async Task StoredMemberUserType_IsReadable()
 	{
+		// ReSharper disable once MethodHasAsyncOverload
 		var document = BsonDocument.Parse(File.ReadAllText(Path.Combine(DataDirectory, "sample-user-type.bson.js")));
 		document["_id"] = ObjectId.GenerateNewId();
 		document["name"] = "Stored Member";

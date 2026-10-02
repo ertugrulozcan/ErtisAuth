@@ -41,6 +41,10 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public ProviderLoginTests(OAuthErtisAuthInstance instance)
 	{
 		this._instance = instance;
@@ -68,10 +72,8 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 	private async Task<HttpResponseMessage> LoginAsync(string provider, object body, string? query = null)
 	{
 		await this.ConfigureProvidersAsync();
-		using var request = new HttpRequestMessage(HttpMethod.Post, $"/oauth/{provider}/login{query}")
-		{
-			Content = JsonContent.Create(body)
-		};
+		using var request = new HttpRequestMessage(HttpMethod.Post, $"/oauth/{provider}/login{query}");
+		request.Content = JsonContent.Create(body);
 		
 		request.Headers.Add("Membership", this._instance.MembershipId);
 		return await this._instance.CreateClient().SendAsync(request, CancellationToken);

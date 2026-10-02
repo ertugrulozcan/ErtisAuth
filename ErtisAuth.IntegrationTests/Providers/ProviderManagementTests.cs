@@ -28,6 +28,10 @@ public class ProviderManagementTests : IClassFixture<OAuthErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public ProviderManagementTests(OAuthErtisAuthInstance instance)
 	{
 		this._instance = instance;

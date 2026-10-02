@@ -13,6 +13,10 @@ public class RoleCrudTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public RoleCrudTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

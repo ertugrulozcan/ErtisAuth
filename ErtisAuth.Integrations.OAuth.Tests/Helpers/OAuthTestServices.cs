@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace ErtisAuth.Integrations.OAuth.Tests.Helpers;
 
 /// <summary>
-/// The authenticators as the WebAPI registers them (AddProviders + ISystemRestHandler), with every HTTP call answered by <see cref="Handler"/>.
+/// The authenticators as the WebAPI registers them (AddProviders + IRestHandler), with every HTTP call answered by <see cref="Handler"/>.
 /// </summary>
 internal sealed class OAuthTestServices
 {
@@ -24,7 +24,7 @@ internal sealed class OAuthTestServices
 		var services = new ServiceCollection();
 		services.AddLogging();
 		services.AddHttpClient();
-		services.AddSingleton<ISystemRestHandler, SystemRestHandler>();
+		services.AddSingleton<IRestHandler, RestHandler>();
 		services.AddProviders();
 		services.ConfigureHttpClientDefaults(builder => builder.ConfigurePrimaryHttpMessageHandler(() => this.Handler));
 		this.ServiceProvider = services.BuildServiceProvider();

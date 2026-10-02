@@ -4,7 +4,6 @@ using System.Text.Json;
 using Ertis.Schema.Dynamics;
 using Ertis.Schema.Serialization;
 using Ertis.MongoDB.Serialization;
-using Ertis.Net.Rest;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Events;
@@ -12,6 +11,7 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using ErtisAuth.Extensions.Mailing.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
@@ -47,8 +47,8 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 
     #region Services
 	
-	private readonly ISystemRestHandler _restHandler;
-    private readonly IEventService _eventService;
+	private readonly IEventService _eventService;
+	private readonly IEnumerable<IMailService> _mailServices;
 	private readonly IUserRepository _userRepository;
 	private readonly ILogger<MailHookService> _logger;
 
@@ -60,21 +60,21 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	/// Constructor
 	/// </summary>
 	/// <param name="membershipService"></param>
-	/// <param name="restHandler"></param>
 	/// <param name="eventService"></param>
+	/// <param name="mailServices"></param>
 	/// <param name="mailHookRepository"></param>
 	/// <param name="userRepository"></param>
 	/// <param name="logger"></param>
 	public MailHookService(
 		IMembershipService membershipService,
-		ISystemRestHandler restHandler,
 		IEventService eventService,
+		IEnumerable<IMailService> mailServices,
 		IMailHookRepository mailHookRepository,
 		IUserRepository userRepository,
 		ILogger<MailHookService> logger) : base(membershipService, mailHookRepository)
 	{
-		this._restHandler = restHandler;
 		this._eventService = eventService;
+		this._mailServices = mailServices;
 		this._userRepository = userRepository;
 		this._logger = logger;
 		
@@ -340,29 +340,50 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		IDictionary<string, string> arguments,
 		CancellationToken cancellationToken = default)
 	{
+		// The failures are thrown (not only logged), so the hook mail is reported as failed instead of sent
+		var service = this._mailServices.FirstOrDefault(x => x.GetProviderType() == mailProvider.Type);
+		if (service == null)
+		{
+			throw new InvalidOperationException($"No mail service is registered for the {mailProvider.Type} provider");
+		}
+		
 		switch (mailProvider.DeliveryMode)
 		{
 			case DeliveryMode.Default:
 			case DeliveryMode.Raw:
-				await mailProvider.SendMailAsync(
-					this._restHandler, 
-					fromName,
-					fromAddress,
-					recipients,
-					subject,
-					htmlBody,
-					cancellationToken: cancellationToken);
+				if (service is IRawMailService rawMailService)
+				{
+					await rawMailService.SendMailAsync(
+						mailProvider,
+						fromName,
+						fromAddress,
+						recipients,
+						subject,
+						htmlBody,
+						cancellationToken: cancellationToken);
+				}
+				else
+				{
+					throw new InvalidOperationException($"The {mailProvider.Type} mail service does not support raw mails");
+				}
 			break;
 			case DeliveryMode.Template:
-				await mailProvider.SendMailWithTemplateAsync(
-					this._restHandler, 
-					fromName,
-					fromAddress,
-					recipients,
-					subject,
-					templateId,
-					arguments,
-					cancellationToken: cancellationToken);
+				if (service is ITemplateMailService templateMailService)
+				{
+					await templateMailService.SendMailWithTemplateAsync(
+						mailProvider,
+						fromName,
+						fromAddress,
+						recipients,
+						subject,
+						templateId,
+						arguments,
+						cancellationToken: cancellationToken);
+				}
+				else
+				{
+					throw new InvalidOperationException($"The {mailProvider.Type} mail service does not support template mails");
+				}
 			break;
 		}
 	}

@@ -1,4 +1,3 @@
-using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using ErtisAuth.IntegrationTests.Infrastructure;
@@ -48,6 +47,10 @@ public class SysInfoTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public SysInfoTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;
@@ -157,7 +160,8 @@ public class SysInfoTests : IClassFixture<ErtisAuthInstance>
 	private static async Task<JsonObject> SendAsync(HttpClient client, HttpMethod method, string url, JsonObject body)
 	{
 		body["sys"] = ForgedSys;
-		using var request = new HttpRequestMessage(method, url) { Content = JsonContent.Create(body) };
+		using var request = new HttpRequestMessage(method, url);
+		request.Content = JsonContent.Create(body);
 		using var response = await client.SendAsync(request, CancellationToken);
 		var content = await response.Content.ReadAsStringAsync(CancellationToken);
 		Assert.True(response.IsSuccessStatusCode, $"{method} {url} -> {(int) response.StatusCode}: {content}");

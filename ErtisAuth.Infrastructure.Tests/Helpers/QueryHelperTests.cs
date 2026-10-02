@@ -188,18 +188,6 @@ public class QueryHelperTests
 		Assert.Equal("InvalidQuery", exception.ErrorCode);
 	}
 	
-	[Fact]
-	public void InjectMembershipIdToAggregation_OutputRoundTripsThroughTheTypedRepositoryParsing()
-	{
-		// Ertis.MongoDB's typed repository splits the pipeline with Newtonsoft (JArray.Parse) and parses each stage with BsonDocument.Parse.
-		const string pipeline = "[ { \"$match\": { \"created_at\": { \"$gt\": ISODate(\"2020-01-01T00:00:00Z\") }, \"_id\": ObjectId(\"5f8a1b2c3d4e5f6a7b8c9d0e\") } }, { \"$group\": { \"_id\": \"$user_id\", \"count\": { \"$sum\": 1 } } } ]";
-		var output = QueryHelper.InjectMembershipIdToAggregation(pipeline, OwnMembershipId);
-		
-		var stagesParsedLikeTheRepository = new BsonArray(Newtonsoft.Json.Linq.JArray.Parse(output).Select(x => BsonDocument.Parse(x.ToString())));
-		
-		Assert.Equal(ScopePipeline(pipeline), stagesParsedLikeTheRepository);
-	}
-	
 	#endregion
 	
 	#region Hidden Fields And JavaScript

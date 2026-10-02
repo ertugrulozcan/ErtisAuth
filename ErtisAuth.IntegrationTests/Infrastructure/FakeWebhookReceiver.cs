@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
+// ReSharper disable MemberCanBePrivate.Global
 namespace ErtisAuth.IntegrationTests.Infrastructure;
 
 /// <summary>
@@ -56,6 +57,8 @@ public sealed class FakeWebhookReceiver : IAsyncDisposable
 			using var reader = new StreamReader(context.Request.Body);
 			var body = await reader.ReadToEndAsync();
 			var path = context.Request.Path.Value ?? "/";
+			
+			// ReSharper disable once AccessToModifiedClosure
 			receiver!._requests.Enqueue(new ReceivedRequest(
 				context.Request.Method,
 				path,
@@ -63,6 +66,7 @@ public sealed class FakeWebhookReceiver : IAsyncDisposable
 				context.Request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString(), StringComparer.OrdinalIgnoreCase),
 				body));
 			
+			// ReSharper disable once AccessToModifiedClosure
 			context.Response.StatusCode = receiver._statusCodes.TryGetValue(path, out var statusCodes) && statusCodes.TryDequeue(out var statusCode)
 				? statusCode
 				: StatusCodes.Status200OK;

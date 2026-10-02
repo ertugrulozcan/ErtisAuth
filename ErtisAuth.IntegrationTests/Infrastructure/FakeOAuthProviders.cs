@@ -8,6 +8,7 @@ using Google.Apis.Auth;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
+// ReSharper disable NotAccessedPositionalProperty.Global
 namespace ErtisAuth.IntegrationTests.Infrastructure;
 
 /// <summary>
@@ -53,6 +54,7 @@ public sealed class FakeOAuthProviders
 	
 	#region Properties
 	
+	// ReSharper disable once MemberCanBePrivate.Global
 	public IReadOnlyCollection<ProviderRequest> Requests => this._requests.ToArray();
 	
 	/// <summary>
@@ -130,6 +132,10 @@ public sealed class FakeOAuthProviders
 		
 		private readonly HttpMessageInvoker _network = new(new SocketsHttpHandler());
 		
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="providers"></param>
 		public Handler(FakeOAuthProviders providers)
 		{
 			this._providers = providers;

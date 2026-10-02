@@ -1,4 +1,4 @@
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using ErtisAuth.Core.Exceptions;
@@ -20,7 +20,7 @@ public class AuthenticationService : MembershipBoundedService, IAuthenticationSe
 	/// </summary>
 	/// <param name="ertisAuthOptions"></param>
 	/// <param name="restHandler"></param>
-	public AuthenticationService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+	public AuthenticationService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
 	{
 		
 	}

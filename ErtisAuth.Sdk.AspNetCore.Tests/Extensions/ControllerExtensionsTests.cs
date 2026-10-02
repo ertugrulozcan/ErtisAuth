@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.Authorization.Extensions;
@@ -50,7 +49,7 @@ public class ControllerExtensionsTests
 				new Claim("unique_name", username),
 				new Claim("prn", membershipId)
 			]),
-			SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes("test-secret-key-test-secret-key-test-secret-key")), SecurityAlgorithms.HmacSha256)
+			SigningCredentials = new SigningCredentials(new SymmetricSecurityKey("test-secret-key-test-secret-key-test-secret-key"u8.ToArray()), SecurityAlgorithms.HmacSha256)
 		});
 	}
 	

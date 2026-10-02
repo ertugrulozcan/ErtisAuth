@@ -33,6 +33,10 @@ public class TokenListTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public TokenListTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

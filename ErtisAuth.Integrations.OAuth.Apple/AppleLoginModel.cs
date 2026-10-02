@@ -1,18 +1,18 @@
 using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.JsonWebTokens;
-using Newtonsoft.Json;
 
+// ReSharper disable UnusedMember.Global
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Integrations.OAuth.Apple;
 
 public class AppleLoginModel
 {
 	#region Properties
 	
-	[JsonProperty("user")]
 	[JsonPropertyName("user")]
 	public AppleUserModel? User { get; set; }
 	
-	[JsonProperty("authorization")]
 	[JsonPropertyName("authorization")]
 	public AppleUserAuthorizationModel? Authorization { get; set; }
 	
@@ -69,11 +69,9 @@ public class AppleUserModel
 {
 	#region Properties
 	
-	[JsonProperty("name")]
 	[JsonPropertyName("name")]
 	public AppleUserNameModel? Name { get; set; }
 	
-	[JsonProperty("email")]
 	[JsonPropertyName("email")]
 	public string? EmailAddress { get; set; }
 	
@@ -84,11 +82,9 @@ public class AppleUserNameModel
 {
 	#region Properties
 	
-	[JsonProperty("firstName")]
 	[JsonPropertyName("firstName")]
 	public string? FirstName { get; set; }
 	
-	[JsonProperty("lastName")]
 	[JsonPropertyName("lastName")]
 	public string? LastName { get; set; }
 	
@@ -99,11 +95,9 @@ public class AppleUserAuthorizationModel
 {
 	#region Properties
 	
-	[JsonProperty("code")]
 	[JsonPropertyName("code")]
 	public string? Code { get; set; }
 	
-	[JsonProperty("id_token")]
 	[JsonPropertyName("id_token")]
 	public string? IdToken { get; set; }
 	

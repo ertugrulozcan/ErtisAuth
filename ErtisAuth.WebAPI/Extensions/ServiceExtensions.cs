@@ -13,7 +13,7 @@ public static class ServiceExtensions
 	
 	public static void AddServices(this IServiceCollection services)
 	{
-		services.AddSingleton<ISystemRestHandler, SystemRestHandler>();
+		services.AddSingleton<IRestHandler, RestHandler>();
 		services.AddSingleton<IJwtService, JwtService>();
 		services.AddSingleton<LegacyApplicationSecretVerifier>(); // LEGACY-APP-SECRET
 		services.AddSingleton<ITokenService, TokenService>();

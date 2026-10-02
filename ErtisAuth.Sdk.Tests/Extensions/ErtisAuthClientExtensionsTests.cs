@@ -159,7 +159,7 @@ public class ErtisAuthClientExtensionsTests
 		var serviceProvider = BuildManually();
 		
 		Assert.NotNull(serviceProvider.GetService<IHttpClientFactory>());
-		Assert.IsType<SystemRestHandler>(serviceProvider.GetRequiredService<ISystemRestHandler>());
+		Assert.IsType<RestHandler>(serviceProvider.GetRequiredService<IRestHandler>());
 	}
 	
 	[Fact]

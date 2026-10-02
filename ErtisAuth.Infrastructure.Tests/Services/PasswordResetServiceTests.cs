@@ -2,7 +2,6 @@ using System.Text;
 using ErtisAuth.Core.Constants;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
-using ErtisAuth.Core.Models.Users;
 
 namespace ErtisAuth.Infrastructure.Tests.Services;
 

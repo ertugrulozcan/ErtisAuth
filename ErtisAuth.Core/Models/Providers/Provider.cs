@@ -1,10 +1,14 @@
 using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
-using Ertis.Core.Models.Resources;
+using Ertis.Core.Models;
 using ErtisAuth.Integrations.OAuth.Core;
 using MongoDB.Bson.Serialization.Attributes;
-using NewtonsoftJsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
 
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Local
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 namespace ErtisAuth.Core.Models.Providers;
 
 public class Provider : MembershipBoundedResource, IHasSysInfo
@@ -12,12 +16,10 @@ public class Provider : MembershipBoundedResource, IHasSysInfo
 	#region Properties
 	
 	[JsonPropertyName("name")]
-	[NewtonsoftJsonProperty("name")]
 	[BsonElement("name")]
 	public string Name { get; private set; }
 	
 	[JsonPropertyName("slug")]
-	[NewtonsoftJsonProperty("slug")]
 	[BsonElement("slug")]
 	public string Slug
 	{
@@ -35,69 +37,59 @@ public class Provider : MembershipBoundedResource, IHasSysInfo
 	
 	[JsonPropertyName("description")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("description", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonElement("description")]
 	[BsonIgnoreIfNull]
 	public string? Description { get; set; }
 	
 	[JsonPropertyName("defaultRole")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("defaultRole", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonElement("defaultRole")]
 	[BsonIgnoreIfNull]
 	public string? DefaultRole { get; set; }
 	
 	[JsonPropertyName("defaultUserType")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("defaultUserType", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonElement("defaultUserType")]
 	[BsonIgnoreIfNull]
 	public string? DefaultUserType { get; set; }
 	
 	[JsonPropertyName("appClientId")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("appClientId", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonElement("appClientId")]
 	[BsonIgnoreIfNull]
 	public string? AppClientId { get; set; }
 	
 	[JsonPropertyName("teamId")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("teamId", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonElement("teamId")]
 	[BsonIgnoreIfNull]
 	public string? TeamId { get; set; }
 	
 	[JsonPropertyName("tenantId")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("tenantId", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonElement("tenantId")]
 	[BsonIgnoreIfNull]
 	public string? TenantId { get; set; }
 	
 	[JsonPropertyName("privateKey")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("privateKey", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonElement("privateKey")]
 	[BsonIgnoreIfNull]
 	public string? PrivateKey { get; set; }
 	
 	[JsonPropertyName("privateKeyId")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("privateKeyId", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonElement("privateKeyId")]
 	[BsonIgnoreIfNull]
 	public string? PrivateKeyId { get; set; }
 	
 	[JsonPropertyName("redirectUri")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("redirectUri", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonElement("redirectUri")]
 	[BsonIgnoreIfNull]
 	public string? RedirectUri { get; set; }
 	
 	[JsonPropertyName("isActive")]
-	[NewtonsoftJsonProperty("isActive")]
 	[BsonElement("isActive")]
 	public bool IsActive { get; set; }
 	
@@ -106,12 +98,10 @@ public class Provider : MembershipBoundedResource, IHasSysInfo
 	/// email is verified (Facebook, Microsoft). Google and Apple verified emails are linked regardless.
 	/// </summary>
 	[JsonPropertyName("trust_email")]
-	[NewtonsoftJsonProperty("trust_email")]
 	[BsonElement("trust_email")]
 	public bool TrustEmail { get; set; }
 	
 	[JsonPropertyName("sys")]
-	[NewtonsoftJsonProperty("sys")]
 	[BsonElement("sys")]
 	public SysModel? Sys { get; set; }
 	

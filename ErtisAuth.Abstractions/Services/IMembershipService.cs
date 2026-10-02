@@ -3,6 +3,7 @@ using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
 
 // ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedMemberInSuper.Global
 namespace ErtisAuth.Abstractions.Services;
 
 public interface IMembershipService : IGenericCrudService<Membership>
@@ -16,7 +17,7 @@ public interface IMembershipService : IGenericCrudService<Membership>
 		bool? withCount = null, 
 		string? sortField = null, 
 		SortDirection? sortDirection = null,
-		IDictionary<string, bool>? selectFields = null,
+		IDictionary<string, bool>? projection = null,
 		CancellationToken cancellationToken = default);
 	
 	Task<Membership?> GetBySecretKeyAsync(string secretKey, CancellationToken cancellationToken = default);

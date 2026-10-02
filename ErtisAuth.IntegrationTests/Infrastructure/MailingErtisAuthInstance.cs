@@ -30,6 +30,11 @@ public class MailingErtisAuthInstance : ErtisAuthInstance
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="mongo"></param>
+	// ReSharper disable once MemberCanBeProtected.Global
 	public MailingErtisAuthInstance(MongoDbContainerFixture mongo) : base(mongo)
 	{
 	
@@ -108,6 +113,10 @@ public sealed class ActivationErtisAuthInstance : MailingErtisAuthInstance
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="mongo"></param>
 	public ActivationErtisAuthInstance(MongoDbContainerFixture mongo) : base(mongo)
 	{
 	

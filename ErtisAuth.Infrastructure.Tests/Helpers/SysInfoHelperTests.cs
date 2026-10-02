@@ -1,4 +1,4 @@
-using Ertis.Core.Models.Resources;
+using Ertis.Core.Models;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Infrastructure.Helpers;

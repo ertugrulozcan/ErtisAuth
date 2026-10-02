@@ -1,7 +1,8 @@
 using System.Text.Json.Serialization;
 using ErtisAuth.WebAPI.Models.Applications;
-using Newtonsoft.Json;
 
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.WebAPI.Models.Setup;
 
 /// <summary>
@@ -12,15 +13,12 @@ public class SetupModel
 {
 	#region Properties
 	
-	[JsonProperty("membership")]
 	[JsonPropertyName("membership")]
 	public SetupMembershipModel? Membership { get; set; }
 	
-	[JsonProperty("user")]
 	[JsonPropertyName("user")]
 	public SetupUserModel? User { get; set; }
 	
-	[JsonProperty("application")]
 	[JsonPropertyName("application")]
 	public CreateApplicationFormModel? Application { get; set; }
 	

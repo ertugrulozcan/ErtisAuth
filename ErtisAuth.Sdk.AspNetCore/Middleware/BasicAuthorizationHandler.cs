@@ -1,4 +1,4 @@
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Extensions.Authorization.Extensions;

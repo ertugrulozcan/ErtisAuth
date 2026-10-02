@@ -18,6 +18,10 @@ public class SetupTests : IClassFixture<FreshErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public SetupTests(FreshErtisAuthInstance instance)
 	{
 		this._instance = instance;
@@ -95,10 +99,8 @@ public class SetupTests : IClassFixture<FreshErtisAuthInstance>
 		}
 		
 		// The administrator can log in
-		using var login = new HttpRequestMessage(HttpMethod.Post, "/generate-token")
-		{
-			Content = System.Net.Http.Json.JsonContent.Create(new { username = ErtisAuthInstance.AdminUsername, password = ErtisAuthInstance.AdminPassword })
-		};
+		using var login = new HttpRequestMessage(HttpMethod.Post, "/generate-token");
+		login.Content = System.Net.Http.Json.JsonContent.Create(new { username = ErtisAuthInstance.AdminUsername, password = ErtisAuthInstance.AdminPassword });
 		
 		login.Headers.Add("Membership", membershipId);
 		using var loginResponse = await this._instance.CreateClient().SendAsync(login, TestContext.Current.CancellationToken);

@@ -36,7 +36,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	#region Services
 	
 	private readonly IEventService _eventService;
-	private readonly ISystemRestHandler _restHandler;
+	private readonly IRestHandler _restHandler;
 	private readonly ILogger<WebhookService> _logger;
 	
 	#endregion
@@ -54,7 +54,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	public WebhookService(
 		IMembershipService membershipService, 
 		IEventService eventService,
-		ISystemRestHandler restHandler,
+		IRestHandler restHandler,
 		IWebhookRepository repository,
 		ILogger<WebhookService> logger) : 
 		base(membershipService, repository)
@@ -206,8 +206,8 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			// Built as a JSON tree: the rest handler serializes the body with the default options
 			var payloadNode = webhookBody != null ? JsonNode.Parse(webhookBody.ToJson()) : null;
 			IRequestBody body = webhook.Request.UncoveredBody ?
-				new SystemJsonRequestBody(payloadNode ?? new JsonObject()) :
-				new SystemJsonRequestBody(new JsonObject
+				new JsonRequestBody(payloadNode ?? new JsonObject()) :
+				new JsonRequestBody(new JsonObject
 				{
 					["document"] = dataNode?["document"]?.DeepClone(),
 					["prior"] = dataNode?["prior"]?.DeepClone(),

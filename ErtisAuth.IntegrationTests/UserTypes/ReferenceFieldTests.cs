@@ -28,6 +28,10 @@ public class ReferenceFieldTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public ReferenceFieldTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

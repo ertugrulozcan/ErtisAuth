@@ -1,13 +1,14 @@
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
 
+// ReSharper disable UnusedMember.Global
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Integrations.OAuth.Facebook;
 
 public class FacebookImageData
 {
 	#region Properties
 	
-	[JsonProperty("data")]
 	[JsonPropertyName("data")]
 	public FacebookImage? Data { get; set; }
 	

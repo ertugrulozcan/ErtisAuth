@@ -3,7 +3,7 @@ using System.Net;
 namespace ErtisAuth.Core.Exceptions;
 
 /// <summary>
-/// A write rejected by a unique index of the database.
+/// A write op rejected by a unique index of the database.
 /// </summary>
 public class DuplicateKeyException : ErtisAuthException
 {

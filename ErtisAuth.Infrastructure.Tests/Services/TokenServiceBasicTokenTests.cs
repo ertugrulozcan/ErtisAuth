@@ -100,7 +100,7 @@ public class TokenServiceBasicTokenTests
 			.Do(x => document = x.ArgAt<object?>(3));
 		var tokenService = this.CreateTokenService();
 		
-		await tokenService.VerifyBasicTokenAsync($"{ApplicationId}:{this._secret}", true, cancellationToken: TestContext.Current.CancellationToken);
+		await tokenService.VerifyBasicTokenAsync($"{ApplicationId}:{this._secret}", fireEvent: true, cancellationToken: TestContext.Current.CancellationToken);
 		
 		var json = JsonSerializer.Serialize(document);
 		Assert.DoesNotContain(this._secret, json);

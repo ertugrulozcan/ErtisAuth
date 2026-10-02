@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Ertis.Core.Helpers;
-using Ertis.Core.Models.Resources;
+using Ertis.Core.Models;
 using Ertis.Schema.Dynamics;
 using Ertis.Schema.Extensions;
 using Ertis.Schema.Serialization;
@@ -11,11 +11,7 @@ using Ertis.Schema.Types;
 using Ertis.Schema.Validation;
 using ErtisAuth.Core.Exceptions;
 
-using NewtonsoftJsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
-using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
-using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
-using NewtonsoftFieldInfoCollectionJsonConverter = Ertis.Schema.Serialization.Legacy.FieldInfoCollectionJsonConverter;
-
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Core.Models.Users;
 
 public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, ICloneable
@@ -45,7 +41,6 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
     #region Properties
     
     [JsonPropertyName("name")]
-    [NewtonsoftJsonProperty("name")]
     [BsonElement("name")]
     public required string Name
     {
@@ -62,7 +57,6 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
     }
     
     [JsonPropertyName("slug")]
-    [NewtonsoftJsonProperty("slug")]
     [BsonElement("slug")]
     public string Slug
     {
@@ -79,19 +73,15 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
     }
     
     [JsonPropertyName("description")]
-    [NewtonsoftJsonProperty("description")]
     [BsonElement("description")]
     public string? Description { get; set; }
     
     [JsonPropertyName("properties")]
-    [NewtonsoftJsonProperty("properties")]
     [JsonConverter(typeof(FieldInfoCollectionJsonConverterFactory))]
-    [NewtonsoftJsonConverter(typeof(NewtonsoftFieldInfoCollectionJsonConverter))]
     [BsonIgnore]
     public IReadOnlyCollection<IFieldInfo> Properties { get => field ?? new List<IFieldInfo>(); set; }
     
     [JsonIgnore]
-    [NewtonsoftJsonIgnore]
     [BsonElement("properties")]
     // ReSharper disable once UnusedMember.Local
     private BsonDocument? PropertiesDocument
@@ -113,12 +103,10 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
     }
     
     [JsonPropertyName("allowAdditionalProperties")]
-    [NewtonsoftJsonProperty("allowAdditionalProperties")]
     [BsonElement("allowAdditionalProperties")]
     public bool AllowAdditionalProperties { get; init; }
     
     [JsonPropertyName("isAbstract")]
-    [NewtonsoftJsonProperty("isAbstract")]
     [BsonElement("isAbstract")]
     public bool IsAbstract
     {
@@ -135,7 +123,6 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
     }
     
     [JsonPropertyName("isSealed")]
-    [NewtonsoftJsonProperty("isSealed")]
     [BsonElement("isSealed")]
     public bool IsSealed
     {
@@ -152,12 +139,10 @@ public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, IClonea
     }
     
     [JsonPropertyName("baseType")]
-    [NewtonsoftJsonProperty("baseType")]
     [BsonElement("baseType")]
     public string? BaseUserType { get; set; }
     
     [JsonPropertyName("sys")]
-    [NewtonsoftJsonProperty("sys")]
     [BsonElement("sys")]
     public SysModel? Sys { get; set; }
     

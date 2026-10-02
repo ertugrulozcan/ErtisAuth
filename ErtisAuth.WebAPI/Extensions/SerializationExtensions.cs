@@ -2,6 +2,9 @@ using System.Text.Json.Serialization;
 using Ertis.Schema.Serialization;
 using Ertis.MongoDB.Serialization;
 using ErtisAuth.Extensions.Mailing.Serialization;
+using ErtisAuth.WebAPI.Filters;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace ErtisAuth.WebAPI.Extensions;
 
@@ -20,6 +23,12 @@ public static class SerializationExtensions
 			options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 			options.JsonSerializerOptions.MaxDepth = 0;
 		});
+	}
+	
+	// ReSharper disable once UnusedMethodReturnValue.Global
+	public static IFilterMetadata AddQueryActionFilter(this MvcOptions options)
+	{
+		return options.Filters.Add<QueryActionFilter>();
 	}
 	
 	#endregion

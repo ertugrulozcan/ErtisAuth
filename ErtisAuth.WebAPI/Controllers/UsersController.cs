@@ -105,12 +105,12 @@ public class UsersController : QueryControllerBase
 		return await base.Query(cancellationToken: cancellationToken);
 	}
 	
-	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string sortField, SortDirection? sortDirection, IDictionary<string, bool> selectFields, CancellationToken cancellationToken = default)
+	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string? sortField, SortDirection? sortDirection, IDictionary<string, bool> projection, CancellationToken cancellationToken = default)
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
 		{
 			var locale = this.Request.Query.ContainsKey("locale") ? this.Request.Query["locale"].ToString() : null;
-			return await this._userService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, selectFields, locale, cancellationToken: cancellationToken);
+			return await this._userService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, projection, locale, cancellationToken: cancellationToken);
 		}
 		else
 		{

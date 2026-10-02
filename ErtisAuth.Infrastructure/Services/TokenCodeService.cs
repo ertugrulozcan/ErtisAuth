@@ -4,7 +4,6 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Helpers;
-using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -15,7 +14,6 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 	private readonly ITokenCodePolicyService _tokenCodePolicyService;
 	private readonly ITokenService _tokenService;
 	private readonly IUserService _userService;
-	private readonly ILogger<TokenCodeService> _logger;
 	
 	#endregion
 	
@@ -29,20 +27,17 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 	/// <param name="tokenService"></param>
 	/// <param name="userService"></param>
 	/// <param name="repository"></param>
-	/// <param name="logger"></param>
 	public TokenCodeService(
 		IMembershipService membershipService,
 		ITokenCodePolicyService tokenCodePolicyService,
 		ITokenService tokenService,
 		IUserService userService,
-		ITokenCodeRepository repository,
-		ILogger<TokenCodeService> logger) : 
+		ITokenCodeRepository repository) : 
 		base(membershipService, repository)
 	{
 		this._tokenCodePolicyService = tokenCodePolicyService;
 		this._tokenService = tokenService;
 		this._userService = userService;
-		this._logger = logger;
 	}
 	
 	#endregion

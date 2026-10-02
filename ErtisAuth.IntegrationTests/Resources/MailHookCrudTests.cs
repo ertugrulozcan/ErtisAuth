@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using ErtisAuth.IntegrationTests.Infrastructure;
 
 namespace ErtisAuth.IntegrationTests.Resources;
@@ -16,6 +15,10 @@ public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public MailHookCrudTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

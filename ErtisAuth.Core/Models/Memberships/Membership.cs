@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using Ertis.Core.Helpers;
-using Ertis.Core.Models.Resources;
+using Ertis.Core.Models;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Cryptography;
@@ -9,24 +9,18 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
-using Newtonsoft.Json;
-using JsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
-using JsonConverter = System.Text.Json.Serialization.JsonConverterAttribute;
-using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
-using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Core.Models.Memberships;
 
 public class Membership : ResourceBase, IHasSysInfo
 {
 	#region Properties
 	
-	[JsonProperty("name")]
 	[JsonPropertyName("name")]
 	[BsonElement("name")]
 	public required string Name { get; set; }
 	
-	[JsonProperty("slug")]
 	[JsonPropertyName("slug")]
 	[BsonElement("slug")]
 	public string Slug
@@ -43,83 +37,70 @@ public class Membership : ResourceBase, IHasSysInfo
 		set => field = Slugifier.Slugify(value, Slugifier.Options.Ignore('_'));
 	}
 	
-	[JsonProperty("expires_in")]
 	[JsonPropertyName("expires_in")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
 	[BsonElement("expires_in")]
 	[BsonIgnoreIfDefault]
 	public int ExpiresIn { get; set; }
 	
-	[JsonProperty("scoped_token_expires_in")]
 	[JsonPropertyName("scoped_token_expires_in")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
 	[BsonElement("scoped_token_expires_in")]
 	[BsonIgnoreIfDefault]
 	public int ScopedTokenExpiresIn { get; set; }
 	
-	[JsonProperty("refresh_token_expires_in")]
 	[JsonPropertyName("refresh_token_expires_in")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
 	[BsonElement("refresh_token_expires_in")]
 	[BsonIgnoreIfDefault]
 	public int RefreshTokenExpiresIn { get; set; }
 	
-	[JsonProperty("reset_password_token_expires_in")]
 	[JsonPropertyName("reset_password_token_expires_in")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("reset_password_token_expires_in")]
 	[BsonIgnoreIfNull]
 	public int? ResetPasswordTokenExpiresIn { get; set; }
 	
-	[JsonProperty("secret_key")]
 	[JsonPropertyName("secret_key")]
 	[BsonElement("secret_key")]
 	public required string SecretKey { get; set; }
 	
-	[JsonProperty("hash_algorithm")]
 	[JsonPropertyName("hash_algorithm")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("hash_algorithm")]
 	[BsonIgnoreIfNull]
 	public string? HashAlgorithm { get; set; }
 	
-	[JsonProperty("encoding")]
 	[JsonPropertyName("encoding")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("encoding")]
 	[BsonIgnoreIfNull]
 	public string? DefaultEncoding { get; set; }
 	
-	[JsonProperty("default_language")]
 	[JsonPropertyName("default_language")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("default_language")]
 	[BsonIgnoreIfNull]
 	public string? DefaultLanguage { get; set; }
 	
-	[JsonProperty("mail_providers")]
 	[JsonPropertyName("mail_providers")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("mail_providers")]
 	[BsonIgnoreIfNull]
 	public IMailProvider[]? MailProviders { get; set; }
 	
-	[JsonProperty("user_activation")]
 	[JsonPropertyName("user_activation")]
 	[BsonElement("user_activation")]
-	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[JsonConverter(typeof(EnumMemberJsonConverter<Status>))]
 	[BsonSerializer(typeof(EnumMemberBsonSerializer<Status>))]
 	public Status UserActivation { get; set; }
 	
-	[JsonProperty("code_policy")]
 	[JsonPropertyName("code_policy")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("code_policy")]
 	[BsonIgnoreIfNull]
 	public string? CodePolicy { get; set; }
 	
-	[JsonProperty("otp_settings")]
 	[JsonPropertyName("otp_settings")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("otp_settings")]
@@ -131,14 +112,12 @@ public class Membership : ResourceBase, IHasSysInfo
 	/// Allows applications without their own secret to authenticate with the membership secret key.
 	/// Missing (null) on memberships created before application secrets existed, which is treated as allowed.
 	/// </summary>
-	[JsonProperty("allow_membership_secret_for_applications")]
 	[JsonPropertyName("allow_membership_secret_for_applications")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("allow_membership_secret_for_applications")]
 	[BsonIgnoreIfNull]
 	public bool? AllowMembershipSecretForApplications { get; set; }
 	
-	[JsonProperty("sys")]
 	[JsonPropertyName("sys")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("sys")]

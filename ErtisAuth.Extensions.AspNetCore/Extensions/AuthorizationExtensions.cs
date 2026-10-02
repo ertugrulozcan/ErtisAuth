@@ -31,6 +31,7 @@ public static class AuthorizationExtensions
 	/// Every 401 response carries the WWW-Authenticate challenge (RFC 9110 §15.5.2), also the ones written by controllers
 	/// (e.g. wrong credentials) and by the exception handler.
 	/// </summary>
+	// ReSharper disable once UnusedMethodReturnValue.Global
 	public static IApplicationBuilder UseWwwAuthenticateChallenge(this IApplicationBuilder app)
 	{
 		return app.Use(async (context, next) =>

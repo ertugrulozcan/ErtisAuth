@@ -10,8 +10,6 @@ namespace ErtisAuth.IntegrationTests.Memberships;
 /// <summary>
 /// 'mail_providers' is an IMailProvider[]: the concrete provider is chosen by its 'type' in JSON (MailProviderJsonConverter)
 /// and by the 'type' discriminator in BSON (MailProviderDiscriminatorConvention).
-/// Regression guard: on net10 the API had no System.Text.Json counterpart of master's Newtonsoft converter, so any
-/// membership request carrying 'mail_providers' failed with 500 ("Deserialization of interface ... IMailProvider").
 /// </summary>
 public class MembershipMailProviderTests : IClassFixture<ErtisAuthInstance>
 {
@@ -23,6 +21,10 @@ public class MembershipMailProviderTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public MembershipMailProviderTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;
@@ -34,7 +36,7 @@ public class MembershipMailProviderTests : IClassFixture<ErtisAuthInstance>
 	
 	private string MembershipUrl => $"/memberships/{this._instance.MembershipId}";
 	
-	private static JsonArray AllProviders => new JsonArray
+	private static JsonArray AllProviders => new()
 	{
 		new JsonObject
 		{

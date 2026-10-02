@@ -82,7 +82,7 @@ public abstract class BaseActionTokenTests
 		});
 		
 		// The utilizer calling the reset and activation endpoints (e.g. the application behind the public pages) holds users.update
-		this._accessControlService.HasGrantedPermission(default, default!, default!).ReturnsForAnyArgs(true);
+		this._accessControlService.HasGrantedPermission(null, null!, default!).ReturnsForAnyArgs(true);
 		
 		this.AddUser(VictimId, "victim", isActive: true, passwordHash: "victim-password-hash");
 		this.AddUser(AttackerId, "attacker", isActive: true, passwordHash: "attacker-password-hash");
@@ -265,7 +265,7 @@ public abstract class BaseActionTokenTests
 	{
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(action);
 		Assert.Equal(errorCode, exception.ErrorCode);
-		await this._repository.DidNotReceiveWithAnyArgs().UpdateAsync(default!, default!, default, default);
+		await this._repository.DidNotReceiveWithAnyArgs().UpdateAsync(null!);
 	}
 	
 	#endregion

@@ -18,7 +18,7 @@ public class ApplicationRepository : RepositoryBase<Application>, IApplicationRe
 		new SingleIndexDefinition("membership_id"),
 		new CompoundIndexDefinition("_id", "membership_id"),
 		new CompoundIndexDefinition("name", "membership_id"),
-		new TextIndexDefinition(["name", "slug"], IndexLocale.none)
+		new TextIndexDefinition(["name", "slug"])
 	};
 	
 	#endregion

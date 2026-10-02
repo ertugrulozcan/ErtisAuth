@@ -10,9 +10,9 @@
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="Ertis.Core" Version="10.0.2" />
-        <PackageReference Include="Ertis.MongoDB" Version="10.0.6" />
-        <PackageReference Include="Ertis.Net" Version="10.0.2" />
-        <PackageReference Include="Ertis.Schema" Version="10.1.7" />
+        <PackageReference Include="Ertis.Core" Version="10.0.4-preview.1" />
+        <PackageReference Include="Ertis.MongoDB" Version="10.0.9-preview.1" />
+        <PackageReference Include="Ertis.Schema" Version="10.1.10-preview.1" />
+        <PackageReference Include="Ertis.TemplateEngine" Version="10.0.3-preview.1" />
     </ItemGroup>
 </Project>

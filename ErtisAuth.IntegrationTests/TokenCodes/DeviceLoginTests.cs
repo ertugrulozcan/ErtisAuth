@@ -20,6 +20,10 @@ public class DeviceLoginTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public DeviceLoginTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

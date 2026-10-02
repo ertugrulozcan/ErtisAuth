@@ -1,13 +1,13 @@
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
 
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.WebAPI.Models.Users;
 
 public class ResetPasswordFormModel
 {
 	#region Properties
 	
-	[JsonProperty("email_address")]
 	[JsonPropertyName("email_address")]
 	public string? EmailAddress { get; set; }
 		

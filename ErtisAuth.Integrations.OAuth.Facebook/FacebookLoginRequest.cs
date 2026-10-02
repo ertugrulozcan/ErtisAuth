@@ -1,9 +1,10 @@
 using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Integrations.OAuth.Core;
-using JsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
-using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
+// ReSharper disable UnusedMember.Global
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Integrations.OAuth.Facebook;
 
 public class FacebookLoginRequest : IProviderLoginRequest<FacebookUserToken, FacebookUserToken>
@@ -11,43 +12,33 @@ public class FacebookLoginRequest : IProviderLoginRequest<FacebookUserToken, Fac
 	#region Properties
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public KnownProviders Provider => KnownProviders.Facebook;
 	
-	[JsonProperty("user")]
 	[JsonPropertyName("user")]
 	public FacebookUserToken? User { get; set; }
 	
-	[JsonProperty("appId")]
 	[JsonPropertyName("appId")]
 	public string? AppId { get; set; }
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public FacebookUserToken? Token { get; set; }
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public string? AccessToken => this.User?.AccessToken ?? this.Token?.AccessToken;
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public string? UserId => this.User?.Id;
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public string? EmailAddress => this.User?.EmailAddress;
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public bool IsEmailVerified => false;
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public string? AvatarUrl => this.User?.Picture?.Data?.Url;
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public bool IsLimited { get; set; }
 	
 	#endregion

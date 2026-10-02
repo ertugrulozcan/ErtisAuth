@@ -25,6 +25,7 @@ public abstract class RepositoryBase<TDto> : MongoRepositoryBase<TDto>, IReposit
 	/// (the same as the default clock skew of JWT validation). Expiry is always checked by the application itself;
 	/// TTL indexes only keep the collections from growing.
 	/// </summary>
+	// ReSharper disable once StaticMemberInGenericType
 	protected static readonly TimeSpan TTLGracePeriod = TimeSpan.FromMinutes(5);
 	
 	#endregion

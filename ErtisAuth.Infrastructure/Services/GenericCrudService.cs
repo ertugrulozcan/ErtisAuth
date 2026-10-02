@@ -91,11 +91,11 @@ public abstract class GenericCrudService<TModel> :
 		bool? withCount = null, 
 		string? sortField = null, 
 		SortDirection? sortDirection = null,
-		IDictionary<string, bool>? selectFields = null, 
+		IDictionary<string, bool>? projection = null, 
 		CancellationToken cancellationToken = default)
 	{
 		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
-		return await this._repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
+		return await this._repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, projection, cancellationToken: cancellationToken);
 	}
 	
 	#endregion

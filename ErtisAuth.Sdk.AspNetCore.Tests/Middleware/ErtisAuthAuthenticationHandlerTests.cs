@@ -99,7 +99,7 @@ public class ErtisAuthAuthenticationHandlerTests
 		var result = await this.AuthenticateAsync(TestHttpContext.Create("Bearer access-token"));
 		
 		Assert.True(result.None);
-		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(null!, null!);
 	}
 	
 	[Fact]
@@ -133,7 +133,7 @@ public class ErtisAuthAuthenticationHandlerTests
 		
 		Assert.True(result.Succeeded);
 		await this._basicHandler.Received(1).CheckAuthorizationAsync(Arg.Is<BasicToken>(x => x.AccessToken == $"{ApplicationId}:secret"), Arg.Any<HttpContext>());
-		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(null!, null!);
 	}
 	
 	[Fact]
@@ -154,7 +154,7 @@ public class ErtisAuthAuthenticationHandlerTests
 		
 		Assert.True(result.Succeeded);
 		await this._bearerHandler.Received(1).CheckAuthenticationAsync(Arg.Any<BearerToken>());
-		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(null!, null!);
 	}
 	
 	/// <summary>
@@ -169,7 +169,7 @@ public class ErtisAuthAuthenticationHandlerTests
 		
 		Assert.True(result.Succeeded);
 		await this._bearerHandler.Received(1).CheckAuthenticationAsync(Arg.Any<BearerToken>());
-		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(null!, null!);
 	}
 	
 	[Fact]
@@ -182,7 +182,7 @@ public class ErtisAuthAuthenticationHandlerTests
 		
 		Assert.True(result.Succeeded);
 		await this._basicHandler.Received(1).CheckAuthenticationAsync(Arg.Any<BasicToken>());
-		await this._basicHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+		await this._basicHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(null!, null!);
 	}
 	
 	[Fact]
@@ -194,7 +194,7 @@ public class ErtisAuthAuthenticationHandlerTests
 		
 		Assert.True(result.Succeeded);
 		await this._bearerHandler.Received(1).CheckAuthorizationAsync(Arg.Any<BearerToken>(), Arg.Any<HttpContext>());
-		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthenticationAsync(default!);
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthenticationAsync(null!);
 	}
 	
 	[Fact]
@@ -276,8 +276,8 @@ public class ErtisAuthAuthenticationHandlerTests
 		
 		Assert.NotNull(result.Failure);
 		Assert.Equal(ErrorMessage(errorCode), result.Failure.Message);
-		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
-		await this._basicHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(default!, default!);
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(null!, null!);
+		await this._basicHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(null!, null!);
 	}
 	
 	private static string ErrorMessage(string errorCode)

@@ -1,14 +1,13 @@
 using System.Text.Json.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
-using Newtonsoft.Json;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Core.Models.Users;
 
 public class UserWithPasswordHash : User
 {
 	#region Properties
 	
-	[JsonProperty("password_hash")]
 	[JsonPropertyName("password_hash")]
 	[BsonElement("password_hash")]
 	public string? PasswordHash { get; set; }
@@ -28,6 +27,7 @@ public class UserWithPasswordHash : User
 	/// <summary>
 	/// Constructor with user
 	/// </summary>
+	// ReSharper disable once UnusedMember.Global
 	public UserWithPasswordHash(User user)
 	{
 		this.Id = user.Id;

@@ -170,12 +170,12 @@ public static class HashParser
 				outputBitSize = 256;
 				stateSize = 0;
 				return true;
-			case "PBKDF2" when segments.Length == 2 && segments[1] == "SHA256":
+			case "PBKDF2" when segments is [_, "SHA256"]:
 				algorithm = HashAlgorithms.PBKDF2_SHA256;
 				outputBitSize = 256;
 				stateSize = 0;
 				return true;
-			case "PBKDF2" when segments.Length == 2 && segments[1] == "SHA512":
+			case "PBKDF2" when segments is [_, "SHA512"]:
 				algorithm = HashAlgorithms.PBKDF2_SHA512;
 				outputBitSize = 512;
 				stateSize = 0;

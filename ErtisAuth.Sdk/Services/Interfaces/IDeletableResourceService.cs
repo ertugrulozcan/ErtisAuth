@@ -1,4 +1,4 @@
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 using ErtisAuth.Core.Models.Identity;
 
 // ReSharper disable UnusedMember.Global

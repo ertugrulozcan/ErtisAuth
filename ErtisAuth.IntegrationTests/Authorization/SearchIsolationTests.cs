@@ -26,6 +26,10 @@ public class SearchIsolationTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public SearchIsolationTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

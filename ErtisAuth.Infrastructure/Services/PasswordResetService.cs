@@ -82,7 +82,7 @@ public class PasswordResetService : IPasswordResetService
 			membership
 		};
 		
-		await this._eventService.FireEventAsync(ErtisAuthEventType.UserPasswordReset, user, membershipId, eventPayload, cancellationToken: cancellationToken);
+		await this._eventService.FireEventAsync(ErtisAuthEventType.UserPasswordReset, utilizer, membershipId, eventPayload, cancellationToken: cancellationToken);
 		
 		await this.SendResetPasswordMailAsync(resetPasswordToken, user, membership, host, cancellationToken: cancellationToken);
 		

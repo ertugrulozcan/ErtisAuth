@@ -33,6 +33,7 @@ public static class ErtisAuthExtensions
 	/// </summary>
 	/// <param name="services"></param>
 	/// <param name="configure"></param>
+	// ReSharper disable once UnusedMethodReturnValue.Global
 	public static IServiceCollection AddErtisAuth(this IServiceCollection services, Action<ErtisAuthOptions> configure)
 	{
 		return services.AddErtisAuth<ErtisAuthAuthenticationHandler>(configure);

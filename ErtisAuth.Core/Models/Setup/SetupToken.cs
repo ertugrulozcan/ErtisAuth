@@ -1,5 +1,6 @@
 using MongoDB.Bson.Serialization.Attributes;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Core.Models.Setup;
 
 /// <summary>

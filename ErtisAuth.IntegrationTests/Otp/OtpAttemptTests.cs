@@ -29,6 +29,10 @@ public class OtpAttemptTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public OtpAttemptTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;
@@ -71,10 +75,8 @@ public class OtpAttemptTests : IClassFixture<ErtisAuthInstance>
 	
 	private async Task<HttpResponseMessage> VerifyOtpAsync(string code)
 	{
-		using var request = new HttpRequestMessage(HttpMethod.Post, "/verify-otp")
-		{
-			Content = JsonContent.Create(new { username = ErtisAuthInstance.AdminUsername, password = code })
-		};
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/verify-otp");
+		request.Content = JsonContent.Create(new { username = ErtisAuthInstance.AdminUsername, password = code });
 		
 		request.Headers.Add("Membership", this._instance.MembershipId);
 		request.Headers.Add("X-Host", OtpHost);

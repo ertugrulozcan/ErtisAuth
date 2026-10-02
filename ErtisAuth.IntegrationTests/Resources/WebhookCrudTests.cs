@@ -13,6 +13,10 @@ public class WebhookCrudTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public WebhookCrudTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

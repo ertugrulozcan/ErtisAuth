@@ -1,9 +1,8 @@
 using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Integrations.OAuth.Core;
-using JsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
-using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Integrations.OAuth.Microsoft;
 
 public class MicrosoftLoginRequest : IProviderLoginRequest<MicrosoftToken, MicrosoftUser>
@@ -11,39 +10,30 @@ public class MicrosoftLoginRequest : IProviderLoginRequest<MicrosoftToken, Micro
 	#region Properties
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public KnownProviders Provider => KnownProviders.Microsoft;
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public MicrosoftUser? User { get; set; }
 	
-	[JsonProperty("token")]
 	[JsonPropertyName("token")]
 	public MicrosoftToken? Token { get; set; }
 	
-	[JsonProperty("clientId")]
 	[JsonPropertyName("clientId")]
 	public string? ClientId { get; set; }
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public string? UserId => this.User?.Id;
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public string? EmailAddress => this.User?.EmailAddress;
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public bool IsEmailVerified => false;
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public string? AccessToken => this.Token?.AccessToken;
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public string? AvatarUrl => this.User?.Photo;
 	
 	#endregion

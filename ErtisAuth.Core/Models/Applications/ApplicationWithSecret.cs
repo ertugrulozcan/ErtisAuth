@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
-using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Applications;
 
@@ -14,7 +13,6 @@ public class ApplicationWithSecret : Application
 {
 	#region Properties
 	
-	[JsonProperty("secret")]
 	[JsonPropertyName("secret")]
 	[BsonIgnore]
 	public string Secret { get; }

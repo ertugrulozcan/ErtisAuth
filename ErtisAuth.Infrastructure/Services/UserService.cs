@@ -1,5 +1,5 @@
 using Ertis.Core.Collections;
-using Ertis.Core.Models.Resources;
+using Ertis.Core.Models;
 using Ertis.MongoDB.Queries;
 using Ertis.Schema.Dynamics;
 using Ertis.Schema.Exceptions;
@@ -687,14 +687,14 @@ public class UserService : DynamicObjectCrudService, IUserService
         bool? withCount = null,
         string? orderBy = null, 
         SortDirection? sortDirection = null, 
-        IDictionary<string, bool>? selectFields = null, 
+        IDictionary<string, bool>? projection = null, 
         string? locale = null, 
         CancellationToken cancellationToken = default)
     {
 		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
         query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId, HiddenFields);
         QueryHelper.EnsureSortable(orderBy, HiddenFields);
-		var results = await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, language: locale, cancellationToken: cancellationToken);
+		var results = await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, projection, language: locale, cancellationToken: cancellationToken);
 		return results.HidePasswordHash();
     }
     

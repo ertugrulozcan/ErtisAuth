@@ -1,4 +1,4 @@
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using ErtisAuth.Core.Exceptions;
@@ -21,7 +21,7 @@ public class MicrosoftAuthenticator : IMicrosoftAuthenticator
 	
 	#region Services
 	
-	private readonly ISystemRestHandler restHandler;
+	private readonly IRestHandler restHandler;
 	
 	#endregion
 	
@@ -31,7 +31,7 @@ public class MicrosoftAuthenticator : IMicrosoftAuthenticator
 	/// Constructor
 	/// </summary>
 	/// <param name="restHandler"></param>
-	public MicrosoftAuthenticator(ISystemRestHandler restHandler)
+	public MicrosoftAuthenticator(IRestHandler restHandler)
 	{
 		this.restHandler = restHandler;
 	}

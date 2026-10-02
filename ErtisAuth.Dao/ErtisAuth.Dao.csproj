@@ -6,11 +6,11 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="Ertis.Data" Version="10.0.0" />
+        <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
+        <ProjectReference Include="..\ErtisAuth.Extensions.Mailing\ErtisAuth.Extensions.Mailing.csproj" />
     </ItemGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\ErtisAuth.Core\ErtisAuth.Core.csproj" />
-        <ProjectReference Include="..\ErtisAuth.Extensions.Mailing\ErtisAuth.Extensions.Mailing.csproj" />
+      <PackageReference Include="Ertis.MongoDB" Version="10.0.9-preview.1" />
     </ItemGroup>
 </Project>

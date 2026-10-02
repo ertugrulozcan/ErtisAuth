@@ -20,6 +20,7 @@ internal sealed class SdkTestServices
 	
 	public RecordingHttpMessageHandler Handler { get; } = new();
 	
+	// ReSharper disable once MemberCanBePrivate.Global
 	public IServiceProvider ServiceProvider { get; }
 	
 	#endregion

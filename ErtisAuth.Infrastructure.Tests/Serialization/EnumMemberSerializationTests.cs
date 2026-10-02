@@ -9,7 +9,7 @@ using MongoDB.Bson.Serialization;
 namespace ErtisAuth.Infrastructure.Tests.Serialization;
 
 /// <summary>
-/// Status values are stored and returned in lowercase ([EnumMember] value) as before .NET 10 (DTO layer + Newtonsoft):
+/// Status values are stored and returned in lowercase ([EnumMember] value) as before .NET 10:
 /// WebhookService queries active webhooks with status == "active".
 /// </summary>
 public class EnumMemberSerializationTests

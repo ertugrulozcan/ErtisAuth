@@ -13,6 +13,10 @@ public class CodePolicyCrudTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public CodePolicyCrudTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

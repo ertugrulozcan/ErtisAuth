@@ -1,9 +1,11 @@
 using System.Text.Json.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
-using Newtonsoft.Json;
-using JsonIgnore = System.Text.Json.Serialization.JsonIgnoreAttribute;
-using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
 
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 namespace ErtisAuth.Core.Models.Identity;
 
 public class ResetPasswordToken
@@ -17,14 +19,12 @@ public class ResetPasswordToken
 	
 	#region Properties
 	
-	[JsonProperty("reset_token")]
 	[JsonPropertyName("reset_token")]
 	[BsonElement("reset_token")]
 	public string Token { get; protected set; }
 	
 	[JsonIgnore]
 	[BsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public TimeSpan ExpiresIn
 	{
 		get => this.expiresIn;
@@ -35,7 +35,6 @@ public class ResetPasswordToken
 		}
 	}
 	
-	[JsonProperty("expires_in")]
 	[JsonPropertyName("expires_in")]
 	[BsonElement("expires_in")]
 	public int ExpiresInTimeStamp
@@ -48,14 +47,12 @@ public class ResetPasswordToken
 		}
 	}
 	
-	[JsonProperty("created_at")]
 	[JsonPropertyName("created_at")]
 	[BsonElement("created_at")]
 	public DateTime CreatedAt { get; protected set; }
 	
 	[JsonIgnore]
 	[BsonIgnore]
-	[NewtonsoftJsonIgnore]
 	public bool IsExpired => DateTime.UtcNow > this.ExpireTime;
 	
 	/// <summary>
@@ -63,7 +60,6 @@ public class ResetPasswordToken
 	/// Not serialized to clients.
 	/// </summary>
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	[BsonElement("expire_time")]
 	public DateTime ExpireTime => this.CreatedAt.Add(this.ExpiresIn);
 	

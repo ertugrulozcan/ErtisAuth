@@ -38,7 +38,7 @@ public sealed class NullableEnumMemberBsonSerializer<TEnum> : SerializerBase<TEn
 {
 	#region Fields
 	
-	private readonly Core.Serialization.EnumMemberBsonSerializer<TEnum> _serializer = new();
+	private readonly EnumMemberBsonSerializer<TEnum> _serializer = new();
 	
 	#endregion
 	

@@ -1,4 +1,4 @@
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 
 namespace ErtisAuth.Sdk.Extensions;
 

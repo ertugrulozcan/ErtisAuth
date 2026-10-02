@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using ErtisAuth.IntegrationTests.Infrastructure;
 using ErtisAuth.IntegrationTests.Resources;
@@ -54,6 +53,10 @@ public class QueryIsolationTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public QueryIsolationTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

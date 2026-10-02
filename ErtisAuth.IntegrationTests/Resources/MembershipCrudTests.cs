@@ -16,6 +16,10 @@ public class MembershipCrudTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public MembershipCrudTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

@@ -1,4 +1,4 @@
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using ErtisAuth.Core.Exceptions;
@@ -27,7 +27,7 @@ public class FacebookAuthenticator : IFacebookAuthenticator
 	
 	#region Services
 	
-	private readonly ISystemRestHandler restHandler;
+	private readonly IRestHandler restHandler;
 	
 	#endregion
 	
@@ -37,7 +37,7 @@ public class FacebookAuthenticator : IFacebookAuthenticator
 	/// Constructor
 	/// </summary>
 	/// <param name="restHandler"></param>
-	public FacebookAuthenticator(ISystemRestHandler restHandler)
+	public FacebookAuthenticator(IRestHandler restHandler)
 	{
 		this.restHandler = restHandler;
 	}

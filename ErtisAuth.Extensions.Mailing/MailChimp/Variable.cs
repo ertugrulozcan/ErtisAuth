@@ -1,17 +1,16 @@
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
 
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Extensions.Mailing.MailChimp;
 
 public class Variable
 {
 	#region Properties
 	
-	[JsonProperty("name")]
 	[JsonPropertyName("name")]
 	public string? Name { get; set; }
 	
-	[JsonProperty("content")]
 	[JsonPropertyName("content")]
 	public string? Content { get; set; }
 	

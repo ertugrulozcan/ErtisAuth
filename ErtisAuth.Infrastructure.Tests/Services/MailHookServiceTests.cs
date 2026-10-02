@@ -1,19 +1,23 @@
 using Ertis.Schema.Dynamics;
 using System.Net;
 using Ertis.Core.Exceptions;
-using Ertis.Net.Rest;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Mailing;
+using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using ErtisAuth.Extensions.Mailing.Services.Interfaces;
+using ErtisAuth.Extensions.Mailing.SmtpServer;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.Infrastructure.Tests.Helpers;
 using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Bson;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
+using MailChimpProvider = ErtisAuth.Extensions.Mailing.MailChimp.MailChimpProvider;
+using SendGridProvider = ErtisAuth.Extensions.Mailing.SendGrid.SendGridProvider;
 
 namespace ErtisAuth.Infrastructure.Tests.Services;
 
@@ -40,7 +44,12 @@ public class MailHookServiceTests
 	
 	private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
 	
-	private readonly IMailProvider _mailProvider = Substitute.For<IMailProvider>();
+	// MailHookService finds the mail service by the provider type and sends through the non-generic interfaces
+	private readonly IRawMailService _smtpService = Substitute.For<IRawMailService>();
+	
+	private readonly ITemplateMailService _mailChimpService = Substitute.For<ITemplateMailService>();
+	
+	private readonly Membership _membership;
 	
 	private readonly List<MailHook> _mailHooks;
 	
@@ -54,12 +63,12 @@ public class MailHookServiceTests
 	
 	public MailHookServiceTests()
 	{
+		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		this._mailHooks = InMemoryRepository.Setup(this._repository, x => x.Id ??= ObjectId.GenerateNewId().ToString());
 		
-		this._mailProvider.Slug.Returns("smtp");
-		this._mailProvider.DeliveryMode.Returns(DeliveryMode.Default);
-		this._mailProvider
-			.SendMailAsync(Arg.Any<ISystemRestHandler>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IEnumerable<Recipient>>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+		this._smtpService.GetProviderType().Returns(MailProviderType.SmtpServer);
+		this._smtpService
+			.SendMailAsync(Arg.Any<IMailProvider>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IEnumerable<Recipient>>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo =>
 			{
 				lock (this._sentMails)
@@ -70,8 +79,9 @@ public class MailHookServiceTests
 				return Task.CompletedTask;
 			});
 		
-		this._mailProvider
-			.SendMailWithTemplateAsync(Arg.Any<ISystemRestHandler>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IEnumerable<Recipient>>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IDictionary<string, string>>(), Arg.Any<CancellationToken>())
+		this._mailChimpService.GetProviderType().Returns(MailProviderType.MailChimp);
+		this._mailChimpService
+			.SendMailWithTemplateAsync(Arg.Any<IMailProvider>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IEnumerable<Recipient>>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IDictionary<string, string>>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo =>
 			{
 				lock (this._sentMails)
@@ -82,12 +92,12 @@ public class MailHookServiceTests
 				return Task.CompletedTask;
 			});
 		
-		var membership = TestServiceFactory.CreateMembership();
-		membership.Id = MembershipId;
-		membership.MailProviders = [this._mailProvider];
-		this._membershipService.GetAsync(MembershipId, Arg.Any<CancellationToken>()).Returns(membership);
+		this._membership = TestServiceFactory.CreateMembership();
+		this._membership.Id = MembershipId;
+		this._membership.MailProviders = [CreateSmtpProvider()];
+		this._membershipService.GetAsync(MembershipId, Arg.Any<CancellationToken>()).Returns(this._membership);
 		
-		this._userRepository.FindOneAsync(UserId, Arg.Any<CancellationToken>()).Returns((object) new User
+		this._userRepository.FindOneAsync(UserId, Arg.Any<CancellationToken>()).Returns(new User
 		{
 			Id = UserId,
 			Username = "john.doe",
@@ -115,9 +125,21 @@ public class MailHookServiceTests
 	
 	#region Helpers
 	
-	private MailHookService CreateService()
+	private MailHookService CreateService(IEnumerable<IMailService>? mailServices = null)
 	{
-		return new MailHookService(this._membershipService, Substitute.For<ISystemRestHandler>(), this._eventService, this._repository, this._userRepository, NullLogger<MailHookService>.Instance);
+		return new MailHookService(this._membershipService, this._eventService, mailServices ?? [this._smtpService, this._mailChimpService], this._repository, this._userRepository, NullLogger<MailHookService>.Instance);
+	}
+	
+	private static SmtpServerProvider CreateSmtpProvider()
+	{
+		return new SmtpServerProvider
+		{
+			Name = "smtp",
+			Host = "smtp.example.com",
+			Port = 587,
+			Username = "mailer",
+			Password = "secret"
+		};
 	}
 	
 	private static MailHook CreateMailHook(
@@ -226,9 +248,9 @@ public class MailHookServiceTests
 	[Fact]
 	public async Task SendHookMailAsync_WithTemplateDeliveryMode_SendsTheFormattedVariables()
 	{
-		// Template providers (SendGrid, MailChimp) escape the variables themselves
-		this._mailProvider.DeliveryMode.Returns(DeliveryMode.Template);
-		var mailHook = CreateMailHook();
+		// Template providers (MailChimp) escape the variables themselves
+		this._membership.MailProviders = [new MailChimpProvider { Name = "mailchimp", ApiKey = "key" }];
+		var mailHook = CreateMailHook(mailProvider: "mailchimp");
 		mailHook.Variables = [new MailHookVariable { Key = "name", Value = "{{user.firstname}}" }, new MailHookVariable { Key = "empty", Value = null }];
 		
 		var mail = await this.SendAsync(mailHook, new { user = new { firstname = "<b>John</b>" } });
@@ -260,14 +282,42 @@ public class MailHookServiceTests
 	[Fact]
 	public async Task SendHookMailAsync_WhenTheProviderFails_FiresMailhookMailFailed()
 	{
-		this._mailProvider
-			.SendMailAsync(Arg.Any<ISystemRestHandler>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IEnumerable<Recipient>>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+		this._smtpService
+			.SendMailAsync(Arg.Any<IMailProvider>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IEnumerable<Recipient>>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.ThrowsAsync(new InvalidOperationException("SMTP unavailable"));
 		
 		this.CreateService().SendHookMailAsync(CreateMailHook(), UserId, MembershipId, new { }, TestContext.Current.CancellationToken);
 		await this.WaitForOutcomeEventsAsync(1);
 		
 		Assert.Equal(ErtisAuthEventType.MailhookMailFailed, Assert.Single(this.OutcomeEvents()));
+	}
+	
+	[Fact]
+	public async Task SendHookMailAsync_WithoutMailServiceForTheProviderType_FiresMailhookMailFailed()
+	{
+		// Only the SMTP and MailChimp services are registered
+		this._membership.MailProviders = [new SendGridProvider { Name = "sendgrid", ApiKey = "key" }];
+		
+		this.CreateService().SendHookMailAsync(CreateMailHook(mailProvider: "sendgrid"), UserId, MembershipId, new { }, TestContext.Current.CancellationToken);
+		await this.WaitForOutcomeEventsAsync(1);
+		
+		Assert.Equal(ErtisAuthEventType.MailhookMailFailed, Assert.Single(this.OutcomeEvents()));
+		Assert.Empty(this._sentMails);
+	}
+	
+	[Fact]
+	public async Task SendHookMailAsync_WhenTheMailServiceDoesNotSupportTheDeliveryMode_FiresMailhookMailFailed()
+	{
+		// The MailChimp provider delivers with templates, but its registered service sends only raw mails
+		var rawOnlyService = Substitute.For<IRawMailService>();
+		rawOnlyService.GetProviderType().Returns(MailProviderType.MailChimp);
+		this._membership.MailProviders = [new MailChimpProvider { Name = "mailchimp", ApiKey = "key" }];
+		
+		this.CreateService([rawOnlyService]).SendHookMailAsync(CreateMailHook(mailProvider: "mailchimp"), UserId, MembershipId, new { }, TestContext.Current.CancellationToken);
+		await this.WaitForOutcomeEventsAsync(1);
+		
+		Assert.Equal(ErtisAuthEventType.MailhookMailFailed, Assert.Single(this.OutcomeEvents()));
+		await rawOnlyService.DidNotReceiveWithAnyArgs().SendMailAsync(null!, null!, null!, null!, null!, null!, CancellationToken.None);
 	}
 	
 	[Theory]
@@ -376,7 +426,7 @@ public class MailHookServiceTests
 		var service = this.CreateService();
 		await service.CreateAsync(CreateMailHook(), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuth.Core.Exceptions.ErtisAuthException>(() => service.CreateAsync(CreateMailHook(), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<Core.Exceptions.ErtisAuthException>(() => service.CreateAsync(CreateMailHook(), MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		
 		Assert.Equal(HttpStatusCode.Conflict, exception.StatusCode);
 	}

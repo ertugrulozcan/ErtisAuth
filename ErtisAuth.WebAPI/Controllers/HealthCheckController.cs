@@ -39,22 +39,7 @@ public class HealthCheckController : ControllerBase
 	{
 		try
 		{
-			var dbStatisticsTask = this._database.GetDatabaseStatisticsAsync();
-			var listCollectionsTask = this._database.ListCollectionsAsync();
-			
-			await Task.WhenAll(dbStatisticsTask, listCollectionsTask);
-			
-			var dbStatistics = await dbStatisticsTask;
-			if (dbStatistics == null)
-			{
-				return this.Ok(new
-				{
-					Status = "Unhealthy",
-					Message = "Database statistics could not fetched"
-				});
-			}
-			
-			var collectionList = (await listCollectionsTask).ToList();
+			var collectionList = (await this._database.ListCollectionsAsync()).ToList();
 			if (!collectionList.Contains("memberships") ||
 				!collectionList.Contains("roles") ||
 				!collectionList.Contains("users") ||

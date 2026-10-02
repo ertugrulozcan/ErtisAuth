@@ -2,18 +2,11 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
 public class ActiveTokenService : MembershipBoundedService<ActiveToken>, IActiveTokenService
 {
-	#region Services
-	
-	private readonly ILogger<ActiveTokenService> _logger;
-	
-	#endregion
-	
 	#region Constructors
 	
 	/// <summary>
@@ -21,14 +14,12 @@ public class ActiveTokenService : MembershipBoundedService<ActiveToken>, IActive
 	/// </summary>
 	/// <param name="membershipService"></param>
 	/// <param name="repository"></param>
-	/// <param name="logger"></param>
 	public ActiveTokenService(
 		IMembershipService membershipService,
-		IActiveTokensRepository repository,
-		ILogger<ActiveTokenService> logger) :
+		IActiveTokensRepository repository) :
 		base(membershipService, repository)
 	{
-		this._logger = logger;
+		
 	}
 	
 	#endregion

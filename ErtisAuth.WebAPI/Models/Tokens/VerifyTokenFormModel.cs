@@ -1,13 +1,13 @@
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
 
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.WebAPI.Models.Tokens;
 
 public class VerifyTokenFormModel
 {
 	#region Properties
 	
-	[JsonProperty("token")]
 	[JsonPropertyName("token")]
 	public string? Token { get; set; }
 	

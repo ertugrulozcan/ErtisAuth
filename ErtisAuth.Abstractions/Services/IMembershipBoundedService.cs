@@ -31,7 +31,7 @@ public interface IMembershipBoundedService<TModel> : IMembershipBoundedService w
 		bool? withCount = null, 
 		string? sortField = null, 
 		SortDirection? sortDirection = null,
-		IDictionary<string, bool>? selectFields = null, 
+		IDictionary<string, bool>? projection = null, 
 		CancellationToken cancellationToken = default);
 	
 	Task<TModel?> GetAsync(string id, string membershipId, CancellationToken cancellationToken = default);

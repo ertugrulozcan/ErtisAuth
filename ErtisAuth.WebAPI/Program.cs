@@ -3,8 +3,8 @@ using ErtisAuth.Extensions.Database;
 using ErtisAuth.Extensions.Prometheus;
 using ErtisAuth.Integrations.OAuth.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.Mailing.Extensions;
 using ErtisAuth.WebAPI.Extensions;
-using ErtisAuth.WebAPI.Filters;
 using Microsoft.AspNetCore.ResponseCompression;
 using Scalar.AspNetCore;
 
@@ -18,6 +18,9 @@ builder.Services.AddServices();
 
 // Providers
 builder.Services.AddProviders();
+
+// Mail Providers
+builder.Services.AddMailProviders();
 
 // MemoryCache
 builder.Services.AddMemoryCache();
@@ -49,7 +52,9 @@ builder.Services.AddResponseCompression(options =>
 builder.Services.AddOpenApi();
 
 // Controllers & JSON Options
-builder.Services.AddControllers(options => options.Filters.Add<QueryActionFilter>()).AddJsonSerialization();
+builder.Services
+	.AddControllers(options => options.AddQueryActionFilter())
+	.AddJsonSerialization();
 
 // Graceful shutdown
 builder.ConfigureShutdown();
@@ -89,4 +94,6 @@ app.UseServices();
 app.Run();
 
 // Exposes the entry point to WebApplicationFactory (for ErtisAuth.IntegrationTests)
+#pragma warning disable ASP0027
 public partial class Program;
+#pragma warning restore ASP0027

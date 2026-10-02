@@ -38,6 +38,10 @@ public partial class UserPasswordFlowTests : IClassFixture<MailingErtisAuthInsta
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public UserPasswordFlowTests(MailingErtisAuthInstance instance)
 	{
 		this._instance = instance;
@@ -81,10 +85,8 @@ public partial class UserPasswordFlowTests : IClassFixture<MailingErtisAuthInsta
 	private async Task<HttpResponseMessage> RequestPasswordResetAsync(string emailAddress, string? host = MailingErtisAuthInstance.Host)
 	{
 		var adminClient = await this._instance.CreateAdminClientAsync();
-		using var request = new HttpRequestMessage(HttpMethod.Post, $"{this.UsersUrl}/reset-password")
-		{
-			Content = JsonContent.Create(new { email_address = emailAddress })
-		};
+		using var request = new HttpRequestMessage(HttpMethod.Post, $"{this.UsersUrl}/reset-password");
+		request.Content = JsonContent.Create(new { email_address = emailAddress });
 		
 		if (host != null)
 		{
@@ -97,6 +99,7 @@ public partial class UserPasswordFlowTests : IClassFixture<MailingErtisAuthInsta
 	/// <summary>
 	/// The link in the mail, and its reset token as a browser reads it from the query string.
 	/// </summary>
+	// ReSharper disable once UnusedTupleComponentInReturnValue
 	private static (string Link, string ResetToken) ReadResetLink(MimeMessage message)
 	{
 		var link = HttpUtility.HtmlDecode(LinkRegex().Match(message.HtmlBody ?? string.Empty).Groups["link"].Value);

@@ -20,6 +20,10 @@ public sealed class OAuthErtisAuthInstance : ErtisAuthInstance
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="mongo"></param>
 	public OAuthErtisAuthInstance(MongoDbContainerFixture mongo) : base(mongo)
 	{
 	

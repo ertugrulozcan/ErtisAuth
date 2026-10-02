@@ -20,6 +20,10 @@ public class ResourceRequestTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public ResourceRequestTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

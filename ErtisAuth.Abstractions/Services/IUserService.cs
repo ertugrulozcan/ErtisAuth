@@ -44,7 +44,7 @@ public interface IUserService : IDeletableMembershipBoundedService
         bool? withCount = null, 
         string? orderBy = null, 
         SortDirection? sortDirection = null, 
-        IDictionary<string, bool>? selectFields = null, 
+        IDictionary<string, bool>? projection = null, 
         string? locale = null, 
         CancellationToken cancellationToken = default);
     

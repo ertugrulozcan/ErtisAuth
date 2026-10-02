@@ -105,7 +105,6 @@ public class TokenRetentionTests
 		var token = new ResetPasswordToken("token", TimeSpan.FromMinutes(3));
 		
 		Assert.DoesNotContain("expire_time", System.Text.Json.JsonSerializer.Serialize(token));
-		Assert.DoesNotContain("expire_time", Newtonsoft.Json.JsonConvert.SerializeObject(token));
 	}
 	
 	#endregion

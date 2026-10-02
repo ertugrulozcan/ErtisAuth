@@ -337,36 +337,36 @@ public class ApplicationServiceSecretTests
 	
 	#region Query
 	
-	private async Task<IDictionary<string, bool>?> QuerySelectFieldsAsync(ApplicationService applicationService, IDictionary<string, bool>? selectFields)
+	private async Task<IDictionary<string, bool>?> QueryProjectionAsync(ApplicationService applicationService, IDictionary<string, bool>? projection)
 	{
-		await applicationService.QueryAsync("{}", this._membership.Id, selectFields: selectFields, cancellationToken: TestContext.Current.CancellationToken);
+		await applicationService.QueryAsync("{}", this._membership.Id, projection: projection, cancellationToken: TestContext.Current.CancellationToken);
 		var queryCall = this._repository.ReceivedCalls().Last(x => x.GetMethodInfo().Name == nameof(IApplicationRepository.QueryAsync));
 		return queryCall.GetArguments().OfType<IDictionary<string, bool>>().SingleOrDefault();
 	}
 	
 	[Fact]
-	public async Task QueryAsync_WithoutSelectFields_ExcludesSecretHash()
+	public async Task QueryAsync_WithoutProjection_ExcludesSecretHash()
 	{
-		var selectFields = await this.QuerySelectFieldsAsync(this.CreateApplicationService(), null);
+		var projection = await this.QueryProjectionAsync(this.CreateApplicationService(), null);
 		
-		Assert.NotNull(selectFields);
-		Assert.False(selectFields["secret_hash"]);
+		Assert.NotNull(projection);
+		Assert.False(projection["secret_hash"]);
 	}
 	
 	[Fact]
-	public async Task QueryAsync_WithExclusionSelectFields_AlsoExcludesSecretHash()
+	public async Task QueryAsync_WithExclusionProjection_AlsoExcludesSecretHash()
 	{
-		var selectFields = await this.QuerySelectFieldsAsync(this.CreateApplicationService(), new Dictionary<string, bool> { { "role", false } });
+		var projection = await this.QueryProjectionAsync(this.CreateApplicationService(), new Dictionary<string, bool> { { "role", false } });
 		
-		Assert.NotNull(selectFields);
-		Assert.False(selectFields["role"]);
-		Assert.False(selectFields["secret_hash"]);
+		Assert.NotNull(projection);
+		Assert.False(projection["role"]);
+		Assert.False(projection["secret_hash"]);
 	}
 	
 	[Fact]
-	public async Task QueryAsync_WithInclusionSelectFields_DropsSecretHashFromIncludedFields()
+	public async Task QueryAsync_WithInclusionProjection_DropsSecretHashFromIncludedFields()
 	{
-		var selectFields = await this.QuerySelectFieldsAsync(this.CreateApplicationService(), new Dictionary<string, bool>
+		var projection = await this.QueryProjectionAsync(this.CreateApplicationService(), new Dictionary<string, bool>
 		{
 			{ "name", true },
 			{ "secret_hash", true },
@@ -374,10 +374,10 @@ public class ApplicationServiceSecretTests
 			{ "_id", false }
 		});
 		
-		Assert.NotNull(selectFields);
-		Assert.True(selectFields["name"]);
-		Assert.False(selectFields["_id"]);
-		Assert.DoesNotContain(selectFields.Keys, x => x.StartsWith("secret_hash"));
+		Assert.NotNull(projection);
+		Assert.True(projection["name"]);
+		Assert.False(projection["_id"]);
+		Assert.DoesNotContain(projection.Keys, x => x.StartsWith("secret_hash"));
 	}
 	
 	#endregion

@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using MimeKit;
 
+// ReSharper disable MemberCanBePrivate.Global
 namespace ErtisAuth.IntegrationTests.Infrastructure;
 
 /// <summary>

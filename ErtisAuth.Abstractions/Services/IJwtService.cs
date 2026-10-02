@@ -4,6 +4,8 @@ using ErtisAuth.Core.Models.Memberships;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedMemberInSuper.Global
 namespace ErtisAuth.Abstractions.Services;
 
 public interface IJwtService

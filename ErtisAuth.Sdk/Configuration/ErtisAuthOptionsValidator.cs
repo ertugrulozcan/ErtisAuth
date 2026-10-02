@@ -10,6 +10,7 @@ public static class ErtisAuthOptionsValidator
 {
 	#region Methods
 	
+	// ReSharper disable once MemberCanBePrivate.Global
 	public static IReadOnlyList<string> GetErrors(ErtisAuthOptions options)
 	{
 		var errors = new List<string>();

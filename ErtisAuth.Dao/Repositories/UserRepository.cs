@@ -20,7 +20,7 @@ public class UserRepository : DynamicRepositoryBase, IUserRepository
         new CompoundIndexDefinition("_id", "membership_id"),
         new CompoundIndexDefinition("username", "membership_id"),
         new CompoundIndexDefinition("email_address", "membership_id"),
-        new TextIndexDefinition(["username", "firstname", "lastname", "email_address"], IndexLocale.none)
+        new TextIndexDefinition(["username", "firstname", "lastname", "email_address"])
     };
     
     #endregion

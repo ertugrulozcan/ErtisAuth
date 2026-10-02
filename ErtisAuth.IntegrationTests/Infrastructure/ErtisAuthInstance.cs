@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
+// ReSharper disable MemberCanBePrivate.Global
 namespace ErtisAuth.IntegrationTests.Infrastructure;
 
 /// <summary>
@@ -53,6 +54,11 @@ public class ErtisAuthInstance : IAsyncLifetime
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="mongo"></param>
+	// ReSharper disable once MemberCanBeProtected.Global
 	public ErtisAuthInstance(MongoDbContainerFixture mongo)
 	{
 		this.DatabaseName = $"ertisauth-{Guid.NewGuid():N}";
@@ -115,6 +121,7 @@ public class ErtisAuthInstance : IAsyncLifetime
 	
 	#region Setup
 	
+	// ReSharper disable once MemberCanBePrivate.Global
 	public static object SetupRequest => new
 	{
 		membership = new
@@ -148,10 +155,8 @@ public class ErtisAuthInstance : IAsyncLifetime
 	
 	public async Task<HttpResponseMessage> PostSetupAsync(string? token = SetupToken)
 	{
-		using var request = new HttpRequestMessage(HttpMethod.Post, "/setup")
-		{
-			Content = JsonContent.Create(SetupRequest)
-		};
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/setup");
+		request.Content = JsonContent.Create(SetupRequest);
 		
 		if (token != null)
 		{
@@ -189,10 +194,8 @@ public class ErtisAuthInstance : IAsyncLifetime
 	
 	public async Task<HttpResponseMessage> RequestTokenAsync(string username, string password)
 	{
-		using var request = new HttpRequestMessage(HttpMethod.Post, "/generate-token")
-		{
-			Content = JsonContent.Create(new { username, password })
-		};
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/generate-token");
+		request.Content = JsonContent.Create(new { username, password });
 		
 		request.Headers.Add("Membership", this.MembershipId);
 		return await this.CreateClient().SendAsync(request);
@@ -264,6 +267,10 @@ public sealed class FreshErtisAuthInstance : ErtisAuthInstance
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="mongo"></param>
 	public FreshErtisAuthInstance(MongoDbContainerFixture mongo) : base(mongo)
 	{
 	

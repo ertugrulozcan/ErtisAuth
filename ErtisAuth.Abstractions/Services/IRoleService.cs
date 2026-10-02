@@ -15,5 +15,6 @@ public interface IRoleService : IMembershipBoundedCrudService<Role>
 	/// <summary>
 	/// Ensures the administrator role of every membership; called once at startup.
 	/// </summary>
+	// ReSharper disable once UnusedMemberInSuper.Global
 	Task EnsureAdministratorRolesAsync(CancellationToken cancellationToken = default);
 }

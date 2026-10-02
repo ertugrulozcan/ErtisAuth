@@ -1,25 +1,22 @@
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
 
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.WebAPI.Models.Applications;
 
 public class UpdateApplicationFormModel
 {
 	#region Properties
 	
-	[JsonProperty("name")]
 	[JsonPropertyName("name")]
 	public string? Name { get; set; }
 	
-	[JsonProperty("slug")]
 	[JsonPropertyName("slug")]
 	public string? Slug { get; set; }
 	
-	[JsonProperty("secret")]
 	[JsonPropertyName("secret")]
 	public string? Secret { get; set; }
 	
-	[JsonProperty("role")]
 	[JsonPropertyName("role")]
 	public string? Role { get; set; }
 	

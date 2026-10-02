@@ -36,6 +36,10 @@ public class NumericBoundsTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public NumericBoundsTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

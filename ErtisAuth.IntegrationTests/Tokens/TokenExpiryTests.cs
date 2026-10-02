@@ -26,6 +26,10 @@ public class TokenExpiryTests : IClassFixture<ShortLivedTokenErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public TokenExpiryTests(ShortLivedTokenErtisAuthInstance instance)
 	{
 		this._instance = instance;

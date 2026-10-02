@@ -13,7 +13,7 @@ public class ErtisAuthException : ErtisException
 	// ReSharper disable once MemberCanBePrivate.Global
 	protected ErtisAuthException(HttpStatusCode statusCode, string message, string errorCode) : base(statusCode, message, errorCode)
 	{
-	
+		
 	}
 	
 	#endregion

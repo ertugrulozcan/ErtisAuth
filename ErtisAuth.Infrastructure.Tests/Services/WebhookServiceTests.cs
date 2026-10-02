@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json.Nodes;
 using Ertis.Core.Exceptions;
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using Ertis.Schema.Dynamics;
@@ -38,7 +38,7 @@ public class WebhookServiceTests
 	
 	private readonly IEventService _eventService = Substitute.For<IEventService>();
 	
-	private readonly ISystemRestHandler _restHandler = Substitute.For<ISystemRestHandler>();
+	private readonly IRestHandler _restHandler = Substitute.For<IRestHandler>();
 	
 	private readonly IWebhookRepository _repository = Substitute.For<IWebhookRepository>();
 	
@@ -73,7 +73,7 @@ public class WebhookServiceTests
 						callInfo.ArgAt<HttpMethod>(0),
 						callInfo.ArgAt<string>(1),
 						callInfo.ArgAt<IHeaderCollection>(3).ToDictionary().ToDictionary(x => x.Key, x => x.Value.ToString()),
-						JsonNode.Parse(((SystemJsonRequestBody) callInfo.ArgAt<IRequestBody>(4)).Json ?? "null")));
+						JsonNode.Parse(((JsonRequestBody) callInfo.ArgAt<IRequestBody>(4)).Json ?? "null")));
 				}
 				
 				return new ResponseResult(this._responseStatusCode);

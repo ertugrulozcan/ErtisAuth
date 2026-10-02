@@ -33,6 +33,10 @@ public class SdkClientAuthorizationTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public SdkClientAuthorizationTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;
@@ -73,10 +77,8 @@ public class SdkClientAuthorizationTests : IClassFixture<ErtisAuthInstance>
 	
 	private async Task<string> GenerateScopedTokenAsync(string accessToken, params string[] scopes)
 	{
-		using var request = new HttpRequestMessage(HttpMethod.Post, "/generate-token")
-		{
-			Content = JsonContent.Create(new { scopes })
-		};
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/generate-token");
+		request.Content = JsonContent.Create(new { scopes });
 		
 		request.Headers.Add("Membership", this._instance.MembershipId);
 		request.Headers.Add("Authorization", $"Bearer {accessToken}");

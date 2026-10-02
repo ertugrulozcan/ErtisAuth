@@ -22,6 +22,7 @@ public static class BsonDocumentExtensions
 		return new Regex(@"ObjectId\((.[a-f0-9]{24}.)\)", RegexOptions.Compiled).Replace(json, s => s.Groups[1].Value);
 	}
 	
+	// ReSharper disable once UnusedMember.Global
 	public static bool IsObjectId(this string id)
 	{
 		return id != "undefined" && ObjectId.TryParse(id, out _);

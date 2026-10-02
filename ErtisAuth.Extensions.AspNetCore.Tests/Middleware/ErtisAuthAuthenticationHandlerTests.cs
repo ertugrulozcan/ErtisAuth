@@ -231,7 +231,7 @@ public class ErtisAuthAuthenticationHandlerTests
 		var result = await this.AuthenticateAsync($"Bearer {Token}");
 		
 		Assert.False(result.Succeeded);
-		this._accessControlService.ReceivedWithAnyArgs(1).HasPermission(default(Role)!, default(Rbac)!, default(Utilizer));
+		this._accessControlService.ReceivedWithAnyArgs(1).HasPermission(null!, default(Rbac)!, default);
 	}
 	
 	[Theory]
@@ -245,7 +245,7 @@ public class ErtisAuthAuthenticationHandlerTests
 		var result = await this.AuthenticateAsync($"Bearer {Token}", authorization: authorization);
 		
 		Assert.True(result.Succeeded);
-		this._accessControlService.DidNotReceiveWithAnyArgs().HasPermission(default(Role)!, default(Rbac)!, default(Utilizer));
+		this._accessControlService.DidNotReceiveWithAnyArgs().HasPermission(null!, default(Rbac)!, default);
 	}
 	
 	[Fact]

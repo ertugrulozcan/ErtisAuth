@@ -266,10 +266,10 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		bool? withCount = null, 
 		string? sortField = null,
 		SortDirection? sortDirection = null, 
-		IDictionary<string, bool>? selectFields = null, 
+		IDictionary<string, bool>? projection = null, 
 		CancellationToken cancellationToken = default)
 	{
-		return await base.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, ExcludeSecretHash(selectFields), cancellationToken: cancellationToken);
+		return await base.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, ExcludeSecretHash(projection), cancellationToken: cancellationToken);
 	}
 	
 	/// <summary>
@@ -277,9 +277,9 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	/// An inclusion projection returns only the listed fields, so it is enough to drop the hash from it;
 	/// otherwise the hash is excluded explicitly (MongoDB does not allow mixing inclusion and exclusion).
 	/// </summary>
-	private static IDictionary<string, bool> ExcludeSecretHash(IDictionary<string, bool>? selectFields)
+	private static IDictionary<string, bool> ExcludeSecretHash(IDictionary<string, bool>? projection)
 	{
-		var fields = selectFields != null ? new Dictionary<string, bool>(selectFields) : new Dictionary<string, bool>();
+		var fields = projection != null ? new Dictionary<string, bool>(projection) : new Dictionary<string, bool>();
 		var isInclusion = fields.Any(x => x.Key != "_id" && x.Value);
 		if (isInclusion)
 		{

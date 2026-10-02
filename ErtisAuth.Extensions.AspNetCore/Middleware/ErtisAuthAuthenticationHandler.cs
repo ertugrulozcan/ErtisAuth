@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Authentication;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.Authorization.Extensions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -28,7 +27,6 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 	private readonly ITokenService tokenService;
 	private readonly IRoleService roleService;
 	private readonly IAccessControlService accessControlService;
-	private readonly ILogger<ErtisAuthAuthenticationHandler> _logger;
 	
 	#endregion
 	
@@ -55,8 +53,6 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 		this.tokenService = tokenService;
 		this.roleService = roleService;
 		this.accessControlService = accessControlService;
-		
-		this._logger = logger.CreateLogger<ErtisAuthAuthenticationHandler>();
 	}
 	
 	#endregion
@@ -73,7 +69,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 			this.Response.StatusCode = (int) ex.StatusCode;
 			if (this.Response.StatusCode == StatusCodes.Status401Unauthorized)
 			{
-				this.Response.Headers.WWWAuthenticate = ErtisAuth.Extensions.Authorization.Scheme.WwwAuthenticate;
+				this.Response.Headers.WWWAuthenticate = Authorization.Scheme.WwwAuthenticate;
 			}
 			
 			this.Response.ContentType = "application/json";
@@ -82,7 +78,7 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 		}
 		
 		await base.HandleChallengeAsync(properties);
-		this.Response.Headers.WWWAuthenticate = ErtisAuth.Extensions.Authorization.Scheme.WwwAuthenticate;
+		this.Response.Headers.WWWAuthenticate = Authorization.Scheme.WwwAuthenticate;
 	}
 	
 	protected override async Task<AuthenticateResult> HandleAuthenticateAsync()

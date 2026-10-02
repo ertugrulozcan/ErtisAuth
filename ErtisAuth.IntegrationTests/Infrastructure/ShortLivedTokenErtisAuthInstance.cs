@@ -16,6 +16,10 @@ public sealed class ShortLivedTokenErtisAuthInstance : ErtisAuthInstance
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="mongo"></param>
 	public ShortLivedTokenErtisAuthInstance(MongoDbContainerFixture mongo) : base(mongo)
 	{
 	

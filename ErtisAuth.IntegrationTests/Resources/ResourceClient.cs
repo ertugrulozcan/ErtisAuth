@@ -26,6 +26,11 @@ public sealed class ResourceClient
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="client"></param>
+	/// <param name="url"></param>
 	public ResourceClient(HttpClient client, string url)
 	{
 		this._client = client;

@@ -24,7 +24,6 @@ public class ApplicationSerializationTests
 	private static IEnumerable<string> Serialize(object value)
 	{
 		yield return System.Text.Json.JsonSerializer.Serialize(value, value.GetType());
-		yield return Newtonsoft.Json.JsonConvert.SerializeObject(value);
 	}
 	
 	#endregion

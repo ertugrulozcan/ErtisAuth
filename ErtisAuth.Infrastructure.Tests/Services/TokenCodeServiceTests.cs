@@ -6,7 +6,6 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.Infrastructure.Tests.Helpers;
-using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Bson;
 using NSubstitute;
 
@@ -51,6 +50,7 @@ public class TokenCodeServiceTests
 	
 	public TokenCodeServiceTests()
 	{
+		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		this._tokenCodes = InMemoryRepository.Setup(this._repository, x => x.Id ??= ObjectId.GenerateNewId().ToString());
 		
 		this._membership = TestServiceFactory.CreateMembership();
@@ -82,7 +82,7 @@ public class TokenCodeServiceTests
 	
 	private TokenCodeService CreateService()
 	{
-		return new TokenCodeService(this._membershipService, this._tokenCodePolicyService, this._tokenService, this._userService, this._repository, NullLogger<TokenCodeService>.Instance);
+		return new TokenCodeService(this._membershipService, this._tokenCodePolicyService, this._tokenService, this._userService, this._repository);
 	}
 	
 	private static Utilizer UserUtilizer(string userId)

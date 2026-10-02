@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Ertis.Core.Exceptions;
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 using Ertis.Schema.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 

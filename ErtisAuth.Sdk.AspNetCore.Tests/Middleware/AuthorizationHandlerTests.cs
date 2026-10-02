@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Identity;

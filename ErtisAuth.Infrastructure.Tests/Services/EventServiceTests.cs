@@ -37,6 +37,7 @@ public class EventServiceTests
 	
 	public EventServiceTests()
 	{
+		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		this._events = InMemoryRepository.Setup(this._repository, x => x.Id ??= ObjectId.GenerateNewId().ToString());
 		
 		var membership = TestServiceFactory.CreateMembership();

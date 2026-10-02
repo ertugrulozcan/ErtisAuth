@@ -28,6 +28,10 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public UserTypeRulesTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;

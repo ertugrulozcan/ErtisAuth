@@ -66,9 +66,9 @@ public static class ErtisAuthClientExtensions
 		
 		services.TryAddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);
 		
-		// SystemRestHandler requires IHttpClientFactory, which is not registered by default (not even in ASP.NET Core)
+		// RestHandler requires IHttpClientFactory, which is not registered by default (not even in ASP.NET Core)
 		services.AddHttpClient();
-		services.TryAddSingleton<ISystemRestHandler, SystemRestHandler>();
+		services.TryAddSingleton<IRestHandler, RestHandler>();
 		
 		// SDK services
 		InitializeServices(services);

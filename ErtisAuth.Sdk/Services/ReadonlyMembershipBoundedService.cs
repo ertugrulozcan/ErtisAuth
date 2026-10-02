@@ -1,5 +1,5 @@
 using Ertis.Core.Collections;
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using ErtisAuth.Core.Models;
@@ -26,7 +26,7 @@ public abstract class ReadonlyMembershipBoundedService<T> : MembershipBoundedSer
     /// </summary>
     /// <param name="ertisAuthOptions"></param>
     /// <param name="restHandler"></param>
-    protected ReadonlyMembershipBoundedService(IErtisAuthOptions ertisAuthOptions, ISystemRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+    protected ReadonlyMembershipBoundedService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
     {
 	    
     }

@@ -37,6 +37,10 @@ public partial class UserActivationTests : IClassFixture<ActivationErtisAuthInst
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public UserActivationTests(ActivationErtisAuthInstance instance)
 	{
 		this._instance = instance;
@@ -51,19 +55,17 @@ public partial class UserActivationTests : IClassFixture<ActivationErtisAuthInst
 		var username = $"user{Guid.NewGuid():N}";
 		var emailAddress = $"{username}@example.com";
 		var adminClient = await this._instance.CreateAdminClientAsync();
-		using var request = new HttpRequestMessage(HttpMethod.Post, this.UsersUrl)
+		using var request = new HttpRequestMessage(HttpMethod.Post, this.UsersUrl);
+		request.Content = JsonContent.Create(new
 		{
-			Content = JsonContent.Create(new
-			{
-				username,
-				firstname = "Jane",
-				lastname = "Doe",
-				email_address = emailAddress,
-				password = Password,
-				role = "admin",
-				user_type = "user"
-			})
-		};
+			username,
+			firstname = "Jane",
+			lastname = "Doe",
+			email_address = emailAddress,
+			password = Password,
+			role = "admin",
+			user_type = "user"
+		});
 		
 		if (host != null)
 		{
@@ -145,10 +147,8 @@ public partial class UserActivationTests : IClassFixture<ActivationErtisAuthInst
 		var (_, _, emailAddress) = await this.CreateUserAsync(host: null);
 		
 		var adminClient = await this._instance.CreateAdminClientAsync();
-		using var request = new HttpRequestMessage(HttpMethod.Post, $"{this.UsersUrl}/resend-activation-mail")
-		{
-			Content = JsonContent.Create(new { email_address = emailAddress })
-		};
+		using var request = new HttpRequestMessage(HttpMethod.Post, $"{this.UsersUrl}/resend-activation-mail");
+		request.Content = JsonContent.Create(new { email_address = emailAddress });
 		
 		request.Headers.Add("X-Host", MailingErtisAuthInstance.Host);
 		using var response = await adminClient.SendAsync(request, CancellationToken);

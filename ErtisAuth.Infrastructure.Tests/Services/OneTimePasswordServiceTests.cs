@@ -51,6 +51,7 @@ public class OneTimePasswordServiceTests
 	
 	public OneTimePasswordServiceTests()
 	{
+		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		this._otps = InMemoryRepository.Setup(this._repository, x => x.Id ??= ObjectId.GenerateNewId().ToString());
 		
 		// Like the repository's atomic FindOneAndUpdate: increments only below the limit, returns the updated document

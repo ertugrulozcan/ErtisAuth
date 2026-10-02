@@ -52,13 +52,13 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 		bool? withCount = null, 
 		string? sortField = null,
 		SortDirection? sortDirection = null, 
-		IDictionary<string, bool>? selectFields = null, 
+		IDictionary<string, bool>? projection = null, 
 		CancellationToken cancellationToken = default)
 	{
 		query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId, this.HiddenFields);
 		QueryHelper.EnsureSortable(sortField, this.HiddenFields);
 		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
-		return await this._repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
+		return await this._repository.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, projection, cancellationToken: cancellationToken);
 	}
 	
 	#endregion

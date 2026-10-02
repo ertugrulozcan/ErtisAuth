@@ -1,9 +1,8 @@
-using Ertis.Core.Models.Response;
+using System.Text.Json;
+using Ertis.Core.Models;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace ErtisAuth.WebAPI.Filters;
 
@@ -22,6 +21,10 @@ public class QueryActionFilter : IAsyncActionFilter
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="logger"></param>
 	public QueryActionFilter(ILogger<QueryActionFilter> logger)
 	{
 		this._logger = logger;
@@ -78,12 +81,17 @@ public class QueryActionFilter : IAsyncActionFilter
 	
 	private static bool IsValidJson(string body)
 	{
+		if (string.IsNullOrWhiteSpace(body))
+		{
+			return false;
+		}
+		
 		try
 		{
-			JToken.Parse(body);
+			using var document = JsonDocument.Parse(body);
 			return true;
 		}
-		catch (JsonReaderException)
+		catch (JsonException)
 		{
 			return false;
 		}

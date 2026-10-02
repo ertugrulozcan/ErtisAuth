@@ -19,8 +19,13 @@ internal static class TestHttpContext
 	/// </summary>
 	public static DefaultHttpContext Create(string? authorizationHeader = null, params object[] metadata)
 	{
-		var httpContext = new DefaultHttpContext();
-		httpContext.Response.Body = new MemoryStream();
+		var httpContext = new DefaultHttpContext
+		{
+			Response =
+			{
+				Body = new MemoryStream()
+			}
+		};
 		
 		if (authorizationHeader != null)
 		{

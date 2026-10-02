@@ -1,4 +1,4 @@
-using Ertis.Core.Models.Response;
+using Ertis.Core.Models;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
 
@@ -9,7 +9,7 @@ public abstract class BaseRestService
 {
 	#region Services
 	
-	private readonly ISystemRestHandler restHandler;
+	private readonly IRestHandler restHandler;
 	
 	#endregion
 	
@@ -19,7 +19,7 @@ public abstract class BaseRestService
 	/// Constructor
 	/// </summary>
 	/// <param name="restHandler"></param>
-	protected BaseRestService(ISystemRestHandler restHandler)
+	protected BaseRestService(IRestHandler restHandler)
 	{
 		this.restHandler = restHandler;
 	}

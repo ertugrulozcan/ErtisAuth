@@ -33,6 +33,10 @@ public class RoleBasedAccessTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public RoleBasedAccessTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;
@@ -218,10 +222,8 @@ public class RoleBasedAccessTests : IClassFixture<ErtisAuthInstance>
 	public async Task ScopedToken_IsLimitedToItsScopes()
 	{
 		var (accessToken, _) = await this._instance.GenerateTokenAsync();
-		using var request = new HttpRequestMessage(HttpMethod.Post, "/generate-token")
-		{
-			Content = JsonContent.Create(new { scopes = new[] { "users.read" } })
-		};
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/generate-token");
+		request.Content = JsonContent.Create(new { scopes = new[] { "users.read" } });
 		
 		request.Headers.Add("Membership", this._instance.MembershipId);
 		request.Headers.Add("Authorization", $"Bearer {accessToken}");
@@ -259,10 +261,8 @@ public class RoleBasedAccessTests : IClassFixture<ErtisAuthInstance>
 	public async Task CheckPermission_ByScopedToken_IsLimitedToTheScopes()
 	{
 		var (accessToken, _) = await this._instance.GenerateTokenAsync();
-		using var request = new HttpRequestMessage(HttpMethod.Post, "/generate-token")
-		{
-			Content = JsonContent.Create(new { scopes = new[] { "users.read" } })
-		};
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/generate-token");
+		request.Content = JsonContent.Create(new { scopes = new[] { "users.read" } });
 		
 		request.Headers.Add("Membership", this._instance.MembershipId);
 		request.Headers.Add("Authorization", $"Bearer {accessToken}");

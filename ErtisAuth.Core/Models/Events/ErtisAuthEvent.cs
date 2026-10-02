@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Ertis.Schema.Dynamics;
 using ErtisAuth.Core.Models.Applications;
@@ -6,13 +7,9 @@ using ErtisAuth.Core.Extensions;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-using JsonSerializer = System.Text.Json.JsonSerializer;
-using NewtonsoftJsonProperty = Newtonsoft.Json.JsonPropertyAttribute;
-using NewtonsoftJsonIgnore = Newtonsoft.Json.JsonIgnoreAttribute;
-using NewtonsoftJsonConverter = Newtonsoft.Json.JsonConverterAttribute;
-using NewtonsoftStringEnumConverter = Newtonsoft.Json.Converters.StringEnumConverter;
-
 // ReSharper disable UnusedMember.Global
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Core.Models.Events;
 
 public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
@@ -28,21 +25,17 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 	
 	[JsonPropertyName("event_type")]
 	[JsonConverter(typeof(JsonStringEnumConverter))]
-	[NewtonsoftJsonProperty("event_type")]
-	[NewtonsoftJsonConverter(typeof(NewtonsoftStringEnumConverter))]
 	[BsonElement("event_type")]
 	[BsonRepresentation(BsonType.String)]
 	public required ErtisAuthEventType EventType { get; set; }
 	
 	[JsonPropertyName("utilizer_id")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("utilizer_id", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonElement("utilizer_id")]
 	public required string UtilizerId { get; set; }
 	
 	[JsonPropertyName("document")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("document", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonIgnore]
 	public object? Document
 	{
@@ -71,7 +64,6 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 	}
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	[BsonElement("document")]
 	[BsonIgnoreIfNull]
 	public BsonDocument? BsonDocument
@@ -86,7 +78,6 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 	
 	[JsonPropertyName("prior")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[NewtonsoftJsonProperty("prior", NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
 	[BsonIgnore]
 	public object? Prior
 	{
@@ -115,7 +106,6 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 	}
 	
 	[JsonIgnore]
-	[NewtonsoftJsonIgnore]
 	[BsonElement("prior")]
 	[BsonIgnoreIfNull]
 	public BsonDocument? BsonPrior
@@ -129,12 +119,10 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 	}
 	
 	[JsonPropertyName("event_time")]
-	[NewtonsoftJsonProperty("event_time")]
 	[BsonElement("event_time")]
 	public DateTime EventTime { get; set; }
 	
 	[JsonPropertyName("membership_id")]
-	[NewtonsoftJsonProperty("membership_id")]
 	[BsonElement("membership_id")]
 	public required string MembershipId { get; set; }
 	

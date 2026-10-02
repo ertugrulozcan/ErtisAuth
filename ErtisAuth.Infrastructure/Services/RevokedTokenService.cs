@@ -4,7 +4,6 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -19,7 +18,6 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken>, IRevo
 	#region Services
 	
 	private readonly IMemoryCache _memoryCache;
-	private readonly ILogger<RevokedTokenService> _logger;
 	
 	#endregion
 	
@@ -31,15 +29,12 @@ public class RevokedTokenService : MembershipBoundedService<RevokedToken>, IRevo
 	/// <param name="membershipService"></param>
 	/// <param name="memoryCache"></param>
 	/// <param name="repository"></param>
-	/// <param name="logger"></param>
 	public RevokedTokenService(
 		IMembershipService membershipService, 
 		IMemoryCache memoryCache,
-		IRevokedTokensRepository repository,
-		ILogger<RevokedTokenService> logger) : base(membershipService, repository)
+		IRevokedTokensRepository repository) : base(membershipService, repository)
 	{
 		this._memoryCache = memoryCache;
-		this._logger = logger;
 	}
 	
 	#endregion

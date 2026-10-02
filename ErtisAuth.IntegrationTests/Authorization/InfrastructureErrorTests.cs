@@ -18,6 +18,10 @@ public class InfrastructureErrorTests : IClassFixture<OutageErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public InfrastructureErrorTests(OutageErtisAuthInstance instance)
 	{
 		this._instance = instance;

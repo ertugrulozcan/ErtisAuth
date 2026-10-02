@@ -35,6 +35,11 @@ public class UniqueIndexTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
+	/// <param name="mongo"></param>
 	public UniqueIndexTests(ErtisAuthInstance instance, MongoDbContainerFixture mongo)
 	{
 		this._instance = instance;
@@ -201,10 +206,12 @@ public class UniqueIndexTests : IClassFixture<ErtisAuthInstance>
 		var userType = await this.CreateUserTypeAsync(field, isUnique: false);
 		var slug = userType["slug"]!.GetValue<string>();
 		using (var first = await this.CreateUserAsync(slug, field, "same"))
-		using (var second = await this.CreateUserAsync(slug, field, "same"))
 		{
-			await ResourceClient.AssertStatusAsync(first, HttpStatusCode.Created);
-			await ResourceClient.AssertStatusAsync(second, HttpStatusCode.Created);
+			using (var second = await this.CreateUserAsync(slug, field, "same"))
+			{
+				await ResourceClient.AssertStatusAsync(first, HttpStatusCode.Created);
+				await ResourceClient.AssertStatusAsync(second, HttpStatusCode.Created);
+			}
 		}
 		
 		var userTypes = await this.UserTypesAsync();

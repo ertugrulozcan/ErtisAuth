@@ -18,12 +18,17 @@ internal sealed class TestJwt
 	
 	#region Properties
 	
+	// ReSharper disable once MemberCanBePrivate.Global
 	public RsaSecurityKey Key { get; }
 	
 	#endregion
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="keyId"></param>
 	public TestJwt(string keyId)
 	{
 		this.Key = new RsaSecurityKey(RSA.Create(2048)) { KeyId = keyId };

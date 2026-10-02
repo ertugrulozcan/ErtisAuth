@@ -25,6 +25,10 @@ public class MailHookDeliveryTests : IClassFixture<MailingErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
 	public MailHookDeliveryTests(MailingErtisAuthInstance instance)
 	{
 		this._instance = instance;

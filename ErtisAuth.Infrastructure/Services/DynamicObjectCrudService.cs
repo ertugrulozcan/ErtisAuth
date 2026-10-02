@@ -74,14 +74,14 @@ public partial class DynamicObjectCrudService : IDynamicObjectCrudService
         bool? withCount = null, 
         string? orderBy = null,
         SortDirection? sortDirection = null, 
-        IDictionary<string, bool>? selectFields = null, 
+        IDictionary<string, bool>? projection = null, 
         string? language = null,  
         CancellationToken cancellationToken = default)
     {
         Locale? locale = Enum.TryParse<Locale>(language, out var locale_) ? locale_ : null;
         var collationOptions = locale != null ? new CollationOptions { Locale = locale } : null;
 		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
-        var paginatedCollection = await this._repository.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, selectFields, null, collationOptions, cancellationToken: cancellationToken);
+        var paginatedCollection = await this._repository.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, projection, null, collationOptions, cancellationToken: cancellationToken);
         return new PaginationCollection<DynamicObject>
         {
             Count = paginatedCollection.Count,

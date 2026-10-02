@@ -53,7 +53,9 @@ public sealed class OutageErtisAuthInstance : ErtisAuthInstance
 		public static ITokenService Create(ITokenService inner)
 		{
 			var proxy = Create<ITokenService, FailingTokenService>();
-			((FailingTokenService) (object) proxy)._inner = inner;
+			
+			// ReSharper disable once SuspiciousTypeConversion.Global
+			((FailingTokenService) proxy)._inner = inner;
 			return proxy;
 		}
 		

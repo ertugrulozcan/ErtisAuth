@@ -20,6 +20,11 @@ public class StartupIndexTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="instance"></param>
+	/// <param name="mongo"></param>
 	public StartupIndexTests(ErtisAuthInstance instance, MongoDbContainerFixture mongo)
 	{
 		this._instance = instance;
