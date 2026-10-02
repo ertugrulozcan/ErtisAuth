@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
+using ErtisAuth.Core.Models.Users;
 using ErtisAuth.IntegrationTests.Infrastructure;
 using ErtisAuth.IntegrationTests.Resources;
 
@@ -143,7 +144,23 @@ public class ReferenceFieldTests : IClassFixture<ErtisAuthInstance>
 		
 		Assert.Equal(referencedId, user["ref"]!["_id"]!.GetValue<string>());
 	}
-	
+
+	/// <summary>
+	/// Every user type inherits (directly or indirectly) from the origin user type, which is not stored:
+	/// a reference field with the origin as content type accepts the users of any type.
+	/// </summary>
+	[Fact]
+	public async Task SingleReference_WithTheOriginAsContentType_AcceptsAnyUserType()
+	{
+		var derivedType = await this.CreateUserTypeAsync(baseType: await this.CreateUserTypeAsync());
+		var referencedId = await this.CreateUserIdAsync(derivedType);
+		var userType = await this.CreateReferencingUserTypeAsync("single", UserType.ORIGIN_USER_TYPE_SLUG);
+
+		var user = await this.CreateReferencingUserAsync(userType, referencedId);
+
+		Assert.Equal(referencedId, user["ref"]!["_id"]!.GetValue<string>());
+	}
+
 	[Fact]
 	public async Task SingleReference_ToAnotherType_IsRejected()
 	{

@@ -533,7 +533,8 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	        throw ErtisAuthException.UserTypeNotFound(childUserTypeName, "slug");
         }
         
-        var parentUserType = allUserTypes.Items.FirstOrDefault(x => x.Slug == parentUserTypeName);
+        // The origin user type is not stored, it is found by GetByNameOrSlugAsync
+        var parentUserType = await this.GetByNameOrSlugAsync(parentUserTypeName, membershipId, cancellationToken: cancellationToken);
         if (parentUserType == null)
         {
 	        throw ErtisAuthException.UserTypeNotFound(parentUserTypeName, "slug");
