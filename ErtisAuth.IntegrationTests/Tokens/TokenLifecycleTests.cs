@@ -53,6 +53,21 @@ public class TokenLifecycleTests : IClassFixture<ErtisAuthInstance>
 		Assert.False(me.TryGetProperty("password_hash", out _));
 	}
 	
+	/// <summary>
+	/// The authorization scheme is case-insensitive (RFC 7235)
+	/// </summary>
+	[Theory]
+	[InlineData("bearer")]
+	[InlineData("BEARER")]
+	public async Task Me_WithTheSchemeInAnotherCase_ReturnsTheAdministrator(string scheme)
+	{
+		var (accessToken, _) = await this._instance.GenerateTokenAsync();
+		
+		using var response = await this.GetAsync("/me", $"{scheme} {accessToken}");
+		
+		Assert.True(response.IsSuccessStatusCode, (await ErtisAuthInstance.ReadJsonAsync(response)).ToString());
+	}
+	
 	[Fact]
 	public async Task GenerateToken_WithWrongPassword_IsRejected()
 	{
@@ -115,6 +130,14 @@ public class TokenLifecycleTests : IClassFixture<ErtisAuthInstance>
 		
 		Assert.True(response.IsSuccessStatusCode, application.ToString());
 		Assert.Equal(this._instance.ApplicationId, application.GetProperty("_id").GetString());
+	}
+	
+	[Fact]
+	public async Task WhoAmI_WithTheSchemeInLowercase_ReturnsTheApplication()
+	{
+		using var response = await this.GetAsync("/whoami", $"basic {this._instance.ApplicationId}:{this._instance.ApplicationSecret}");
+		
+		Assert.True(response.IsSuccessStatusCode, (await ErtisAuthInstance.ReadJsonAsync(response)).ToString());
 	}
 	
 	[Fact]

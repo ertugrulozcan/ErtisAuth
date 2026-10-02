@@ -108,6 +108,19 @@ public class SdkClientAuthorizationTests : IClassFixture<ErtisAuthInstance>
 		await AssertStatusAsync(client.PostAsync("/orders", null, CancellationToken), HttpStatusCode.Forbidden);
 	}
 	
+	/// <summary>
+	/// The SDK reads the authorization scheme case-insensitively (RFC 7235)
+	/// </summary>
+	[Fact]
+	public async Task User_WithTheSchemeInLowercase_IsAuthorized()
+	{
+		var (accessToken, _) = await this.LoginAsUserOfRoleAsync("orders.read", "roles.read");
+		await using var application = await SdkClientApplication.StartAsync(this._instance);
+		using var client = application.CreateClient($"bearer {accessToken}");
+		
+		await AssertStatusAsync(client.GetAsync("/orders", CancellationToken), HttpStatusCode.OK);
+	}
+	
 	[Fact]
 	public async Task User_WithoutPermission_IsForbidden()
 	{

@@ -83,13 +83,13 @@ public abstract class TokenBase
 		
 		if (parts.Length == 2)
 		{
-			var supportedTokenTypes = Enum.GetValues(typeof(SupportedTokenTypes)).Cast<SupportedTokenTypes>().Select(x => x.ToString());
-			if (!supportedTokenTypes.Contains(parts[0]))
+			// The scheme is case-insensitive (RFC 7235, 'bearer' is 'Bearer'); it is given with its canonical name
+			if (!TokenTypeExtensions.TryParseTokenType(parts[0], out var supportedTokenType))
 			{
 				throw ErtisAuthException.UnsupportedTokenType();
 			}
 			
-			tokenType = parts[0];
+			tokenType = supportedTokenType.ToString();
 			return parts[1];
 		}
 		

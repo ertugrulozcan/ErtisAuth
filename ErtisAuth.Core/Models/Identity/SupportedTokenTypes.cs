@@ -18,20 +18,25 @@ public static class TokenTypeExtensions
 {
 	#region Methods
 	
+	/// <summary>
+	/// Parses an authorization scheme, case-insensitively (RFC 7235); 'None' is not a scheme
+	/// </summary>
 	public static bool TryParseTokenType(string tokenType, out SupportedTokenTypes supportedTokenType)
 	{
-		switch (tokenType)
+		if (string.Equals(tokenType, nameof(SupportedTokenTypes.Bearer), StringComparison.OrdinalIgnoreCase))
 		{
-			case "Bearer":
-				supportedTokenType = SupportedTokenTypes.Bearer;
-				return true;
-			case "Basic":
-				supportedTokenType = SupportedTokenTypes.Basic;
-				return true;
-			default:
-				supportedTokenType = SupportedTokenTypes.None;
-				return false;
+			supportedTokenType = SupportedTokenTypes.Bearer;
+			return true;
 		}
+		
+		if (string.Equals(tokenType, nameof(SupportedTokenTypes.Basic), StringComparison.OrdinalIgnoreCase))
+		{
+			supportedTokenType = SupportedTokenTypes.Basic;
+			return true;
+		}
+		
+		supportedTokenType = SupportedTokenTypes.None;
+		return false;
 	}
 	
 	#endregion
