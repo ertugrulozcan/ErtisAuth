@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using ErtisAuth.IntegrationTests.Infrastructure;
 using ErtisAuth.IntegrationTests.Resources;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace ErtisAuth.IntegrationTests.Providers;
 
@@ -258,6 +260,39 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 		
 		Assert.Equal(facebookEmail, user["email_address"]!.GetValue<string>());
 		Assert.Equal([facebookId], ConnectedAccountsOf(user, "Facebook"));
+	}
+	
+	/// <summary>
+	/// The provider and the provider's user id must match in the same connected account: a Facebook account whose id equals
+	/// the Google id of a user must not log in as that user (the two conditions used to match different array elements).
+	/// </summary>
+	[Fact]
+	public async Task Facebook_IdOfAnotherProvidersAccount_DoesNotLogInAsItsUser()
+	{
+		var googleId = Guid.NewGuid().ToString("N");
+		var victim = await this.CreateLocalUserAsync($"victim-{Guid.NewGuid():N}@example.com");
+		var victimId = victim["_id"]!.GetValue<string>();
+		await this._instance.Database.GetCollection<BsonDocument>("users").UpdateOneAsync(
+			Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(victimId)),
+			Builders<BsonDocument>.Update.Set("connected_accounts", new BsonArray
+			{
+				new BsonDocument { { "Provider", "Google" }, { "UserId", googleId } },
+				new BsonDocument { { "Provider", "Facebook" }, { "UserId", Guid.NewGuid().ToString("N") } }
+			}),
+			cancellationToken: CancellationToken);
+		
+		var attackerEmail = $"fb-{Guid.NewGuid():N}@example.com";
+		this.Providers.Respond(FakeOAuthProviders.FacebookDebugTokenUrl, new { data = new { app_id = FacebookAppId, user_id = googleId, is_valid = true, type = "USER" } });
+		this.Providers.Respond(FakeOAuthProviders.FacebookMeUrl, new { id = googleId, first_name = "Attacker", last_name = "Account", email = attackerEmail });
+		
+		var (user, _) = await this.AssertLoginAsync(await this.LoginAsync("facebook", new
+		{
+			appId = FacebookAppId,
+			user = new { id = googleId, first_name = "Attacker", last_name = "Account", email = attackerEmail, accessToken = "facebook-user-access-token" }
+		}));
+		
+		Assert.NotEqual(victimId, user["_id"]!.GetValue<string>());
+		Assert.Equal(attackerEmail, user["email_address"]!.GetValue<string>());
 	}
 	
 	[Fact]

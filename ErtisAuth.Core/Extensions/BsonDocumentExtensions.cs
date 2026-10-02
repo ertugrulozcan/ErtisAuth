@@ -1,7 +1,5 @@
-using System.Text.Json;
-using System.Text.RegularExpressions;
+using Ertis.Schema.Dynamics;
 using MongoDB.Bson;
-using MongoDB.Bson.IO;
 
 namespace ErtisAuth.Core.Extensions;
 
@@ -9,17 +7,13 @@ public static class BsonDocumentExtensions
 {
 	#region Methods
 	
-	public static dynamic? ToDynamicObject(this BsonDocument bsonDocument)
+	/// <summary>
+	/// Maps the document to .NET values instead of a json round trip: no extended json wrappers ({ "$oid": .. }, { "$date": .. })
+	/// in the output, the ObjectIds become strings (DynamicObject writes them as strings) and the dates stay dates
+	/// </summary>
+	public static DynamicObject ToDynamicObject(this BsonDocument bsonDocument)
 	{
-		var jsonWriterSettings = new JsonWriterSettings { OutputMode = JsonOutputMode.RelaxedExtendedJson };
-		var json = bsonDocument.ToJson(jsonWriterSettings);
-		json = ClearObjectIds(json);
-		return JsonSerializer.Deserialize<dynamic>(json);
-	}
-	
-	private static string ClearObjectIds(string json)
-	{
-		return new Regex(@"ObjectId\((.[a-f0-9]{24}.)\)", RegexOptions.Compiled).Replace(json, s => s.Groups[1].Value);
+		return DynamicObject.Create((IDictionary<string, object?>) BsonTypeMapper.MapToDotNetValue(bsonDocument));
 	}
 	
 	// ReSharper disable once UnusedMember.Global

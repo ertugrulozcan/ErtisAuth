@@ -53,7 +53,7 @@ builder.Services.AddOpenApi();
 
 // Controllers & JSON Options
 builder.Services
-	.AddControllers(options => options.AddQueryActionFilter())
+	.AddControllers()
 	.AddJsonSerialization();
 
 // Graceful shutdown

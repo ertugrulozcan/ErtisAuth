@@ -464,10 +464,13 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	private async Task<User?> FindUserAsync(IProviderLoginRequest request, Provider provider, string membershipId, CancellationToken cancellationToken = default)
 	{
+		// The provider and its user id must match in the same connected account (not in two different array elements)
 		var query = QueryBuilder.Where(
 			QueryBuilder.Equals("membership_id", membershipId), 
-			QueryBuilder.Equals("connected_accounts.Provider", provider.Name), 
-			QueryBuilder.Equals("connected_accounts.UserId", request.UserId)).ToString();
+			QueryBuilder.ElemMatch(
+				"connected_accounts",
+				QueryBuilder.Equals("Provider", provider.Name),
+				QueryBuilder.Equals("UserId", request.UserId))).ToString();
 		
 		var queryUsersResult = await this._userService.QueryAsync(query, membershipId, 0, 1, cancellationToken: cancellationToken);
 		if (queryUsersResult.Items.Any())

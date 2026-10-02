@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Ertis.Core.Collections;
 using Ertis.Core.Models;
 using Ertis.Net.Http;
@@ -90,7 +91,7 @@ public class UserService : MembershipBoundedService<User>, IUserService
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default)
 	{
-		var query = "{ 'where': { 'user_id': '" + userId + "', 'membership_id': '" + this.MembershipId + "' } }";
+		var query = this.UserTokensQuery(userId);
 		return await this.ExecuteRequestAsync<PaginationCollection<ActiveToken>>(
 			HttpMethod.Post, 
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/active-tokens/_query", 
@@ -98,6 +99,25 @@ public class UserService : MembershipBoundedService<User>, IUserService
 			HeaderCollection.Add("Authorization", token.ToString()),
 			new JsonRequestBody(query),
 			cancellationToken: cancellationToken).ConfigureAwait(false);
+	}
+	
+	/// <summary>
+	/// Built as a json document: a valid json (single quotes are not) whose values can't change the query
+	/// </summary>
+	private string UserTokensQuery(string userId, string? tokenType = null)
+	{
+		var where = new JsonObject
+		{
+			["user_id"] = userId,
+			["membership_id"] = this.MembershipId
+		};
+		
+		if (tokenType != null)
+		{
+			where["token_type"] = tokenType;
+		}
+		
+		return new JsonObject { ["where"] = where }.ToJsonString();
 	}
 	
 	#endregion
@@ -114,7 +134,7 @@ public class UserService : MembershipBoundedService<User>, IUserService
 		SortDirection? sortDirection = null, 
 		CancellationToken cancellationToken = default)
 	{
-		var query = "{ 'where': { 'user_id': '" + userId + "', 'membership_id': '" + this.MembershipId + "', 'token_type': 'bearer_token' } }";
+		var query = this.UserTokensQuery(userId, tokenType: "bearer_token");
 		return await this.ExecuteRequestAsync<PaginationCollection<RevokedToken>>(
 			HttpMethod.Post, 
 			$"{this.BaseUrl}/memberships/{this.MembershipId}/revoked-tokens/_query", 

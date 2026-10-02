@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text;
 using System.Text.Json;
 using Ertis.Schema.Dynamics;
 using Ertis.Schema.Serialization;
@@ -37,6 +36,13 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	    }
     };
 
+    private static readonly Ertis.TemplateEngine.ParserOptions HtmlParserOptions = new()
+    {
+	    OpenBrackets = "{{",
+	    CloseBrackets = "}}",
+	    ValueEncoder = WebUtility.HtmlEncode
+    };
+    
     private static readonly string[] PredefinedAutonomouslyMailHooks =
     {
 	    USER_ACTIVATION_MAIL_HOOK_SLUG,
@@ -275,7 +281,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 					}
 				}
 				
-				var mailBody = FormatHtml(formatter, mailhook.MailTemplate ?? string.Empty, payload);
+				var mailBody = FormatHtml(mailhook.MailTemplate ?? string.Empty, payload);
 				var mailSubject = FormatSingleLine(formatter, mailhook.MailSubject ?? string.Empty, payload);
 				await this.SendMailAsync(
 					mailProvider,
@@ -317,29 +323,12 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	}
 	
 	/// <summary>
-	/// The mail body is HTML and payload values (e.g. a user's own name) are user-controlled: each placeholder's value is
-	/// HTML-encoded, the template's own markup is kept. Placeholders are resolved by the template engine as before.
+	/// The mail body is HTML and payload values (e.g. a user's own name) are user-controlled: each resolved value is
+	/// HTML-encoded, the template's own markup and the unresolved placeholders are kept as they are.
 	/// </summary>
-	private static string FormatHtml(Ertis.TemplateEngine.Formatter formatter, string template, object? payload)
+	private static string FormatHtml(string template, object? payload)
 	{
-		var builder = new StringBuilder();
-		foreach (var segment in formatter.LookUp(template))
-		{
-			switch (segment)
-			{
-				case Ertis.TemplateEngine.PlaceHolder placeHolder:
-					var value = formatter.Format(placeHolder.Outer, payload);
-					
-					// An unresolved placeholder is kept as it is
-					builder.Append(value == placeHolder.Outer ? value : WebUtility.HtmlEncode(value));
-					break;
-				case Ertis.TemplateEngine.RawPart rawPart:
-					builder.Append(rawPart.RawValue);
-					break;
-			}
-		}
-		
-		return builder.ToString();
+		return new Ertis.TemplateEngine.Formatter(HtmlParserOptions).Format(template, payload);
 	}
 	
 	/// <summary>

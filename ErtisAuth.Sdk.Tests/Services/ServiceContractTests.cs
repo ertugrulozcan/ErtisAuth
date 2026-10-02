@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json.Nodes;
 using System.Web;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
@@ -246,7 +247,9 @@ public class ServiceContractTests
 		
 		Assert.Equal(HttpMethod.Post, this.LastRequest.Method);
 		Assert.Equal($"{MembershipUrl}/active-tokens/_query", this.LastRequest.Path);
-		Assert.Contains($"'user_id': '{UserId}'", this.LastRequest.Body);
+		var where = JsonNode.Parse(this.LastRequest.Body!)!["where"]!;
+		Assert.Equal(UserId, where["user_id"]!.GetValue<string>());
+		Assert.Equal(SdkTestServices.MembershipId, where["membership_id"]!.GetValue<string>());
 	}
 	
 	[Fact]
@@ -257,7 +260,9 @@ public class ServiceContractTests
 		await this._sdk.Get<IUserService>().GetRevokedTokensAsync(UserId, this._token, cancellationToken: TestContext.Current.CancellationToken);
 		
 		Assert.Equal($"{MembershipUrl}/revoked-tokens/_query", this.LastRequest.Path);
-		Assert.Contains($"'user_id': '{UserId}'", this.LastRequest.Body);
+		var where = JsonNode.Parse(this.LastRequest.Body!)!["where"]!;
+		Assert.Equal(UserId, where["user_id"]!.GetValue<string>());
+		Assert.Equal("bearer_token", where["token_type"]!.GetValue<string>());
 	}
 	
 	[Fact]

@@ -142,7 +142,19 @@ public class QueryIsolationTests : IClassFixture<ErtisAuthInstance>
 		using var content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
 		using var response = await adminClient.PostAsync($"{this.MembershipUrl}/roles/_query", content, CancellationToken);
 		
-		await ResourceClient.AssertStatusAsync(response, HttpStatusCode.BadRequest);
+		var error = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.BadRequest);
+		Assert.Equal("InvalidQuery", error!["errorCode"]!.GetValue<string>());
+	}
+	
+	[Fact]
+	public async Task Query_WithEmptyBody_ReturnsTheDocumentsOfTheMembership()
+	{
+		var adminClient = await this._instance.CreateAdminClientAsync();
+		using var content = new StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
+		using var response = await adminClient.PostAsync($"{this.MembershipUrl}/roles/_query", content, CancellationToken);
+		
+		var result = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.OK);
+		Assert.All(result!["items"]!.AsArray(), x => Assert.Equal(this._instance.MembershipId, x!["membership_id"]!.GetValue<string>()));
 	}
 	
 	/// <summary>

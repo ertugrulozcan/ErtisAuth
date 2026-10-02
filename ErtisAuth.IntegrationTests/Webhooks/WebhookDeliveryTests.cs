@@ -84,6 +84,22 @@ public class WebhookDeliveryTests : IClassFixture<ErtisAuthInstance>
 		});
 	}
 	
+	/// <summary>
+	/// The webhooks run in the background: waits until the execution events are recorded
+	/// </summary>
+	private async Task<JsonArray> WaitForWebhookEventsAsync(string webhookId, string eventType, int count)
+	{
+		var deadline = DateTime.UtcNow.AddSeconds(10);
+		var events = await this.QueryWebhookEventsAsync(webhookId, eventType);
+		while (events.Count < count && DateTime.UtcNow < deadline)
+		{
+			await Task.Delay(100, CancellationToken);
+			events = await this.QueryWebhookEventsAsync(webhookId, eventType);
+		}
+		
+		return events;
+	}
+	
 	private async Task<JsonArray> QueryWebhookEventsAsync(string webhookId, string eventType)
 	{
 		var events = await this.AdminResourceClientAsync("events");
@@ -284,8 +300,38 @@ public class WebhookDeliveryTests : IClassFixture<ErtisAuthInstance>
 		await receiver.WaitForRequestsAsync(path, count: 2);
 		await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken);
 		Assert.Equal(2, receiver.RequestsTo(path).Count());
-		Assert.Equal(2, (await this.QueryWebhookEventsAsync(webhookId, "WebhookRequestFailed")).Count);
+		var failed = await this.QueryWebhookEventsAsync(webhookId, "WebhookRequestFailed");
+		Assert.Equal(2, failed.Count);
+		Assert.All(failed, x => Assert.Equal(500, x!["document"]!["response"]!["statusCode"]!.GetValue<int>()));
 		Assert.Empty(await this.QueryWebhookEventsAsync(webhookId, "WebhookRequestSent"));
+	}
+	
+	/// <summary>
+	/// A request which can not be sent (connection refused, timeout) is retried and each failure is recorded with the error
+	/// (regression: the exception could not be serialized into the event, the retries were skipped and nothing was recorded).
+	/// </summary>
+	[Fact]
+	public async Task UnreachableReceiver_IsRetriedAndEachFailureIsRecorded()
+	{
+		// A receiver which is stopped: its port refuses the connections
+		var receiver = await FakeWebhookReceiver.StartAsync();
+		var url = receiver.Url(NewPath());
+		await receiver.DisposeAsync();
+		var webhookId = await this.CreateWebhookAsync("UserCreated", url, tryCount: 2);
+		
+		await this.CreateUserAsync();
+		
+		var failed = await this.WaitForWebhookEventsAsync(webhookId, "WebhookRequestFailed", count: 2);
+		Assert.Equal([1, 2], failed.Select(x => x!["document"]!["tryIndex"]!.GetValue<int>()).Order());
+		Assert.All(failed, x =>
+		{
+			var exception = x!["document"]!["exception"]!.AsObject();
+			Assert.False(string.IsNullOrEmpty(exception["type"]?.GetValue<string>()));
+			Assert.False(string.IsNullOrEmpty(exception["message"]?.GetValue<string>()));
+			
+			// The stack trace is not exposed
+			Assert.Equal(["message", "type"], exception.Select(property => property.Key).Order());
+		});
 	}
 	
 	#endregion

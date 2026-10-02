@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Ertis.MongoDB.Serialization;
 using Ertis.Schema.Dynamics;
+using Ertis.Schema.Serialization;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Extensions;
@@ -16,6 +18,20 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 {
 	#region Fields
 	
+	/// <summary>
+	/// The payloads (e.g. anonymous objects of models) may contain DynamicObjects and ObjectIds
+	/// </summary>
+	private static readonly JsonSerializerOptions PayloadSerializerOptions = new()
+	{
+		Converters =
+		{
+			new DynamicObjectJsonConverter(),
+			new ObjectIdConverter()
+		}
+	};
+	
+	private object? document;
+	private object? prior;
 	private BsonDocument? bsonDocument;
 	private BsonDocument? bsonPrior;
 	
@@ -39,27 +55,11 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 	[BsonIgnore]
 	public object? Document
 	{
-		get;
+		get => this.document;
 		set
 		{
-			field = value;
-			
-			if (value != null)
-			{
-				if (value is DynamicObject dynamicObject)
-				{
-					this.bsonDocument = BsonDocument.Parse(dynamicObject.ToJson());
-				}
-				else if (value is BsonDocument _bsonDocument)
-				{
-					this.bsonDocument = _bsonDocument;
-				}
-				else
-				{
-					var documentJson = JsonSerializer.Serialize(value);
-					this.bsonDocument = BsonDocument.Parse(documentJson);
-				}
-			}
+			this.document = value;
+			this.bsonDocument = ToBsonDocument(value);
 		}
 	}
 	
@@ -71,8 +71,9 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 		get => this.bsonDocument;
 		set
 		{
+			// Read from the database: the stored document is kept as it is
 			this.bsonDocument = value;
-			this.Document = value?.ToDynamicObject();
+			this.document = value?.ToDynamicObject();
 		}
 	}
 	
@@ -81,27 +82,11 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 	[BsonIgnore]
 	public object? Prior
 	{
-		get;
+		get => this.prior;
 		set
 		{
-			field = value;
-			
-			if (value != null)
-			{
-				if (value is DynamicObject dynamicObject)
-				{
-					this.bsonPrior = BsonDocument.Parse(dynamicObject.ToJson());
-				}
-				else if (value is BsonDocument _bsonPrior)
-				{
-					this.bsonPrior = _bsonPrior;
-				}
-				else
-				{
-					var documentJson = JsonSerializer.Serialize(value);
-					this.bsonPrior = BsonDocument.Parse(documentJson);
-				}
-			}
+			this.prior = value;
+			this.bsonPrior = ToBsonDocument(value);
 		}
 	}
 	
@@ -113,8 +98,9 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 		get => this.bsonPrior;
 		set
 		{
+			// Read from the database: the stored document is kept as it is
 			this.bsonPrior = value;
-			this.Prior = value?.ToDynamicObject();
+			this.prior = value?.ToDynamicObject();
 		}
 	}
 	
@@ -164,6 +150,21 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 		this.MembershipId = application.MembershipId;
 		this.Document = document;
 		this.Prior = prior;
+	}
+	
+	#endregion
+	
+	#region Methods
+	
+	private static BsonDocument? ToBsonDocument(object? payload)
+	{
+		return payload switch
+		{
+			null => null,
+			BsonDocument bsonDocument => bsonDocument,
+			DynamicObject dynamicObject => BsonDocument.Parse(dynamicObject.ToJson()),
+			_ => BsonDocument.Parse(JsonSerializer.Serialize(payload, PayloadSerializerOptions))
+		};
 	}
 	
 	#endregion

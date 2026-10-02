@@ -277,6 +277,32 @@ public partial class UserPasswordFlowTests : IClassFixture<MailingErtisAuthInsta
 		Assert.Single(this._instance.Smtp.MessagesTo(emailAddress));
 	}
 	
+	/// <summary>
+	/// The event is readable (events.read) and forwarded to the webhooks of the event: it must not carry the membership,
+	/// whose secret key signs the tokens (regression guard, the whole membership was in the payload).
+	/// </summary>
+	[Fact]
+	public async Task ResetPassword_EventDoesNotContainTheMembership()
+	{
+		var (_, username, emailAddress) = await this.CreateUserAsync();
+		
+		using var resetResponse = await this.RequestPasswordResetAsync(emailAddress);
+		await ResourceClient.AssertStatusAsync(resetResponse, HttpStatusCode.OK);
+		
+		var events = await new ResourceClient(await this._instance.CreateAdminClientAsync(), $"/memberships/{this._instance.MembershipId}/events").QueryAsync(new
+		{
+			where = new Dictionary<string, object>
+			{
+				["event_type"] = "UserPasswordReset",
+				["document.user.username"] = username
+			}
+		});
+		
+		var document = Assert.Single(events)!["document"]!.AsObject();
+		Assert.False(document.ContainsKey("membership"));
+		Assert.DoesNotContain("secret_key", document.ToJsonString());
+	}
+	
 	[Fact]
 	public async Task SetPassword_WithAnotherUsersResetToken_ReturnsUnauthorized()
 	{

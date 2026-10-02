@@ -74,12 +74,12 @@ public class PasswordResetService : IPasswordResetService
 		var resetPasswordToken = await this.GenerateResetPasswordTokenAsync(user, membership, cancellationToken: cancellationToken);
 		var resetPasswordLink = GenerateResetPasswordLink(resetPasswordToken, membershipId, host);
 		
+		// The membership is not in the payload: it carries the secret key (the event has the membership_id)
 		var eventPayload = new
 		{
 			resetPasswordToken.Token,
 			resetPasswordLink,
-			user,
-			membership
+			user
 		};
 		
 		await this._eventService.FireEventAsync(ErtisAuthEventType.UserPasswordReset, utilizer, membershipId, eventPayload, cancellationToken: cancellationToken);

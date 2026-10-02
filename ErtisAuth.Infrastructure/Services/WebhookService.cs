@@ -31,6 +31,16 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		}
 	};
 	
+	/// <summary>
+	/// The values written into the url are url-escaped (e.g. '../admin?x=1' can't change the path or the query)
+	/// </summary>
+	private static readonly Ertis.TemplateEngine.ParserOptions UrlParserOptions = new()
+	{
+		OpenBrackets = "{{",
+		CloseBrackets = "}}",
+		ValueEncoder = Uri.EscapeDataString
+	};
+	
 	#endregion
 	
 	#region Services
@@ -190,10 +200,10 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			// Event data is user-controlled: every template target gets context-specific escaping
 			var dataNode = call.EventData;
 			var data = ToTemplateData(dataNode);
-			var urlData = ToTemplateData(MapStringValues(dataNode?.DeepClone(), Uri.EscapeDataString));
 			var formatter = new Ertis.TemplateEngine.Formatter();
+			var urlFormatter = new Ertis.TemplateEngine.Formatter(UrlParserOptions);
 			var httpMethod = new HttpMethod(webhook.Request.Method);
-			var url = formatter.Format(webhook.Request.Url, urlData);
+			var url = urlFormatter.Format(webhook.Request.Url, data);
 			var headers = HeaderCollection.Create();
 			if (webhook.Request.Headers != null)
 			{
@@ -242,43 +252,45 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			
 			for (var i = 0; i < tryCount; i++)
 			{
+				// Only the request is guarded: a failure of recording the outcome must not count as a failed request (and resend it)
+				WebhookExecutionResult webhookExecutionResult;
 				try
 				{
 					var response = await this._restHandler.ExecuteRequestAsync(httpMethod, url, QueryString.Empty, headers, body, cancellationToken: CancellationToken.None);
-					var webhookExecutionResult = new WebhookExecutionResult
+					var statusCode = response.StatusCode != null ? (int)response.StatusCode : (int?)null;
+					webhookExecutionResult = new WebhookExecutionResult
 					{
 						WebhookId = webhook.Id,
 						IsSuccess = response.IsSuccess,
-						StatusCode = response.StatusCode != null ? (int)response.StatusCode : null,
+						StatusCode = statusCode,
 						TryIndex = i + 1,
-						Exception = null,
 						Request = webhookRequest,
-						Response = response
+						Response = new WebhookResponse
+						{
+							IsSuccess = response.IsSuccess,
+							StatusCode = statusCode,
+							Body = response.Json
+						}
 					};
-					
-					if (response.IsSuccess)
-					{
-						await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestSent, utilizerId, membershipId, webhookExecutionResult, cancellationToken: cancellationToken);
-						break;
-					}
-					else
-					{
-						await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestFailed, utilizerId, membershipId, webhookExecutionResult, cancellationToken: cancellationToken);
-					}
 				}
 				catch (Exception ex)
 				{
-					var webhookExecutionResult = new WebhookExecutionResult
+					webhookExecutionResult = new WebhookExecutionResult
 					{
 						WebhookId = webhook.Id,
 						IsSuccess = false,
 						StatusCode = 500,
 						TryIndex = i + 1,
-						Exception = ex,
+						Exception = WebhookExecutionError.FromException(ex),
 						Request = webhookRequest
 					};
-					
-					await this._eventService.FireEventAsync(ErtisAuthEventType.WebhookRequestFailed, utilizerId, membershipId, webhookExecutionResult, cancellationToken: cancellationToken);
+				}
+				
+				var eventType = webhookExecutionResult.IsSuccess ? ErtisAuthEventType.WebhookRequestSent : ErtisAuthEventType.WebhookRequestFailed;
+				await this._eventService.FireEventAsync(eventType, utilizerId, membershipId, webhookExecutionResult, cancellationToken: cancellationToken);
+				if (webhookExecutionResult.IsSuccess)
+				{
+					break;
 				}
 			}
 		}
