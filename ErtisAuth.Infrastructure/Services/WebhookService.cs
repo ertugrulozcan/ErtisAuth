@@ -3,7 +3,6 @@ using System.Text.Json.Nodes;
 using Ertis.Net.Http;
 using Ertis.Net.Rest;
 using Ertis.Schema.Dynamics;
-using Ertis.Schema.Serialization;
 using Ertis.MongoDB.Serialization;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Events;
@@ -20,13 +19,12 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	#region Fields
 	
 	/// <summary>
-	/// Event documents are DynamicObjects (e.g. users) with ObjectIds: without these converters they are serialized as '{}'.
+	/// Event documents may contain ObjectIds (DynamicObjects, e.g. users, carry their own converter).
 	/// </summary>
 	private static readonly JsonSerializerOptions EventDataSerializerOptions = new()
 	{
 		Converters =
 		{
-			new DynamicObjectJsonConverter(),
 			new ObjectIdConverter()
 		}
 	};

@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Ertis.MongoDB.Serialization;
 using Ertis.Schema.Dynamics;
-using Ertis.Schema.Serialization;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Extensions;
@@ -19,13 +18,12 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 	#region Fields
 	
 	/// <summary>
-	/// The payloads (e.g. anonymous objects of models) may contain DynamicObjects and ObjectIds
+	/// The payloads (e.g. anonymous objects of models) may contain ObjectIds (DynamicObjects carry their own converter)
 	/// </summary>
 	private static readonly JsonSerializerOptions PayloadSerializerOptions = new()
 	{
 		Converters =
 		{
-			new DynamicObjectJsonConverter(),
 			new ObjectIdConverter()
 		}
 	};

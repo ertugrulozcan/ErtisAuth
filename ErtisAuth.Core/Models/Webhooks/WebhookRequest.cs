@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using Ertis.Schema.Dynamics;
-using Ertis.Schema.Serialization;
 using ErtisAuth.Core.Extensions;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -34,7 +33,6 @@ public class WebhookRequest
 	
 	[JsonPropertyName("body")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[JsonConverter(typeof(DynamicObjectJsonConverter))]
 	[BsonIgnore]
 	public DynamicObject? Body
 	{

@@ -12,7 +12,7 @@
     <ItemGroup>
         <PackageReference Include="Ertis.Core" Version="10.0.4-preview.1" />
         <PackageReference Include="Ertis.MongoDB" Version="10.0.9-preview.1" />
-        <PackageReference Include="Ertis.Schema" Version="10.1.10-preview.1" />
+        <PackageReference Include="Ertis.Schema" Version="10.1.11-preview.1" />
         <PackageReference Include="Ertis.TemplateEngine" Version="10.0.3-preview.1" />
     </ItemGroup>
 </Project>

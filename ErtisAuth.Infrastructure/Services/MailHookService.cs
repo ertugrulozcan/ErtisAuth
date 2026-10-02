@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text.Json;
 using Ertis.Schema.Dynamics;
-using Ertis.Schema.Serialization;
 using Ertis.MongoDB.Serialization;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Users;
@@ -25,13 +24,12 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
     private const string RESET_PASSWORD_MAIL_HOOK_SLUG = "reset-password";
 
     /// <summary>
-    /// Event documents are DynamicObjects (e.g. users) with ObjectIds: without these converters they are serialized as '{}'.
+    /// Event documents may contain ObjectIds (DynamicObjects, e.g. users, carry their own converter).
     /// </summary>
     private static readonly JsonSerializerOptions TemplateDataSerializerOptions = new()
     {
 	    Converters =
 	    {
-		    new DynamicObjectJsonConverter(),
 		    new ObjectIdConverter()
 	    }
     };

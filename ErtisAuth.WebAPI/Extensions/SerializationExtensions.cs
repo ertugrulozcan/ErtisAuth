@@ -14,7 +14,6 @@ public static class SerializationExtensions
 		services.AddJsonOptions(options =>
 		{
 			options.JsonSerializerOptions.Converters.Add(new ObjectIdConverter());
-			options.JsonSerializerOptions.Converters.Add(new DynamicObjectJsonConverter());
 			options.JsonSerializerOptions.Converters.Add(new FieldInfoJsonConverter());
 			options.JsonSerializerOptions.Converters.Add(new MailProviderJsonConverter());
 			options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
