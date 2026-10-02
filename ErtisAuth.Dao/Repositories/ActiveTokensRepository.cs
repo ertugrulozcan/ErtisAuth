@@ -18,6 +18,9 @@ public class ActiveTokensRepository : RepositoryBase<ActiveToken>, IActiveTokens
 		new SingleIndexDefinition("username"),
 		new SingleIndexDefinition("email_address"),
 		new SingleIndexDefinition("membership_id"),
+		
+		// The active token of a refresh token is looked up on every refresh
+		new SingleIndexDefinition("refresh_token"),
 		new CompoundIndexDefinition("user_id", "membership_id"),
 		new CompoundIndexDefinition("expire_time", "membership_id"),
 		new TTLIndexDefinition("retain_until", SortDirection.Ascending, TTLGracePeriod)

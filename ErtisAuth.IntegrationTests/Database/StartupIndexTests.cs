@@ -57,6 +57,14 @@ public class StartupIndexTests : IClassFixture<ErtisAuthInstance>
 		Assert.Contains(indexes, x => x["key"].AsBsonDocument.Names.SequenceEqual(["token"]));
 	}
 	
+	[Fact]
+	public async Task Startup_CreatesTheRefreshTokenLookupIndex()
+	{
+		var indexes = await (await this._instance.Database.GetCollection<BsonDocument>("active_tokens").Indexes.ListAsync(TestContext.Current.CancellationToken)).ToListAsync(TestContext.Current.CancellationToken);
+		
+		Assert.Contains(indexes, x => x["key"].AsBsonDocument.Names.SequenceEqual(["refresh_token"]));
+	}
+	
 	[Theory]
 	[InlineData("users", new[] { "username", "firstname", "lastname", "email_address" })]
 	[InlineData("roles", new[] { "name", "slug", "description" })]
