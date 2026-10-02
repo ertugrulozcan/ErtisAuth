@@ -49,6 +49,8 @@ public class MailHookServiceTests
 	
 	private readonly ITemplateMailService _mailChimpService = Substitute.For<ITemplateMailService>();
 	
+	private readonly MailHookQueue _mailHookQueue = new();
+	
 	private readonly Membership _membership;
 	
 	private readonly List<MailHook> _mailHooks;
@@ -125,9 +127,16 @@ public class MailHookServiceTests
 	
 	#region Helpers
 	
-	private MailHookService CreateService(IEnumerable<IMailService>? mailServices = null)
+	private MailHookService CreateService(IEnumerable<IMailService>? mailServices = null, IMailHookQueue? mailHookQueue = null)
 	{
-		return new MailHookService(this._membershipService, this._eventService, mailServices ?? [this._smtpService, this._mailChimpService], this._repository, this._userRepository, NullLogger<MailHookService>.Instance);
+		return new MailHookService(
+			this._membershipService,
+			this._eventService,
+			mailServices ?? [this._smtpService, this._mailChimpService],
+			mailHookQueue ?? this._mailHookQueue,
+			this._repository,
+			this._userRepository,
+			NullLogger<MailHookService>.Instance);
 	}
 	
 	private static SmtpServerProvider CreateSmtpProvider()
@@ -169,23 +178,31 @@ public class MailHookServiceTests
 	
 	private async Task<SentMail> SendAsync(MailHook mailHook, object? payload)
 	{
-		this.CreateService().SendHookMailAsync(mailHook, UserId, MembershipId, payload, TestContext.Current.CancellationToken);
-		await this.WaitForOutcomeEventsAsync(1);
+		await SendHookMailAsync(this.CreateService(), mailHook, payload);
 		return Assert.Single(this._sentMails);
 	}
 	
+	private static Task SendHookMailAsync(MailHookService service, MailHook mailHook, object? payload)
+	{
+		return service.SendHookMailAsync(new HookMail(mailHook, UserId, MembershipId, payload), TestContext.Current.CancellationToken);
+	}
+	
 	/// <summary>
-	/// Mails are sent in the background (fire and forget); wait for the outcome events.
+	/// The event handler queues the mails in the background: waits for the queued mails, then sends them like the mail hook worker does.
 	/// </summary>
-	private async Task WaitForOutcomeEventsAsync(int count)
+	private async Task SendQueuedMailsAsync(MailHookService service, int expectedCount)
 	{
 		var deadline = DateTime.UtcNow.AddSeconds(5);
-		while (this.OutcomeEvents().Count < count && DateTime.UtcNow < deadline)
+		while (this._mailHookQueue.Count < expectedCount && DateTime.UtcNow < deadline)
 		{
 			await Task.Delay(20, TestContext.Current.CancellationToken);
 		}
 		
-		Assert.Equal(count, this.OutcomeEvents().Count);
+		this._mailHookQueue.Complete();
+		await foreach (var mail in this._mailHookQueue.ReadAllAsync(TestContext.Current.CancellationToken))
+		{
+			await service.SendHookMailAsync(mail, TestContext.Current.CancellationToken);
+		}
 	}
 	
 	private List<ErtisAuthEventType> OutcomeEvents()
@@ -286,8 +303,7 @@ public class MailHookServiceTests
 			.SendMailAsync(Arg.Any<IMailProvider>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IEnumerable<Recipient>>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.ThrowsAsync(new InvalidOperationException("SMTP unavailable"));
 		
-		this.CreateService().SendHookMailAsync(CreateMailHook(), UserId, MembershipId, new { }, TestContext.Current.CancellationToken);
-		await this.WaitForOutcomeEventsAsync(1);
+		await SendHookMailAsync(this.CreateService(), CreateMailHook(), new { });
 		
 		Assert.Equal(ErtisAuthEventType.MailhookMailFailed, Assert.Single(this.OutcomeEvents()));
 	}
@@ -298,8 +314,7 @@ public class MailHookServiceTests
 		// Only the SMTP and MailChimp services are registered
 		this._membership.MailProviders = [new SendGridProvider { Name = "sendgrid", ApiKey = "key" }];
 		
-		this.CreateService().SendHookMailAsync(CreateMailHook(mailProvider: "sendgrid"), UserId, MembershipId, new { }, TestContext.Current.CancellationToken);
-		await this.WaitForOutcomeEventsAsync(1);
+		await SendHookMailAsync(this.CreateService(), CreateMailHook(mailProvider: "sendgrid"), new { });
 		
 		Assert.Equal(ErtisAuthEventType.MailhookMailFailed, Assert.Single(this.OutcomeEvents()));
 		Assert.Empty(this._sentMails);
@@ -313,8 +328,7 @@ public class MailHookServiceTests
 		rawOnlyService.GetProviderType().Returns(MailProviderType.MailChimp);
 		this._membership.MailProviders = [new MailChimpProvider { Name = "mailchimp", ApiKey = "key" }];
 		
-		this.CreateService([rawOnlyService]).SendHookMailAsync(CreateMailHook(mailProvider: "mailchimp"), UserId, MembershipId, new { }, TestContext.Current.CancellationToken);
-		await this.WaitForOutcomeEventsAsync(1);
+		await SendHookMailAsync(this.CreateService([rawOnlyService]), CreateMailHook(mailProvider: "mailchimp"), new { });
 		
 		Assert.Equal(ErtisAuthEventType.MailhookMailFailed, Assert.Single(this.OutcomeEvents()));
 		await rawOnlyService.DidNotReceiveWithAnyArgs().SendMailAsync(null!, null!, null!, null!, null!, null!, CancellationToken.None);
@@ -325,8 +339,7 @@ public class MailHookServiceTests
 	[InlineData("active", "unknown-provider")]
 	public async Task SendHookMailAsync_WithPassiveHookOrUnknownProvider_SendsNothing(string status, string mailProvider)
 	{
-		this.CreateService().SendHookMailAsync(CreateMailHook(status: status, mailProvider: mailProvider), UserId, MembershipId, new { }, TestContext.Current.CancellationToken);
-		await Task.Delay(300, TestContext.Current.CancellationToken);
+		await SendHookMailAsync(this.CreateService(), CreateMailHook(status: status, mailProvider: mailProvider), new { });
 		
 		Assert.Empty(this._sentMails);
 		Assert.Empty(this.OutcomeEvents());
@@ -340,10 +353,10 @@ public class MailHookServiceTests
 	public async Task OnEventFired_SendsTheCustomHooksOfTheEvent()
 	{
 		this._mailHooks.Add(CreateMailHook(name: "Welcome", template: "<p>Welcome {{document.firstname}}</p>"));
-		this.CreateService();
+		var service = this.CreateService();
 		
 		this.FireUserCreated(new { firstname = "John" });
-		await this.WaitForOutcomeEventsAsync(1);
+		await this.SendQueuedMailsAsync(service, 1);
 		
 		Assert.Equal("<p>Welcome John</p>", Assert.Single(this._sentMails).HtmlBody);
 	}
@@ -362,11 +375,13 @@ public class MailHookServiceTests
 		this._mailHooks.Add(otherMembership);
 		
 		this._mailHooks.Add(CreateMailHook(name: "Passive", subject: "Passive", status: "passive"));
-		this.CreateService();
+		var service = this.CreateService();
 		
 		this.FireUserCreated(new { firstname = "John" });
-		await this.WaitForOutcomeEventsAsync(1);
+		
+		// Gives the other hooks the time to be (wrongly) queued
 		await Task.Delay(300, TestContext.Current.CancellationToken);
+		await this.SendQueuedMailsAsync(service, 1);
 		
 		Assert.Equal("Matching", Assert.Single(this._sentMails).Subject);
 	}
@@ -378,10 +393,10 @@ public class MailHookServiceTests
 	public async Task OnEventFired_WithDynamicObjectDocument_ResolvesItsPlaceholders()
 	{
 		this._mailHooks.Add(CreateMailHook(name: "Welcome", template: "<p>Welcome {{document.firstname}}</p>", subject: "Hi {{document.firstname}}"));
-		this.CreateService();
+		var service = this.CreateService();
 		
 		this.FireUserCreated(DynamicObject.Parse("""{ "_id": "user-1", "firstname": "John" }"""));
-		await this.WaitForOutcomeEventsAsync(1);
+		await this.SendQueuedMailsAsync(service, 1);
 		
 		var mail = Assert.Single(this._sentMails);
 		Assert.Equal("<p>Welcome John</p>", mail.HtmlBody);
@@ -400,7 +415,37 @@ public class MailHookServiceTests
 		this.FireUserCreated(new { firstname = "John" });
 		await Task.Delay(300, TestContext.Current.CancellationToken);
 		
-		Assert.Empty(this._sentMails);
+		Assert.Equal(0, this._mailHookQueue.Count);
+	}
+	
+	#endregion
+	
+	#region Queuing
+	
+	[Fact]
+	public async Task QueueHookMail_QueuesASnapshotOfThePayload()
+	{
+		// The mail is sent later: a change of the caller's objects after queuing must not reach the mail
+		var service = this.CreateService();
+		var user = new Dictionary<string, object?> { ["firstname"] = "John" };
+		
+		service.QueueHookMail(CreateMailHook(template: "<p>Hi {{user.firstname}}</p>"), UserId, MembershipId, new { user });
+		user["firstname"] = "Changed";
+		await this.SendQueuedMailsAsync(service, 1);
+		
+		Assert.Equal("<p>Hi John</p>", Assert.Single(this._sentMails).HtmlBody);
+	}
+	
+	[Fact]
+	public void QueueHookMail_WhenTheQueueRejectsTheMail_DoesNotThrow()
+	{
+		// e.g. a full queue, or a closed one on shutdown: the flow which queues the mail (e.g. a password reset) must not fail
+		var rejectingQueue = Substitute.For<IMailHookQueue>();
+		rejectingQueue.TryEnqueue(Arg.Any<HookMail>()).Returns(false);
+		
+		this.CreateService(mailHookQueue: rejectingQueue).QueueHookMail(CreateMailHook(), UserId, MembershipId, new { });
+		
+		rejectingQueue.Received(1).TryEnqueue(Arg.Any<HookMail>());
 	}
 	
 	#endregion

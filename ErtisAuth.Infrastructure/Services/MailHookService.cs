@@ -49,6 +49,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	
 	private readonly IEventService _eventService;
 	private readonly IEnumerable<IMailService> _mailServices;
+	private readonly IMailHookQueue _mailHookQueue;
 	private readonly IUserRepository _userRepository;
 	private readonly ILogger<MailHookService> _logger;
 
@@ -62,6 +63,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	/// <param name="membershipService"></param>
 	/// <param name="eventService"></param>
 	/// <param name="mailServices"></param>
+	/// <param name="mailHookQueue"></param>
 	/// <param name="mailHookRepository"></param>
 	/// <param name="userRepository"></param>
 	/// <param name="logger"></param>
@@ -69,12 +71,14 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		IMembershipService membershipService,
 		IEventService eventService,
 		IEnumerable<IMailService> mailServices,
+		IMailHookQueue mailHookQueue,
 		IMailHookRepository mailHookRepository,
 		IUserRepository userRepository,
 		ILogger<MailHookService> logger) : base(membershipService, mailHookRepository)
 	{
 		this._eventService = eventService;
 		this._mailServices = mailServices;
+		this._mailHookQueue = mailHookQueue;
 		this._userRepository = userRepository;
 		this._logger = logger;
 		
@@ -114,12 +118,11 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			{
 				if (PredefinedAutonomouslyMailHooks.All(x => x != mailHook.Slug))
 				{
-					this.SendHookMailAsync(
+					this.QueueHookMail(
 						mailHook,
 						ertisAuthEvent.UtilizerId,
 						ertisAuthEvent.MembershipId,
-						ertisAuthEvent,
-						cancellationToken: cancellationToken);
+						ertisAuthEvent);
 				}
 			}
 		}
@@ -169,17 +172,35 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	
 	#region Methods
 	
-	public async void SendHookMailAsync(MailHook mailhook, string userId, string membershipId, object? payload, CancellationToken cancellationToken = default)
+	public void QueueHookMail(MailHook mailHook, string userId, string membershipId, object? payload)
 	{
 		try
 		{
-			if (mailhook.IsActive)
+			// The payload is snapshotted now: the mail is sent later, when the caller may have changed its objects
+			var mail = new HookMail(mailHook, userId, membershipId, ToTemplateData(payload));
+			if (!this._mailHookQueue.TryEnqueue(mail))
 			{
-				var membership = await this._membershipService.GetAsync(mailhook.MembershipId, cancellationToken: cancellationToken);
-				var mailProvider = membership?.MailProviders?.FirstOrDefault(x => x.Slug == mailhook.MailProvider);
+				this._logger.LogError("The hook mail '{MailHook}' could not be queued: the mail queue is full or closed", mailHook.Name);
+			}
+		}
+		catch (Exception ex)
+		{
+			// Queuing is best effort like the sending: the flow which queues the mail (e.g. a password reset) does not fail
+			this._logger.LogError(ex, "The hook mail '{MailHook}' could not be queued", mailHook.Name);
+		}
+	}
+	
+	public async Task SendHookMailAsync(HookMail mail, CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			if (mail.MailHook.IsActive)
+			{
+				var membership = await this._membershipService.GetAsync(mail.MailHook.MembershipId, cancellationToken: cancellationToken);
+				var mailProvider = membership?.MailProviders?.FirstOrDefault(x => x.Slug == mail.MailHook.MailProvider);
 				if (mailProvider != null)
 				{
-					await this.SendMailAsync(mailhook, mailProvider, userId, membershipId, payload, cancellationToken: cancellationToken);
+					await this.SendMailAsync(mail.MailHook, mailProvider, mail.UserId, mail.MembershipId, mail.Payload, cancellationToken: cancellationToken);
 				}
 			}
 		}

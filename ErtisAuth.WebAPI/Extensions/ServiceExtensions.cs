@@ -3,6 +3,7 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Extensions.AspNetCore.Middleware;
 using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Infrastructure.Services;
+using ErtisAuth.WebAPI.BackgroundServices;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ErtisAuth.WebAPI.Extensions;
@@ -33,7 +34,9 @@ public static class ServiceExtensions
 		services.AddSingleton<IOneTimePasswordService, OneTimePasswordService>();
 		services.AddSingleton<IProviderService, ProviderService>();
 		services.AddSingleton<IWebhookService, WebhookService>();
+		services.AddSingleton<IMailHookQueue, MailHookQueue>();
 		services.AddSingleton<IMailHookService, MailHookService>();
+		services.AddHostedService<MailHookBackgroundService>();
 		services.AddSingleton<ISetupService, SetupService>();
 		services.AddSingleton<IUtilizerService, UtilizerService>();
 		services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
