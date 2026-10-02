@@ -1,3 +1,4 @@
+using Ertis.Core.Models;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
@@ -14,6 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
+[Tags("Providers")]
 [Authorized]
 [RbacResource("providers")]
 [MembershipRoute("providers")]
@@ -43,9 +45,16 @@ public class ProvidersController : ControllerBase
 	
 	#region Read Methods
 	
+	/// <summary>Get a provider</summary>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">Provider id</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<Provider>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<Provider>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
 		var provider = await this._providerService.GetAsync(id, membershipId);
@@ -59,23 +68,26 @@ public class ProvidersController : ControllerBase
 		}
 	}
 	
+	/// <summary>List providers</summary>
+	/// <remarks>Returns the external identity providers (Google, Facebook, Apple, Microsoft) of the membership; the missing ones are created as inactive.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet]
 	[RbacAction(Rbac.CrudActions.Read)]
-	[ProducesResponseType(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<Provider[]>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
 		return this.Ok(await this._providerService.GetProvidersAsync(membershipId, cancellationToken: cancellationToken));
 	}
 	
+	/// <summary>List active providers</summary>
+	/// <remarks>Anonymous: returns only the public settings (name, client id, tenant id) of the active providers, for the login pages.</remarks>
+	/// <param name="membershipId">Membership id</param>
 	[HttpGet("active-providers")]
 	[Unauthorized]
 	[ProducesResponseType(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> GetActiveProviders([FromRoute] string membershipId)
 	{
 		var providers = await this._providerService.GetProvidersAsync(membershipId);
@@ -94,9 +106,21 @@ public class ProvidersController : ControllerBase
 	
 	#region Update Methods
 	
+	/// <summary>Update a provider</summary>
+	/// <remarks>The provider is identified by its <c>name</c> (Google, Facebook, Apple or Microsoft). Omitted <c>is_active</c>, <c>trust_email</c> and <c>private_key</c> keep their current values. **Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">Provider id</param>
+	/// <param name="model">Provider</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPut("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Update)]
+	[ProducesResponseType<Provider>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
 	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateProviderFormModel model, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(model.Name))
@@ -139,9 +163,17 @@ public class ProvidersController : ControllerBase
 	
 	#region Delete Methods
 	
+	/// <summary>Delete a provider</summary>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">Provider id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpDelete("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Delete)]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);

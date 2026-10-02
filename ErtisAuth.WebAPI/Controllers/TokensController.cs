@@ -1,3 +1,4 @@
+using Ertis.Core.Models;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
+[Tags("Tokens")]
 public class TokensController : ControllerBase
 {
 	#region Services
@@ -48,8 +50,14 @@ public class TokensController : ControllerBase
 	
 	#region Methods
 	
+	/// <summary>Get the token owner</summary>
+	/// <remarks>Returns the user of a Bearer token, or the application of a Basic token. Same as whoami.</remarks>
 	[HttpGet]
 	[Route("me")]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Me()
 	{
 		var token = this.GetToken();
@@ -79,8 +87,14 @@ public class TokensController : ControllerBase
 		}
 	}
 	
+	/// <summary>Who am I</summary>
+	/// <remarks>Returns the user of a Bearer token, or the application of a Basic token. Same as me.</remarks>
 	[HttpGet]
 	[Route("whoami")]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> WhoAmI()
 	{
 		var token = this.GetToken();
@@ -145,8 +159,15 @@ public class TokensController : ControllerBase
 		};
 	}
 	
+	/// <summary>Generate a token</summary>
+	/// <remarks>Signs in with <c>username</c> (or email address) and <c>password</c> and returns an access and a refresh token. Without credentials, a Bearer token in the Authorization header and <c>scopes</c> in the body return a scoped token of the same user. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). The optional <c>X-IpAddress</c> and <c>X-UserAgent</c> headers are stored with the active token.</remarks>
+	/// <param name="model">Credentials or scopes</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
 	[Route("generate-token")]
+	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenFormModel model, CancellationToken cancellationToken = default)
 	{
 		var membershipId = this.GetMembershipId();
@@ -210,8 +231,13 @@ public class TokensController : ControllerBase
 		}
 	}
 	
+	/// <summary>Verify a token</summary>
+	/// <remarks>Verifies the token in the Authorization header (Bearer or Basic). Answers 200 with the validation result, or 401 when the token is not valid.</remarks>
 	[HttpGet]
 	[Route("verify-token")]
+	[ProducesResponseType<ITokenValidationResult>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ITokenValidationResult>(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> VerifyToken()
 	{
 		var token = this.GetTokenFromHeader(out var tokenTypeStr);
@@ -236,8 +262,14 @@ public class TokensController : ControllerBase
 		}
 	}
 	
+	/// <summary>Verify a token (body)</summary>
+	/// <remarks>Like the GET endpoint; the token can also be given in the body (with its type, e.g. <c>Bearer ...</c>) instead of the Authorization header.</remarks>
+	/// <param name="model">Token to verify</param>
 	[HttpPost]
 	[Route("verify-token")]
+	[ProducesResponseType<ITokenValidationResult>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ITokenValidationResult>(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> VerifyToken([FromBody] VerifyTokenFormModel model)
 	{
 		var token = this.GetTokenFromHeader(out var tokenTypeStr);
@@ -267,8 +299,13 @@ public class TokensController : ControllerBase
 		}
 	}
 	
+	/// <summary>Refresh a token</summary>
+	/// <remarks>Returns a new token for the refresh token in the Authorization header. The refresh token is revoked (usable once) unless <c>revoke=false</c> is given. **Note:** the previous access token is not revoked; it stays valid until it expires.</remarks>
 	[HttpGet]
 	[Route("refresh-token")]
+	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> RefreshToken()
 	{
 		var refreshToken = this.GetTokenFromHeader(out _);
@@ -287,8 +324,14 @@ public class TokensController : ControllerBase
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 	}
 	
+	/// <summary>Refresh a token (body)</summary>
+	/// <remarks>Like the GET endpoint; the refresh token can also be given in the body instead of the Authorization header.</remarks>
+	/// <param name="model">Refresh token</param>
 	[HttpPost]
 	[Route("refresh-token")]
+	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenFormModel model)
 	{
 		var refreshToken = this.GetTokenFromHeader(out _);
@@ -312,8 +355,14 @@ public class TokensController : ControllerBase
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 	}
 	
+	/// <summary>Revoke a token</summary>
+	/// <remarks>Signs out: revokes the token in the Authorization header. <c>logout-all=true</c> revokes all tokens of the user (every device). Answers 401 when the token could not be revoked.</remarks>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet]
 	[Route("revoke-token")]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> RevokeToken(CancellationToken cancellationToken = default)
 	{
 		var token = this.GetTokenFromHeader(out _);
@@ -339,8 +388,15 @@ public class TokensController : ControllerBase
 		}
 	}
 	
+	/// <summary>Revoke a token (body)</summary>
+	/// <remarks>Like the GET endpoint; the token can also be given in the body instead of the Authorization header.</remarks>
+	/// <param name="model">Token to revoke</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
 	[Route("revoke-token")]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> RevokeToken([FromBody] RevokeTokenFormModel model, CancellationToken cancellationToken = default)
 	{
 		var token = this.GetTokenFromHeader(out _);
@@ -371,8 +427,14 @@ public class TokensController : ControllerBase
 		}
 	}
 	
+	/// <summary>Verify a one time password</summary>
+	/// <remarks>Verifies the one time password (<c>password</c>) of the user (<c>username</c> or email address) and returns a reset token, to set a new password with the set password endpoint. The <c>X-Host</c> header must match the OTP host of the membership. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). **Note:** the returned token is not an access token. Failed attempts are limited; the one time password is deleted when they are used up.</remarks>
+	/// <param name="model">Username and one time password</param>
 	[HttpPost]
 	[Route("verify-otp")]
+	[ProducesResponseType<ResetPasswordToken>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> VerifyOneTimePassword([FromBody] GenerateTokenFormModel model)
 	{
 		var membershipId = this.GetMembershipId();
@@ -405,8 +467,19 @@ public class TokensController : ControllerBase
 	
 	#region Provider Methods
 	
+	/// <summary>Sign in with Facebook</summary>
+	/// <remarks>Signs in (or signs up) the user with a Facebook login result. <c>limited_flow=true</c> is for Facebook Limited Login. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). The optional <c>X-IpAddress</c> and <c>X-UserAgent</c> headers are stored with the active token.</remarks>
+	/// <param name="request">Facebook login result</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
 	[Route("oauth/facebook/login")]
+	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status501NotImplemented)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status503ServiceUnavailable)]
 	public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequest request, CancellationToken cancellationToken = default)
 	{
 		var membershipId = this.GetMembershipId();
@@ -444,8 +517,19 @@ public class TokensController : ControllerBase
 		);
 	}
 	
+	/// <summary>Sign in with Google</summary>
+	/// <remarks>Signs in (or signs up) the user with a Google login result. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). The optional <c>X-IpAddress</c> and <c>X-UserAgent</c> headers are stored with the active token.</remarks>
+	/// <param name="request">Google login result</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
 	[Route("oauth/google/login")]
+	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status501NotImplemented)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status503ServiceUnavailable)]
 	public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken = default)
 	{
 		var membershipId = this.GetMembershipId();
@@ -478,8 +562,19 @@ public class TokensController : ControllerBase
 		);
 	}
 	
+	/// <summary>Sign in with Microsoft</summary>
+	/// <remarks>Signs in (or signs up) the user with a Microsoft login result. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). The optional <c>X-IpAddress</c> and <c>X-UserAgent</c> headers are stored with the active token.</remarks>
+	/// <param name="request">Microsoft login result</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
 	[Route("oauth/microsoft/login")]
+	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status501NotImplemented)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status503ServiceUnavailable)]
 	public async Task<IActionResult> MicrosoftLogin([FromBody] MicrosoftLoginRequest request, CancellationToken cancellationToken = default)
 	{
 		var membershipId = this.GetMembershipId();
@@ -512,8 +607,21 @@ public class TokensController : ControllerBase
 		);
 	}
 	
+	/// <summary>Sign in with Apple</summary>
+	/// <remarks>Signs in (or signs up) the user with a Sign in with Apple result. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). The optional <c>X-IpAddress</c> and <c>X-UserAgent</c> headers are stored with the active token.</remarks>
+	/// <param name="request">Sign in with Apple result</param>
+	/// <param name="platform">Client platform: <c>ios</c>, <c>android</c> or <c>web</c></param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
 	[Route("oauth/apple/login")]
+	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status501NotImplemented)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status503ServiceUnavailable)]
 	public async Task<IActionResult> AppleLogin([FromBody] AppleLoginModel request, [FromQuery] string platform, CancellationToken cancellationToken = default)
 	{
 		var membershipId = this.GetMembershipId();

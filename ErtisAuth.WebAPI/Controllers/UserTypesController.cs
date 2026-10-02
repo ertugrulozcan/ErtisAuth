@@ -1,3 +1,4 @@
+using Ertis.Core.Models;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
@@ -18,6 +19,7 @@ namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
 [Authorized]
+[Tags("User Types")]
 [RbacResource("user-types")]
 [MembershipRoute("user-types")]
 public class UserTypesController : QueryControllerBase
@@ -46,13 +48,17 @@ public class UserTypesController : QueryControllerBase
     
     #region Read Methods
 	
+	/// <summary>Get a user type</summary>
+	/// <remarks>Returns the user type with the fields inherited from its base types.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">User type id</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
-	[ProducesResponseType(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<UserType>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<UserType>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
 		var userType = await this._userTypeService.GetAsync(id, membershipId);
@@ -66,14 +72,19 @@ public class UserTypesController : QueryControllerBase
 		}
 	}
 	
+	/// <summary>Get the declaring types of the fields</summary>
+	/// <remarks>Groups the fields of the user type by the type that declares them in the inheritance chain, up to the origin user type <c>base-user</c>.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">User type id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("relations/{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
-	[ProducesResponseType(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType(StatusCodes.Status403Forbidden)]
-	public async Task<ActionResult<UserType>> GetFieldInfoOwnerRelations([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+	[ProducesResponseType<Dictionary<string, List<string>>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	public async Task<ActionResult<Dictionary<string, List<string>>>> GetFieldInfoOwnerRelations([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var relations = await this._userTypeService.GetFieldInfoOwnerRelationsAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (relations != null)
@@ -86,12 +97,16 @@ public class UserTypesController : QueryControllerBase
 		}
 	}
 	
+	/// <summary>List user types</summary>
+	/// <remarks>Returns the stored user types of the membership; the origin user type is not included. Paginated with the <c>skip</c>, <c>limit</c> and <c>with_count</c> query parameters, sorted with <c>sort</c> (e.g. <c>sort=name desc</c>).</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet]
 	[RbacAction(Rbac.CrudActions.Read)]
-	[ProducesResponseType(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<PaginationCollection<UserType>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
@@ -101,12 +116,15 @@ public class UserTypesController : QueryControllerBase
 		return this.Ok(userTypes);
 	}
 	
+	/// <summary>List all user types</summary>
+	/// <remarks>Returns all user types of the membership without pagination, the origin user type <c>base-user</c> included.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("all")]
 	[RbacAction(Rbac.CrudActions.Read)]
-	[ProducesResponseType(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<PaginationCollection<UserType>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> GetAll([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
 		var userTypes = await this._userTypeService.GetAsync(membershipId, null, null, false, null, null, cancellationToken: cancellationToken);
@@ -128,13 +146,15 @@ public class UserTypesController : QueryControllerBase
 		return this.Ok(userTypes);
 	}
 	
+	/// <summary>Query user types</summary>
+	/// <remarks>Filters the user types with the MongoDB query in the <c>where</c> field of the body and projects them with <c>select</c>; paginated and sorted with the query parameters of the list endpoint. JavaScript operators (<c>$where</c>, <c>$function</c>) and hidden fields are rejected.</remarks>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost("_query")]
 	[RbacAction(Rbac.CrudActions.Read)]
-	[ProducesResponseType(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<PaginationCollection<UserType>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public override async Task<IActionResult> Query(CancellationToken cancellationToken = default)
 	{
 		return await base.Query(cancellationToken: cancellationToken);
@@ -156,13 +176,19 @@ public class UserTypesController : QueryControllerBase
 	
 	#region Create Methods
 	
+	/// <summary>Create a user type</summary>
+	/// <remarks>Defines the schema of a kind of user. The base type (<c>baseType</c>) can be given by its slug or name and is stored by its slug; without it the type inherits from the origin user type <c>base-user</c>. The slug is derived from the name when not given.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="model">User type</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
 	[RbacAction(Rbac.CrudActions.Create)]
-	[ProducesResponseType(StatusCodes.Status201Created)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<UserType>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
 	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateUserTypeFormModel model, CancellationToken cancellationToken = default)
 	{
 		var userTypeModel = ToUserType(membershipId, null, model.Name, model.Slug, model.Description, model.Properties, model.AllowAdditionalProperties, model.IsAbstract, model.IsSealed, model.BaseUserType);
@@ -175,9 +201,21 @@ public class UserTypesController : QueryControllerBase
 	
 	#region Update Methods
 	
+	/// <summary>Update a user type</summary>
+	/// <remarks>**Note:** the slug of a user type which has users or derived types does not change (a new slug is ignored), since they refer to it by its slug. **Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">User type id</param>
+	/// <param name="model">User type</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPut("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Update)]
+	[ProducesResponseType<UserType>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
 	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateUserTypeFormModel model, CancellationToken cancellationToken = default)
 	{
 		var userTypeModel = ToUserType(membershipId, id, model.Name, model.Slug, model.Description, model.Properties, model.AllowAdditionalProperties, model.IsAbstract, model.IsSealed, model.BaseUserType);
@@ -228,9 +266,19 @@ public class UserTypesController : QueryControllerBase
 	
 	#region Delete Methods
 	
+	/// <summary>Delete a user type</summary>
+	/// <remarks>A user type which has users or derived types can not be deleted.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">User type id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpDelete("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Delete)]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);

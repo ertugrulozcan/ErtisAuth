@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
+[Tags("Roles")]
 [Authorized]
 [RbacResource("roles")]
 [MembershipRoute("roles")]
@@ -56,8 +57,19 @@ public class RolesController : QueryControllerBase
 	
 	#region Create Methods
 	
+	/// <summary>Create a role</summary>
+	/// <remarks>A role grants permissions (<c>permissions</c>) and forbids actions (<c>forbidden</c>) in the <c>[subject].[resource].[action].[object]</c> form.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="model">Role</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
 	[RbacAction(Rbac.CrudActions.Create)]
+	[ProducesResponseType<Role>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
 	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateRoleFormModel model, CancellationToken cancellationToken = default)
 	{
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
@@ -85,9 +97,16 @@ public class RolesController : QueryControllerBase
 	
 	#region Read Methods
 	
+	/// <summary>Get a role</summary>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">Role id</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<Role>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<Role>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
 		var role = await this._roleService.GetAsync(id, membershipId);
@@ -101,8 +120,16 @@ public class RolesController : QueryControllerBase
 		}
 	}
 	
+	/// <summary>List roles</summary>
+	/// <remarks>Paginated with the <c>skip</c>, <c>limit</c> and <c>with_count</c> query parameters, sorted with <c>sort</c> (e.g. <c>sort=name desc</c>).</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet]
 	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<PaginationCollection<Role>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
@@ -112,8 +139,15 @@ public class RolesController : QueryControllerBase
 		return this.Ok(roles);
 	}
 	
+	/// <summary>Query roles</summary>
+	/// <remarks>Filters the roles with the MongoDB query in the <c>where</c> field of the body and projects them with <c>select</c>; paginated and sorted with the query parameters of the list endpoint. JavaScript operators (<c>$where</c>, <c>$function</c>) and hidden fields are rejected.</remarks>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost("_query")]
 	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<PaginationCollection<Role>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public override async Task<IActionResult> Query(CancellationToken cancellationToken = default)
 	{
 		return await base.Query(cancellationToken: cancellationToken);
@@ -131,13 +165,17 @@ public class RolesController : QueryControllerBase
 		}
 	}
 	
+	/// <summary>Search roles</summary>
+	/// <remarks>Full text search with the <c>keyword</c> query parameter; paginated and sorted like the list endpoint.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="keyword">Text to search for</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("search")]
 	[RbacAction(Rbac.CrudActions.Read)]
-	[ProducesResponseType(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<PaginationCollection<Role>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(keyword.Trim()))
@@ -155,9 +193,21 @@ public class RolesController : QueryControllerBase
 	
 	#region Update Methods
 	
+	/// <summary>Update a role</summary>
+	/// <remarks>**Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">Role id</param>
+	/// <param name="model">Role</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPut("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Update)]
+	[ProducesResponseType<Role>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
 	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateRoleFormModel model, CancellationToken cancellationToken = default)
 	{
 		var roleModel = new Role
@@ -180,9 +230,17 @@ public class RolesController : QueryControllerBase
 	
 	#region Delete Methods
 	
+	/// <summary>Delete a role</summary>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">Role id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpDelete("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Delete)]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
@@ -196,12 +254,19 @@ public class RolesController : QueryControllerBase
 		}
 	}
 	
+	/// <summary>Delete roles</summary>
+	/// <remarks>Deletes the roles with the ids in the body. Returns 204 when all of them are deleted and 404 when none of them is deleted. **Note:** when only some of them are deleted the response is 200 with an error body (<c>BulkDeletePartial</c>), not a success.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="ids">Ids of the roles to delete</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpDelete]
-	[ProducesResponseType(StatusCodes.Status204NoContent)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	[RbacAction(Rbac.CrudActions.Delete)]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[]? ids, CancellationToken cancellationToken = default)
 	{
 		if (ids != null)
@@ -234,8 +299,18 @@ public class RolesController : QueryControllerBase
 	
 	#region Check Permission
 	
+	/// <summary>Check a permission of a role</summary>
+	/// <remarks>Checks whether the role has the permission in the <c>permission</c> query parameter (<c>[subject].[resource].[action].[object]</c>, shorter forms like <c>users.read</c> allowed). **Note:** a denied permission answers 401, not 403.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">Role id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("{id}/check-permission")]
 	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> CheckPermissionByRole([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
 		var role = await this._roleService.GetAsync(id, membershipId, cancellationToken: cancellationToken);
@@ -264,13 +339,17 @@ public class RolesController : QueryControllerBase
 		}
 	}
 	
-	/// <summary>
-	/// Whether the caller's token may perform the given permission (used by ErtisAuth.Sdk.AspNetCore to authorize the
-	/// requests of client applications). Self authorized: asking about one's own permissions needs a valid token only,
-	/// the asked permission is evaluated with the caller's role, UBAC and token scopes.
-	/// </summary>
+	/// <summary>Check a permission of the caller</summary>
+	/// <remarks>Checks whether the caller's token may perform the permission in the <c>permission</c> query parameter, with its role, user based permissions and token scopes. Needs only a valid token. Used by ErtisAuth.Sdk.AspNetCore. **Note:** a denied permission answers 401, not 403.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("check-permission")]
 	[SelfAuthorized]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> CheckPermissionByToken([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);

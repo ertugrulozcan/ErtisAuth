@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
+[Tags("Health Check")]
 public class HealthCheckController : ControllerBase
 {
 	#region Services
@@ -34,7 +35,11 @@ public class HealthCheckController : ControllerBase
 	
 	#region Methods
 	
+	/// <summary>Health check</summary>
+	/// <remarks>Checks the database connection and whether the installation is set up. Anonymous. **Note:** an installation which is not set up yet answers 200 with the status <c>Unhealthy</c>; only a failing database answers 500.</remarks>
 	[HttpGet("healthcheck")]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> HealthCheck()
 	{
 		try
@@ -69,7 +74,10 @@ public class HealthCheckController : ControllerBase
 		}
 	}
 	
+	/// <summary>Ping</summary>
+	/// <remarks>Answers <c>Pong</c>. Anonymous; does not touch the database.</remarks>
 	[HttpGet("ping")]
+	[ProducesResponseType<string>(StatusCodes.Status200OK)]
 	public IActionResult Ping()
 	{
 		return this.Ok("Pong");

@@ -6,7 +6,6 @@ using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.Mailing.Extensions;
 using ErtisAuth.WebAPI.Extensions;
 using Microsoft.AspNetCore.ResponseCompression;
-using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,7 +48,7 @@ builder.Services.AddResponseCompression(options =>
 });
 
 // OpenAPI
-builder.Services.AddOpenApi();
+builder.AddOpenApi();
 
 // Controllers & JSON Options
 builder.Services
@@ -62,14 +61,7 @@ builder.ConfigureShutdown();
 var app = builder.Build();
 
 // OpenAPI
-if (app.Environment.IsDevelopment())
-{
-	app.MapOpenApi();
-	app.MapScalarApiReference("documentation", options =>
-	{
-		options.WithTitle("ErtisAuth");
-	});
-}
+app.UseOpenApi();
 
 // Compression
 app.UseResponseCompression();

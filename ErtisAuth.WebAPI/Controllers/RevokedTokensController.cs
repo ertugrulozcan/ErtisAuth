@@ -1,3 +1,5 @@
+using ErtisAuth.Core.Models.Identity;
+using Ertis.Core.Models;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
@@ -12,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
+[Tags("Revoked Tokens")]
 [Authorized]
 [RbacResource("tokens")]
 [MembershipRoute("revoked-tokens")]
@@ -38,8 +41,16 @@ public class RevokedTokensController : QueryControllerBase
 	
 	#region Read Methods
 	
+	/// <summary>List revoked tokens</summary>
+	/// <remarks>Returns the revoked access tokens of the membership. Paginated with the <c>skip</c>, <c>limit</c> and <c>with_count</c> query parameters, sorted with <c>sort</c> (e.g. <c>sort=name desc</c>).</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet]
 	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<PaginationCollection<RevokedToken>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
@@ -49,8 +60,15 @@ public class RevokedTokensController : QueryControllerBase
 		return this.Ok(revokedTokens);
 	}
 	
+	/// <summary>Query revoked tokens</summary>
+	/// <remarks>Filters the revoked tokens with the MongoDB query in the <c>where</c> field of the body and projects them with <c>select</c>; paginated and sorted with the query parameters of the list endpoint. JavaScript operators (<c>$where</c>, <c>$function</c>) and hidden fields are rejected.</remarks>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost("_query")]
 	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<PaginationCollection<RevokedToken>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public override async Task<IActionResult> Query(CancellationToken cancellationToken = default)
 	{
 		return await base.Query(cancellationToken: cancellationToken);

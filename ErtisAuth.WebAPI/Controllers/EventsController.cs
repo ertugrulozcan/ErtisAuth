@@ -1,3 +1,4 @@
+using Ertis.Core.Models;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
@@ -14,6 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ErtisAuth.WebAPI.Controllers;
 
 [ApiController]
+[Tags("Events")]
 [Authorized]
 [RbacResource("events")]
 [MembershipRoute("events")]
@@ -40,9 +42,17 @@ public class EventsController : QueryControllerBase
 	
 	#region Read Methods
 	
+	/// <summary>Get an event</summary>
+	/// <remarks>Returns an event (user created, token generated, role updated...) with the utilizer who caused it and the related documents.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">Event id</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<ErtisAuthEvent>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<ErtisAuthEvent>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
 		var ertisAuthEvent = await this._eventService.GetAsync(id, membershipId);
@@ -56,8 +66,16 @@ public class EventsController : QueryControllerBase
 		}
 	}
 	
+	/// <summary>List events</summary>
+	/// <remarks>Returns the event log of the membership. Paginated with the <c>skip</c>, <c>limit</c> and <c>with_count</c> query parameters, sorted with <c>sort</c> (e.g. <c>sort=name desc</c>).</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet]
 	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<PaginationCollection<ErtisAuthEvent>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
 	{
 		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
@@ -67,8 +85,15 @@ public class EventsController : QueryControllerBase
 		return this.Ok(events);
 	}
 	
+	/// <summary>Query events</summary>
+	/// <remarks>Filters the events with the MongoDB query in the <c>where</c> field of the body and projects them with <c>select</c>; paginated and sorted with the query parameters of the list endpoint. JavaScript operators (<c>$where</c>, <c>$function</c>) and hidden fields are rejected.</remarks>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost("_query")]
 	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<PaginationCollection<ErtisAuthEvent>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public override async Task<IActionResult> Query(CancellationToken cancellationToken = default)
 	{
 		return await base.Query(cancellationToken: cancellationToken);
