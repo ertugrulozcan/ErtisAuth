@@ -11,6 +11,7 @@ using ErtisAuth.Infrastructure.Constants;
 using ErtisAuth.Infrastructure.Helpers;
 using Ertis.Core.Collections;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -30,6 +31,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	private readonly IRoleService _roleService;
 	private readonly IEventService _eventService;
+	private readonly ILogger<ApplicationService> _logger;
 	private readonly IMemoryCache _memoryCache;
 	
 	#endregion
@@ -44,15 +46,18 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	/// <param name="eventService"></param>
 	/// <param name="memoryCache"></param>
 	/// <param name="applicationRepository"></param>
+	/// <param name="logger"></param>
 	public ApplicationService(
 		IMembershipService membershipService, 
 		IRoleService roleService, 
 		IEventService eventService,
 		IMemoryCache memoryCache,
-		IApplicationRepository applicationRepository) : base(membershipService, applicationRepository)
+		IApplicationRepository applicationRepository,
+		ILogger<ApplicationService> logger) : base(membershipService, applicationRepository)
 	{
 		this._roleService = roleService;
 		this._eventService = eventService;
+		this._logger = logger;
 		this._memoryCache = memoryCache;
 		
 		this.OnCreated += this.ApplicationCreatedEventHandler;
@@ -64,19 +69,40 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	#region Event Handlers
 	
-	private void ApplicationCreatedEventHandler(object? sender, CreateResourceEventArgs<Application> eventArgs)
+	private async void ApplicationCreatedEventHandler(object? sender, CreateResourceEventArgs<Application> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.ApplicationCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.ApplicationCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "ApplicationService.ApplicationCreatedEventHandler occured an error");
+		}
 	}
 	
-	private void ApplicationUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Application> eventArgs)
+	private async void ApplicationUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Application> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.ApplicationUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.ApplicationUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "ApplicationService.ApplicationUpdatedEventHandler occured an error");
+		}
 	}
 	
-	private void ApplicationDeletedEventHandler(object? sender, DeleteResourceEventArgs<Application> eventArgs)
+	private async void ApplicationDeletedEventHandler(object? sender, DeleteResourceEventArgs<Application> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.ApplicationDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.ApplicationDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "ApplicationService.ApplicationDeletedEventHandler occured an error");
+		}
 	}
 	
 	#endregion

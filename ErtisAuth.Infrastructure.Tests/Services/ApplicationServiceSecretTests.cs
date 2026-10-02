@@ -12,6 +12,7 @@ using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.Infrastructure.Tests.Helpers;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace ErtisAuth.Infrastructure.Tests.Services;
@@ -84,7 +85,7 @@ public class ApplicationServiceSecretTests
 			this._roleService,
 			this._eventService,
 			new MemoryCache(new MemoryCacheOptions()),
-			this._repository);
+			this._repository, NullLogger<ApplicationService>.Instance);
 	}
 	
 	/// <summary>

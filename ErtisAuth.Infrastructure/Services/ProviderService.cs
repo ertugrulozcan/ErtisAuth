@@ -91,19 +91,40 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Event Handlers
 	
-	private void ProviderCreatedEventHandler(object? sender, CreateResourceEventArgs<Provider> eventArgs)
+	private async void ProviderCreatedEventHandler(object? sender, CreateResourceEventArgs<Provider> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderCreated, eventArgs.Utilizer, eventArgs.MembershipId, ToEventDocument(eventArgs.Resource));
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.ProviderCreated, eventArgs.Utilizer, eventArgs.MembershipId, ToEventDocument(eventArgs.Resource));
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "ProviderService.ProviderCreatedEventHandler occured an error");
+		}
 	}
 	
-	private void ProviderUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Provider> eventArgs)
+	private async void ProviderUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Provider> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderUpdated, eventArgs.Utilizer, eventArgs.MembershipId, ToEventDocument(eventArgs.Updated), ToEventDocument(eventArgs.Prior));
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.ProviderUpdated, eventArgs.Utilizer, eventArgs.MembershipId, ToEventDocument(eventArgs.Updated), ToEventDocument(eventArgs.Prior));
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "ProviderService.ProviderUpdatedEventHandler occured an error");
+		}
 	}
 	
-	private void ProviderDeletedEventHandler(object? sender, DeleteResourceEventArgs<Provider> eventArgs)
+	private async void ProviderDeletedEventHandler(object? sender, DeleteResourceEventArgs<Provider> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.ProviderDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, ToEventDocument(eventArgs.Resource));
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.ProviderDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, ToEventDocument(eventArgs.Resource));
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "ProviderService.ProviderDeletedEventHandler occured an error");
+		}
 	}
 	
 	/// <summary>

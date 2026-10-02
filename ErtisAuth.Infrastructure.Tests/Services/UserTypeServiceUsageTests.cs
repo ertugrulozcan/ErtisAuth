@@ -9,6 +9,7 @@ using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.Infrastructure.Tests.Helpers;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace ErtisAuth.Infrastructure.Tests.Services;
@@ -70,7 +71,7 @@ public class UserTypeServiceUsageTests
 	
 	private UserTypeService CreateUserTypeService()
 	{
-		return new UserTypeService(this._membershipService, Substitute.For<IEventService>(), this._repository, this._userRepository, Substitute.For<IUserUniqueIndexSynchronizer>(), new MemoryCache(new MemoryCacheOptions()));
+		return new UserTypeService(this._membershipService, Substitute.For<IEventService>(), this._repository, this._userRepository, Substitute.For<IUserUniqueIndexSynchronizer>(), new MemoryCache(new MemoryCacheOptions()), NullLogger<UserTypeService>.Instance);
 	}
 	
 	private UserType NewUserType(string name, string? slug = null)

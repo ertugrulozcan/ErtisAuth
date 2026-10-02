@@ -9,6 +9,7 @@ using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -23,6 +24,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	#region Services
 	
 	private readonly IEventService _eventService;
+	private readonly ILogger<RoleService> _logger;
 	private readonly IMemoryCache _memoryCache;
 	
 	#endregion
@@ -36,13 +38,16 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	/// <param name="eventService"></param>
 	/// <param name="memoryCache"></param>
 	/// <param name="roleRepository"></param>
+	/// <param name="logger"></param>
 	public RoleService(
 		IMembershipService membershipService, 
 		IEventService eventService, 
 		IMemoryCache memoryCache,
-		IRoleRepository roleRepository) : base(membershipService, roleRepository)
+		IRoleRepository roleRepository,
+		ILogger<RoleService> logger) : base(membershipService, roleRepository)
 	{
 		this._eventService = eventService;
+		this._logger = logger;
 		this._memoryCache = memoryCache;
 		
 		this.OnCreated += this.RoleCreatedEventHandler;
@@ -126,19 +131,40 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	#region Event Handlers
 	
-	private void RoleCreatedEventHandler(object? sender, CreateResourceEventArgs<Role> eventArgs)
+	private async void RoleCreatedEventHandler(object? sender, CreateResourceEventArgs<Role> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.RoleCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.RoleCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "RoleService.RoleCreatedEventHandler occured an error");
+		}
 	}
 	
-	private void RoleUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Role> eventArgs)
+	private async void RoleUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Role> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.RoleUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.RoleUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "RoleService.RoleUpdatedEventHandler occured an error");
+		}
 	}
 	
-	private void RoleDeletedEventHandler(object? sender, DeleteResourceEventArgs<Role> eventArgs)
+	private async void RoleDeletedEventHandler(object? sender, DeleteResourceEventArgs<Role> eventArgs)
 	{
-		this._eventService.FireEventAsync(ErtisAuthEventType.RoleDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.RoleDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "RoleService.RoleDeletedEventHandler occured an error");
+		}
 	}
 	
 	#endregion

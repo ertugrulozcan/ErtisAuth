@@ -2,13 +2,17 @@ using System.Net;
 using Ertis.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.Infrastructure.Tests.Helpers;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Bson;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace ErtisAuth.Infrastructure.Tests.Services;
 
@@ -54,7 +58,7 @@ public class TokenCodePolicyServiceTests
 	
 	private TokenCodePolicyService CreateService()
 	{
-		return new TokenCodePolicyService(this._membershipService, Substitute.For<IEventService>(), this._repository);
+		return new TokenCodePolicyService(this._membershipService, Substitute.For<IEventService>(), this._repository, NullLogger<TokenCodePolicyService>.Instance);
 	}
 	
 	private static TokenCodePolicy CreatePolicy(string name = "TV Code", int length = 6, int expiresIn = 300)
@@ -100,6 +104,25 @@ public class TokenCodePolicyServiceTests
 		
 		Assert.Equal(created.Id, (await service.GetBySlugAsync("tv-code", MembershipId, TestContext.Current.CancellationToken))?.Id);
 		Assert.Null(await service.GetBySlugAsync("tv-code", "5f8a1b2c3d4e5f6a7b8c9dff", TestContext.Current.CancellationToken));
+	}
+	
+	/// <summary>
+	/// The created event is stored in the background: a failure is logged (it was lost unobserved) and the policy is still created
+	/// </summary>
+	[Fact]
+	public async Task CreateAsync_WhenTheEventCanNotBeStored_LogsTheErrorAndCreatesThePolicy()
+	{
+		var eventService = Substitute.For<IEventService>();
+		eventService
+			.FireEventAsync(Arg.Any<ErtisAuthEventType>(), Arg.Any<Utilizer>(), Arg.Any<string?>(), Arg.Any<object?>(), Arg.Any<object?>(), Arg.Any<CancellationToken>())
+			.ThrowsAsync(new InvalidOperationException("Database unavailable"));
+		var logger = Substitute.For<ILogger<TokenCodePolicyService>>();
+		var service = new TokenCodePolicyService(this._membershipService, eventService, this._repository, logger);
+		
+		var created = await this.CreateAsync(service, CreatePolicy());
+		
+		Assert.Contains(this._policies, x => x.Id == created.Id);
+		Assert.Contains(logger.ReceivedCalls(), x => x.GetMethodInfo().Name == nameof(ILogger.Log) && (LogLevel) x.GetArguments()[0]! == LogLevel.Error && x.GetArguments()[3] is InvalidOperationException);
 	}
 	
 	#endregion

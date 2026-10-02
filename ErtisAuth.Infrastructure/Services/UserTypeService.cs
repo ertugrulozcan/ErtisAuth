@@ -14,6 +14,7 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -33,6 +34,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
     #region Services
 	
     private readonly IEventService _eventService;
+    private readonly ILogger<UserTypeService> _logger;
     private readonly IUserRepository _userRepository;
     private readonly IUserUniqueIndexSynchronizer _uniqueIndexSynchronizer;
     private readonly IMemoryCache _memoryCache;
@@ -271,10 +273,12 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
         IUserTypeRepository repository,
         IUserRepository userRepository,
         IUserUniqueIndexSynchronizer uniqueIndexSynchronizer,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache,
+        ILogger<UserTypeService> logger)
         : base(membershipService, repository)
     {
         this._eventService = eventService;
+        this._logger = logger;
         this._userRepository = userRepository;
         this._uniqueIndexSynchronizer = uniqueIndexSynchronizer;
         this._memoryCache = memoryCache;
@@ -288,20 +292,41 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
     
     #region Event Handlers
 	
-    private void UserTypeCreatedEventHandler(object? sender, CreateResourceEventArgs<UserType> eventArgs)
-    {
-		this._eventService.FireEventAsync(ErtisAuthEventType.UserTypeCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
-    }
+	private async void UserTypeCreatedEventHandler(object? sender, CreateResourceEventArgs<UserType> eventArgs)
+	{
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.UserTypeCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "UserTypeService.UserTypeCreatedEventHandler occured an error");
+		}
+	}
 	
-    private void UserTypeUpdatedEventHandler(object? sender, UpdateResourceEventArgs<UserType> eventArgs)
-    {
-		this._eventService.FireEventAsync(ErtisAuthEventType.UserTypeUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
-    }
+	private async void UserTypeUpdatedEventHandler(object? sender, UpdateResourceEventArgs<UserType> eventArgs)
+	{
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.UserTypeUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "UserTypeService.UserTypeUpdatedEventHandler occured an error");
+		}
+	}
 	
-    private void UserTypeDeletedEventHandler(object? sender, DeleteResourceEventArgs<UserType> eventArgs)
-    {
-		this._eventService.FireEventAsync(ErtisAuthEventType.UserTypeDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
-    }
+	private async void UserTypeDeletedEventHandler(object? sender, DeleteResourceEventArgs<UserType> eventArgs)
+	{
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.UserTypeDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "UserTypeService.UserTypeDeletedEventHandler occured an error");
+		}
+	}
 	
     #endregion
     

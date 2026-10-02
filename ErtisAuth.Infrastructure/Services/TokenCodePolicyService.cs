@@ -4,6 +4,7 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -12,6 +13,7 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 	#region Services
 	
 	private readonly IEventService _eventService;
+	private readonly ILogger<TokenCodePolicyService> _logger;
 	
 	#endregion
 	
@@ -23,12 +25,15 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
     /// <param name="membershipService"></param>
     /// <param name="eventService"></param>
     /// <param name="repository"></param>
+    /// <param name="logger"></param>
     public TokenCodePolicyService(
 	    IMembershipService membershipService,
 	    IEventService eventService,
-	    ICodePolicyRepository repository) : base(membershipService, repository)
+	    ICodePolicyRepository repository,
+	    ILogger<TokenCodePolicyService> logger) : base(membershipService, repository)
     {
 	    this._eventService = eventService;
+	    this._logger = logger;
 	    
 	    this.OnCreated += this.OnCreatedEventHandler;
 	    this.OnUpdated += this.OnUpdatedEventHandler;
@@ -48,20 +53,41 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
     
     #region Event Handlers
 	
-    private void OnCreatedEventHandler(object? sender, CreateResourceEventArgs<TokenCodePolicy> eventArgs)
-    {
-		this._eventService.FireEventAsync(ErtisAuthEventType.TokenCodePolicyCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
-    }
+	private async void OnCreatedEventHandler(object? sender, CreateResourceEventArgs<TokenCodePolicy> eventArgs)
+	{
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenCodePolicyCreated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Resource);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "TokenCodePolicyService.OnCreatedEventHandler occured an error");
+		}
+	}
 	
-    private void OnUpdatedEventHandler(object? sender, UpdateResourceEventArgs<TokenCodePolicy> eventArgs)
-    {
-		this._eventService.FireEventAsync(ErtisAuthEventType.TokenCodePolicyUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
-    }
+	private async void OnUpdatedEventHandler(object? sender, UpdateResourceEventArgs<TokenCodePolicy> eventArgs)
+	{
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenCodePolicyUpdated, eventArgs.Utilizer, eventArgs.MembershipId, eventArgs.Updated, eventArgs.Prior);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "TokenCodePolicyService.OnUpdatedEventHandler occured an error");
+		}
+	}
 	
-    private void OnDeletedEventHandler(object? sender, DeleteResourceEventArgs<TokenCodePolicy> eventArgs)
-    {
-		this._eventService.FireEventAsync(ErtisAuthEventType.TokenCodePolicyDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
-    }
+	private async void OnDeletedEventHandler(object? sender, DeleteResourceEventArgs<TokenCodePolicy> eventArgs)
+	{
+		try
+		{
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenCodePolicyDeleted, eventArgs.Utilizer, eventArgs.MembershipId, null, eventArgs.Resource);
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "TokenCodePolicyService.OnDeletedEventHandler occured an error");
+		}
+	}
 	
     #endregion
     

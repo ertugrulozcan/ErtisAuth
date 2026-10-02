@@ -6,6 +6,7 @@ using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.Infrastructure.Tests.Helpers;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace ErtisAuth.Infrastructure.Tests.Services;
@@ -43,7 +44,7 @@ public class RoleServiceCacheTests
 	
 	private RoleService CreateRoleService()
 	{
-		return new RoleService(this._membershipService, Substitute.For<IEventService>(), new MemoryCache(new MemoryCacheOptions()), this._repository);
+		return new RoleService(this._membershipService, Substitute.For<IEventService>(), new MemoryCache(new MemoryCacheOptions()), this._repository, NullLogger<RoleService>.Instance);
 	}
 	
 	private Role NewRole(string id, string name)
