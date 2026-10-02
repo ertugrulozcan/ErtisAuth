@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
+using ErtisAuth.Core.Models.Users;
 using ErtisAuth.IntegrationTests.Infrastructure;
 using ErtisAuth.IntegrationTests.Resources;
 
@@ -123,8 +124,11 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 		// The declaring type of each field
 		var adminClient = await this._instance.CreateAdminClientAsync();
 		var relations = await adminClient.GetFromJsonAsync<JsonObject>($"{this.MembershipUrl}/user-types/relations/{child["_id"]!.GetValue<string>()}", CancellationToken);
-		Assert.Contains("loyalty_number", relations![parent["slug"]!.GetValue<string>()]!.AsArray().Select(x => x!.GetValue<string>()));
-		Assert.Contains("tier", relations[childSlug]!.AsArray().Select(x => x!.GetValue<string>()));
+		Assert.Equal(new[] { "loyalty_number" }, relations![parent["slug"]!.GetValue<string>()]!.AsArray().Select(x => x!.GetValue<string>()));
+		Assert.Equal(new[] { "tier" }, relations[childSlug]!.AsArray().Select(x => x!.GetValue<string>()));
+		
+		// The fields of the origin user type are declared by the origin, not by the topmost custom type of the chain
+		Assert.Contains("firstname", relations[UserType.ORIGIN_USER_TYPE_SLUG]!.AsArray().Select(x => x!.GetValue<string>()));
 	}
 	
 	/// <summary>

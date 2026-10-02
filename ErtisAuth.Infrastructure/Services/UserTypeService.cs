@@ -267,6 +267,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
     /// <param name="userRepository">Used directly instead of IUserService, which depends on this service</param>
     /// <param name="uniqueIndexSynchronizer"></param>
     /// <param name="memoryCache"></param>
+	/// <param name="logger"></param>
     public UserTypeService(
         IMembershipService membershipService,
         IEventService eventService,
@@ -388,14 +389,9 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 				break;
 			}
 			
+			// The walk goes up to the origin user type (it has no base): every type carries the merged origin fields,
+			// so without the origin they would be attributed to the topmost custom type of the chain
 			ancestors.Add(baseUserType);
-			
-			// As before: the walk ends at a type whose base is the origin user type (the origin is listed only as a direct base)
-			if (string.IsNullOrEmpty(baseUserType.BaseUserType) || baseUserType.BaseUserType == UserType.ORIGIN_USER_TYPE_SLUG)
-			{
-				break;
-			}
-			
 			pivotUserType = baseUserType;
 		}
 		
