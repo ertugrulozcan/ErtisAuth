@@ -317,6 +317,11 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.BadRequest, $"The base user type '{baseUserTypeName}' is flagged as sealed. It's can not be used as base type.", "InheritedTypeIsSealed");
 	}
 	
+	public static ErtisAuthException UserTypeInheritanceCycle(string baseUserTypeName)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, $"The base user type '{baseUserTypeName}' inherits from this user type (an inheritance cycle), or its inheritance chain is too deep.", "UserTypeInheritanceCycle");
+	}
+	
 	public static ErtisAuthException InheritedTypeIsAbstract(string baseUserTypeName)
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, $"The base user type '{baseUserTypeName}' has abstract modifier.", "InheritedTypeIsAbstract");

@@ -22,6 +22,11 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
     #region Constants
 	
     private const string CACHE_KEY = "user-types";
+    
+    /// <summary>
+    /// The longest inheritance chain walked (from a user type to the origin user type): a guard against a cyclic or too deep chain
+    /// </summary>
+    private const int MAX_INHERITANCE_DEPTH = 32;
 	
     #endregion
     
@@ -344,27 +349,33 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
         return fieldInfoOwnerRelationDictionary;
     }
     
-    private async Task<List<UserType>> GetGenealogyAsync(UserType userType, CancellationToken cancellationToken = default)
-    {
-        var ancestors = new List<UserType> { userType };
-        var pivotUserType = userType;
+	private async Task<List<UserType>> GetGenealogyAsync(UserType userType, CancellationToken cancellationToken = default)
+	{
+		var ancestors = new List<UserType> { userType };
+		var pivotUserType = userType;
 		
-        do
-        {
-	        pivotUserType = pivotUserType.BaseUserType != null ? await this.GetBaseUserTypeAsync(pivotUserType.BaseUserType, userType.MembershipId, cancellationToken: cancellationToken) : null;
-	        if (pivotUserType != null)
-	        {
-		        ancestors.Add(pivotUserType);
-	        }
-        } 
-        while (
-	        pivotUserType != null &&
-	        !string.IsNullOrEmpty(pivotUserType.BaseUserType) &&
-	        pivotUserType.BaseUserType != UserType.ORIGIN_USER_TYPE_SLUG
-	    );
+		// Bounded: a cyclic (or too deep) chain stored before the cycle check is not walked forever
+		while (!string.IsNullOrEmpty(pivotUserType.BaseUserType) && ancestors.Count <= MAX_INHERITANCE_DEPTH)
+		{
+			var baseUserType = await this.GetBaseUserTypeAsync(pivotUserType.BaseUserType, userType.MembershipId, cancellationToken: cancellationToken);
+			if (baseUserType == null || ancestors.Any(x => x.Slug == baseUserType.Slug))
+			{
+				break;
+			}
+			
+			ancestors.Add(baseUserType);
+			
+			// As before: the walk ends at a type whose base is the origin user type (the origin is listed only as a direct base)
+			if (string.IsNullOrEmpty(baseUserType.BaseUserType) || baseUserType.BaseUserType == UserType.ORIGIN_USER_TYPE_SLUG)
+			{
+				break;
+			}
+			
+			pivotUserType = baseUserType;
+		}
 		
-        return ancestors;
-    }
+		return ancestors;
+	}
 	
     protected override void Overwrite(UserType destination, UserType source)
     {
@@ -402,10 +413,33 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	        throw ErtisAuthException.InheritedTypeIsSealed(model.BaseUserType);
         }
 		
+		await this.EnsureNoInheritanceCycleAsync(model, baseUserType, cancellationToken: cancellationToken);
+		
         model.Properties = new ReadOnlyCollection<IFieldInfo>(model.MergeTypeProperties(baseUserType, crudOperation is CrudOperation.Update or CrudOperation.Create).ToList());
 		
         return model;
     }
+	
+	/// <summary>
+	/// Walks the ancestors of the base user type until the origin user type: the user type must not be one of them
+	/// (on an update the base type can be changed to a descendant), and the chain must be acyclic and not too deep
+	/// (an existing chain may be cyclic, e.g. stored before this check).
+	/// </summary>
+	private async Task EnsureNoInheritanceCycleAsync(UserType model, UserType baseUserType, CancellationToken cancellationToken = default)
+	{
+		var visited = new HashSet<string>();
+		var ancestor = baseUserType;
+		while (ancestor != null && ancestor.Slug != OriginUserType.Slug)
+		{
+			var isTheModel = ancestor.Slug == model.Slug || (!string.IsNullOrEmpty(model.Id) && ancestor.Id == model.Id);
+			if (isTheModel || !visited.Add(ancestor.Slug) || visited.Count > MAX_INHERITANCE_DEPTH)
+			{
+				throw ErtisAuthException.UserTypeInheritanceCycle(baseUserType.Slug);
+			}
+			
+			ancestor = string.IsNullOrEmpty(ancestor.BaseUserType) ? null : await this.GetBaseUserTypeAsync(ancestor.BaseUserType, model.MembershipId, cancellationToken: cancellationToken);
+		}
+	}
 	
     private async Task<UserType?> GetBaseUserTypeAsync(string baseUserTypeName, string membershipId, CancellationToken cancellationToken = default)
     {
@@ -487,24 +521,27 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
         return IsInheritFrom(childUserType, parentUserType, allUserTypes.Items.ToArray());
     }
 	
-    private static bool IsInheritFrom(UserType? childUserType, UserType parentUserType, UserType[] allUserTypes)
-    {
-        while (true)
-        {
-	        if (string.IsNullOrEmpty(childUserType?.BaseUserType))
-	        {
-		        return false;
-	        }
-	        
-	        if (childUserType.BaseUserType == parentUserType.Slug)
-	        {
-		        return true;
-	        }
+	private static bool IsInheritFrom(UserType? childUserType, UserType parentUserType, UserType[] allUserTypes)
+	{
+		// Bounded: a cyclic (or too deep) chain stored before the cycle check is not walked forever
+		for (var depth = 0; depth <= MAX_INHERITANCE_DEPTH; depth++)
+		{
+			if (string.IsNullOrEmpty(childUserType?.BaseUserType))
+			{
+				return false;
+			}
 			
-	        childUserType = allUserTypes.FirstOrDefault(x => x.Slug == childUserType.BaseUserType);
-        }
-    }
-    
+			if (childUserType.BaseUserType == parentUserType.Slug)
+			{
+				return true;
+			}
+			
+			childUserType = allUserTypes.FirstOrDefault(x => x.Slug == childUserType.BaseUserType);
+		}
+		
+		return false;
+	}
+	
 	protected override Task<IEnumerable<string>> ValidateModelAsync(UserType model, CancellationToken cancellationToken = default)
 	{
 		var errorList = new List<string>();
