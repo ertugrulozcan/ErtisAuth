@@ -434,6 +434,9 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	        throw ErtisAuthException.InheritedTypeIsSealed(model.BaseUserType);
         }
 		
+		// The base type may be given by its name: stored by its slug, which never changes (the name can be renamed)
+		model.BaseUserType = baseUserType.Slug;
+		
 		await this.EnsureNoInheritanceCycleAsync(model, baseUserType, cancellationToken: cancellationToken);
 		
         model.Properties = new ReadOnlyCollection<IFieldInfo>(model.MergeTypeProperties(baseUserType, crudOperation is CrudOperation.Update or CrudOperation.Create).ToList());

@@ -42,12 +42,12 @@ public class ReferenceFieldTests : IClassFixture<ErtisAuthInstance>
 	
 	#region Helpers
 	
-	private async Task<string> CreateUserTypeAsync(string baseType = "user", JsonObject? properties = null)
+	private async Task<string> CreateUserTypeAsync(string baseType = "user", JsonObject? properties = null, string? name = null)
 	{
 		var userTypes = new ResourceClient(await this._instance.CreateAdminClientAsync(), $"{this.MembershipUrl}/user-types");
 		var userType = await userTypes.CreateAsync(new JsonObject
 		{
-			["name"] = $"Reference {Guid.NewGuid():N}",
+			["name"] = name ?? $"Reference {Guid.NewGuid():N}",
 			["baseType"] = baseType,
 			["properties"] = properties ?? new JsonObject()
 		});
@@ -145,6 +145,23 @@ public class ReferenceFieldTests : IClassFixture<ErtisAuthInstance>
 		Assert.Equal(referencedId, user["ref"]!["_id"]!.GetValue<string>());
 	}
 
+	/// <summary>
+	/// The base type of the derived type is given by its name (stored by its slug).
+	/// </summary>
+	[Fact]
+	public async Task SingleReference_ToATypeInheritedByName_IsAccepted()
+	{
+		var contentTypeName = $"Reference {Guid.NewGuid():N}";
+		var contentType = await this.CreateUserTypeAsync(name: contentTypeName);
+		var derivedType = await this.CreateUserTypeAsync(baseType: contentTypeName);
+		var referencedId = await this.CreateUserIdAsync(derivedType);
+		var userType = await this.CreateReferencingUserTypeAsync("single", contentType);
+		
+		var user = await this.CreateReferencingUserAsync(userType, referencedId);
+		
+		Assert.Equal(referencedId, user["ref"]!["_id"]!.GetValue<string>());
+	}
+	
 	/// <summary>
 	/// Every user type inherits (directly or indirectly) from the origin user type, which is not stored:
 	/// a reference field with the origin as content type accepts the users of any type.

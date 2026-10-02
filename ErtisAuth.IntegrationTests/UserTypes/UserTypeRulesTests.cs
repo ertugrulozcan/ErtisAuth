@@ -152,6 +152,37 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 		Assert.Equal(parentSlug, (await userTypes.GetAsync(child["_id"]!.GetValue<string>()))["baseType"]!.GetValue<string>());
 	}
 	
+	/// <summary>
+	/// A base type given by its name is stored by its slug: the derived type keeps its base type when the base type is
+	/// renamed, and the base type can not be deleted.
+	/// </summary>
+	[Fact]
+	public async Task BaseTypeGivenByName_IsStoredBySlug()
+	{
+		var parentName = UniqueName("Partner");
+		var parent = await this.CreateUserTypeAsync(parentName);
+		var parentId = parent["_id"]!.GetValue<string>();
+		var parentSlug = parent["slug"]!.GetValue<string>();
+		var childName = UniqueName("Gold Partner");
+		var child = await this.CreateUserTypeAsync(childName, baseType: parentName);
+		Assert.Equal(parentSlug, child["baseType"]!.GetValue<string>());
+		
+		var userTypes = await this.AdminResourceClientAsync("user-types");
+		var adminClient = await this._instance.CreateAdminClientAsync();
+		using var deleteResponse = await adminClient.DeleteAsync($"{userTypes.Url}/{parentId}", CancellationToken);
+		await AssertErrorAsync(deleteResponse, "UserTypeCanNotBeDelete");
+		
+		// After the rename, the child is updated with its base type as it is read (like a client does)
+		await userTypes.UpdateAsync(parentId, UserTypeBody(UniqueName("Renamed Partner")));
+		var childId = child["_id"]!.GetValue<string>();
+		var storedBaseType = (await userTypes.GetAsync(childId))["baseType"]!.GetValue<string>();
+		var updatedChild = await userTypes.UpdateAsync(childId, UserTypeBody(childName, baseType: storedBaseType, properties: new JsonObject
+		{
+			["partner_code"] = new JsonObject { ["type"] = "string" }
+		}));
+		Assert.Equal(parentSlug, updatedChild["baseType"]!.GetValue<string>());
+	}
+	
 	[Fact]
 	public async Task AbstractType_HasNoUsersButCanBeInherited()
 	{
