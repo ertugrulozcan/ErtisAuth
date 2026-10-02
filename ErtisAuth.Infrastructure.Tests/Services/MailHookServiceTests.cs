@@ -49,7 +49,7 @@ public class MailHookServiceTests
 	
 	private readonly ITemplateMailService _mailChimpService = Substitute.For<ITemplateMailService>();
 	
-	private readonly MailHookQueue _mailHookQueue = new();
+	private readonly BackgroundQueue<HookMail> _mailHookQueue = new();
 	
 	private readonly Membership _membership;
 	
@@ -127,7 +127,7 @@ public class MailHookServiceTests
 	
 	#region Helpers
 	
-	private MailHookService CreateService(IEnumerable<IMailService>? mailServices = null, IMailHookQueue? mailHookQueue = null)
+	private MailHookService CreateService(IEnumerable<IMailService>? mailServices = null, IBackgroundQueue<HookMail>? mailHookQueue = null)
 	{
 		return new MailHookService(
 			this._membershipService,
@@ -440,7 +440,7 @@ public class MailHookServiceTests
 	public void QueueHookMail_WhenTheQueueRejectsTheMail_DoesNotThrow()
 	{
 		// e.g. a full queue, or a closed one on shutdown: the flow which queues the mail (e.g. a password reset) must not fail
-		var rejectingQueue = Substitute.For<IMailHookQueue>();
+		var rejectingQueue = Substitute.For<IBackgroundQueue<HookMail>>();
 		rejectingQueue.TryEnqueue(Arg.Any<HookMail>()).Returns(false);
 		
 		this.CreateService(mailHookQueue: rejectingQueue).QueueHookMail(CreateMailHook(), UserId, MembershipId, new { });

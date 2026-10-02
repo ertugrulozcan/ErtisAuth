@@ -49,7 +49,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	
 	private readonly IEventService _eventService;
 	private readonly IEnumerable<IMailService> _mailServices;
-	private readonly IMailHookQueue _mailHookQueue;
+	private readonly IBackgroundQueue<HookMail> _mailHookQueue;
 	private readonly IUserRepository _userRepository;
 	private readonly ILogger<MailHookService> _logger;
 
@@ -71,7 +71,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		IMembershipService membershipService,
 		IEventService eventService,
 		IEnumerable<IMailService> mailServices,
-		IMailHookQueue mailHookQueue,
+		IBackgroundQueue<HookMail> mailHookQueue,
 		IMailHookRepository mailHookRepository,
 		IUserRepository userRepository,
 		ILogger<MailHookService> logger) : base(membershipService, mailHookRepository)

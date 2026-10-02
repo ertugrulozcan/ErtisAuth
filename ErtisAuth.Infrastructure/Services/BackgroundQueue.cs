@@ -1,15 +1,14 @@
 using System.Threading.Channels;
 using ErtisAuth.Abstractions.Services;
-using ErtisAuth.Core.Models.Mailing;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class MailHookQueue : IMailHookQueue
+public class BackgroundQueue<T> : IBackgroundQueue<T>
 {
 	#region Constants
 	
 	/// <summary>
-	/// Bounds the memory under a burst of events; a mail which does not fit is rejected (logged by the caller)
+	/// Bounds the memory under a burst of events; an item which does not fit is rejected (logged by the caller)
 	/// </summary>
 	public const int Capacity = 10_000;
 	
@@ -17,7 +16,7 @@ public class MailHookQueue : IMailHookQueue
 	
 	#region Fields
 	
-	private readonly Channel<HookMail> _channel = Channel.CreateBounded<HookMail>(new BoundedChannelOptions(Capacity)
+	private readonly Channel<T> _channel = Channel.CreateBounded<T>(new BoundedChannelOptions(Capacity)
 	{
 		FullMode = BoundedChannelFullMode.Wait
 	});
@@ -32,12 +31,12 @@ public class MailHookQueue : IMailHookQueue
 	
 	#region Methods
 	
-	public bool TryEnqueue(HookMail mail)
+	public bool TryEnqueue(T item)
 	{
-		return this._channel.Writer.TryWrite(mail);
+		return this._channel.Writer.TryWrite(item);
 	}
 	
-	public IAsyncEnumerable<HookMail> ReadAllAsync(CancellationToken cancellationToken = default)
+	public IAsyncEnumerable<T> ReadAllAsync(CancellationToken cancellationToken = default)
 	{
 		return this._channel.Reader.ReadAllAsync(cancellationToken);
 	}

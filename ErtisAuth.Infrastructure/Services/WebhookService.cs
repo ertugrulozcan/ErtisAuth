@@ -37,6 +37,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	
 	private readonly IEventService _eventService;
 	private readonly IRestHandler _restHandler;
+	private readonly IBackgroundQueue<WebhookCall> _webhookQueue;
 	private readonly ILogger<WebhookService> _logger;
 	
 	#endregion
@@ -49,18 +50,21 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	/// <param name="membershipService"></param>
 	/// <param name="eventService"></param>
 	/// <param name="restHandler"></param>
+	/// <param name="webhookQueue"></param>
 	/// <param name="repository"></param>
 	/// <param name="logger"></param>
 	public WebhookService(
 		IMembershipService membershipService, 
 		IEventService eventService,
 		IRestHandler restHandler,
+		IBackgroundQueue<WebhookCall> webhookQueue,
 		IWebhookRepository repository,
 		ILogger<WebhookService> logger) : 
 		base(membershipService, repository)
 	{
 		this._eventService = eventService;
 		this._restHandler = restHandler;
+		this._webhookQueue = webhookQueue;
 		this._logger = logger;
 		
 		this._eventService.OnEventFired += this.OnEventFired;
@@ -100,14 +104,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			
 			foreach (var webhook in webhooks.Items.Where(x => x.IsActive))
 			{
-				// Fire and forget: webhooks run in the background, ExecuteWebhookAsync catches and logs every exception
-				_ = this.ExecuteWebhookAsync(
-					webhook, 
-					ertisAuthEvent.UtilizerId, 
-					ertisAuthEvent.MembershipId, 
-					ertisAuthEvent.Document, 
-					ertisAuthEvent.Prior, 
-					cancellationToken: cancellationToken);
+				this.QueueWebhook(webhook, ertisAuthEvent);
 			}
 		}
 		catch (Exception ex)
@@ -156,14 +153,31 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	
 	#region Methods
 	
-	private async Task ExecuteWebhookAsync(
-		Webhook webhook, 
-		string utilizerId, 
-		string membershipId, 
-		object? document, 
-		object? prior, 
-		CancellationToken cancellationToken = default)
+	/// <summary>
+	/// Queues the webhook call; it is executed in the background by the webhook worker
+	/// </summary>
+	private void QueueWebhook(Webhook webhook, ErtisAuthEvent ertisAuthEvent)
 	{
+		try
+		{
+			// The event data is snapshotted now: the call is executed later, when the event's objects may have been changed
+			var eventData = JsonSerializer.SerializeToNode(new { document = ertisAuthEvent.Document, prior = ertisAuthEvent.Prior }, EventDataSerializerOptions);
+			if (!this._webhookQueue.TryEnqueue(new WebhookCall(webhook, ertisAuthEvent.UtilizerId, ertisAuthEvent.MembershipId, eventData)))
+			{
+				this._logger.LogError("Webhook {WebhookId} could not be queued: the webhook queue is full or closed", webhook.Id);
+			}
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "Webhook {WebhookId} could not be queued", webhook.Id);
+		}
+	}
+	
+	public async Task ExecuteWebhookAsync(WebhookCall call, CancellationToken cancellationToken = default)
+	{
+		var webhook = call.Webhook;
+		var utilizerId = call.UtilizerId;
+		var membershipId = call.MembershipId;
 		try
 		{
 			if (!webhook.IsActive || webhook.Request == null)
@@ -174,7 +188,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 			var tryCount = webhook.TryCount > 0 ? webhook.TryCount : 1;
 			
 			// Event data is user-controlled: every template target gets context-specific escaping
-			var dataNode = JsonSerializer.SerializeToNode(new { document, prior }, EventDataSerializerOptions);
+			var dataNode = call.EventData;
 			var data = ToTemplateData(dataNode);
 			var urlData = ToTemplateData(MapStringValues(dataNode?.DeepClone(), Uri.EscapeDataString));
 			var formatter = new Ertis.TemplateEngine.Formatter();
@@ -220,8 +234,8 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 				Url = webhook.Request.Url,
 				Headers = webhook.Request.Headers,
 				Body = new DynamicObject(new {
-					document,
-					prior,
+					document = dataNode?["document"]?.DeepClone(),
+					prior = dataNode?["prior"]?.DeepClone(),
 					payload = webhookBody
 				})
 			};

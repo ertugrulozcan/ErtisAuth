@@ -1,5 +1,7 @@
 using Ertis.Net.Rest;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Models.Mailing;
+using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Extensions.AspNetCore.Middleware;
 using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Infrastructure.Services;
@@ -33,8 +35,10 @@ public static class ServiceExtensions
 		services.AddSingleton<ITokenCodePolicyService, TokenCodePolicyService>();
 		services.AddSingleton<IOneTimePasswordService, OneTimePasswordService>();
 		services.AddSingleton<IProviderService, ProviderService>();
+		services.AddSingleton<IBackgroundQueue<WebhookCall>, BackgroundQueue<WebhookCall>>();
 		services.AddSingleton<IWebhookService, WebhookService>();
-		services.AddSingleton<IMailHookQueue, MailHookQueue>();
+		services.AddHostedService<WebhookBackgroundService>();
+		services.AddSingleton<IBackgroundQueue<HookMail>, BackgroundQueue<HookMail>>();
 		services.AddSingleton<IMailHookService, MailHookService>();
 		services.AddHostedService<MailHookBackgroundService>();
 		services.AddSingleton<ISetupService, SetupService>();

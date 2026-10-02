@@ -15,7 +15,7 @@ public class MailHookBackgroundServiceTests
 {
 	#region Fields
 	
-	private readonly MailHookQueue _mailHookQueue = new();
+	private readonly BackgroundQueue<HookMail> _mailHookQueue = new();
 	
 	private readonly IMailHookService _mailHookService = Substitute.For<IMailHookService>();
 	

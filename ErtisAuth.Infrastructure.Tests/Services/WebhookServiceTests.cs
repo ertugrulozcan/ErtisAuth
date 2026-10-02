@@ -42,6 +42,8 @@ public class WebhookServiceTests
 	
 	private readonly IWebhookRepository _repository = Substitute.For<IWebhookRepository>();
 	
+	private readonly BackgroundQueue<WebhookCall> _webhookQueue = new();
+	
 	private readonly List<Webhook> _webhooks;
 	
 	private readonly List<SentRequest> _sentRequests = [];
@@ -98,7 +100,7 @@ public class WebhookServiceTests
 	
 	private WebhookService CreateService()
 	{
-		return new WebhookService(this._membershipService, this._eventService, this._restHandler, this._repository, NullLogger<WebhookService>.Instance);
+		return new WebhookService(this._membershipService, this._eventService, this._restHandler, this._webhookQueue, this._repository, NullLogger<WebhookService>.Instance);
 	}
 	
 	private static Webhook CreateWebhook(
@@ -146,18 +148,26 @@ public class WebhookServiceTests
 		});
 	}
 	
-	/// <summary>
-	/// Webhooks run in the background (fire and forget); wait for the outcome events.
-	/// </summary>
-	private async Task WaitForOutcomeEventsAsync(int count)
+	private async Task WaitForQueuedWebhooksAsync(int count)
 	{
 		var deadline = DateTime.UtcNow.AddSeconds(5);
-		while (this.OutcomeEvents().Count < count && DateTime.UtcNow < deadline)
+		while (this._webhookQueue.Count < count && DateTime.UtcNow < deadline)
 		{
 			await Task.Delay(20, TestContext.Current.CancellationToken);
 		}
-		
-		Assert.Equal(count, this.OutcomeEvents().Count);
+	}
+	
+	/// <summary>
+	/// The event handler queues the webhook calls in the background: waits for the queued calls, then executes them like the webhook worker does.
+	/// </summary>
+	private async Task ExecuteQueuedWebhooksAsync(WebhookService service, int expectedCount)
+	{
+		await this.WaitForQueuedWebhooksAsync(expectedCount);
+		this._webhookQueue.Complete();
+		await foreach (var call in this._webhookQueue.ReadAllAsync(TestContext.Current.CancellationToken))
+		{
+			await service.ExecuteWebhookAsync(call, TestContext.Current.CancellationToken);
+		}
 	}
 	
 	private List<ErtisAuthEventType> OutcomeEvents()
@@ -171,9 +181,9 @@ public class WebhookServiceTests
 	private async Task<SentRequest> SendSingleRequestAsync(Webhook webhook, object document)
 	{
 		this.AddWebhook(webhook);
-		this.CreateService();
+		var service = this.CreateService();
 		this.FireUserCreated(document);
-		await this.WaitForOutcomeEventsAsync(1);
+		await this.ExecuteQueuedWebhooksAsync(service, 1);
 		return Assert.Single(this._sentRequests);
 	}
 	
@@ -287,11 +297,13 @@ public class WebhookServiceTests
 		this.AddWebhook(otherMembership);
 		
 		this.AddWebhook(CreateWebhook(url: "https://hooks.example.com/passive", status: WebhookStatus.Passive));
-		this.CreateService();
+		var service = this.CreateService();
 		
 		this.FireUserCreated(new { username = "john.doe" });
-		await this.WaitForOutcomeEventsAsync(1);
+		
+		// Gives the other webhooks the time to be (wrongly) queued
 		await Task.Delay(300, TestContext.Current.CancellationToken);
+		await this.ExecuteQueuedWebhooksAsync(service, 1);
 		
 		Assert.Equal("https://hooks.example.com/matching", Assert.Single(this._sentRequests).Url);
 	}
@@ -303,10 +315,10 @@ public class WebhookServiceTests
 	public async Task OnEventFired_WithDynamicObjectDocument_SendsAndTemplatesItsFields()
 	{
 		this.AddWebhook(CreateWebhook(url: "https://hooks.example.com/{{document.username}}"));
-		this.CreateService();
+		var service = this.CreateService();
 		
 		this.FireUserCreated(DynamicObject.Parse("""{ "_id": "user-1", "username": "john.doe" }"""));
-		await this.WaitForOutcomeEventsAsync(1);
+		await this.ExecuteQueuedWebhooksAsync(service, 1);
 		
 		var request = Assert.Single(this._sentRequests);
 		Assert.Equal("https://hooks.example.com/john.doe", request.Url);
@@ -322,7 +334,25 @@ public class WebhookServiceTests
 		this.FireUserCreated(new { username = "john.doe" });
 		await Task.Delay(300, TestContext.Current.CancellationToken);
 		
-		Assert.Empty(this._sentRequests);
+		Assert.Equal(0, this._webhookQueue.Count);
+	}
+	
+	[Fact]
+	public async Task OnEventFired_QueuesASnapshotOfTheEventData()
+	{
+		// The call is executed later: a change of the event's objects after the event must not reach the request
+		this.AddWebhook(CreateWebhook(url: "https://hooks.example.com/{{document.username}}"));
+		var service = this.CreateService();
+		var document = new Dictionary<string, object?> { ["username"] = "john.doe" };
+		
+		this.FireUserCreated(document);
+		await this.WaitForQueuedWebhooksAsync(1);
+		document["username"] = "changed";
+		await this.ExecuteQueuedWebhooksAsync(service, 1);
+		
+		var request = Assert.Single(this._sentRequests);
+		Assert.Equal("https://hooks.example.com/john.doe", request.Url);
+		Assert.Equal("john.doe", request.Body?["document"]?["username"]?.GetValue<string>());
 	}
 	
 	#endregion
@@ -404,10 +434,10 @@ public class WebhookServiceTests
 	{
 		this._responseStatusCode = HttpStatusCode.InternalServerError;
 		this.AddWebhook(CreateWebhook(tryCount: 3));
-		this.CreateService();
+		var service = this.CreateService();
 		
 		this.FireUserCreated(new { username = "john.doe" });
-		await this.WaitForOutcomeEventsAsync(3);
+		await this.ExecuteQueuedWebhooksAsync(service, 1);
 		
 		Assert.Equal(3, this._sentRequests.Count);
 		Assert.All(this.OutcomeEvents(), x => Assert.Equal(ErtisAuthEventType.WebhookRequestFailed, x));
@@ -417,11 +447,10 @@ public class WebhookServiceTests
 	public async Task OnEventFired_WhenTheReceiverSucceeds_DoesNotRetry()
 	{
 		this.AddWebhook(CreateWebhook(tryCount: 3));
-		this.CreateService();
+		var service = this.CreateService();
 		
 		this.FireUserCreated(new { username = "john.doe" });
-		await this.WaitForOutcomeEventsAsync(1);
-		await Task.Delay(200, TestContext.Current.CancellationToken);
+		await this.ExecuteQueuedWebhooksAsync(service, 1);
 		
 		Assert.Single(this._sentRequests);
 		Assert.Equal(ErtisAuthEventType.WebhookRequestSent, Assert.Single(this.OutcomeEvents()));
