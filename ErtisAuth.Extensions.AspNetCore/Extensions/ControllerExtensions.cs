@@ -52,6 +52,30 @@ public static class ControllerExtensions
 		return TokenBase.ExtractToken(authorizationHeader, out tokenType);
 	}
 	
+	public static TokenBase GetToken(this ControllerBase controller)
+	{
+		var stringToken = controller.GetTokenFromHeader(out var tokenTypeStr);
+		if (string.IsNullOrEmpty(stringToken))
+		{
+			throw ErtisAuthException.AuthorizationHeaderMissing();
+		}
+		
+		if (tokenTypeStr == null || !TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
+		{
+			throw ErtisAuthException.UnsupportedTokenType();
+		}
+		
+		TokenBase token = tokenType switch
+		{
+			SupportedTokenTypes.None => throw ErtisAuthException.UnsupportedTokenType(),
+			SupportedTokenTypes.Basic => new BasicToken(stringToken),
+			SupportedTokenTypes.Bearer => BearerToken.CreateTemp(stringToken),
+			_ => throw ErtisAuthException.UnsupportedTokenType()
+		};
+		
+		return token;
+	}
+	
 	public static UnauthorizedObjectResult InvalidCredentials(this ControllerBase controller)
 	{
 		return controller.Unauthorized(ErtisAuthException.InvalidCredentials().Error);

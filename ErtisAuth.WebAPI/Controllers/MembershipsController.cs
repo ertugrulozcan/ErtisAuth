@@ -48,28 +48,6 @@ public class MembershipsController : QueryControllerBase
 	
 	#endregion
 	
-	#region Create Methods
-	
-	/// <summary>Create a membership</summary>
-	/// <remarks>Creates an isolated tenant (like a realm) with its own users, roles, applications and token settings.</remarks>
-	/// <param name="model">Membership</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	[HttpPost]
-	[RbacAction(Rbac.CrudActions.Create)]
-	[ProducesResponseType<Membership>(StatusCodes.Status201Created)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
-	public async Task<IActionResult> Create([FromBody] CreateMembershipFormModel model, CancellationToken cancellationToken = default)
-	{
-		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var membership = await this._membershipService.CreateAsync(ToMembership(model), utilizer, cancellationToken: cancellationToken);
-		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{membership.Id}", membership);
-	}
-	
-	#endregion
-	
 	#region Read Methods
 	
 	/// <summary>Get a membership</summary>
@@ -127,6 +105,7 @@ public class MembershipsController : QueryControllerBase
 		return await base.Query(cancellationToken: cancellationToken);
 	}
 	
+	[NonAction]
 	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string? sortField, SortDirection? sortDirection, IDictionary<string, bool> projection, CancellationToken cancellationToken = default)
 	{
 		return await this._membershipService.QueryAsync(query, skip, limit, withCount, sortField, sortDirection, projection, cancellationToken: cancellationToken);
@@ -157,6 +136,28 @@ public class MembershipsController : QueryControllerBase
 	
 	#endregion
 	
+	#region Create Methods
+	
+	/// <summary>Create a membership</summary>
+	/// <remarks>Creates an isolated tenant (like a realm) with its own users, roles, applications and token settings.</remarks>
+	/// <param name="model">Membership</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPost]
+	[RbacAction(Rbac.CrudActions.Create)]
+	[ProducesResponseType<Membership>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	public async Task<IActionResult> Create([FromBody] CreateMembershipFormModel model, CancellationToken cancellationToken = default)
+	{
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.CreateAsync(ToMembership(model), utilizer, cancellationToken: cancellationToken);
+		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{membership.Id}", membership);
+	}
+	
+	#endregion
+	
 	#region Update Methods
 	
 	/// <summary>Update a membership</summary>
@@ -178,70 +179,6 @@ public class MembershipsController : QueryControllerBase
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var membership = ToMembership(id, model);
 		return this.Ok(await this._membershipService.UpdateAsync(membership, utilizer, cancellationToken: cancellationToken));
-	}
-	
-	#endregion
-	
-	#region Mapping Methods
-	
-	private static Membership ToMembership(CreateMembershipFormModel model)
-	{
-		return ToMembership(null, model.Name, model.Slug, model.SecretKey, model.ExpiresIn, model.ScopedTokenExpiresIn, model.RefreshTokenExpiresIn, model.ResetPasswordTokenExpiresIn, model.HashAlgorithm, model.DefaultEncoding, model.DefaultLanguage, model.MailProviders, model.UserActivation, model.CodePolicy, model.OtpSettings);
-	}
-	
-	private static Membership ToMembership(string id, UpdateMembershipFormModel model)
-	{
-		var membership = ToMembership(id, model.Name, model.Slug, model.SecretKey, model.ExpiresIn, model.ScopedTokenExpiresIn, model.RefreshTokenExpiresIn, model.ResetPasswordTokenExpiresIn, model.HashAlgorithm, model.DefaultEncoding, model.DefaultLanguage, model.MailProviders, model.UserActivation, model.CodePolicy, model.OtpSettings);
-		membership.AllowMembershipSecretForApplications = model.AllowMembershipSecretForApplications; // LEGACY-APP-SECRET
-		return membership;
-	}
-	
-	private static Membership ToMembership(
-		string? id,
-		string? name,
-		string? slug,
-		string? secretKey,
-		int expiresIn,
-		int scopedTokenExpiresIn,
-		int refreshTokenExpiresIn,
-		int? resetPasswordTokenExpiresIn,
-		string? hashAlgorithm,
-		string? defaultEncoding,
-		string? defaultLanguage,
-		IMailProvider[]? mailProviders,
-		Status userActivation,
-		string? codePolicy,
-		OtpSettings? otpSettings)
-	{
-		var membership = new Membership
-		{
-			Name = name ?? string.Empty,
-			SecretKey = secretKey ?? string.Empty,
-			ExpiresIn = expiresIn,
-			ScopedTokenExpiresIn = scopedTokenExpiresIn,
-			RefreshTokenExpiresIn = refreshTokenExpiresIn,
-			ResetPasswordTokenExpiresIn = resetPasswordTokenExpiresIn,
-			HashAlgorithm = hashAlgorithm,
-			DefaultEncoding = defaultEncoding,
-			DefaultLanguage = defaultLanguage,
-			MailProviders = mailProviders,
-			UserActivation = userActivation,
-			CodePolicy = codePolicy,
-			OtpSettings = otpSettings
-		};
-		
-		if (id != null)
-		{
-			membership.Id = id;
-		}
-		
-		// Otherwise derived from the name
-		if (!string.IsNullOrEmpty(slug))
-		{
-			membership.Slug = slug;
-		}
-		
-		return membership;
 	}
 	
 	#endregion
@@ -375,6 +312,73 @@ public class MembershipsController : QueryControllerBase
 	public IActionResult GetDefaultDbLocale()
 	{
 		return this.Ok(TextSearchLanguage.None.ISO6391Code);
+	}
+	
+	#endregion
+	
+	#region Mapping Methods
+	
+	[NonAction]
+	private static Membership ToMembership(CreateMembershipFormModel model)
+	{
+		return ToMembership(null, model.Name, model.Slug, model.SecretKey, model.ExpiresIn, model.ScopedTokenExpiresIn, model.RefreshTokenExpiresIn, model.ResetPasswordTokenExpiresIn, model.HashAlgorithm, model.DefaultEncoding, model.DefaultLanguage, model.MailProviders, model.UserActivation, model.CodePolicy, model.OtpSettings);
+	}
+	
+	[NonAction]
+	private static Membership ToMembership(string id, UpdateMembershipFormModel model)
+	{
+		var membership = ToMembership(id, model.Name, model.Slug, model.SecretKey, model.ExpiresIn, model.ScopedTokenExpiresIn, model.RefreshTokenExpiresIn, model.ResetPasswordTokenExpiresIn, model.HashAlgorithm, model.DefaultEncoding, model.DefaultLanguage, model.MailProviders, model.UserActivation, model.CodePolicy, model.OtpSettings);
+		membership.AllowMembershipSecretForApplications = model.AllowMembershipSecretForApplications; // LEGACY-APP-SECRET
+		return membership;
+	}
+	
+	[NonAction]
+	private static Membership ToMembership(
+		string? id,
+		string? name,
+		string? slug,
+		string? secretKey,
+		int expiresIn,
+		int scopedTokenExpiresIn,
+		int refreshTokenExpiresIn,
+		int? resetPasswordTokenExpiresIn,
+		string? hashAlgorithm,
+		string? defaultEncoding,
+		string? defaultLanguage,
+		IMailProvider[]? mailProviders,
+		Status userActivation,
+		string? codePolicy,
+		OtpSettings? otpSettings)
+	{
+		var membership = new Membership
+		{
+			Name = name ?? string.Empty,
+			SecretKey = secretKey ?? string.Empty,
+			ExpiresIn = expiresIn,
+			ScopedTokenExpiresIn = scopedTokenExpiresIn,
+			RefreshTokenExpiresIn = refreshTokenExpiresIn,
+			ResetPasswordTokenExpiresIn = resetPasswordTokenExpiresIn,
+			HashAlgorithm = hashAlgorithm,
+			DefaultEncoding = defaultEncoding,
+			DefaultLanguage = defaultLanguage,
+			MailProviders = mailProviders,
+			UserActivation = userActivation,
+			CodePolicy = codePolicy,
+			OtpSettings = otpSettings
+		};
+		
+		if (id != null)
+		{
+			membership.Id = id;
+		}
+		
+		// Otherwise derived from the name
+		if (!string.IsNullOrEmpty(slug))
+		{
+			membership.Slug = slug;
+		}
+		
+		return membership;
 	}
 	
 	#endregion

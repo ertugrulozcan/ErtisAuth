@@ -51,52 +51,6 @@ public class WebhooksController : QueryControllerBase
 	
 	#endregion
 	
-	#region Create Methods
-	
-	/// <summary>Create a webhook</summary>
-	/// <remarks>Sends the configured HTTP request when the given event occurs, retried up to <c>try_count</c> times.</remarks>
-	/// <param name="membershipId">Membership id</param>
-	/// <param name="model">Webhook</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	[HttpPost]
-	[RbacAction(Rbac.CrudActions.Create)]
-	[ProducesResponseType<Webhook>(StatusCodes.Status201Created)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
-	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateWebhookFormModel model, CancellationToken cancellationToken = default)
-	{
-		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			return this.MembershipNotFound(membershipId);
-		}
-		
-		var webhookModel = new Webhook
-		{
-			Name = model.Name ?? string.Empty,
-			Description = model.Description,
-			Event = model.Event ?? string.Empty,
-			Status = model.Status switch
-			{
-				"active" or "Active" => WebhookStatus.Active,
-				"passive" or "Passive" => WebhookStatus.Passive,
-				_ => null
-			},
-			TryCount = model.TryCount,
-			Request = model.Request,
-			MembershipId = membershipId
-		};
-		
-		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var webhook = await this._webhookService.CreateAsync(webhookModel, membershipId, utilizer, cancellationToken: cancellationToken);
-		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{webhook.Id}", webhook);
-	}
-	
-	#endregion
-	
 	#region Read Methods
 	
 	/// <summary>Get a webhook</summary>
@@ -155,6 +109,7 @@ public class WebhooksController : QueryControllerBase
 		return await base.Query(cancellationToken: cancellationToken);
 	}
 	
+	[NonAction]
 	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string? sortField, SortDirection? sortDirection, IDictionary<string, bool> projection, CancellationToken cancellationToken = default)
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
@@ -165,6 +120,52 @@ public class WebhooksController : QueryControllerBase
 		{
 			throw ErtisAuthException.MembershipIdRequired();
 		}
+	}
+	
+	#endregion
+	
+	#region Create Methods
+	
+	/// <summary>Create a webhook</summary>
+	/// <remarks>Sends the configured HTTP request when the given event occurs, retried up to <c>try_count</c> times.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="model">Webhook</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPost]
+	[RbacAction(Rbac.CrudActions.Create)]
+	[ProducesResponseType<Webhook>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateWebhookFormModel model, CancellationToken cancellationToken = default)
+	{
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		if (membership == null)
+		{
+			return this.MembershipNotFound(membershipId);
+		}
+		
+		var webhookModel = new Webhook
+		{
+			Name = model.Name ?? string.Empty,
+			Description = model.Description,
+			Event = model.Event ?? string.Empty,
+			Status = model.Status switch
+			{
+				"active" or "Active" => WebhookStatus.Active,
+				"passive" or "Passive" => WebhookStatus.Passive,
+				_ => null
+			},
+			TryCount = model.TryCount,
+			Request = model.Request,
+			MembershipId = membershipId
+		};
+		
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var webhook = await this._webhookService.CreateAsync(webhookModel, membershipId, utilizer, cancellationToken: cancellationToken);
+		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{webhook.Id}", webhook);
 	}
 	
 	#endregion

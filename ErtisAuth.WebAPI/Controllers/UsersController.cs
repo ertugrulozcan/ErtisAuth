@@ -117,6 +117,7 @@ public class UsersController : QueryControllerBase
 		return await base.Query(cancellationToken: cancellationToken);
 	}
 	
+	[NonAction]
 	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string? sortField, SortDirection? sortDirection, IDictionary<string, bool> projection, CancellationToken cancellationToken = default)
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
@@ -421,6 +422,7 @@ public class UsersController : QueryControllerBase
 	/// Signs the user out on every device after a password change (e.g. after an account takeover),
 	/// except the session in which the user changed its own password.
 	/// </summary>
+	[NonAction]
 	private async Task RevokeTokensAfterPasswordChangeAsync(string userId, string membershipId, Utilizer utilizer, CancellationToken cancellationToken)
 	{
 		var callersOwnAccessToken = utilizer.Type == Utilizer.UtilizerType.User && utilizer.Id == userId && utilizer.TokenType == SupportedTokenTypes.Bearer

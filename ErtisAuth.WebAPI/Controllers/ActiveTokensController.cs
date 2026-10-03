@@ -99,6 +99,7 @@ public class ActiveTokensController : QueryControllerBase
 		return await base.Query(cancellationToken: cancellationToken);
 	}
 	
+	[NonAction]
 	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string? sortField, SortDirection? sortDirection, IDictionary<string, bool> projection, CancellationToken cancellationToken = default)
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))

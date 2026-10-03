@@ -67,9 +67,7 @@ public static class OpenApiExtensions
 				options
 					.WithTitle(Title)
 					.ShowOperationId()
-					.ExpandAllTags()
-					.SortOperationsByMethod()
-					.PreserveSchemaPropertyOrder();
+					.ExpandAllTags();
 			});
 		}
 	}

@@ -51,37 +51,6 @@ public class CodePoliciesController : QueryControllerBase
 	
 	#endregion
 	
-	#region Create Methods
-	
-	/// <summary>Create a code policy</summary>
-	/// <remarks>Defines how token codes are generated: length, letters and/or digits, and lifetime in seconds (<c>expires_in</c>).</remarks>
-	/// <param name="membershipId">Membership id</param>
-	/// <param name="model">Code policy</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	[HttpPost]
-	[RbacAction(Rbac.CrudActions.Create)]
-	[ProducesResponseType<TokenCodePolicy>(StatusCodes.Status201Created)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
-	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateTokenCodePolicyFormModel model, CancellationToken cancellationToken = default)
-	{
-		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			return this.MembershipNotFound(membershipId);
-		}
-		
-		var policyModel = ToTokenCodePolicy(membershipId, null, model.Name, model.Slug, model.Description, model.Length, model.ContainsLetters, model.ContainsDigits, model.ExpiresIn);
-		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var policy = await this._codePolicyService.CreateAsync(policyModel, membershipId, utilizer, cancellationToken: cancellationToken);
-		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{policy.Id}", policy);
-	}
-	
-	#endregion
-	
 	#region Read Methods
 	
 	/// <summary>Get a code policy</summary>
@@ -140,6 +109,7 @@ public class CodePoliciesController : QueryControllerBase
 		return await base.Query(cancellationToken: cancellationToken);
 	}
 	
+	[NonAction]
 	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string? sortField, SortDirection? sortDirection, IDictionary<string, bool> projection, CancellationToken cancellationToken = default)
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
@@ -150,6 +120,37 @@ public class CodePoliciesController : QueryControllerBase
 		{
 			throw ErtisAuthException.MembershipIdRequired();
 		}
+	}
+	
+	#endregion
+	
+	#region Create Methods
+	
+	/// <summary>Create a code policy</summary>
+	/// <remarks>Defines how token codes are generated: length, letters and/or digits, and lifetime in seconds (<c>expires_in</c>).</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="model">Code policy</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPost]
+	[RbacAction(Rbac.CrudActions.Create)]
+	[ProducesResponseType<TokenCodePolicy>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateTokenCodePolicyFormModel model, CancellationToken cancellationToken = default)
+	{
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		if (membership == null)
+		{
+			return this.MembershipNotFound(membershipId);
+		}
+		
+		var policyModel = ToTokenCodePolicy(membershipId, null, model.Name, model.Slug, model.Description, model.Length, model.ContainsLetters, model.ContainsDigits, model.ExpiresIn);
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var policy = await this._codePolicyService.CreateAsync(policyModel, membershipId, utilizer, cancellationToken: cancellationToken);
+		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{policy.Id}", policy);
 	}
 	
 	#endregion
@@ -179,6 +180,7 @@ public class CodePoliciesController : QueryControllerBase
 		return this.Ok(policy);
 	}
 	
+	[NonAction]
 	private static TokenCodePolicy ToTokenCodePolicy(string membershipId, string? id, string? name, string? slug, string? description, int length, bool containsLetters, bool containsDigits, int expiresIn)
 	{
 		var policy = new TokenCodePolicy

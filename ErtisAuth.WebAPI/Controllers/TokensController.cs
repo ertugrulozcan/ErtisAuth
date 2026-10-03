@@ -124,30 +124,7 @@ public class TokensController : ControllerBase
 		}
 	}
 	
-	private TokenBase GetToken()
-	{
-		var stringToken = this.GetTokenFromHeader(out var tokenTypeStr);
-		if (string.IsNullOrEmpty(stringToken))
-		{
-			throw ErtisAuthException.AuthorizationHeaderMissing();
-		}
-		
-		if (tokenTypeStr == null || !TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
-		{
-			throw ErtisAuthException.UnsupportedTokenType();
-		}
-		
-		TokenBase token = tokenType switch
-		{
-			SupportedTokenTypes.None => throw ErtisAuthException.UnsupportedTokenType(),
-			SupportedTokenTypes.Basic => new BasicToken(stringToken),
-			SupportedTokenTypes.Bearer => BearerToken.CreateTemp(stringToken),
-			_ => throw ErtisAuthException.UnsupportedTokenType()
-		};
-		
-		return token;
-	}
-	
+	[NonAction]
 	private async Task<IUtilizer?> GetTokenOwnerUtilizerAsync(TokenBase token, CancellationToken cancellationToken = default)
 	{
 		return token.TokenType switch

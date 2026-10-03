@@ -51,45 +51,6 @@ public class ApplicationsController : QueryControllerBase
 	
 	#endregion
 	
-	#region Create Methods
-	
-	/// <summary>Create an application</summary>
-	/// <remarks>Creates an application (machine to machine client) with a role and a newly generated secret. **Note:** the plain secret is returned only in this response; store it, it can not be read again (rotate it if it is lost).</remarks>
-	/// <param name="membershipId">Membership id</param>
-	/// <param name="model">Application</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	[HttpPost]
-	[RbacAction(Rbac.CrudActions.Create)]
-	[ProducesResponseType<ApplicationWithSecret>(StatusCodes.Status201Created)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
-	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateApplicationFormModel model, CancellationToken cancellationToken = default)
-	{
-		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			return this.MembershipNotFound(membershipId);
-		}
-		
-		var applicationModel = new Application
-		{ 
-			Name = model.Name ?? string.Empty, 
-			Slug = model.Slug ?? string.Empty,
-			Role = model.Role ?? string.Empty,
-			MembershipId = membershipId
-		};
-		
-		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var app = await this._applicationService.CreateWithSecretAsync(applicationModel, membershipId, utilizer, cancellationToken: cancellationToken);
-		
-		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{app.Id}", app);
-	}
-	
-	#endregion
-	
 	#region Read Methods
 	
 	/// <summary>Get an application</summary>
@@ -149,6 +110,7 @@ public class ApplicationsController : QueryControllerBase
 		return await base.Query(cancellationToken: cancellationToken);
 	}
 	
+	[NonAction]
 	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string? sortField, SortDirection? sortDirection, IDictionary<string, bool> projection, CancellationToken cancellationToken = default)
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
@@ -183,6 +145,45 @@ public class ApplicationsController : QueryControllerBase
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
 		return this.Ok(await this._applicationService.SearchAsync(keyword, membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+	}
+	
+	#endregion
+	
+	#region Create Methods
+	
+	/// <summary>Create an application</summary>
+	/// <remarks>Creates an application (machine to machine client) with a role and a newly generated secret. **Note:** the plain secret is returned only in this response; store it, it can not be read again (rotate it if it is lost).</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="model">Application</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPost]
+	[RbacAction(Rbac.CrudActions.Create)]
+	[ProducesResponseType<ApplicationWithSecret>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateApplicationFormModel model, CancellationToken cancellationToken = default)
+	{
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		if (membership == null)
+		{
+			return this.MembershipNotFound(membershipId);
+		}
+		
+		var applicationModel = new Application
+		{ 
+			Name = model.Name ?? string.Empty, 
+			Slug = model.Slug ?? string.Empty,
+			Role = model.Role ?? string.Empty,
+			MembershipId = membershipId
+		};
+		
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var app = await this._applicationService.CreateWithSecretAsync(applicationModel, membershipId, utilizer, cancellationToken: cancellationToken);
+		
+		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{app.Id}", app);
 	}
 	
 	#endregion

@@ -99,29 +99,5 @@ public class TokenCodesController : ControllerBase
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 	}
 	
-	private TokenBase GetToken()
-	{
-		var stringToken = this.GetTokenFromHeader(out var tokenTypeStr);
-		if (string.IsNullOrEmpty(stringToken))
-		{
-			throw ErtisAuthException.AuthorizationHeaderMissing();
-		}
-		
-		if (tokenTypeStr == null || !TokenTypeExtensions.TryParseTokenType(tokenTypeStr, out var tokenType))
-		{
-			throw ErtisAuthException.UnsupportedTokenType();
-		}
-		
-		TokenBase token = tokenType switch
-		{
-			SupportedTokenTypes.None => throw ErtisAuthException.UnsupportedTokenType(),
-			SupportedTokenTypes.Basic => new BasicToken(stringToken),
-			SupportedTokenTypes.Bearer => BearerToken.CreateTemp(stringToken),
-			_ => throw ErtisAuthException.UnsupportedTokenType()
-		};
-		
-		return token;
-	}
-	
 	#endregion
 }

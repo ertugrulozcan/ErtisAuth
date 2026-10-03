@@ -55,46 +55,6 @@ public class RolesController : QueryControllerBase
 	
 	#endregion
 	
-	#region Create Methods
-	
-	/// <summary>Create a role</summary>
-	/// <remarks>A role grants permissions (<c>permissions</c>) and forbids actions (<c>forbidden</c>) in the <c>[subject].[resource].[action].[object]</c> form.</remarks>
-	/// <param name="membershipId">Membership id</param>
-	/// <param name="model">Role</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	[HttpPost]
-	[RbacAction(Rbac.CrudActions.Create)]
-	[ProducesResponseType<Role>(StatusCodes.Status201Created)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
-	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateRoleFormModel model, CancellationToken cancellationToken = default)
-	{
-		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			return this.MembershipNotFound(membershipId);
-		}
-		
-		var roleModel = new Role
-		{
-			Name = model.Name ?? string.Empty,
-			Slug = model.Slug ?? string.Empty,
-			Description = model.Description,
-			Permissions = model.Permissions,
-			Forbidden = model.Forbidden,
-			MembershipId = membershipId
-		};
-		
-		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var role = await this._roleService.CreateAsync(roleModel, membershipId, utilizer, cancellationToken: cancellationToken);
-		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{role.Id}", role);
-	}
-	
-	#endregion
-	
 	#region Read Methods
 	
 	/// <summary>Get a role</summary>
@@ -153,6 +113,7 @@ public class RolesController : QueryControllerBase
 		return await base.Query(cancellationToken: cancellationToken);
 	}
 	
+	[NonAction]
 	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string? sortField, SortDirection? sortDirection, IDictionary<string, bool> projection, CancellationToken cancellationToken = default)
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
@@ -187,6 +148,46 @@ public class RolesController : QueryControllerBase
 		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
 		
 		return this.Ok(await this._roleService.SearchAsync(keyword, membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+	}
+	
+	#endregion
+	
+	#region Create Methods
+	
+	/// <summary>Create a role</summary>
+	/// <remarks>A role grants permissions (<c>permissions</c>) and forbids actions (<c>forbidden</c>) in the <c>[subject].[resource].[action].[object]</c> form.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="model">Role</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPost]
+	[RbacAction(Rbac.CrudActions.Create)]
+	[ProducesResponseType<Role>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateRoleFormModel model, CancellationToken cancellationToken = default)
+	{
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		if (membership == null)
+		{
+			return this.MembershipNotFound(membershipId);
+		}
+		
+		var roleModel = new Role
+		{
+			Name = model.Name ?? string.Empty,
+			Slug = model.Slug ?? string.Empty,
+			Description = model.Description,
+			Permissions = model.Permissions,
+			Forbidden = model.Forbidden,
+			MembershipId = membershipId
+		};
+		
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var role = await this._roleService.CreateAsync(roleModel, membershipId, utilizer, cancellationToken: cancellationToken);
+		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{role.Id}", role);
 	}
 	
 	#endregion
@@ -378,6 +379,7 @@ public class RolesController : QueryControllerBase
 		}
 	}
 	
+	[NonAction]
 	private bool TryExtractPermissionParameter(out Rbac? rbac, out ErrorModel? errorModel)
 	{
 		if (this.Request.Query.ContainsKey("permission"))

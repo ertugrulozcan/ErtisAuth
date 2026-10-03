@@ -51,37 +51,6 @@ public class MailHooksController : QueryControllerBase
 	
 	#endregion
 	
-	#region Create Methods
-	
-	/// <summary>Create a mail hook</summary>
-	/// <remarks>Sends a templated mail through a mail provider of the membership when the given event occurs, to the utilizer and/or the recipients.</remarks>
-	/// <param name="membershipId">Membership id</param>
-	/// <param name="model">Mail hook</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	[HttpPost]
-	[RbacAction(Rbac.CrudActions.Create)]
-	[ProducesResponseType<MailHook>(StatusCodes.Status201Created)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
-	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateMailHookFormModel model, CancellationToken cancellationToken = default)
-	{
-		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
-		if (membership == null)
-		{
-			return this.MembershipNotFound(membershipId);
-		}
-		
-		var mailHookModel = ToMailHook(membershipId, null, model.Name, model.Slug, model.Description, model.Event, model.Status, model.MailSubject, model.MailTemplate, model.FromName, model.FromAddress, model.SendToUtilizer, model.Recipients, model.MailProvider, model.Variables);
-		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var mailHook = await this._mailHookService.CreateAsync(mailHookModel, membershipId, utilizer, cancellationToken: cancellationToken);
-		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{mailHook.Id}", mailHook);
-	}
-	
-	#endregion
-	
 	#region Read Methods
 	
 	/// <summary>Get a mail hook</summary>
@@ -140,6 +109,7 @@ public class MailHooksController : QueryControllerBase
 		return await base.Query(cancellationToken: cancellationToken);
 	}
 	
+	[NonAction]
 	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string? sortField, SortDirection? sortDirection, IDictionary<string, bool> projection, CancellationToken cancellationToken = default)
 	{
 		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
@@ -150,6 +120,37 @@ public class MailHooksController : QueryControllerBase
 		{
 			throw ErtisAuthException.MembershipIdRequired();
 		}
+	}
+	
+	#endregion
+	
+	#region Create Methods
+	
+	/// <summary>Create a mail hook</summary>
+	/// <remarks>Sends a templated mail through a mail provider of the membership when the given event occurs, to the utilizer and/or the recipients.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="model">Mail hook</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPost]
+	[RbacAction(Rbac.CrudActions.Create)]
+	[ProducesResponseType<MailHook>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateMailHookFormModel model, CancellationToken cancellationToken = default)
+	{
+		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
+		if (membership == null)
+		{
+			return this.MembershipNotFound(membershipId);
+		}
+		
+		var mailHookModel = ToMailHook(membershipId, null, model.Name, model.Slug, model.Description, model.Event, model.Status, model.MailSubject, model.MailTemplate, model.FromName, model.FromAddress, model.SendToUtilizer, model.Recipients, model.MailProvider, model.Variables);
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var mailHook = await this._mailHookService.CreateAsync(mailHookModel, membershipId, utilizer, cancellationToken: cancellationToken);
+		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{mailHook.Id}", mailHook);
 	}
 	
 	#endregion
@@ -180,6 +181,7 @@ public class MailHooksController : QueryControllerBase
 		return this.Ok(mailHook);
 	}
 	
+	[NonAction]
 	private static MailHook ToMailHook(
 		string membershipId, 
 		string? id, 
