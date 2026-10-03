@@ -185,7 +185,7 @@ public class TokensController : ControllerBase
 			var token = this.GetTokenFromHeader(out var tokenTypeStr);
 			if (string.IsNullOrEmpty(token))
 			{
-				throw ErtisAuthException.BearerTokenRequired();
+				throw ErtisAuthException.InvalidCredentialsOrMissingToken();
 			}
 			
 			var scopes = model.Scopes?.Select(x => x.Trim()).ToArray();

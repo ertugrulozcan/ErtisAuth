@@ -3,7 +3,7 @@ using MongoDB.Bson;
 
 namespace ErtisAuth.Core.Extensions;
 
-public static class BsonDocumentExtensions
+public static class BsonExtensions
 {
 	#region Methods
 	
@@ -39,6 +39,20 @@ public static class BsonDocumentExtensions
 		}
 		
 		return new BsonDocument(nodes);
+	}
+	
+	public static bool IsObjectIdParseException(this Exception exception, out string? actualValue)
+	{
+		const string message = "is not a valid 24 digit hex string.";
+		
+		if (exception is FormatException && exception.Source == "MongoDB.Bson" && exception.Message.EndsWith(message))
+		{
+			actualValue = exception.Message[..exception.Message.IndexOf(message, StringComparison.InvariantCulture)].Replace("\'", string.Empty).Trim();
+			return true;
+		}
+		
+		actualValue = null;
+		return false;
 	}
 	
 	#endregion

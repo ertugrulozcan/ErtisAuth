@@ -73,6 +73,11 @@ public class ErtisAuthException : ErtisException
 		}
 	}
 	
+	public static ErtisAuthException InvalidCredentialsOrMissingToken()
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, "Invalid credentials or missing token", "InvalidCredentialsOrMissingToken");
+	}
+	
 	public static ErtisAuthException UnsupportedTokenType()
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "Token type not supported. Token type must be one of Bearer or Basic", "TokenTypeNotSupported");

@@ -225,7 +225,7 @@ public class MembershipsController : QueryControllerBase
 				displayName = x.DisplayName,
 				name = x.Name.ToUpperInvariant()
 			}).ToArray(),
-			defaultEncoding = Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName,
+			defaultEncoding = Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName.ToUpperInvariant(),
 			hashAlgorithms = Enum.GetNames<HashAlgorithms>().Select(x => x.Replace('_', '-')).ToArray(),
 			defaultHashAlgorithm = Core.Constants.Defaults.RECOMMENDED_HASH_ALGORITHM.ToString().Replace('_', '-'),
 			dbLocales = TextSearchLanguage.All.ToArray(),
@@ -258,7 +258,7 @@ public class MembershipsController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public IActionResult GetDefaultEncoding()
 	{
-		return this.Ok(Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName);
+		return this.Ok(Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName.ToUpperInvariant());
 	}
 	
 	/// <summary>List the hash algorithms</summary>

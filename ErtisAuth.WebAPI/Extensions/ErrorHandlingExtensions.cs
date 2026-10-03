@@ -3,6 +3,7 @@ using System.Text.Json;
 using Ertis.Core.Exceptions;
 using Ertis.Core.Models;
 using Ertis.Schema.Exceptions;
+using ErtisAuth.Core.Extensions;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace ErtisAuth.WebAPI.Extensions;
@@ -94,7 +95,21 @@ public static class ErrorHandlingExtensions
 							break;
 						default:
 						{
-							// Internal details (database errors, stack traces) stay in the log
+							// Invalid ObjectId
+							if (contextFeature.Error.IsObjectIdParseException(out var actualValue))
+							{
+								context.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+								errorModel = new ErrorModel
+								{
+									Message = string.IsNullOrEmpty(actualValue) ? "Invalid id parameter" : $"'{actualValue}' is not a valid id parameter",
+									ErrorCode = "ParameterFormatError",
+									StatusCode = 400
+								};
+								
+								break;
+							}
+							
+							// Internal Server Error (500)
 							var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger(nameof(ErrorHandlingExtensions));
 							logger.LogError(contextFeature.Error, "Unhandled exception on {Method} {Path}", context.Request.Method, context.Request.Path);
 							
