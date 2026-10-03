@@ -3,6 +3,8 @@
 
 ### New Rules
 
-Rule ID | Category | Severity | Notes
---------|----------|----------|-------
-ERTISAUTH001 | Usage | Warning | RbacObjectRouteParameterAnalyzer
+| Rule ID      | Category | Severity | Notes                   |
+| -------------|----------|----------|------------------------ |
+| ERTISAUTH601 | Usage    | Warning  | RbacPlaceholderAnalyzer |
+| ERTISAUTH602 | Usage    | Error    | RbacPlaceholderAnalyzer |
+| ERTISAUTH603 | Security | Error    | RbacPlaceholderAnalyzer |
