@@ -1,6 +1,6 @@
 using Ertis.TemplateEngine;
-using ErtisAuth.Core.Attributes;
 using ErtisAuth.Core.Models.Roles;
+using ErtisAuth.Extensions.Authorization.Attributes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 

@@ -10,7 +10,6 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Core.Attributes;
 using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Services;

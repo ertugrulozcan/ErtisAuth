@@ -4,7 +4,6 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.Authorization.Attributes;
-using ErtisAuth.Core.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Extensions.AspNetCore.Services;
 using ErtisAuth.Extensions.AspNetCore.Attributes;

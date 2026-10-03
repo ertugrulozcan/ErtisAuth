@@ -1,4 +1,3 @@
-using ErtisAuth.Core.Attributes;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.Authorization.Attributes;

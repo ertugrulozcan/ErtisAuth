@@ -9,4 +9,10 @@
 		<ProjectReference Include="..\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj" />
 		<ProjectReference Include="..\ErtisAuth.Sdk\ErtisAuth.Sdk.csproj" />
 	</ItemGroup>
+
+	<!-- Analyzers do not flow to consumers through package dependencies, so the analyzer is shipped inside this package -->
+	<ItemGroup>
+		<ProjectReference Include="..\ErtisAuth.Analyzers\ErtisAuth.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+		<None Include="..\ErtisAuth.Analyzers\bin\$(Configuration)\netstandard2.0\ErtisAuth.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+	</ItemGroup>
 </Project>

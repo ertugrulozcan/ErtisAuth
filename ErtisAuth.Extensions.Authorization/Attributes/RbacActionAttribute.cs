@@ -1,10 +1,10 @@
 using ErtisAuth.Core.Models.Roles;
 
 // ReSharper disable UnusedMember.Global
-namespace ErtisAuth.Core.Attributes;
+namespace ErtisAuth.Extensions.Authorization.Attributes;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class RbacActionAttribute : RbacAttribute
+public sealed class RbacActionAttribute : RbacAttribute
 {
 	#region Constructors
 	

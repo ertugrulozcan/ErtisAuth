@@ -1,6 +1,6 @@
 using ErtisAuth.Core.Models.Roles;
 
-namespace ErtisAuth.Core.Attributes;
+namespace ErtisAuth.Extensions.Authorization.Attributes;
 
 [AttributeUsage(AttributeTargets.Method)]
 public abstract class RbacAttribute : Attribute

@@ -1,7 +1,7 @@
-namespace ErtisAuth.Core.Attributes;
+namespace ErtisAuth.Extensions.Authorization.Attributes;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-public class RbacResourceAttribute : RbacAttribute
+public sealed class RbacResourceAttribute : RbacAttribute
 {
 	#region Constructors
 	
