@@ -52,4 +52,32 @@ public class CreateMailHookFormModel
 	public MailHookVariable[]? Variables { get; set; }
 	
 	#endregion
+	
+	internal MailHook ToMailHook(string membershipId)
+	{
+		var mailHook = new MailHook
+		{
+			Name = this.Name ?? string.Empty,
+			Description = this.Description,
+			Event = this.Event,
+			Status = this.Status,
+			MailSubject = this.MailSubject,
+			MailTemplate = this.MailTemplate,
+			FromName = this.FromName,
+			FromAddress = this.FromAddress,
+			SendToUtilizer = this.SendToUtilizer,
+			Recipients = this.Recipients,
+			MailProvider = this.MailProvider,
+			Variables = this.Variables,
+			MembershipId = membershipId
+		};
+		
+		// Otherwise derived from the name
+		if (!string.IsNullOrEmpty(this.Slug))
+		{
+			mailHook.Slug = this.Slug;
+		}
+		
+		return mailHook;
+	}
 }

@@ -146,7 +146,7 @@ public class CodePoliciesController : QueryControllerBase
 			return this.MembershipNotFound(membershipId);
 		}
 		
-		var policyModel = ToTokenCodePolicy(membershipId, null, model.Name, model.Slug, model.Description, model.Length, model.ContainsLetters, model.ContainsDigits, model.ExpiresIn);
+		var policyModel = model.ToTokenCodePolicy(membershipId);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var policy = await this._codePolicyService.CreateAsync(policyModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{policy.Id}", policy);
@@ -173,38 +173,10 @@ public class CodePoliciesController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
 	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateTokenCodePolicyFormModel model, CancellationToken cancellationToken = default)
 	{
-		var policyModel = ToTokenCodePolicy(membershipId, id, model.Name, model.Slug, model.Description, model.Length, model.ContainsLetters, model.ContainsDigits, model.ExpiresIn);
+		var policyModel = model.ToTokenCodePolicy(id, membershipId);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var policy = await this._codePolicyService.UpdateAsync(policyModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Ok(policy);
-	}
-	
-	[NonAction]
-	private static TokenCodePolicy ToTokenCodePolicy(string membershipId, string? id, string? name, string? slug, string? description, int length, bool containsLetters, bool containsDigits, int expiresIn)
-	{
-		var policy = new TokenCodePolicy
-		{
-			Name = name ?? string.Empty,
-			Description = description,
-			Length = length,
-			ContainsLetters = containsLetters,
-			ContainsDigits = containsDigits,
-			ExpiresIn = expiresIn,
-			MembershipId = membershipId
-		};
-		
-		if (id != null)
-		{
-			policy.Id = id;
-		}
-		
-		// Otherwise derived from the name
-		if (!string.IsNullOrEmpty(slug))
-		{
-			policy.Slug = slug;
-		}
-		
-		return policy;
 	}
 	
 	#endregion

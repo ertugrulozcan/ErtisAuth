@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using Ertis.Schema.Serialization;
 using Ertis.Schema.Types;
+using ErtisAuth.Core.Models.Users;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.WebAPI.Models.UserTypes;
@@ -36,6 +37,33 @@ public class CreateUserTypeFormModel
 	
 	[JsonPropertyName("baseType")]
 	public string? BaseUserType { get; set; }
+	
+	#endregion
+	
+	#region Methods
+	
+	internal UserType ToUserType(string membershipId)
+	{
+		var userType = new UserType
+		{
+			Name = this.Name ?? string.Empty,
+			Description = this.Description,
+			Properties = this.Properties ?? [],
+			AllowAdditionalProperties = this.AllowAdditionalProperties,
+			IsAbstract = this.IsAbstract,
+			IsSealed = this.IsSealed,
+			BaseUserType = this.BaseUserType,
+			MembershipId = membershipId
+		};
+		
+		// Otherwise derived from the name
+		if (!string.IsNullOrEmpty(this.Slug))
+		{
+			userType.Slug = this.Slug;
+		}
+		
+		return userType;
+	}
 	
 	#endregion
 }

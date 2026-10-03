@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using ErtisAuth.Core.Models.Identity;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedAutoPropertyAccessor.Global
@@ -31,6 +32,33 @@ public class UpdateTokenCodePolicyFormModel
 	
 	[JsonPropertyName("expires_in")]
 	public int ExpiresIn { get; set; }
+	
+	#endregion
+	
+	#region Methods
+	
+	internal TokenCodePolicy ToTokenCodePolicy(string id, string membershipId)
+	{
+		var policy = new TokenCodePolicy
+		{
+			Id = id,
+			Name = this.Name ?? string.Empty,
+			Description = this.Description,
+			Length = this.Length,
+			ContainsLetters = this.ContainsLetters,
+			ContainsDigits = this.ContainsDigits,
+			ExpiresIn = this.ExpiresIn,
+			MembershipId = membershipId
+		};
+		
+		// Otherwise derived from the name
+		if (!string.IsNullOrEmpty(this.Slug))
+		{
+			policy.Slug = this.Slug;
+		}
+		
+		return policy;
+	}
 	
 	#endregion
 }

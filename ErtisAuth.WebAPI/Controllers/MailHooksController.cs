@@ -146,7 +146,7 @@ public class MailHooksController : QueryControllerBase
 			return this.MembershipNotFound(membershipId);
 		}
 		
-		var mailHookModel = ToMailHook(membershipId, null, model.Name, model.Slug, model.Description, model.Event, model.Status, model.MailSubject, model.MailTemplate, model.FromName, model.FromAddress, model.SendToUtilizer, model.Recipients, model.MailProvider, model.Variables);
+		var mailHookModel = model.ToMailHook(membershipId);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var mailHook = await this._mailHookService.CreateAsync(mailHookModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{mailHook.Id}", mailHook);
@@ -174,59 +174,10 @@ public class MailHooksController : QueryControllerBase
 	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] UpdateMailHookFormModel model, CancellationToken cancellationToken = default)
 	{
 		// The route id, not an id in the body, identifies the updated mail hook (RBAC checks the route id)
-		var mailHookModel = ToMailHook(membershipId, id, model.Name, model.Slug, model.Description, model.Event, model.Status, model.MailSubject, model.MailTemplate, model.FromName, model.FromAddress, model.SendToUtilizer, model.Recipients, model.MailProvider, model.Variables);
+		var mailHookModel = model.ToMailHook(id, membershipId);
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var mailHook = await this._mailHookService.UpdateAsync(mailHookModel, membershipId, utilizer, cancellationToken: cancellationToken);
 		return this.Ok(mailHook);
-	}
-	
-	[NonAction]
-	private static MailHook ToMailHook(
-		string membershipId, 
-		string? id, 
-		string? name, 
-		string? slug, 
-		string? description, 
-		string? eventName, 
-		string? status, 
-		string? mailSubject, 
-		string? mailTemplate, 
-		string? fromName, 
-		string? fromAddress, 
-		bool sendToUtilizer, 
-		Recipient[]? recipients, 
-		string? mailProvider, 
-		MailHookVariable[]? variables)
-	{
-		var mailHook = new MailHook
-		{
-			Name = name ?? string.Empty,
-			Description = description,
-			Event = eventName,
-			Status = status,
-			MailSubject = mailSubject,
-			MailTemplate = mailTemplate,
-			FromName = fromName,
-			FromAddress = fromAddress,
-			SendToUtilizer = sendToUtilizer,
-			Recipients = recipients,
-			MailProvider = mailProvider,
-			Variables = variables,
-			MembershipId = membershipId
-		};
-		
-		if (id != null)
-		{
-			mailHook.Id = id;
-		}
-		
-		// Otherwise derived from the name
-		if (!string.IsNullOrEmpty(slug))
-		{
-			mailHook.Slug = slug;
-		}
-		
-		return mailHook;
 	}
 	
 	#endregion

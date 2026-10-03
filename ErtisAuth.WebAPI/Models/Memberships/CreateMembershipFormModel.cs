@@ -2,6 +2,7 @@
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Mailing;
+using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Serialization;
 
 // ReSharper disable UnusedMember.Global
@@ -57,6 +58,38 @@ public class CreateMembershipFormModel
 	
 	[JsonPropertyName("otp_settings")]
 	public OtpSettings? OtpSettings { get; set; }
+	
+	#endregion
+	
+	#region Methods
+	
+	internal Membership ToMembership()
+	{
+		var membership = new Membership
+		{
+			Name = this.Name ?? string.Empty,
+			SecretKey = this.SecretKey ?? string.Empty,
+			ExpiresIn = this.ExpiresIn,
+			ScopedTokenExpiresIn = this.ScopedTokenExpiresIn,
+			RefreshTokenExpiresIn = this.RefreshTokenExpiresIn,
+			ResetPasswordTokenExpiresIn = this.ResetPasswordTokenExpiresIn,
+			HashAlgorithm = this.HashAlgorithm,
+			DefaultEncoding = this.DefaultEncoding,
+			DefaultLanguage = this.DefaultLanguage,
+			MailProviders = this.MailProviders,
+			UserActivation = this.UserActivation,
+			CodePolicy = this.CodePolicy,
+			OtpSettings = this.OtpSettings
+		};
+		
+		// Otherwise derived from the name
+		if (!string.IsNullOrEmpty(this.Slug))
+		{
+			membership.Slug = this.Slug;
+		}
+		
+		return membership;
+	}
 	
 	#endregion
 }

@@ -4,10 +4,7 @@ using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using Ertis.MongoDB.Queries;
 using ErtisAuth.Abstractions.Services;
-using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Cryptography;
-using ErtisAuth.Core.Models.Identity;
-using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.Authorization.Attributes;
@@ -151,7 +148,7 @@ public class MembershipsController : QueryControllerBase
 	public async Task<IActionResult> Create([FromBody] CreateMembershipFormModel model, CancellationToken cancellationToken = default)
 	{
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var membership = await this._membershipService.CreateAsync(ToMembership(model), utilizer, cancellationToken: cancellationToken);
+		var membership = await this._membershipService.CreateAsync(model.ToMembership(), utilizer, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{membership.Id}", membership);
 	}
 	
@@ -176,7 +173,7 @@ public class MembershipsController : QueryControllerBase
 	{
 		// The route id is the one authorized (RbacObject), so it is the one updated
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		var membership = ToMembership(id, model);
+		var membership = model.ToMembership(id);
 		return this.Ok(await this._membershipService.UpdateAsync(membership, utilizer, cancellationToken: cancellationToken));
 	}
 	
@@ -311,73 +308,6 @@ public class MembershipsController : QueryControllerBase
 	public IActionResult GetDefaultDbLocale()
 	{
 		return this.Ok(TextSearchLanguage.None.ISO6391Code);
-	}
-	
-	#endregion
-	
-	#region Mapping Methods
-	
-	[NonAction]
-	private static Membership ToMembership(CreateMembershipFormModel model)
-	{
-		return ToMembership(null, model.Name, model.Slug, model.SecretKey, model.ExpiresIn, model.ScopedTokenExpiresIn, model.RefreshTokenExpiresIn, model.ResetPasswordTokenExpiresIn, model.HashAlgorithm, model.DefaultEncoding, model.DefaultLanguage, model.MailProviders, model.UserActivation, model.CodePolicy, model.OtpSettings);
-	}
-	
-	[NonAction]
-	private static Membership ToMembership(string id, UpdateMembershipFormModel model)
-	{
-		var membership = ToMembership(id, model.Name, model.Slug, model.SecretKey, model.ExpiresIn, model.ScopedTokenExpiresIn, model.RefreshTokenExpiresIn, model.ResetPasswordTokenExpiresIn, model.HashAlgorithm, model.DefaultEncoding, model.DefaultLanguage, model.MailProviders, model.UserActivation, model.CodePolicy, model.OtpSettings);
-		membership.AllowMembershipSecretForApplications = model.AllowMembershipSecretForApplications; // LEGACY-APP-SECRET
-		return membership;
-	}
-	
-	[NonAction]
-	private static Membership ToMembership(
-		string? id,
-		string? name,
-		string? slug,
-		string? secretKey,
-		int expiresIn,
-		int scopedTokenExpiresIn,
-		int refreshTokenExpiresIn,
-		int? resetPasswordTokenExpiresIn,
-		string? hashAlgorithm,
-		string? defaultEncoding,
-		string? defaultLanguage,
-		IMailProvider[]? mailProviders,
-		Status userActivation,
-		string? codePolicy,
-		OtpSettings? otpSettings)
-	{
-		var membership = new Membership
-		{
-			Name = name ?? string.Empty,
-			SecretKey = secretKey ?? string.Empty,
-			ExpiresIn = expiresIn,
-			ScopedTokenExpiresIn = scopedTokenExpiresIn,
-			RefreshTokenExpiresIn = refreshTokenExpiresIn,
-			ResetPasswordTokenExpiresIn = resetPasswordTokenExpiresIn,
-			HashAlgorithm = hashAlgorithm,
-			DefaultEncoding = defaultEncoding,
-			DefaultLanguage = defaultLanguage,
-			MailProviders = mailProviders,
-			UserActivation = userActivation,
-			CodePolicy = codePolicy,
-			OtpSettings = otpSettings
-		};
-		
-		if (id != null)
-		{
-			membership.Id = id;
-		}
-		
-		// Otherwise derived from the name
-		if (!string.IsNullOrEmpty(slug))
-		{
-			membership.Slug = slug;
-		}
-		
-		return membership;
 	}
 	
 	#endregion

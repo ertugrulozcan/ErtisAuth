@@ -676,6 +676,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	public override async Task<UserType> UpdateAsync(UserType model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		await this._changeLock.WaitAsync(cancellationToken);
+		
 		try
 		{
 			// The name or slug may change, so the entries of the prior version are removed explicitly
