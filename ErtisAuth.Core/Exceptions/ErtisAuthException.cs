@@ -141,7 +141,7 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException TokenCodePolicyNotFound(string? slug = null)
 	{
 		return string.IsNullOrEmpty(slug) 
-			? new ErtisAuthException(HttpStatusCode.NotFound, "Any code policy not found for this membership", "TokenCodePolicyNotFound") 
+			? new ErtisAuthException(HttpStatusCode.NotFound, "Any code policy not found in this membership", "TokenCodePolicyNotFound") 
 			: new ErtisAuthException(HttpStatusCode.NotFound, $"Code policy not found in db by given slug: <{slug}>", "TokenCodePolicyNotFound");
 	}
 	
@@ -204,14 +204,14 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "Membership id required", "MembershipIdRequired");
 	}
 	
-	public static ErtisAuthException MembershipAlreadyExists(string membershipId)
+	public static ErtisAuthException MembershipAlreadyExists(string slug)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"Membership is already exists ({membershipId})", "MembershipAlreadyExists");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"Membership is already exists ({slug})", "MembershipAlreadyExists");
 	}
 	
-	public static ErtisAuthException MembershipCouldNotDeleted(string membershipId)
+	public static ErtisAuthException MembershipCouldNotDeleted(string reason)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"This membership is already using by some membership related resources, it's could not be deleted ({membershipId})", "MembershipCouldNotDeleted");
+		return new ErtisAuthException(HttpStatusCode.Conflict, reason, "MembershipCouldNotDeleted");
 	}
 	
 	public static ErtisAuthException InvalidQuery(string message)
@@ -242,6 +242,11 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException UnsupportedEncoding(string encoding)
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, $"Unsupported encoding ({encoding})", "UnsupportedEncoding");
+	}
+	
+	public static ErtisAuthException UnsupportedLanguage(string locale)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, $"Unsupported locale ({locale})", "UnsupportedLanguage");
 	}
 	
 	public static ErtisAuthException UserAlreadyActive()

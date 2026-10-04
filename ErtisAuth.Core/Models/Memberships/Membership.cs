@@ -148,7 +148,7 @@ public class Membership : ResourceBase, IHasSlug, IHasSysInfo
 		return HashParser.TryParseHashAlgorithm(this.HashAlgorithm, out algorithm, out _, out _);
 	}
 
-	public bool IsEncodingValid()
+	public bool IsValidEncoding()
 	{
 		return
 			string.IsNullOrEmpty(this.DefaultEncoding) ||

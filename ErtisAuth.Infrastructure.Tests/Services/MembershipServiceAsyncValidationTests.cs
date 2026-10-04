@@ -60,7 +60,7 @@ public class MembershipServiceAsyncValidationTests
 		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateMembershipService().CreateAsync(membership, Utilizer.GetSystemUtilizer(string.Empty), TestContext.Current.CancellationToken));
 		
 		Assert.NotNull(exception.Errors);
-		Assert.Contains(exception.Errors, x => x.Contains(membership.Name));
+		Assert.Contains(exception.Errors, x => x.Contains(membership.Slug));
 		this.AssertNoBlockingSlugLookup();
 	}
 	

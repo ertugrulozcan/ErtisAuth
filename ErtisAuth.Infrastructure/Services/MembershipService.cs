@@ -3,6 +3,7 @@ using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
+using Ertis.MongoDB.Queries;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using Microsoft.Extensions.Caching.Memory;
@@ -74,36 +75,48 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	{
 		var errorList = new List<string>();
 		
+		// Name
 		if (string.IsNullOrEmpty(model.Name))
 		{
 			errorList.Add("name is a required field");
 		}
 		
+		// Slug
 		if (!model.Slug.IsValidSlug(out var error))
 		{
 			errorList.Add(error!);
 		}
 		
+		// Is already exist?
+		if (membershipWithSameSlug != null && membershipWithSameSlug.Id != model.Id)
+		{
+			errorList.Add(ErtisAuthException.MembershipAlreadyExists(model.Slug).Message);
+		}
+		
+		// ExpiresIn
 		if (model.ExpiresIn <= 0)
 		{
 			errorList.Add("expires_in is a required field");
 		}
 		
+		// RefreshTokenExpiresIn
 		if (model.RefreshTokenExpiresIn <= 0)
 		{
 			errorList.Add("refresh_token_expires_in is a required field");
 		}
 		
+		// Secret Key
 		if (string.IsNullOrEmpty(model.SecretKey))
 		{
 			errorList.Add("secret_key is a required field");
 		}
-		else if (model.IsEncodingValid() && model.GetEncoding().GetByteCount(model.SecretKey) < MIN_SECRET_KEY_BYTE_COUNT)
+		else if (model.IsValidEncoding() && model.GetEncoding().GetByteCount(model.SecretKey) < MIN_SECRET_KEY_BYTE_COUNT)
 		{
 			// Measured in the encoding of the membership, the key is converted to bytes by it
 			errorList.Add($"secret_key must be at least {MIN_SECRET_KEY_BYTE_COUNT} bytes ({MIN_SECRET_KEY_BYTE_COUNT * 8} bits) in the encoding of the membership");
 		}
 		
+		// Hash Algorithm
 		if (string.IsNullOrEmpty(model.HashAlgorithm))
 		{
 			errorList.Add(ErtisAuthException.HashAlgorithmRequired().Message);
@@ -113,16 +126,19 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 			errorList.Add(ErtisAuthException.UnsupportedHashAlgorithm(model.HashAlgorithm).Message);
 		}
 		
-		if (!model.IsEncodingValid())
+		// Encoding
+		if (!model.IsValidEncoding())
 		{
 			errorList.Add(ErtisAuthException.UnsupportedEncoding(model.DefaultEncoding!).Message);
 		}
 		
-		if (membershipWithSameSlug != null && membershipWithSameSlug.Id != model.Id)
+		// Default Language
+		if (!string.IsNullOrEmpty(model.DefaultLanguage) && TextSearchLanguage.All.All(x => x.ISO6391Code != model.DefaultLanguage))
 		{
-			errorList.Add(ErtisAuthException.MembershipAlreadyExists(model.Name).Message);
+			errorList.Add(ErtisAuthException.UnsupportedLanguage(model.DefaultLanguage).Message);
 		}
 		
+		// OtpSettings
 		if (model.OtpSettings != null)
 		{
 			if (string.IsNullOrEmpty(model.OtpSettings.Host))
@@ -200,7 +216,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	protected override ErtisAuthException GetAlreadyExistError(Membership model)
 	{
-		return ErtisAuthException.MembershipAlreadyExists(model.Id);
+		return ErtisAuthException.MembershipAlreadyExists(model.Slug);
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string id)
@@ -349,7 +365,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		var membershipBoundedResources = await this.GetMembershipBoundedResourcesAsync(id, cancellationToken: cancellationToken);
 		if (membershipBoundedResources.Any())
 		{
-			throw ErtisAuthException.MembershipCouldNotDeleted(id);
+			throw ErtisAuthException.MembershipCouldNotDeleted($"This membership is already using by some membership related resources, it's could not be deleted ({id})");
 		}
 		
 		// The deleted membership is no longer listed by PurgeAllCacheAsync, so its own entries are removed explicitly
