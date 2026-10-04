@@ -10,6 +10,8 @@ public interface IMembershipService : IGenericCrudService<Membership>
 {
 	void RegisterService<T>(IMembershipBoundedService<T> service) where T : IHasMembership, IHasIdentifier;
 	
+	Task<Membership?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
+	
 	Task<IPaginationCollection<dynamic>> QueryAsync(
 		string query, 
 		int? skip = null, 

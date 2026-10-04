@@ -4,6 +4,7 @@ using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Extensions.Authorization.Attributes;
@@ -59,7 +60,7 @@ public class UserTypesController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<UserType>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var userType = await this._userTypeService.GetAsync(id, membershipId);
+		var userType = id.IsObjectId() ? await this._userTypeService.GetAsync(id, membershipId) : await this._userTypeService.GetByNameOrSlugAsync(id, membershipId);
 		if (userType != null)
 		{
 			return this.Ok(userType);

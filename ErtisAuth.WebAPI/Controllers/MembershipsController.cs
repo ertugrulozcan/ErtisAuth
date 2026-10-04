@@ -4,6 +4,7 @@ using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using Ertis.MongoDB.Queries;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models.Cryptography;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
@@ -58,7 +59,7 @@ public class MembershipsController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Get([FromRoute] string id)
 	{
-		var membership = await this._membershipService.GetAsync(id);
+		var membership = id.IsObjectId() ? await this._membershipService.GetAsync(id) : await this._membershipService.GetBySlugAsync(id);
 		if (membership != null)
 		{
 			return this.Ok(membership);

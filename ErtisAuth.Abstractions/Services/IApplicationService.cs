@@ -6,9 +6,9 @@ namespace ErtisAuth.Abstractions.Services;
 
 public interface IApplicationService : IMembershipBoundedCrudService<Application>
 {
-	Application? GetById(string id);
-	
 	ValueTask<Application?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
+	
+	Task<Application?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default);
 	
 	/// <summary>
 	/// Creates the application with a newly generated secret; the plain secret is only returned here.

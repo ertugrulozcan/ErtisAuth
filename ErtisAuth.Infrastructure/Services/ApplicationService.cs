@@ -215,11 +215,11 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	{
 		if (exclude == null)
 		{
-			return await this.GetApplicationBySlugAsync(model.Slug, membershipId, cancellationToken: cancellationToken) != null;	
+			return await this.GetBySlugAsync(model.Slug, membershipId, cancellationToken: cancellationToken) != null;	
 		}
 		else
 		{
-			var current = await this.GetApplicationBySlugAsync(model.Slug, membershipId, cancellationToken: cancellationToken);
+			var current = await this.GetBySlugAsync(model.Slug, membershipId, cancellationToken: cancellationToken);
 			if (current != null)
 			{
 				return current.Id != exclude.Id;	
@@ -343,23 +343,6 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		return application;
 	}
 	
-	public Application? GetById(string id)
-	{
-		var cacheKey = GetCacheKey("*", id);
-		if (!this._memoryCache.TryGetValue<Application>(cacheKey, out var application))
-		{
-			application = this._repository.FindOne(x => x.Id == id);
-			if (application == null)
-			{
-				return null;
-			}
-			
-			this._memoryCache.Set(cacheKey, application, GetCacheTTL());
-		}
-		
-		return application;
-	}
-	
 	public async ValueTask<Application?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
 	{
 		var cacheKey = GetCacheKey("*", id);
@@ -377,7 +360,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		return application;
 	}
 	
-	private async Task<Application?> GetApplicationBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
+	public async Task<Application?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
 	{
 		return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 	}

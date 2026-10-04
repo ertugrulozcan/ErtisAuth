@@ -284,7 +284,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		return membership;
 	}
 	
-	private async Task<Membership?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
+	public async Task<Membership?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
 	{
 		return await this._repository.FindOneAsync(x => x.Slug == slug.Trim(), cancellationToken: cancellationToken);
 	}

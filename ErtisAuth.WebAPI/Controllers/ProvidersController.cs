@@ -1,6 +1,7 @@
 using Ertis.Core.Models;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.Authorization.Attributes;
@@ -56,7 +57,7 @@ public class ProvidersController : ControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<Provider>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var provider = await this._providerService.GetAsync(id, membershipId);
+		var provider = id.IsObjectId() ? await this._providerService.GetAsync(id, membershipId) : await this._providerService.GetBySlugAsync(id, membershipId);
 		if (provider != null)
 		{
 			return this.Ok(provider);

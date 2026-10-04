@@ -291,11 +291,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		return ErtisAuthException.ProviderNotFound(id);
 	}
 	
-	private async Task<Provider?> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
-	{
-		return await this._repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-	}
-	
 	#endregion
 	
 	#region Cache Methods
@@ -318,6 +313,16 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	#endregion
 	
 	#region Read Methods
+	
+	private async Task<Provider?> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
+	{
+		return await this._repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
+	}
+	
+	public async Task<Provider?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
+	{
+		return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
+	}
 	
 	public async Task<IEnumerable<Provider>> GetProvidersAsync(string membershipId, CancellationToken cancellationToken = default)
 	{

@@ -6,6 +6,8 @@ namespace ErtisAuth.Abstractions.Services;
 
 public interface IProviderService : IMembershipBoundedCrudService<Provider>
 {
+	Task<Provider?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default);
+	
 	Task<IEnumerable<Provider>> GetProvidersAsync(string membershipId, CancellationToken cancellationToken = default);
 	
 	Task<BearerToken> LoginAsync(IProviderLoginRequest request, string membershipId, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default);

@@ -4,6 +4,7 @@ using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
@@ -65,7 +66,7 @@ public class ApplicationsController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<Application>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var app = await this._applicationService.GetAsync(id, membershipId);
+		var app = id.IsObjectId() ? await this._applicationService.GetAsync(id, membershipId) : await this._applicationService.GetBySlugAsync(id, membershipId);
 		if (app != null)
 		{
 			return this.Ok(app);

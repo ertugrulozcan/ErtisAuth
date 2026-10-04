@@ -4,6 +4,7 @@ using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Extensions.Authorization.Attributes;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
@@ -68,7 +69,7 @@ public class RolesController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<Role>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var role = await this._roleService.GetAsync(id, membershipId);
+		var role = id.IsObjectId() ? await this._roleService.GetAsync(id, membershipId) : await this._roleService.GetBySlugAsync(id, membershipId);
 		if (role != null)
 		{
 			return this.Ok(role);
