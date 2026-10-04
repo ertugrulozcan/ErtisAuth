@@ -1,6 +1,7 @@
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dao.Repositories.Interfaces;
@@ -144,6 +145,11 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 		if (string.IsNullOrEmpty(model.Name))
 		{
 			errorList.Add("name is a required field");
+		}
+		
+		if (!model.Slug.IsValidSlug(out var error))
+		{
+			errorList.Add(error!);
 		}
 		
 		if (string.IsNullOrEmpty(model.MembershipId))

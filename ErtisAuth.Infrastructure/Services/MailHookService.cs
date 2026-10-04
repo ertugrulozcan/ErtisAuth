@@ -7,6 +7,7 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Extensions.Mailing.Services.Interfaces;
@@ -426,9 +427,9 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			errorList.Add("name is a required field");
 		}
 		
-		if (string.IsNullOrEmpty(model.Slug))
+		if (!model.Slug.IsValidSlug(out var error))
 		{
-			errorList.Add("slug is a required field");
+			errorList.Add(error!);
 		}
 		
 		if (string.IsNullOrEmpty(model.MembershipId))

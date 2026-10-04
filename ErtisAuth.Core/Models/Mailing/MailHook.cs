@@ -7,7 +7,7 @@ using MongoDB.Bson.Serialization.Attributes;
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Core.Models.Mailing;
 
-public class MailHook : MembershipBoundedResource, IHasSysInfo
+public class MailHook : MembershipBoundedResource, IHasSlug, IHasSysInfo
 {
     #region Properties
     

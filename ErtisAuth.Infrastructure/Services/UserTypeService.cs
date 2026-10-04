@@ -7,6 +7,7 @@ using Ertis.Schema.Types.Primitives;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
@@ -576,6 +577,11 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 			if (string.IsNullOrEmpty(model.Name))
 			{
 				errorList.Add("Name is required");
+			}
+			
+			if (!model.Slug.IsValidSlug(out var error))
+			{
+				errorList.Add(error!);
 			}
 			
 			if (!model.ValidateSchema(out var validationException) && validationException != null)

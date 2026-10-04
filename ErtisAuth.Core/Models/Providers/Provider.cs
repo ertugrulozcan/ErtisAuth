@@ -11,7 +11,7 @@ using MongoDB.Bson.Serialization.Attributes;
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 namespace ErtisAuth.Core.Models.Providers;
 
-public class Provider : MembershipBoundedResource, IHasSysInfo
+public class Provider : MembershipBoundedResource, IHasSlug, IHasSysInfo
 {
 	#region Properties
 	

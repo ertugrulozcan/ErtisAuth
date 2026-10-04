@@ -4,6 +4,7 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
@@ -221,6 +222,11 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		if (string.IsNullOrEmpty(model.Name))
 		{
 			errorList.Add("name is a required field");
+		}
+		
+		if (!model.Slug.IsValidSlug(out var error))
+		{
+			errorList.Add(error!);
 		}
 		
 		if (string.IsNullOrEmpty(model.MembershipId))

@@ -7,7 +7,7 @@ using MongoDB.Bson.Serialization.Attributes;
 // ReSharper disable UnusedMemberInSuper.Global
 namespace ErtisAuth.Core.Models.Mailing;
 
-public interface IMailProvider
+public interface IMailProvider : IHasSlug
 {
 	#region Properties
 	
@@ -29,10 +29,6 @@ public interface IMailProvider
 	[JsonPropertyName("name")]
 	[BsonElement("name")]
 	string Name { get; }
-	
-	[JsonPropertyName("slug")]
-	[BsonElement("slug")]
-	string Slug { get; }
 	
 	#endregion
 }

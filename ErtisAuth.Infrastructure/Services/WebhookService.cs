@@ -9,6 +9,7 @@ using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Webhooks;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -352,6 +353,11 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		if (string.IsNullOrEmpty(model.Name))
 		{
 			errorList.Add("name is a required field");
+		}
+		
+		if (!model.Slug.IsValidSlug(out var error))
+		{
+			errorList.Add(error!);
 		}
 		
 		if (string.IsNullOrEmpty(model.MembershipId))

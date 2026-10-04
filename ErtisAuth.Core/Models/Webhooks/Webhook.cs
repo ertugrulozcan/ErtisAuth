@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Ertis.Core.Helpers;
 using Ertis.Core.Models;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Serialization;
@@ -6,13 +7,29 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Core.Models.Webhooks;
 
-public class Webhook : MembershipBoundedResource, IHasSysInfo
+public class Webhook : MembershipBoundedResource, IHasSlug, IHasSysInfo
 {
 	#region Properties
 	
 	[JsonPropertyName("name")]
 	[BsonElement("name")]
 	public required string Name { get; set; }
+	
+	[JsonPropertyName("slug")]
+	[BsonElement("slug")]
+	public string Slug
+	{
+		get
+		{
+			if (string.IsNullOrEmpty(field))
+			{
+				field = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
+			}
+			
+			return field;
+		}
+		set => field = Slugifier.Slugify(value, Slugifier.Options.Ignore('_'));
+	}
 	
 	[JsonPropertyName("description")]
 	[BsonElement("description")]

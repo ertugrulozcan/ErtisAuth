@@ -10,6 +10,7 @@ using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using ErtisAuth.Infrastructure.Helpers;
 using Ertis.Core.Collections;
+using ErtisAuth.Core.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -124,6 +125,11 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		if (string.IsNullOrEmpty(model.Name))
 		{
 			errorList.Add("name is a required field");
+		}
+		
+		if (!model.Slug.IsValidSlug(out var error))
+		{
+			errorList.Add(error!);
 		}
 		
 		if (string.IsNullOrEmpty(model.MembershipId))

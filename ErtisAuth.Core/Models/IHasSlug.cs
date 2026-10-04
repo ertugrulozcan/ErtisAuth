@@ -3,13 +3,13 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Core.Models;
 
-public interface IHasMembership
+public interface IHasSlug
 {
 	#region Properties
 	
-	[JsonPropertyName("membership_id")]
-	[BsonElement("membership_id")]
-	string MembershipId { get; set; }
+	[JsonPropertyName("slug")]
+	[BsonElement("slug")]
+	public string Slug { get; }
 	
 	#endregion
 }

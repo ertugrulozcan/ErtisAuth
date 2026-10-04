@@ -6,7 +6,7 @@ using MongoDB.Bson.Serialization.Attributes;
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Core.Models.Identity;
 
-public class TokenCodePolicy : MembershipBoundedResource, IHasSysInfo
+public class TokenCodePolicy : MembershipBoundedResource, IHasSlug, IHasSysInfo
 {
     #region Properties
     

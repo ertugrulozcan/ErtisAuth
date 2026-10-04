@@ -43,9 +43,9 @@ public static class ErrorHandlingExtensions
 								StatusCode = 400,
 								Errors = cumulativeValidationException.Errors.Select(x => new
 								{
-									x.Message,
-									x.FieldName,
-									x.FieldPath
+									message = x.Message,
+									fieldName = x.FieldName,
+									fieldPath = x.FieldPath
 								})
 							};
 							break;
@@ -73,17 +73,17 @@ public static class ErrorHandlingExtensions
 							{
 								FieldValidationException fieldValidationException => new
 								{
-									fieldValidationException.Message,
-									fieldValidationException.FieldName,
-									fieldValidationException.FieldPath,
-									ErrorCode = "FieldValidationException",
-									StatusCode = 400
+									message = fieldValidationException.Message,
+									fieldName = fieldValidationException.FieldName,
+									fieldPath = fieldValidationException.FieldPath,
+									errorCode = "FieldValidationException",
+									statusCode = 400
 								},
 								SchemaValidationException schemaValidationException => new
 								{
-									schemaValidationException.Message,
-									ErrorCode = "SchemaValidationException",
-									StatusCode = 400
+									message = schemaValidationException.Message,
+									errorCode = "SchemaValidationException",
+									statusCode = 400
 								},
 								_ => new ErrorModel
 								{

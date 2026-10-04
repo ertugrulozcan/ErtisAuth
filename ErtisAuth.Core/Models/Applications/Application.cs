@@ -7,7 +7,7 @@ using MongoDB.Bson.Serialization.Attributes;
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Core.Models.Applications;
 
-public class Application : MembershipBoundedResource, IUtilizer, IHasSysInfo
+public class Application : MembershipBoundedResource, IHasSlug, IUtilizer, IHasSysInfo
 {
 	#region Properties
 	

@@ -14,7 +14,7 @@ using ErtisAuth.Core.Exceptions;
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Core.Models.Users;
 
-public class UserType : MembershipBoundedResource, IHasSysInfo, ISchema, ICloneable
+public class UserType : MembershipBoundedResource, IHasSlug, IHasSysInfo, ISchema, ICloneable
 {
     #region Constants
     

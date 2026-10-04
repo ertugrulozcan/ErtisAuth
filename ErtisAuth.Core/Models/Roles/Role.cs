@@ -5,7 +5,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace ErtisAuth.Core.Models.Roles;
 
-public class Role : MembershipBoundedResource, IHasSysInfo
+public class Role : MembershipBoundedResource, IHasSlug, IHasSysInfo
 {
 	#region Properties
 	
