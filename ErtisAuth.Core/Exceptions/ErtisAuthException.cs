@@ -416,26 +416,25 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "Role required", "RoleRequired");
 	}
 	
-	public static ErtisAuthException RoleNotFound(string roleIdOrName, bool passedRoleName = false)
+	public static ErtisAuthException RoleNotFound(string value, string? fieldName = null)
 	{
-		if (passedRoleName)
-		{
-			return new ErtisAuthException(HttpStatusCode.NotFound, $"Role not found in db by given name: <{roleIdOrName}>", "RoleNotFound");
-		}
-		else
-		{
-			return new ErtisAuthException(HttpStatusCode.NotFound, $"Role not found in db by given _id: <{roleIdOrName}>", "RoleNotFound");	
-		}
+		fieldName = string.IsNullOrEmpty(fieldName) ? "id" : fieldName;
+		return new ErtisAuthException(HttpStatusCode.NotFound, $"Role not found in db by given {fieldName}: <{value}>", "RoleNotFound");
 	}
 	
-	public static ErtisAuthException RoleWithSameNameAlreadyExists(string name)
+	public static ErtisAuthException RoleWithSameSlugAlreadyExists(string slug)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"The role with same name is already exists ({name})", "RoleWithSameNameAlreadyExists");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The role with same slug is already exists ({slug})", "RoleAlreadyExists");
 	}
 	
-	public static ErtisAuthException ReservedRoleName(string name)
+	public static ErtisAuthException ReservedRole(string slug)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"This role name is reserved by the system ({name})", "ReservedRoleName");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"This role is reserved by the system ({slug})", "ReservedRole");
+	}
+	
+	public static ErtisAuthException SystemRolesCannotBeDeleted(string slug)
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The reserved system roles cannot be deleted ({slug})", "SystemRolesCannotBeDeleted");
 	}
 	
 	public static ErtisAuthException UbacsConflicted(string message)

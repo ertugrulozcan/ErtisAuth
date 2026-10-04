@@ -254,7 +254,7 @@ public class TokenService : ITokenService
 			}
 			else
 			{
-				throw ErtisAuthException.RoleNotFound(verifyResult.User.Role);
+				throw ErtisAuthException.RoleNotFound(verifyResult.User.Role, "slug");
 			}
 		}
 		else

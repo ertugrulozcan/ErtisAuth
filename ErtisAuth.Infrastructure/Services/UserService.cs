@@ -341,7 +341,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         var role = await this._roleService.GetBySlugAsync(roleSlug, membershipId, cancellationToken: cancellationToken);
         if (role == null)
         {
-	        throw ErtisAuthException.RoleNotFound(roleSlug, true);
+	        throw ErtisAuthException.RoleNotFound(roleSlug, "slug");
         }
 		
         return role;

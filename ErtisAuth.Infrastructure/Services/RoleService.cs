@@ -71,7 +71,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	public async Task<Role> EnsureAdministratorRoleAsync(Membership membership, CancellationToken cancellationToken = default)
 	{
-		var adminRole = await this.GetBySlugAsync(ReservedRoles.Administrator, membership.Id, cancellationToken: cancellationToken);
+		var adminRole = await this.GetBySlugAsync(ReservedRoles.Administrator.Slug, membership.Id, cancellationToken: cancellationToken);
 		if (adminRole != null)
 		{
 			return adminRole;
@@ -120,9 +120,9 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		
 		return await this.CreateAsync(new Role
 		{
-			Name = "Administrator",
-			Slug = ReservedRoles.Administrator,
-			Description = "Administrator",
+			Name = ReservedRoles.Administrator.Name,
+			Slug = ReservedRoles.Administrator.Slug,
+			Description = ReservedRoles.Administrator.Description,
 			MembershipId = membership.Id,
 			Permissions = permissions
 		}, membership.Id, utilizer, cancellationToken: cancellationToken);
@@ -319,7 +319,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	protected override ErtisAuthException GetAlreadyExistError(Role model)
 	{
-		return ErtisAuthException.RoleWithSameNameAlreadyExists(model.Name);
+		return ErtisAuthException.RoleWithSameSlugAlreadyExists(model.Slug);
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string id)
@@ -354,9 +354,9 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	public override async Task<Role> CreateAsync(Role model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
-		if (model.Slug is ReservedRoles.Administrator && utilizer.Type != Utilizer.UtilizerType.System)
+		if (ReservedRoles.IsReserved(model.Slug) && utilizer.Type != Utilizer.UtilizerType.System)
 		{
-			throw ErtisAuthException.ReservedRoleName(model.Slug);
+			throw ErtisAuthException.ReservedRole(model.Slug);
 		}
 		
 		var created = await base.CreateAsync(model, membershipId, utilizer, cancellationToken);
@@ -381,10 +381,21 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	public override async Task<bool> DeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
+		var role = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
+		if (role == null)
+		{
+			throw ErtisAuthException.RoleNotFound(id);
+		}
+		
+		if (ReservedRoles.IsReserved(role.Slug))
+		{
+			throw ErtisAuthException.SystemRolesCannotBeDeleted(role.Slug);
+		}
+		
 		var isDeleted = await base.DeleteAsync(id, membershipId, utilizer, cancellationToken);
 		if (isDeleted)
 		{
-			await this.RefreshCacheAsync(membershipId);	
+			await this.RefreshCacheAsync(membershipId);
 		}
 		
 		return isDeleted;
@@ -392,6 +403,15 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	public override async Task<bool?> BulkDeleteAsync(string[] ids, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
+		foreach (var id in ids)
+		{
+			var role = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
+			if (role != null && ReservedRoles.IsReserved(role.Slug))
+			{
+				throw ErtisAuthException.SystemRolesCannotBeDeleted(role.Slug);
+			}
+		}
+		
 		var result = await base.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken: cancellationToken);
 		await this.RefreshCacheAsync(membershipId);
 		return result;

@@ -111,7 +111,7 @@ public struct Utilizer
 		{
 			Id = "system",
 			Username = "system",
-			Role = ReservedRoles.Administrator,
+			Role = ReservedRoles.Administrator.Slug,
 			Type = UtilizerType.System,
 			MembershipId = membershipId
 		};

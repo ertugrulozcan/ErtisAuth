@@ -63,7 +63,7 @@ public class RoleServiceAdministratorRoleTests
 	
 	private Role[] AdministratorRoles(string membershipId)
 	{
-		return this._roles.Where(x => x.MembershipId == membershipId && x.Slug == ReservedRoles.Administrator).ToArray();
+		return this._roles.Where(x => x.MembershipId == membershipId && x.Slug == ReservedRoles.Administrator.Slug).ToArray();
 	}
 	
 	#endregion
@@ -90,7 +90,7 @@ public class RoleServiceAdministratorRoleTests
 		
 		var role = await this.CreateRoleService().EnsureAdministratorRoleAsync(membership, TestContext.Current.CancellationToken);
 		
-		Assert.Equal(ReservedRoles.Administrator, role.Slug);
+		Assert.Equal(ReservedRoles.Administrator.Slug, role.Slug);
 		Assert.Single(this.AdministratorRoles(membership.Id));
 		Assert.Contains("*.users.create.*", role.Permissions!);
 		Assert.Contains("*.memberships.delete.*", role.Permissions!);
