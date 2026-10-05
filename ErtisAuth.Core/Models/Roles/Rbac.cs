@@ -1,3 +1,5 @@
+using ErtisAuth.Core.Exceptions;
+
 namespace ErtisAuth.Core.Models.Roles;
 
 public class Rbac : IEquatable<Rbac>
@@ -55,7 +57,7 @@ public class Rbac : IEquatable<Rbac>
 	{
 		if (string.IsNullOrEmpty(path))
 		{
-			throw new ArgumentException("Role permission path is empty!");
+			throw ErtisAuthException.InvalidRbac("The rbac expression can not be empty");
 		}
 		
 		var segments = path.Split(RbacSegment.SEPARATOR);
@@ -94,7 +96,7 @@ public class Rbac : IEquatable<Rbac>
 					Object = (RbacSegment) segments[3]
 				};
 			default:
-				throw new ArgumentOutOfRangeException(nameof(path), "The permission path is not valid. ([subject].[resource].[action].[object])");
+				throw ErtisAuthException.InvalidRbac();
 		}
 	}
 	

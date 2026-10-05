@@ -21,6 +21,7 @@ using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Dao.Repositories.Interfaces;
+using ErtisAuth.Infrastructure.Extensions;
 using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.Integrations.OAuth.Core;
 using Microsoft.Extensions.Logging;
@@ -345,45 +346,6 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
 		
         return role;
-    }
-	
-    #endregion
-	
-    #region Ubac Methods
-	
-    private void EnsureUbacs(DynamicObject model)
-    {
-        var permissionList = new List<Ubac>();
-        if (model.TryGetValue("permissions", out string[]? permissions, out _) && permissions != null)
-        {
-	        foreach (var permission in permissions)
-	        {
-		        var ubac = Ubac.Parse(permission);
-		        permissionList.Add(ubac);
-	        }
-        }
-		
-        var forbiddenList = new List<Ubac>();
-        if (model.TryGetValue("forbidden", out string[]? forbiddens, out _) && forbiddens != null)
-        {
-	        foreach (var forbidden in forbiddens)
-	        {
-		        var ubac = Ubac.Parse(forbidden);
-		        forbiddenList.Add(ubac);
-	        }
-        }
-		
-        // Is there any conflict?
-        foreach (var permissionUbac in permissionList)
-        {
-	        foreach (var forbiddenUbac in forbiddenList)
-	        {
-		        if (permissionUbac == forbiddenUbac)
-		        {
-			        throw ErtisAuthException.UbacsConflicted($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{permissionUbac}')");
-		        }
-	        }	
-        }
     }
 	
     #endregion
@@ -776,7 +738,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
     #region Validation Methods
 	
-    private async Task EnsureAndValidateAsync(
+    private async Task ValidateAsync(
         UserType userType,
         DynamicObject model, 
         DynamicObject? current,
@@ -788,11 +750,19 @@ public class UserService : DynamicObjectCrudService, IUserService
         this.EnsureMembershipId(model, membershipId);
         this.EnsureId(model);
         EnsureSys(model, utilizer, current);
-        this.EnsureUbacs(model);
         
         await this.EnsureUserTypeAsync(userType, model, id, current?.GetValue<string>("user_type"), membershipId);
         await this.EmbedReferencesAsync(userType, model, cancellationToken: cancellationToken);
         await this.EnsureRoleAsync(model, membershipId, cancellationToken: cancellationToken);
+		
+		// Ubac validation
+		if (model.TryGetValue("permissions", out string[]? permissions, out _) && permissions != null && model.TryGetValue("forbidden", out string[]? forbiddens, out _) && forbiddens != null)
+		{
+			if (UbacExtensions.HasConflict(permissions, forbiddens, out var conflict) && conflict != null)
+			{
+				throw ErtisAuthException.UbacsConflicted($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{conflict}')");
+			}
+		}
     }
 	
     #endregion
@@ -818,7 +788,8 @@ public class UserService : DynamicObjectCrudService, IUserService
         var userType = await this.GetUserTypeAsync(model, null, membershipId, sourceProvider == KnownProviders.ErtisAuth, cancellationToken: cancellationToken);
         NormalizeUserType(model, userType, isCreate: true);
         this.EnsureManagedProperties(model, membershipId);
-        await this.EnsureAndValidateAsync(userType, model, null, null, membershipId, utilizer, cancellationToken: cancellationToken);
+        
+		await this.ValidateAsync(userType, model, null, null, membershipId, utilizer, cancellationToken: cancellationToken);
         
         if (sourceProvider == KnownProviders.ErtisAuth && !string.IsNullOrEmpty(password))
         {
@@ -1067,7 +1038,8 @@ public class UserService : DynamicObjectCrudService, IUserService
         model = this.SyncModel(current, model);
 		await this.CheckPrivilegedPropertiesAsync(model, current, userId, utilizer, cancellationToken: cancellationToken);
         this.EnsurePasswordHash(model, current);
-        await this.EnsureAndValidateAsync(userType, model, current, userId, membershipId, utilizer, cancellationToken: cancellationToken);
+        
+		await this.ValidateAsync(userType, model, current, userId, membershipId, utilizer, cancellationToken: cancellationToken);
         
         DynamicObject? updated;
         try

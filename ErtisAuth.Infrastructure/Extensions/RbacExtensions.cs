@@ -104,5 +104,44 @@ public static class RbacExtensions
 		return false;
 	}
 	
+	public static bool HasConflict(IEnumerable<string>? permissions, IEnumerable<string>? forbiddens, out Rbac? conflictedRbac)
+	{
+		var permissionList = new List<Rbac>();
+		if (permissions != null)
+		{
+			foreach (var permission in permissions)
+			{
+				var rbac = Rbac.Parse(permission);
+				permissionList.Add(rbac);
+			}
+		}
+		
+		var forbiddenList = new List<Rbac>();
+		if (forbiddens != null)
+		{
+			foreach (var forbidden in forbiddens)
+			{
+				var rbac = Rbac.Parse(forbidden);
+				forbiddenList.Add(rbac);
+			}
+		}
+		
+		// Is there any conflict?
+		foreach (var permissionRbac in permissionList)
+		{
+			foreach (var forbiddenRbac in forbiddenList)
+			{
+				if (permissionRbac == forbiddenRbac)
+				{
+					conflictedRbac = permissionRbac;
+					return true;
+				}
+			}
+		}
+		
+		conflictedRbac = null;
+		return false;
+	}
+	
 	#endregion
 }

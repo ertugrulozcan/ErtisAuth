@@ -9,6 +9,7 @@ using ErtisAuth.Core.Helpers;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
+using ErtisAuth.Infrastructure.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -234,43 +235,9 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 			errorList.Add("membership_id is a required field");
 		}
 		
-		try
+		if (RbacExtensions.HasConflict(model.Permissions, model.Forbidden, out var conflict) && conflict != null)
 		{
-			var permissionList = new List<Rbac>();
-			if (model.Permissions != null)
-			{
-				foreach (var permission in model.Permissions)
-				{
-					var rbac = Rbac.Parse(permission);
-					permissionList.Add(rbac);
-				}
-			}
-			
-			var forbiddenList = new List<Rbac>();
-			if (model.Forbidden != null)
-			{
-				foreach (var forbidden in model.Forbidden)
-				{
-					var rbac = Rbac.Parse(forbidden);
-					forbiddenList.Add(rbac);
-				}
-			}
-			
-			// Is there any conflict?
-			foreach (var permissionRbac in permissionList)
-			{
-				foreach (var forbiddenRbac in forbiddenList)
-				{
-					if (permissionRbac == forbiddenRbac)
-					{
-						errorList.Add($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{permissionRbac}')");
-					}
-				}	
-			}
-		}
-		catch (Exception ex)
-		{
-			errorList.Add(ex.Message);
+			errorList.Add($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{conflict}')");
 		}
 		
 		return Task.FromResult<IEnumerable<string>>(errorList);

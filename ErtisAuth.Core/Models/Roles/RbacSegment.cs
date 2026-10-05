@@ -1,3 +1,5 @@
+using ErtisAuth.Core.Exceptions;
+
 namespace ErtisAuth.Core.Models.Roles;
 
 public readonly struct RbacSegment : IEquatable<RbacSegment>, IEquatable<string>
@@ -33,12 +35,17 @@ public readonly struct RbacSegment : IEquatable<RbacSegment>, IEquatable<string>
 	{
 		if (string.IsNullOrEmpty(value) || string.IsNullOrWhiteSpace(value))
 		{
-			throw new ArgumentNullException(nameof(value), "Segment value could not be null!");
+			throw ErtisAuthException.InvalidRbac("The rbac or ubac segment is could not be null");
 		}
 		
 		if (value == All.Value || value == All.Slug)
 		{
-			throw new ArgumentException($"'{value}' is a reserved keyword, it's could not be use as segment value.");
+			throw ErtisAuthException.InvalidRbac($"'{value}' is a reserved keyword, it's could not be use as a rbac or ubac segment value");
+		}
+		
+		if (value.Length > 1 && (value.StartsWith(SEPARATOR) || value.StartsWith(All.Value) || value.EndsWith(SEPARATOR) || value.EndsWith(All.Value)))
+		{
+			throw ErtisAuthException.InvalidRbac("An rbac or ubac segment could not be starts or ends with 'separator' or 'all' keywords");
 		}
 		
 		this.Value = value;

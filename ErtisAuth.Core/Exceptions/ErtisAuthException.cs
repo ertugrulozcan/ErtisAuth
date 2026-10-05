@@ -192,6 +192,30 @@ public class ErtisAuthException : ErtisException
 	
 	#endregion
 	
+	#region Rbac & Ubac Exceptions
+	
+	public static ErtisAuthException InvalidRbac(string? message = null)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, string.IsNullOrEmpty(message) ? "Invalid rbac expression" : $"Invalid rbac expression: {message}", "InvalidRbac");
+	}
+	
+	public static ErtisAuthException InvalidUbac(string? message = null)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, string.IsNullOrEmpty(message) ? "Invalid ubac expression" : $"Invalid ubac expression: {message}", "InvalidUbac");
+	}
+	
+	public static ErtisAuthException RbacsConflicted(string message)
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, message, "RbacsConflicted");
+	}
+	
+	public static ErtisAuthException UbacsConflicted(string message)
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, message, "UbacsConflicted");
+	}
+	
+	#endregion
+	
 	#region Membership Exceptions
 	
 	public static ErtisAuthException MembershipNotFound(string membershipId)
@@ -435,11 +459,6 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException SystemRolesCannotBeDeleted(string slug)
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"The reserved system roles cannot be deleted ({slug})", "SystemRolesCannotBeDeleted");
-	}
-	
-	public static ErtisAuthException UbacsConflicted(string message)
-	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, message, "UbacsConflicted");
 	}
 	
 	#endregion

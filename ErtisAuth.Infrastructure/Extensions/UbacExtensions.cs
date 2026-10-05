@@ -78,5 +78,44 @@ public static class UbacExtensions
 		}
 	}
 	
+	public static bool HasConflict(IEnumerable<string>? permissions, IEnumerable<string>? forbiddens, out Ubac? conflictedUbac)
+	{
+		var permissionList = new List<Ubac>();
+		if (permissions != null)
+		{
+			foreach (var permission in permissions)
+			{
+				var ubac = Ubac.Parse(permission);
+				permissionList.Add(ubac);
+			}
+		}
+		
+		var forbiddenList = new List<Ubac>();
+		if (forbiddens != null)
+		{
+			foreach (var forbidden in forbiddens)
+			{
+				var ubac = Ubac.Parse(forbidden);
+				forbiddenList.Add(ubac);
+			}
+		}
+		
+		// Is there any conflict?
+		foreach (var permissionUbac in permissionList)
+		{
+			foreach (var forbiddenUbac in forbiddenList)
+			{
+				if (permissionUbac == forbiddenUbac)
+				{
+					conflictedUbac = permissionUbac;
+					return true;
+				}
+			}
+		}
+		
+		conflictedUbac = null;
+		return false;
+	}
+	
 	#endregion
 }

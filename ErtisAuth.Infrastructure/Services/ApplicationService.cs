@@ -5,12 +5,12 @@ using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Roles;
-using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using ErtisAuth.Infrastructure.Helpers;
 using Ertis.Core.Collections;
 using ErtisAuth.Core.Extensions;
+using ErtisAuth.Infrastructure.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -146,43 +146,9 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 			errorList.Add($"Role is invalid. There is no role named '{model.Role}'");
 		}
 		
-		try
+		if (UbacExtensions.HasConflict(model.Permissions, model.Forbidden, out var conflict) && conflict != null)
 		{
-			var permissionList = new List<Ubac>();
-			if (model.Permissions != null)
-			{
-				foreach (var permission in model.Permissions)
-				{
-					var ubac = Ubac.Parse(permission);
-					permissionList.Add(ubac);
-				}
-			}
-			
-			var forbiddenList = new List<Ubac>();
-			if (model.Forbidden != null)
-			{
-				foreach (var forbidden in model.Forbidden)
-				{
-					var ubac = Ubac.Parse(forbidden);
-					forbiddenList.Add(ubac);
-				}
-			}
-			
-			// Is there any conflict?
-			foreach (var permissionUbac in permissionList)
-			{
-				foreach (var forbiddenUbac in forbiddenList)
-				{
-					if (permissionUbac == forbiddenUbac)
-					{
-						errorList.Add($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{permissionUbac}')");
-					}
-				}	
-			}
-		}
-		catch (Exception ex)
-		{
-			errorList.Add(ex.Message);
+			errorList.Add($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{conflict}')");
 		}
 		
 		errors = errorList;
