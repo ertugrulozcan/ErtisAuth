@@ -192,7 +192,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
 		{
-			errorList.Add("name is a required field");
+			errorList.Add("Name is required");
 		}
 		
 		if (!model.Slug.IsValidSlug(out var error))
@@ -202,46 +202,46 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		
 		if (string.IsNullOrEmpty(model.MembershipId))
 		{
-			errorList.Add("membership_id is a required field");
+			errorList.Add("Membership id is required");
 		}
 		
 		if (model.IsActive)
 		{
 			if (string.IsNullOrEmpty(model.AppClientId))
 			{
-				errorList.Add("AppClientId is a required field");
+				errorList.Add("App client id is required");
 			}
 			
 			if (string.IsNullOrEmpty(model.DefaultRole))
 			{
-				errorList.Add("DefaultRole is a required field");
+				errorList.Add("Default role is required");
 			}
 			
 			if (string.IsNullOrEmpty(model.DefaultUserType))
 			{
-				errorList.Add("DefaultUserType is a required field");
+				errorList.Add("Default user type is required");
 			}
 			
 			if (model.Name == KnownProviders.Apple.ToString() || model.Name == KnownProviders.AppleNative.ToString())
 			{
 				if (string.IsNullOrEmpty(model.TeamId))
 				{
-					errorList.Add("TeamId is a required field");
+					errorList.Add("Team id is required");
 				}
 				
 				if (string.IsNullOrEmpty(model.PrivateKey))
 				{
-					errorList.Add("PrivateKey is a required field");
+					errorList.Add("Private key is required");
 				}
 				
 				if (string.IsNullOrEmpty(model.PrivateKeyId))
 				{
-					errorList.Add("PrivateKeyId is a required field");
+					errorList.Add("Private key id is required");
 				}
 				
 				if (string.IsNullOrEmpty(model.RedirectUri))
 				{
-					errorList.Add("RedirectUri is a required field");
+					errorList.Add("Redirect uri is required");
 				}
 			}
 		}

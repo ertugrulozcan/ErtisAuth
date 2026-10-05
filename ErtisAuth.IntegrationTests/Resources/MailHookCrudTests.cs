@@ -98,9 +98,9 @@ public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
 	/// Without a subject, a sender or any recipient no mail can be sent: rejected on create as well (was checked on update only).
 	/// </summary>
 	[Theory]
-	[InlineData("mailSubject", "MailSubject is a required field")]
-	[InlineData("fromName", "FromName is a required field")]
-	[InlineData("fromAddress", "FromAddress is a required field")]
+	[InlineData("mailSubject", "Mail subject is required")]
+	[InlineData("fromName", "From name is required")]
+	[InlineData("fromAddress", "From address is required")]
 	[InlineData("recipients", "Recipients list is empty")]
 	public async Task MailHook_CreateWithoutARequiredField_IsRejected(string field, string error)
 	{

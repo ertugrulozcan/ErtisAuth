@@ -65,7 +65,7 @@ public class SetupSecretKeyTests : IClassFixture<FreshErtisAuthInstance>
 		{
 			var error = await ErtisAuthInstance.ReadJsonAsync(response);
 			Assert.True(response.StatusCode == HttpStatusCode.BadRequest, error.ToString());
-			Assert.Contains("secret_key must be at least 32 bytes", error.ToString());
+			Assert.Contains("Secret key must be at least 32 bytes", error.ToString());
 		}
 		
 		// Nothing was set up: the setup succeeds with the default request (a generated secret key)

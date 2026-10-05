@@ -204,8 +204,8 @@ public class WebhookServiceTests
 	
 	[Theory]
 	[InlineData("UnknownEvent", 1, "POST", "Unknown event type.")]
-	[InlineData("UserCreated", 0, "POST", "try_count is a required field (must be in 1..5 range)")]
-	[InlineData("UserCreated", 6, "POST", "try_count is a required field (must be in 1..5 range)")]
+	[InlineData("UserCreated", 0, "POST", "Try count is required (must be in 1..5 range)")]
+	[InlineData("UserCreated", 6, "POST", "Try count is required (must be in 1..5 range)")]
 	[InlineData("UserCreated", 1, "FETCH", "Unknown http method in webhook request.")]
 	public async Task CreateAsync_WithInvalidWebhook_ThrowsValidationError(string eventName, int tryCount, string method, string expectedErrorStart)
 	{
@@ -227,7 +227,7 @@ public class WebhookServiceTests
 		
 		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateService().CreateAsync(webhook, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
 		
-		Assert.Contains("status is a required field", exception.Errors!);
+		Assert.Contains("Status is required", exception.Errors!);
 	}
 	
 	[Fact]

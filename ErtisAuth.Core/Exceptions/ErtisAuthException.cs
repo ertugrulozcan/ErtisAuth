@@ -255,7 +255,7 @@ public class ErtisAuthException : ErtisException
 	
 	public static ErtisAuthException HashAlgorithmRequired()
 	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, "hash_algorithm is a required field", "HashAlgorithmRequired");
+		return new ErtisAuthException(HttpStatusCode.BadRequest, "The hash algorithm is required", "HashAlgorithmRequired");
 	}
 	
 	public static ErtisAuthException UnsupportedHashAlgorithm(string hashAlgorithm)
@@ -386,9 +386,9 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"The '{fieldPath}' field can not be unique, some users already share the same value. ({duplicateKey})", "UniqueFieldHasDuplicates");
 	}
 	
-	public static ErtisAuthException UserTypeAlreadyExists(string userTypeName)
+	public static ErtisAuthException UserTypeAlreadyExists(string slug)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"'{userTypeName}' is already exist.", "UserTypeAlreadyExists");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"'{slug}' is already exist.", "UserTypeAlreadyExists");
 	}
 	
 	public static ErtisAuthException UserTypeNotFound(string field, string parameterName)
@@ -426,9 +426,9 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.NotFound, $"Application not found in db by given id: <{id}>", "ApplicationNotFound");
 	}
 	
-	public static ErtisAuthException ApplicationAlreadyExists(string name)
+	public static ErtisAuthException ApplicationAlreadyExists(string slug)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"The application is already exists with same slug ({name})", "ApplicationAlreadyExists");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The application is already exists with same slug ({slug})", "ApplicationAlreadyExists");
 	}
 	
 	public static ErtisAuthException ApplicationSecretMismatch()

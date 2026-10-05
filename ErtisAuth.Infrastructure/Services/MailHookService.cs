@@ -429,7 +429,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
 		{
-			errorList.Add("name is a required field");
+			errorList.Add("Name is required");
 		}
 		
 		if (!model.Slug.IsValidSlug(out var error))
@@ -439,17 +439,17 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		
 		if (string.IsNullOrEmpty(model.MembershipId))
 		{
-			errorList.Add("membership_id is a required field");
+			errorList.Add("Membership id is required");
 		}
 		
 		if (string.IsNullOrEmpty(model.MailProvider))
 		{
-			errorList.Add("Mail provider is a required field");
+			errorList.Add("Mail provider is required");
 		}
 		
 		if (string.IsNullOrEmpty(model.Status))
 		{
-			errorList.Add("status is a required field");
+			errorList.Add("Status is required");
 		}
 		else if (model.Status != "active" && model.Status != "passive")
 		{
@@ -458,7 +458,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		
 		if (string.IsNullOrEmpty(model.Event))
 		{
-			errorList.Add("event is a required field");
+			errorList.Add("Event type is required");
 		}
 		else if (model.EventType == null)
 		{
@@ -469,7 +469,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		// (no recipients at all unless the mail goes to the utilizer)
 		if (string.IsNullOrEmpty(model.MailSubject))
 		{
-			errorList.Add("MailSubject is a required field");
+			errorList.Add("Mail subject is required");
 		}
 		
 		if (!model.SendToUtilizer && (model.Recipients == null || !model.Recipients.Any()))
@@ -479,12 +479,12 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		
 		if (string.IsNullOrEmpty(model.FromName))
 		{
-			errorList.Add("FromName is a required field");
+			errorList.Add("From name is required");
 		}
 		
 		if (string.IsNullOrEmpty(model.FromAddress))
 		{
-			errorList.Add("FromAddress is a required field");
+			errorList.Add("From address is required");
 		}
 		
 		return Task.FromResult<IEnumerable<string>>(errorList);

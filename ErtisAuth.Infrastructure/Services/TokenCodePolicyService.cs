@@ -144,7 +144,7 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
 		{
-			errorList.Add("name is a required field");
+			errorList.Add("Name is required");
 		}
 		
 		if (!model.Slug.IsValidSlug(out var error))
@@ -154,7 +154,7 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 		
 		if (string.IsNullOrEmpty(model.MembershipId))
 		{
-			errorList.Add("membership_id is a required field");
+			errorList.Add("Membership id is required");
 		}
 		
 		if (model.Length <= 0)
@@ -214,7 +214,7 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 	
 	protected override ErtisAuthException GetAlreadyExistError(TokenCodePolicy model)
 	{
-		return ErtisAuthException.TokenCodePolicyAlreadyExists(model.Name);
+		return ErtisAuthException.TokenCodePolicyAlreadyExists(model.Slug);
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string slug)

@@ -125,7 +125,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
 		{
-			errorList.Add("name is a required field");
+			errorList.Add("Name is required");
 		}
 		
 		if (!model.Slug.IsValidSlug(out var error))
@@ -135,12 +135,12 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		
 		if (string.IsNullOrEmpty(model.MembershipId))
 		{
-			errorList.Add("membership_id is a required field");
+			errorList.Add("Membership id is required");
 		}
 		
 		if (string.IsNullOrEmpty(model.Role))
 		{
-			errorList.Add("role is a required field");
+			errorList.Add("Role is required");
 		}
 		else if (role == null)
 		{
@@ -222,7 +222,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	protected override ErtisAuthException GetAlreadyExistError(Application model)
 	{
-		return ErtisAuthException.ApplicationAlreadyExists($"'{model.Name}'");
+		return ErtisAuthException.ApplicationAlreadyExists(model.Slug);
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string id)

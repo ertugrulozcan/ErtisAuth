@@ -357,7 +357,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
 		{
-			errorList.Add("name is a required field");
+			errorList.Add("Name is required");
 		}
 		
 		if (!model.Slug.IsValidSlug(out var error))
@@ -367,17 +367,17 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		
 		if (string.IsNullOrEmpty(model.MembershipId))
 		{
-			errorList.Add("membership_id is a required field");
+			errorList.Add("Membership id is required");
 		}
 		
 		if (model.Status == null)
 		{
-			errorList.Add("status is a required field");
+			errorList.Add("Status is required");
 		}
 		
 		if (string.IsNullOrEmpty(model.Event))
 		{
-			errorList.Add("event is a required field");
+			errorList.Add("Event type is required");
 		}
 		else if (model.EventType == null)
 		{
@@ -386,24 +386,24 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 		
 		if (model.TryCount is < 1 or > 5)
 		{
-			errorList.Add("try_count is a required field (must be in 1..5 range)");
+			errorList.Add("Try count is required (must be in 1..5 range)");
 		}
 		
 		if (model.Request == null)
 		{
-			errorList.Add("request is a required field");
+			errorList.Add("Request is required");
 		}
 		else
 		{
 			if (string.IsNullOrEmpty(model.Request.Url))
 			{
-				errorList.Add("url is a required field for the webhook request");
+				errorList.Add("Url is required");
 			}
 			
 			var httpMethodList = typeof(HttpMethod).GetProperties().Where(x => x.PropertyType == typeof(HttpMethod)).Select(x => x.Name).ToList();
 			if (string.IsNullOrEmpty(model.Request.Method))
 			{
-				errorList.Add("method is a required field for the webhook request");
+				errorList.Add("Method is required");
 			}
 			else if (!httpMethodList.Any(x => string.Equals(x, model.Request.Method, StringComparison.OrdinalIgnoreCase)))
 			{

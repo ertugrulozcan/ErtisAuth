@@ -223,7 +223,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
 		{
-			errorList.Add("name is a required field");
+			errorList.Add("Name is required");
 		}
 		
 		if (!model.Slug.IsValidSlug(out var error))
@@ -233,7 +233,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		
 		if (string.IsNullOrEmpty(model.MembershipId))
 		{
-			errorList.Add("membership_id is a required field");
+			errorList.Add("Membership id is required");
 		}
 		
 		if (RbacExtensions.HasConflict(model.Permissions, model.Forbidden, out var conflict) && conflict != null)

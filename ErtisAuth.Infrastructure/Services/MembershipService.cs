@@ -79,7 +79,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		// Name
 		if (string.IsNullOrEmpty(model.Name))
 		{
-			errorList.Add("name is a required field");
+			errorList.Add("Name is required");
 		}
 		
 		// Slug
@@ -97,24 +97,24 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		// ExpiresIn
 		if (model.ExpiresIn <= 0)
 		{
-			errorList.Add("expires_in is a required field");
+			errorList.Add("Expires-in is required");
 		}
 		
 		// RefreshTokenExpiresIn
 		if (model.RefreshTokenExpiresIn <= 0)
 		{
-			errorList.Add("refresh_token_expires_in is a required field");
+			errorList.Add("Refresh token expires-in is required");
 		}
 		
 		// Secret Key
 		if (string.IsNullOrEmpty(model.SecretKey))
 		{
-			errorList.Add("secret_key is a required field");
+			errorList.Add("Secret key is required");
 		}
 		else if (model.IsValidEncoding() && model.GetEncoding().GetByteCount(model.SecretKey) < MIN_SECRET_KEY_BYTE_COUNT)
 		{
 			// Measured in the encoding of the membership, the key is converted to bytes by it
-			errorList.Add($"secret_key must be at least {MIN_SECRET_KEY_BYTE_COUNT} bytes ({MIN_SECRET_KEY_BYTE_COUNT * 8} bits) in the encoding of the membership");
+			errorList.Add($"Secret key must be at least {MIN_SECRET_KEY_BYTE_COUNT} bytes ({MIN_SECRET_KEY_BYTE_COUNT * 8} bits) in the encoding of the membership");
 		}
 		
 		// Hash Algorithm

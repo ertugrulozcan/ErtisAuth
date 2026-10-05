@@ -98,7 +98,7 @@ public class MembershipServiceValidationTests
 		var exception = await Assert.ThrowsAsync<ValidationException>(() => membershipService.UpdateAsync(update, Utilizer.GetSystemUtilizer(string.Empty), TestContext.Current.CancellationToken));
 		
 		Assert.NotNull(exception.Errors);
-		Assert.Contains("hash_algorithm is a required field", exception.Errors);
+		Assert.Contains("The hash algorithm is required", exception.Errors);
 	}
 	
 	[Fact]
@@ -175,7 +175,7 @@ public class MembershipServiceValidationTests
 	
 	#region Secret Key
 	
-	private const string ShortSecretKeyError = "secret_key must be at least 32 bytes (256 bits) in the encoding of the membership";
+	private const string ShortSecretKeyError = "Secret key must be at least 32 bytes (256 bits) in the encoding of the membership";
 	
 	/// <summary>
 	/// HMAC-SHA256 can't sign a token with a key shorter than 256 bits: every login of the membership would fail
