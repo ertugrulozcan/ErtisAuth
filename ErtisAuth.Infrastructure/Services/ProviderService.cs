@@ -289,7 +289,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	protected override ErtisAuthException GetAlreadyExistError(Provider model)
 	{
-		return ErtisAuthException.ProviderWithSameNameAlreadyExists(model.Name);
+		return ErtisAuthException.ProviderAlreadyExists(model.Slug);
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string id)

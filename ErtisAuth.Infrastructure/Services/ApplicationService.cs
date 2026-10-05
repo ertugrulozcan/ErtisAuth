@@ -10,6 +10,7 @@ using ErtisAuth.Infrastructure.Constants;
 using ErtisAuth.Infrastructure.Helpers;
 using Ertis.Core.Collections;
 using ErtisAuth.Core.Extensions;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Infrastructure.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -143,7 +144,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		}
 		else if (role == null)
 		{
-			errorList.Add($"Role is invalid. There is no role named '{model.Role}'");
+			errorList.Add($"Role is invalid. There is no role with '{model.Role}' slug");
 		}
 		
 		if (UbacExtensions.HasConflict(model.Permissions, model.Forbidden, out var conflict) && conflict != null)
@@ -153,6 +154,22 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 		
 		errors = errorList;
 		return !errors.Any();
+	}
+	
+	protected override async Task<Application> TouchAsync(Application model, CrudOperation crudOperation, CancellationToken cancellationToken = default)
+	{
+		if (model.Permissions != null)
+		{
+			model.Permissions = model.Permissions.Distinct().Order().ToArray();
+		}
+		
+		if (model.Forbidden != null)
+		{
+			model.Forbidden = model.Forbidden.Distinct().Order().ToArray();
+		}
+		
+		await Task.CompletedTask;
+		return model;
 	}
 	
 	protected override void Overwrite(Application destination, Application source)
@@ -205,7 +222,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 	
 	protected override ErtisAuthException GetAlreadyExistError(Application model)
 	{
-		return ErtisAuthException.ApplicationWithSameNameAlreadyExists($"'{model.Name}'");
+		return ErtisAuthException.ApplicationAlreadyExists($"'{model.Name}'");
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string id)

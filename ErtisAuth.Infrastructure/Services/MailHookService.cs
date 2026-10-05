@@ -569,7 +569,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	
 	protected override ErtisAuthException GetAlreadyExistError(MailHook model)
 	{
-		return ErtisAuthException.MailHookWithSameNameAlreadyExists(model.Name);
+		return ErtisAuthException.MailHookAlreadyExists(model.Slug);
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string id)

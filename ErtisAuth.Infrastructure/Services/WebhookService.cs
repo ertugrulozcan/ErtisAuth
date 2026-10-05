@@ -466,7 +466,7 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	
 	protected override ErtisAuthException GetAlreadyExistError(Webhook model)
 	{
-		return ErtisAuthException.WebhookWithSameNameAlreadyExists(model.Name);
+		return ErtisAuthException.WebhookAlreadyExists(model.Slug);
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string id)

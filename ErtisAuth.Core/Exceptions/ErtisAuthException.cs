@@ -145,9 +145,9 @@ public class ErtisAuthException : ErtisException
 			: new ErtisAuthException(HttpStatusCode.NotFound, $"Code policy not found in db by given slug: <{slug}>", "TokenCodePolicyNotFound");
 	}
 	
-	public static ErtisAuthException TokenCodePolicyWithSameNameAlreadyExists(string name)
+	public static ErtisAuthException TokenCodePolicyAlreadyExists(string slug)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"The token code policy with same name is already exists ({name})", "TokenCodePolicyWithSameNameAlreadyExists");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The token code policy is already exists with same slug ({slug})", "TokenCodePolicyAlreadyExists");
 	}
 	
 	public static ErtisAuthException TokenCodeNotFound()
@@ -196,12 +196,12 @@ public class ErtisAuthException : ErtisException
 	
 	public static ErtisAuthException InvalidRbac(string? message = null)
 	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, string.IsNullOrEmpty(message) ? "Invalid rbac expression" : $"Invalid rbac expression: {message}", "InvalidRbac");
+		return new ErtisAuthException(HttpStatusCode.BadRequest, string.IsNullOrEmpty(message) ? "Invalid rbac expression" : $"Invalid rbac expression ({message})", "InvalidRbac");
 	}
 	
 	public static ErtisAuthException InvalidUbac(string? message = null)
 	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, string.IsNullOrEmpty(message) ? "Invalid ubac expression" : $"Invalid ubac expression: {message}", "InvalidUbac");
+		return new ErtisAuthException(HttpStatusCode.BadRequest, string.IsNullOrEmpty(message) ? "Invalid ubac expression" : $"Invalid ubac expression ({message})", "InvalidUbac");
 	}
 	
 	public static ErtisAuthException RbacsConflicted(string message)
@@ -421,9 +421,9 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.NotFound, $"Application not found in db by given id: <{id}>", "ApplicationNotFound");
 	}
 	
-	public static ErtisAuthException ApplicationWithSameNameAlreadyExists(string name)
+	public static ErtisAuthException ApplicationAlreadyExists(string name)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"The application with same name is already exists ({name})", "ApplicationWithSameNameAlreadyExists");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The application is already exists with same slug ({name})", "ApplicationAlreadyExists");
 	}
 	
 	public static ErtisAuthException ApplicationSecretMismatch()
@@ -446,9 +446,9 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.NotFound, $"Role not found in db by given {fieldName}: <{value}>", "RoleNotFound");
 	}
 	
-	public static ErtisAuthException RoleWithSameSlugAlreadyExists(string slug)
+	public static ErtisAuthException RoleAlreadyExists(string slug)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"The role with same slug is already exists ({slug})", "RoleAlreadyExists");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The role is already exists with same slug ({slug})", "RoleAlreadyExists");
 	}
 	
 	public static ErtisAuthException ReservedRole(string slug)
@@ -475,9 +475,9 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.NotFound, $"Unknown platform ({platformName}). The platform parameter must be one of ios, android or web", "UnknownPlatform");
 	}
 	
-	public static ErtisAuthException ProviderWithSameNameAlreadyExists(string name)
+	public static ErtisAuthException ProviderAlreadyExists(string slug)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"The provider with same name is already exists ({name})", "ProviderWithSameNameAlreadyExists");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The provider is already exists with same slug ({slug})", "ProviderAlreadyExists");
 	}
 	
 	public static ErtisAuthException YouCanNotCreateCustomProvider()
@@ -549,9 +549,9 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.NotFound, $"Webhook not found in db by given _id: <{webhookId}>", "WebhookNotFound");
 	}
 	
-	public static ErtisAuthException WebhookWithSameNameAlreadyExists(string name)
+	public static ErtisAuthException WebhookAlreadyExists(string slug)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"The webhook with same name is already exists ({name})", "WebhookWithSameNameAlreadyExists");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The webhook is already exists with same slug ({slug})", "WebhookAlreadyExists");
 	}
 	
 	#endregion
@@ -563,9 +563,9 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.NotFound, $"Mail hook not found in db by given _id: <{id}>", "MailHookNotFound");
 	}
 	
-	public static ErtisAuthException MailHookWithSameNameAlreadyExists(string name)
+	public static ErtisAuthException MailHookAlreadyExists(string slug)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"The mail hook with same name is already exists ({name})", "MailHookWithSameNameAlreadyExists");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The mailhook is already exists with same slug ({slug})", "MailHookAlreadyExists");
 	}
 	
 	public static ErtisAuthException ActivationMailHookWasNotDefined()

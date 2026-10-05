@@ -214,7 +214,7 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 	
 	protected override ErtisAuthException GetAlreadyExistError(TokenCodePolicy model)
 	{
-		return ErtisAuthException.TokenCodePolicyWithSameNameAlreadyExists(model.Name);
+		return ErtisAuthException.TokenCodePolicyAlreadyExists(model.Name);
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string slug)
