@@ -177,6 +177,11 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	
 	#region Methods
 	
+	private async Task<MailHook?> GetBySlugAsync(string slug, string membershipId)
+	{
+		return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId);
+	}
+	
 	public void QueueHookMail(MailHook mailHook, string userId, string membershipId, object? payload)
 	{
 		try
@@ -551,11 +556,11 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	{
 		if (exclude == null)
 		{
-			return await this.GetByNameAsync(model.Name, membershipId) != null;	
+			return await this.GetBySlugAsync(model.Slug, membershipId) != null;	
 		}
 		else
 		{
-			var current = await this.GetByNameAsync(model.Name, membershipId);
+			var current = await this.GetBySlugAsync(model.Slug, membershipId);
 			if (current != null)
 			{
 				return current.Name != exclude.Name;	
@@ -575,11 +580,6 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	protected override ErtisAuthException GetNotFoundError(string id)
 	{
 		return ErtisAuthException.MailHookNotFound(id);
-	}
-	
-	private async Task<MailHook?> GetByNameAsync(string name, string membershipId)
-	{
-		return await this._repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
 	}
 	
 	#endregion

@@ -151,13 +151,15 @@ public class ReferenceFieldTests : IClassFixture<ErtisAuthInstance>
 	[Fact]
 	public async Task SingleReference_ToATypeInheritedByName_IsAccepted()
 	{
-		var contentTypeName = $"Reference {Guid.NewGuid():N}";
-		var contentType = await this.CreateUserTypeAsync(name: contentTypeName);
-		var derivedType = await this.CreateUserTypeAsync(baseType: contentTypeName);
+		var guid = $"{Guid.NewGuid():N}";
+		var userTypeName = $"Reference {guid}";
+		var userTypeSlug = $"reference-{guid}";
+		var userType = await this.CreateUserTypeAsync(name: userTypeName);
+		var derivedType = await this.CreateUserTypeAsync(baseType: userTypeSlug);
 		var referencedId = await this.CreateUserIdAsync(derivedType);
-		var userType = await this.CreateReferencingUserTypeAsync("single", contentType);
+		var referenceUserType = await this.CreateReferencingUserTypeAsync("single", userType);
 		
-		var user = await this.CreateReferencingUserAsync(userType, referencedId);
+		var user = await this.CreateReferencingUserAsync(referenceUserType, referencedId);
 		
 		Assert.Equal(referencedId, user["ref"]!["_id"]!.GetValue<string>());
 	}

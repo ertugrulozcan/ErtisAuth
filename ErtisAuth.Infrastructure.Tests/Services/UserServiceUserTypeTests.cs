@@ -65,12 +65,12 @@ public class UserServiceUserTypeTests
 		{
 			Id = "user-type-id",
 			Name = UserTypeName,
+			Slug = UserTypeSlug,
 			MembershipId = MembershipId,
 			AllowAdditionalProperties = true
 		};
 		
-		this._userTypeService.GetByNameOrSlugAsync(UserTypeName, MembershipId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(userType);
-		this._userTypeService.GetByNameOrSlugAsync(UserTypeSlug, MembershipId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(userType);
+		this._userTypeService.GetBySlugAsync(UserTypeSlug, MembershipId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(userType);
 		
 		this._roleService.GetBySlugAsync("user", MembershipId, Arg.Any<CancellationToken>()).Returns(new Role
 		{
@@ -172,9 +172,8 @@ public class UserServiceUserTypeTests
 	#region Create
 	
 	[Theory]
-	[InlineData(UserTypeName)]
 	[InlineData(UserTypeSlug)]
-	public async Task CreateAsync_WithUserTypeGivenByNameOrSlug_StoresSlug(string userType)
+	public async Task CreateAsync_WithUserTypeGivenBySlug_StoresSlug(string userType)
 	{
 		var model = Model(x =>
 		{
@@ -237,7 +236,7 @@ public class UserServiceUserTypeTests
 		var model = Model(x =>
 		{
 			x.firstname = "Johnny";
-			x.user_type = UserTypeName;
+			x.user_type = UserTypeSlug;
 		});
 		
 		await this.CreateUserService().UpdateAsync(model, UserId, MembershipId, Self(), fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);

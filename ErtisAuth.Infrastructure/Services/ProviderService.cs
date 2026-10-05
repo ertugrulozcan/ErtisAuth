@@ -271,11 +271,11 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	{
 		if (exclude == null)
 		{
-			return await this.GetByNameAsync(model.Name, membershipId, cancellationToken: cancellationToken) != null;	
+			return await this.GetBySlugAsync(model.Slug, membershipId, cancellationToken: cancellationToken) != null;	
 		}
 		else
 		{
-			var current = await this.GetByNameAsync(model.Name, membershipId, cancellationToken: cancellationToken);
+			var current = await this.GetBySlugAsync(model.Slug, membershipId, cancellationToken: cancellationToken);
 			if (current != null)
 			{
 				return current.Id != exclude.Id;	
@@ -319,11 +319,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	#endregion
 	
 	#region Read Methods
-	
-	private async Task<Provider?> GetByNameAsync(string name, string membershipId, CancellationToken cancellationToken = default)
-	{
-		return await this._repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId, cancellationToken: cancellationToken);
-	}
 	
 	public async Task<Provider?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
 	{
@@ -410,7 +405,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 						throw ErtisAuthException.UserInactive(user?.Id ?? string.Empty);
 					}
 					
-					var userType = await this._userTypeService.GetByNameOrSlugAsync((isNewUser ? provider.DefaultUserType : user?.UserType)!, membershipId, cancellationToken: cancellationToken);
+					var userType = await this._userTypeService.GetBySlugAsync((isNewUser ? provider.DefaultUserType : user?.UserType)!, membershipId, cancellationToken: cancellationToken);
 					
 					this.EnsureConnectedAccounts(user!, request, provider);
 					var dynamicUser = new DynamicObject(user!);

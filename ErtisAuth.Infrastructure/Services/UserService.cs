@@ -146,29 +146,29 @@ public class UserService : DynamicObjectCrudService, IUserService
     
     private async Task<UserType> GetUserTypeAsync(DynamicObject model, DynamicObject? current, string membershipId, bool fallbackWithOriginUserType = false, CancellationToken cancellationToken = default)
     {
-        if (model.TryGetValue<string>("user_type", out var userTypeName, out _) && !string.IsNullOrEmpty(userTypeName))
+        if (model.TryGetValue<string>("user_type", out var userTypeSlug, out _) && !string.IsNullOrEmpty(userTypeSlug))
         {
-            var userType = await this._userTypeService.GetByNameOrSlugAsync(userTypeName, membershipId, true, cancellationToken: cancellationToken);
+            var userType = await this._userTypeService.GetBySlugAsync(userTypeSlug, membershipId, true, cancellationToken: cancellationToken);
             if (userType == null)
             {
-	            throw ErtisAuthException.UserTypeNotFound(userTypeName, "name");
+	            throw ErtisAuthException.UserTypeNotFound(userTypeSlug, "slug");
             }
             
             return userType;
         }
-        else if (current != null && current.TryGetValue<string>("user_type", out var currentUserTypeName, out _) && !string.IsNullOrEmpty(currentUserTypeName))
+        else if (current != null && current.TryGetValue<string>("user_type", out var currentUserTypeSlug, out _) && !string.IsNullOrEmpty(currentUserTypeSlug))
         {
-	        var userType = await this._userTypeService.GetByNameOrSlugAsync(currentUserTypeName, membershipId, true, cancellationToken: cancellationToken);
+	        var userType = await this._userTypeService.GetBySlugAsync(currentUserTypeSlug, membershipId, true, cancellationToken: cancellationToken);
 	        if (userType == null)
 	        {
-		        throw ErtisAuthException.UserTypeNotFound(userTypeName ?? string.Empty, "name");
+		        throw ErtisAuthException.UserTypeNotFound(userTypeSlug ?? string.Empty, "slug");
 	        }
 			
 	        return userType;
         }
         else if (fallbackWithOriginUserType)
 		{
-			var fallbackUserType = await this._userTypeService.GetByNameOrSlugAsync("user", membershipId, true, cancellationToken: cancellationToken);
+			var fallbackUserType = await this._userTypeService.GetBySlugAsync(UserType.ORIGIN_USER_TYPE_SLUG, membershipId, true, cancellationToken: cancellationToken);
 			return fallbackUserType ?? throw ErtisAuthException.UserTypeRequired();
 		}
         else
@@ -179,9 +179,9 @@ public class UserService : DynamicObjectCrudService, IUserService
     
     // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
     /// <summary>
-    /// The user type can be given by name or slug, but users always store its slug (other records refer to user types by slug).
+    /// The user type can be given by slug, but users always store its slug (other records refer to user types by slug).
     /// On create the resolved user type (possibly the fallback one) is always written; on update only a given value is
-    /// normalized, before any comparison with the stored value, so that the same user type given by name is not seen as a change.
+    /// normalized, before any comparison with the stored value, so that the same user type given by slug is not seen as a change.
     /// </summary>
     private static void NormalizeUserType(DynamicObject model, UserType userType, bool isCreate = false)
     {

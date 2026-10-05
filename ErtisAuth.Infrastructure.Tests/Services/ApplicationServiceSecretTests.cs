@@ -191,7 +191,7 @@ public class ApplicationServiceSecretTests
 		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateApplicationService().CreateWithSecretAsync(model, this._membership.Id, this._utilizer, TestContext.Current.CancellationToken));
 		
 		Assert.NotNull(exception.Errors);
-		Assert.Contains("Role is invalid. There is no role named 'unknown-role'", exception.Errors);
+		Assert.Contains("Role is invalid. There is no role with 'unknown-role' slug", exception.Errors);
 	}
 	
 	#endregion

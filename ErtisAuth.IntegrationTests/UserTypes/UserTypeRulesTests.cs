@@ -159,13 +159,16 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 	[Fact]
 	public async Task BaseTypeGivenByName_IsStoredBySlug()
 	{
-		var parentName = UniqueName("Partner");
+		var guid = $"{Guid.NewGuid():N}";
+		var parentName = $"Partner {guid}";
+		var parentSlug = $"partner-{guid}";
+		
 		var parent = await this.CreateUserTypeAsync(parentName);
 		var parentId = parent["_id"]!.GetValue<string>();
-		var parentSlug = parent["slug"]!.GetValue<string>();
+		var createdParentSlug = parent["slug"]!.GetValue<string>();
 		var childName = UniqueName("Gold Partner");
-		var child = await this.CreateUserTypeAsync(childName, baseType: parentName);
-		Assert.Equal(parentSlug, child["baseType"]!.GetValue<string>());
+		var child = await this.CreateUserTypeAsync(childName, baseType: parentSlug);
+		Assert.Equal(createdParentSlug, child["baseType"]!.GetValue<string>());
 		
 		var userTypes = await this.AdminResourceClientAsync("user-types");
 		var adminClient = await this._instance.CreateAdminClientAsync();
@@ -180,7 +183,8 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 		{
 			["partner_code"] = new JsonObject { ["type"] = "string" }
 		}));
-		Assert.Equal(parentSlug, updatedChild["baseType"]!.GetValue<string>());
+		
+		Assert.Equal(createdParentSlug, updatedChild["baseType"]!.GetValue<string>());
 	}
 	
 	[Fact]

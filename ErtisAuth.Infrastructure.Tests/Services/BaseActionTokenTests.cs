@@ -66,10 +66,11 @@ public abstract class BaseActionTokenTests
 	{
 		this.SetupMembership();
 		
-		this._userTypeService.GetByNameOrSlugAsync("user", Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new UserType
+		this._userTypeService.GetBySlugAsync("user", Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new UserType
 		{
 			Id = "user-type-id",
-			Name = "user",
+			Name = "User",
+			Slug = "user",
 			MembershipId = this._membership.Id,
 			AllowAdditionalProperties = true
 		});

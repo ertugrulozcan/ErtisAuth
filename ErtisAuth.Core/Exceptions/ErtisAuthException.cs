@@ -366,6 +366,11 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"'{userTypeName}' is a reserved name. It's can not be used as user type name.", "ReservedUserTypeName");
 	}
 	
+	public static ErtisAuthException ReservedUserTypeSlug(string slug)
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"'{slug}' is a reserved slug. It's can not be used as user type slug.", "ReservedUserTypeSlug");
+	}
+	
 	public static ErtisAuthException DuplicateFieldWithBaseType(string fieldName)
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"'{fieldName}' field is already exist in base user type.", "DuplicateFieldWithBaseType");

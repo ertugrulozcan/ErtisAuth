@@ -60,7 +60,7 @@ public class UserTypesController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<UserType>> Get([FromRoute] string membershipId, [FromRoute] string id)
 	{
-		var userType = id.IsObjectId() ? await this._userTypeService.GetAsync(id, membershipId) : await this._userTypeService.GetByNameOrSlugAsync(id, membershipId);
+		var userType = id.IsObjectId() ? await this._userTypeService.GetAsync(id, membershipId) : await this._userTypeService.GetBySlugAsync(id, membershipId);
 		if (userType != null)
 		{
 			return this.Ok(userType);
@@ -130,7 +130,7 @@ public class UserTypesController : QueryControllerBase
 		var allUserTypes = new List<UserType>();
 		allUserTypes.AddRange(userTypes.Items);
 		
-		var originUserType = await this._userTypeService.GetByNameOrSlugAsync(UserType.ORIGIN_USER_TYPE_SLUG, membershipId, cancellationToken: cancellationToken);
+		var originUserType = await this._userTypeService.GetBySlugAsync(UserType.ORIGIN_USER_TYPE_SLUG, membershipId, cancellationToken: cancellationToken);
 		if (originUserType != null)
 		{
 			allUserTypes.Add(originUserType);	

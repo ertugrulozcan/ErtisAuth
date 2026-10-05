@@ -59,14 +59,15 @@ public class UserServiceUpdateProtectionTests
 		
 		this._membershipService.GetAsync(MembershipId, Arg.Any<CancellationToken>()).Returns(membership);
 		
-		foreach (var userTypeName in new[] { "user", "premium" })
+		foreach (var userTypeSlug in new[] { "user", "premium" })
 		{
 			this._userTypeService
-				.GetByNameOrSlugAsync(userTypeName, MembershipId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+				.GetBySlugAsync(userTypeSlug, MembershipId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
 				.Returns(new UserType
 				{
-					Id = $"{userTypeName}-type-id",
-					Name = userTypeName,
+					Id = $"{userTypeSlug}-type-id",
+					Name = userTypeSlug,
+					Slug = userTypeSlug,
 					MembershipId = MembershipId,
 					AllowAdditionalProperties = true
 				});

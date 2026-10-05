@@ -162,6 +162,11 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	
 	#region Methods
 	
+	private async Task<Webhook?> GetBySlugAsync(string slug, string membershipId)
+	{
+		return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId);
+	}
+	
 	/// <summary>
 	/// Queues the webhook call; it is executed in the background by the webhook worker
 	/// </summary>
@@ -448,11 +453,11 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	{
 		if (exclude == null)
 		{
-			return await this.GetByNameAsync(model.Name, membershipId) != null;	
+			return await this.GetBySlugAsync(model.Slug, membershipId) != null;	
 		}
 		else
 		{
-			var current = await this.GetByNameAsync(model.Name, membershipId);
+			var current = await this.GetBySlugAsync(model.Slug, membershipId);
 			if (current != null)
 			{
 				return current.Name != exclude.Name;	
@@ -472,11 +477,6 @@ public class WebhookService : MembershipBoundedCrudService<Webhook>, IWebhookSer
 	protected override ErtisAuthException GetNotFoundError(string id)
 	{
 		return ErtisAuthException.WebhookNotFound(id);
-	}
-	
-	private async Task<Webhook?> GetByNameAsync(string name, string membershipId)
-	{
-		return await this._repository.FindOneAsync(x => x.Name == name && x.MembershipId == membershipId);
 	}
 	
 	#endregion

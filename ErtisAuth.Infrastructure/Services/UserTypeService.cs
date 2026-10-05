@@ -183,7 +183,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 						    }
 					    })
 						{
-							Name = ""
+							Name = "$schema"
 						},
 					    UniqueItems = true,
 					    UniqueBy = new[] { "Provider" }
@@ -466,9 +466,9 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		}
 	}
 	
-    private async Task<UserType?> GetBaseUserTypeAsync(string baseUserTypeName, string membershipId, CancellationToken cancellationToken = default)
+    private async Task<UserType?> GetBaseUserTypeAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
     {
-        if (baseUserTypeName == OriginUserType.Name || baseUserTypeName == OriginUserType.Slug)
+        if (slug == OriginUserType.Slug)
         {
 	        if (OriginUserType.Clone() is UserType userType)
 	        {
@@ -477,12 +477,12 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	        }
         }
 		
-        return await this.GetByNameOrSlugAsync(baseUserTypeName, membershipId, cancellationToken: cancellationToken);
+        return await this.GetBySlugAsync(slug, membershipId, cancellationToken: cancellationToken);
     }
 	
-    public async Task<UserType?> GetByNameOrSlugAsync(string nameOrSlug, string membershipId, bool forceGetFreshData = false, CancellationToken cancellationToken = default)
+    public async Task<UserType?> GetBySlugAsync(string slug, string membershipId, bool forceGetFreshData = false, CancellationToken cancellationToken = default)
 	{
-		if (nameOrSlug == OriginUserType.Name || nameOrSlug == OriginUserType.Slug)
+		if (slug == OriginUserType.Slug)
 		{
 			if (OriginUserType.Clone() is UserType originUserType_)
 			{
@@ -493,14 +493,14 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		
 		if (forceGetFreshData)
 		{
-			return await this.GetAsync(x => x.Name == nameOrSlug || x.Slug == nameOrSlug, membershipId, cancellationToken: cancellationToken);
+			return await this.GetAsync(x => x.Slug == slug, membershipId, cancellationToken: cancellationToken);
 		}
 		else
 		{
-			var cacheKey = GetCacheKey(membershipId, nameOrSlug);
+			var cacheKey = GetCacheKey(membershipId, slug);
 			if (!this._memoryCache.TryGetValue<UserType>(cacheKey, out var userType))
 			{
-				userType = await this.GetAsync(x => x.Name == nameOrSlug || x.Slug == nameOrSlug, membershipId, cancellationToken: cancellationToken);
+				userType = await this.GetAsync(x => x.Slug == slug, membershipId, cancellationToken: cancellationToken);
 				if (userType == null)
 				{
 					return null;
@@ -513,35 +513,35 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		}
 	}
 	
-    public async Task<bool> IsInheritFromAsync(string childUserTypeName, string parentUserTypeName, string membershipId, CancellationToken cancellationToken = default)
+    public async Task<bool> IsInheritFromAsync(string childUserTypeSlug, string parentUserTypeSlug, string membershipId, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(childUserTypeName))
+        if (string.IsNullOrEmpty(childUserTypeSlug))
         {
-	        throw new ArgumentNullException(nameof(childUserTypeName), "ChildUserType name is null on IsInheritFromAsync()");
+	        throw new ArgumentNullException(nameof(childUserTypeSlug), "ChildUserType slug is null on IsInheritFromAsync()");
         }
         
-        if (string.IsNullOrEmpty(parentUserTypeName))
+        if (string.IsNullOrEmpty(parentUserTypeSlug))
         {
-	        throw new ArgumentNullException(nameof(parentUserTypeName), "ParentUserType name is null on IsInheritFromAsync()");
+	        throw new ArgumentNullException(nameof(parentUserTypeSlug), "ParentUserType slug is null on IsInheritFromAsync()");
         }
 		
-        if (childUserTypeName == parentUserTypeName)
+        if (childUserTypeSlug == parentUserTypeSlug)
         {
 	        return true;
         }
 		
         var allUserTypes = await this.GetAsync(membershipId, null, null, cancellationToken: cancellationToken);
-        var childUserType = allUserTypes.Items.FirstOrDefault(x => x.Slug == childUserTypeName);
+        var childUserType = allUserTypes.Items.FirstOrDefault(x => x.Slug == childUserTypeSlug);
         if (childUserType == null)
         {
-	        throw ErtisAuthException.UserTypeNotFound(childUserTypeName, "slug");
+	        throw ErtisAuthException.UserTypeNotFound(childUserTypeSlug, "slug");
         }
         
-        // The origin user type is not stored, it is found by GetByNameOrSlugAsync
-        var parentUserType = await this.GetByNameOrSlugAsync(parentUserTypeName, membershipId, cancellationToken: cancellationToken);
+        // The origin user type is not stored, it is found by GetBySlugAsync
+        var parentUserType = await this.GetBySlugAsync(parentUserTypeSlug, membershipId, cancellationToken: cancellationToken);
         if (parentUserType == null)
         {
-	        throw ErtisAuthException.UserTypeNotFound(parentUserTypeName, "slug");
+	        throw ErtisAuthException.UserTypeNotFound(parentUserTypeSlug, "slug");
         }
 		
         return IsInheritFrom(childUserType, parentUserType, allUserTypes.Items.ToArray());
@@ -604,18 +604,18 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
 	protected override async Task<bool> IsAlreadyExistAsync(UserType model, string membershipId, UserType? exclude = null, CancellationToken cancellationToken = default)
 	{
-		CheckReservedUserTypeName(model.Name);
+		IsReservedU(model);
 		
 		if (exclude == null)
 		{
-			return await this.GetByNameOrSlugAsync(model.Name, membershipId, cancellationToken: cancellationToken) != null;	
+			return await this.GetBySlugAsync(model.Slug, membershipId, cancellationToken: cancellationToken) != null;	
 		}
 		else
 		{
-			var current = await this.GetByNameOrSlugAsync(model.Name, membershipId, cancellationToken: cancellationToken);
+			var current = await this.GetBySlugAsync(model.Slug, membershipId, cancellationToken: cancellationToken);
 			if (current != null)
 			{
-				return current.Name != exclude.Name;	
+				return current.Slug != exclude.Slug;	
 			}
 			else
 			{
@@ -624,7 +624,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		}
 	}
 	
-	private static void CheckReservedUserTypeName(string name)
+	private static void IsReservedU(UserType userType)
 	{
 		var reservedNames = new[]
 		{
@@ -633,16 +633,29 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		
 		foreach (var reservedName in reservedNames)
 		{
-			if (name == reservedName)
+			if (userType.Name == reservedName)
 			{
 				throw ErtisAuthException.ReservedUserTypeName(reservedName);
+			}
+		}
+		
+		var reservedSlugs = new[]
+		{
+			OriginUserType.Slug
+		};
+		
+		foreach (var reservedSlug in reservedSlugs)
+		{
+			if (userType.Slug == reservedSlug)
+			{
+				throw ErtisAuthException.ReservedUserTypeSlug(reservedSlug);
 			}
 		}
 	}
 	
 	protected override ErtisAuthException GetAlreadyExistError(UserType model)
 	{
-		return ErtisAuthException.UserTypeAlreadyExists(model.Name);
+		return ErtisAuthException.UserTypeAlreadyExists(model.Slug);
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string id)
@@ -785,7 +798,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 		var inheritedUserTypes = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.BaseUserType == userType.Slug, sorting: null, cancellationToken: cancellationToken);
 		if (inheritedUserTypes.Items.Any())
 		{
-			usages.Add($"This user type is currently using as the base type of some other user types. ({string.Join(", ", inheritedUserTypes.Items.Select(x => x.Name))})");
+			usages.Add($"This user type is currently using as the base type of some other user types. ({string.Join(", ", inheritedUserTypes.Items.Select(x => x.Slug))})");
 		}
 		
 		var usersQuery = QueryBuilder.Where(QueryBuilder.Equals("membership_id", membershipId), QueryBuilder.Equals("user_type", userType.Slug));
@@ -820,9 +833,9 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 	
 	#region Cache Methods
 	
-	private static string GetCacheKey(string membershipId, string userTypeNameOrSlug)
+	private static string GetCacheKey(string membershipId, string slug)
 	{
-		return $"{CACHE_KEY}.{membershipId}.{userTypeNameOrSlug}";
+		return $"{CACHE_KEY}.{membershipId}.{slug}";
 	}
 	
 	private static MemoryCacheEntryOptions GetCacheTTL()
@@ -849,7 +862,6 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 			return;
 		}
 		
-		this._memoryCache.Remove(GetCacheKey(membershipId, userType.Name));
 		this._memoryCache.Remove(GetCacheKey(membershipId, userType.Slug));
 	}
 	
