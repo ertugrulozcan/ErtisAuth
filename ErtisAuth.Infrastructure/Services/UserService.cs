@@ -448,7 +448,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     /// The sys info (see <see cref="SysInfoHelper"/>): created on create, from the stored user on update.
     /// A sys info sent by the caller is ignored (removed with the managed properties).
     /// </summary>
-    private static void EnsureSys(DynamicObject model, Utilizer utilizer, DynamicObject? current)
+    private void EnsureSys(DynamicObject model, Utilizer utilizer, DynamicObject? current)
     {
         var sys = current == null ? SysInfoHelper.Created(utilizer) : SysInfoHelper.Modified(GetSys(current), utilizer);
         model.SetValue("sys", sys.ToDictionary(), true);
@@ -576,7 +576,8 @@ public class UserService : DynamicObjectCrudService, IUserService
 		
 		var passwordHash = this.CalculatePasswordHash(newPassword, membership);
 		user.SetValue("password_hash", passwordHash, true);
-		EnsureSys(user, utilizer, prior);
+		
+		this.EnsureSys(user, utilizer, prior);
 		
 		var updatedUser = await base.UpdateAsync(user, userId, cancellationToken: cancellationToken);
 		
@@ -749,21 +750,35 @@ public class UserService : DynamicObjectCrudService, IUserService
     {
         this.EnsureMembershipId(model, membershipId);
         this.EnsureId(model);
-        EnsureSys(model, utilizer, current);
+        this.EnsureSys(model, utilizer, current);
         
         await this.EnsureUserTypeAsync(userType, model, id, current?.GetValue<string>("user_type"), membershipId);
         await this.EmbedReferencesAsync(userType, model, cancellationToken: cancellationToken);
         await this.EnsureRoleAsync(model, membershipId, cancellationToken: cancellationToken);
 		
-		// Ubac validation
-		if (model.TryGetValue("permissions", out string[]? permissions, out _) && permissions != null && model.TryGetValue("forbidden", out string[]? forbiddens, out _) && forbiddens != null)
+		this.EnsureAndValidateUbacs(model);
+	}
+	
+	private void EnsureAndValidateUbacs(DynamicObject model)
+	{
+		model.TryGetValue("permissions", out string[]? permissions, out _);
+		model.TryGetValue("forbidden", out string[]? forbiddens, out _);
+		
+		if (permissions != null && forbiddens != null && UbacExtensions.HasConflict(permissions, forbiddens, out var conflict) && conflict != null)
 		{
-			if (UbacExtensions.HasConflict(permissions, forbiddens, out var conflict) && conflict != null)
-			{
-				throw ErtisAuthException.UbacsConflicted($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{conflict}')");
-			}
+			throw ErtisAuthException.UbacsConflicted($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{conflict}')");
 		}
-    }
+		
+		if (permissions != null)
+		{
+			model.SetValue("permissions", permissions.Distinct().Order().ToArray());
+		}
+		
+		if (forbiddens != null)
+		{
+			model.SetValue("forbidden", forbiddens.Distinct().Order().ToArray());
+		}
+	}
 	
     #endregion
     

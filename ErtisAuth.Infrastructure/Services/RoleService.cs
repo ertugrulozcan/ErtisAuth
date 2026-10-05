@@ -6,6 +6,7 @@ using ErtisAuth.Core.Events;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Helpers;
+using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
@@ -243,6 +244,22 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		return Task.FromResult<IEnumerable<string>>(errorList);
 	}
 	
+	protected override async Task<Role> TouchAsync(Role model, CrudOperation crudOperation, CancellationToken cancellationToken = default)
+	{
+		if (model.Permissions != null)
+		{
+			model.Permissions = model.Permissions.Distinct().Order().ToArray();
+		}
+		
+		if (model.Forbidden != null)
+		{
+			model.Forbidden = model.Forbidden.Distinct().Order().ToArray();
+		}
+		
+		await Task.CompletedTask;
+		return model;
+	}
+	
 	protected override void Overwrite(Role destination, Role source)
 	{
 		destination.Id = source.Id;
@@ -286,7 +303,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	protected override ErtisAuthException GetAlreadyExistError(Role model)
 	{
-		return ErtisAuthException.RoleWithSameSlugAlreadyExists(model.Slug);
+		return ErtisAuthException.RoleAlreadyExists(model.Slug);
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string id)

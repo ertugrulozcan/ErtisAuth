@@ -33,7 +33,7 @@ public class RoleCrudTests : IClassFixture<ErtisAuthInstance>
 	{
 		name,
 		description,
-		permissions = new[] { "users.read", "roles.read" },
+		permissions = new[] { "users.read", "roles.read", "roles.create" },
 		forbidden = new[] { "users.delete" }
 	};
 	
@@ -51,7 +51,7 @@ public class RoleCrudTests : IClassFixture<ErtisAuthInstance>
 		var id = created["_id"]!.GetValue<string>();
 		var slug = created["slug"]!.GetValue<string>();
 		Assert.Equal(this._instance.MembershipId, created["membership_id"]!.GetValue<string>());
-		Assert.Equal(["users.read", "roles.read"], created["permissions"]!.AsArray().Select(x => x!.GetValue<string>()));
+		Assert.Equal(["roles.create", "roles.read", "users.read"], created["permissions"]!.AsArray().Select(x => x!.GetValue<string>()));
 		Assert.Equal(["users.delete"], created["forbidden"]!.AsArray().Select(x => x!.GetValue<string>()));
 		
 		var fetched = await roles.GetAsync(id);

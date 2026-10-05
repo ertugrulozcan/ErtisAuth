@@ -74,7 +74,7 @@ public class Ubac : IEquatable<Ubac>
 					Object = (UbacSegment) segments[2]
 				};
 			default:
-				throw ErtisAuthException.InvalidUbac();
+				throw ErtisAuthException.InvalidUbac(path);
 		}
 	}
 	

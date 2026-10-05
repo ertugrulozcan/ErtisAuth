@@ -96,7 +96,7 @@ public class Rbac : IEquatable<Rbac>
 					Object = (RbacSegment) segments[3]
 				};
 			default:
-				throw ErtisAuthException.InvalidRbac();
+				throw ErtisAuthException.InvalidRbac(path);
 		}
 	}
 	
