@@ -45,6 +45,7 @@ public class ActiveTokensController : QueryControllerBase
 	/// <remarks>Returns an access token which is neither expired nor revoked, with its owner and client info.</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Active token id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
@@ -52,9 +53,9 @@ public class ActiveTokensController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<ActiveToken>> Get([FromRoute] string membershipId, [FromRoute] string id)
+	public async Task<ActionResult<ActiveToken>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var activeToken = await this._activeTokenService.GetAsync(id, membershipId);
+		var activeToken = await this._activeTokenService.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (activeToken != null)
 		{
 			return this.Ok(activeToken);

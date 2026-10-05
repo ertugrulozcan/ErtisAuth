@@ -65,6 +65,7 @@ public class UsersController : QueryControllerBase
 	/// <remarks>Returns the user with the custom fields of its user type; the password hash is never returned.</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">User id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
@@ -72,9 +73,9 @@ public class UsersController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<User>> Get([FromRoute] string membershipId, [FromRoute] string id)
+	public async Task<ActionResult<User>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var user = await this._userService.GetAsync(id, membershipId);
+		var user = await this._userService.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (user != null)
 		{
 			return this.Ok(user);

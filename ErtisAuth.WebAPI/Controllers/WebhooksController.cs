@@ -55,6 +55,7 @@ public class WebhooksController : QueryControllerBase
 	/// <summary>Get a webhook</summary>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Webhook id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
@@ -62,9 +63,9 @@ public class WebhooksController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<Webhook>> Get([FromRoute] string membershipId, [FromRoute] string id)
+	public async Task<ActionResult<Webhook>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var webhook = await this._webhookService.GetAsync(id, membershipId);
+		var webhook = await this._webhookService.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (webhook != null)
 		{
 			return this.Ok(webhook);

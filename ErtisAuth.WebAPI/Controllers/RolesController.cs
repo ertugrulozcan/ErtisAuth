@@ -60,6 +60,7 @@ public class RolesController : QueryControllerBase
 	/// <summary>Get a role</summary>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Role id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
@@ -67,9 +68,9 @@ public class RolesController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<Role>> Get([FromRoute] string membershipId, [FromRoute] string id)
+	public async Task<ActionResult<Role>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var role = id.IsObjectId() ? await this._roleService.GetAsync(id, membershipId) : await this._roleService.GetBySlugAsync(id, membershipId);
+		var role = id.IsObjectId() ? await this._roleService.GetAsync(id, membershipId, cancellationToken: cancellationToken) : await this._roleService.GetBySlugAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (role != null)
 		{
 			return this.Ok(role);

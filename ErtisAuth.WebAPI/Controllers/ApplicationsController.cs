@@ -57,6 +57,7 @@ public class ApplicationsController : QueryControllerBase
 	/// <remarks>The secret is never returned.</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Application id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
@@ -64,9 +65,9 @@ public class ApplicationsController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<Application>> Get([FromRoute] string membershipId, [FromRoute] string id)
+	public async Task<ActionResult<Application>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var app = id.IsObjectId() ? await this._applicationService.GetAsync(id, membershipId) : await this._applicationService.GetBySlugAsync(id, membershipId);
+		var app = id.IsObjectId() ? await this._applicationService.GetAsync(id, membershipId, cancellationToken: cancellationToken) : await this._applicationService.GetBySlugAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (app != null)
 		{
 			return this.Ok(app);

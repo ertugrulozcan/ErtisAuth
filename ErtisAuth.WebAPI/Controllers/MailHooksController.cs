@@ -55,6 +55,7 @@ public class MailHooksController : QueryControllerBase
 	/// <summary>Get a mail hook</summary>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Mail hook id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
@@ -62,9 +63,9 @@ public class MailHooksController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<MailHook>> Get([FromRoute] string membershipId, [FromRoute] string id)
+	public async Task<ActionResult<MailHook>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var mailHook = await this._mailHookService.GetAsync(id, membershipId);
+		var mailHook = await this._mailHookService.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (mailHook != null)
 		{
 			return this.Ok(mailHook);

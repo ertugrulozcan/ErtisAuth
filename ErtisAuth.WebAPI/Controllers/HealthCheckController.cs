@@ -40,15 +40,15 @@ public class HealthCheckController : ControllerBase
 	[HttpGet("healthcheck")]
 	[ProducesResponseType(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<IActionResult> HealthCheck()
+	public async Task<IActionResult> HealthCheck(CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			var collectionList = (await this._database.ListCollectionsAsync()).ToList();
+			var collectionList = (await this._database.ListCollectionsAsync(cancellationToken: cancellationToken)).ToList();
 			if (!collectionList.Contains("memberships") ||
 				!collectionList.Contains("roles") ||
 				!collectionList.Contains("users") ||
-				!await this._setupService.IsSetUpAsync())
+				!await this._setupService.IsSetUpAsync(cancellationToken: cancellationToken))
 			{
 				return this.Ok(new
 				{

@@ -45,6 +45,7 @@ public class EventsController : QueryControllerBase
 	/// <remarks>Returns an event (user created, token generated, role updated...) with the utilizer who caused it and the related documents.</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Event id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
@@ -52,9 +53,9 @@ public class EventsController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<ErtisAuthEvent>> Get([FromRoute] string membershipId, [FromRoute] string id)
+	public async Task<ActionResult<ErtisAuthEvent>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var ertisAuthEvent = await this._eventService.GetAsync(id, membershipId);
+		var ertisAuthEvent = await this._eventService.GetAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (ertisAuthEvent != null)
 		{
 			return this.Ok(ertisAuthEvent);

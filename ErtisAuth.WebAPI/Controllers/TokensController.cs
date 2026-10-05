@@ -58,15 +58,15 @@ public class TokensController : ControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> Me()
+	public async Task<IActionResult> Me(CancellationToken cancellationToken = default)
 	{
 		var token = this.GetToken();
-		var utilizer = await this.GetTokenOwnerUtilizerAsync(token);
+		var utilizer = await this.GetTokenOwnerUtilizerAsync(token, cancellationToken: cancellationToken);
 		if (utilizer != null)
 		{
 			if (token.TokenType == SupportedTokenTypes.Bearer)
 			{
-				var user = await this._userService.GetAsync(utilizer.Id, utilizer.MembershipId);
+				var user = await this._userService.GetAsync(utilizer.Id, utilizer.MembershipId, cancellationToken: cancellationToken);
 				if (user != null)
 				{
 					return this.Ok(user);
@@ -95,15 +95,15 @@ public class TokensController : ControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> WhoAmI()
+	public async Task<IActionResult> WhoAmI(CancellationToken cancellationToken = default)
 	{
 		var token = this.GetToken();
-		var utilizer = await this.GetTokenOwnerUtilizerAsync(token);
+		var utilizer = await this.GetTokenOwnerUtilizerAsync(token, cancellationToken: cancellationToken);
 		if (utilizer != null)
 		{
 			if (token.TokenType == SupportedTokenTypes.Bearer)
 			{
-				var user = await this._userService.GetAsync(utilizer.Id, utilizer.MembershipId);
+				var user = await this._userService.GetAsync(utilizer.Id, utilizer.MembershipId, cancellationToken: cancellationToken);
 				if (user != null)
 				{
 					return this.Ok(user);
@@ -215,7 +215,7 @@ public class TokensController : ControllerBase
 	[ProducesResponseType<ITokenValidationResult>(StatusCodes.Status200OK)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType<ITokenValidationResult>(StatusCodes.Status401Unauthorized)]
-	public async Task<IActionResult> VerifyToken()
+	public async Task<IActionResult> VerifyToken(CancellationToken cancellationToken = default)
 	{
 		var token = this.GetTokenFromHeader(out var tokenTypeStr);
 		if (string.IsNullOrEmpty(token))
@@ -228,7 +228,7 @@ public class TokensController : ControllerBase
 			throw ErtisAuthException.UnsupportedTokenType();	
 		}
 		
-		var validationResult = await this._tokenService.VerifyTokenAsync(token, tokenType, false);
+		var validationResult = await this._tokenService.VerifyTokenAsync(token, tokenType, false, cancellationToken: cancellationToken);
 		if (validationResult.IsValidated)
 		{
 			return this.Ok(validationResult);
@@ -242,12 +242,13 @@ public class TokensController : ControllerBase
 	/// <summary>Verify a token (body)</summary>
 	/// <remarks>Like the GET endpoint; the token can also be given in the body (with its type, e.g. <c>Bearer ...</c>) instead of the Authorization header.</remarks>
 	/// <param name="model">Token to verify</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
 	[Route("verify-token")]
 	[ProducesResponseType<ITokenValidationResult>(StatusCodes.Status200OK)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType<ITokenValidationResult>(StatusCodes.Status401Unauthorized)]
-	public async Task<IActionResult> VerifyToken([FromBody] VerifyTokenFormModel model)
+	public async Task<IActionResult> VerifyToken([FromBody] VerifyTokenFormModel model, CancellationToken cancellationToken = default)
 	{
 		var token = this.GetTokenFromHeader(out var tokenTypeStr);
 		if (string.IsNullOrEmpty(token))
@@ -265,7 +266,7 @@ public class TokensController : ControllerBase
 			return this.AuthorizationHeaderMissing();
 		}
 		
-		var validationResult = await this._tokenService.VerifyTokenAsync(token, tokenType, false);
+		var validationResult = await this._tokenService.VerifyTokenAsync(token, tokenType, false, cancellationToken: cancellationToken);
 		if (validationResult.IsValidated)
 		{
 			return this.Ok(validationResult);
@@ -283,7 +284,7 @@ public class TokensController : ControllerBase
 	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	public async Task<IActionResult> RefreshToken()
+	public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken = default)
 	{
 		var refreshToken = this.GetTokenFromHeader(out _);
 		if (string.IsNullOrEmpty(refreshToken))
@@ -297,19 +298,20 @@ public class TokensController : ControllerBase
 			revokeBefore = this.Request.Query["revoke"] == "true";
 		}
 		
-		var token = await this._tokenService.RefreshTokenAsync(refreshToken, revokeBefore);
+		var token = await this._tokenService.RefreshTokenAsync(refreshToken, revokeBefore, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 	}
 	
 	/// <summary>Refresh a token (body)</summary>
 	/// <remarks>Like the GET endpoint; the refresh token can also be given in the body instead of the Authorization header.</remarks>
 	/// <param name="model">Refresh token</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
 	[Route("refresh-token")]
 	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenFormModel model)
+	public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenFormModel model, CancellationToken cancellationToken = default)
 	{
 		var refreshToken = this.GetTokenFromHeader(out _);
 		if (string.IsNullOrEmpty(refreshToken))
@@ -328,7 +330,7 @@ public class TokensController : ControllerBase
 			revokeBefore = this.Request.Query["revoke"] == "true";
 		}
 		
-		var token = await this._tokenService.RefreshTokenAsync(refreshToken, revokeBefore);
+		var token = await this._tokenService.RefreshTokenAsync(refreshToken, revokeBefore, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 	}
 	
@@ -407,12 +409,13 @@ public class TokensController : ControllerBase
 	/// <summary>Verify a one time password</summary>
 	/// <remarks>Verifies the one time password (<c>password</c>) of the user (<c>username</c> or email address) and returns a reset token, to set a new password with the set password endpoint. The <c>X-Host</c> header must match the OTP host of the membership. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). **Note:** the returned token is not an access token. Failed attempts are limited; the one time password is deleted when they are used up.</remarks>
 	/// <param name="model">Username and one time password</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
 	[Route("verify-otp")]
 	[ProducesResponseType<ResetPasswordToken>(StatusCodes.Status200OK)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	public async Task<IActionResult> VerifyOneTimePassword([FromBody] GenerateTokenFormModel model)
+	public async Task<IActionResult> VerifyOneTimePassword([FromBody] GenerateTokenFormModel model, CancellationToken cancellationToken = default)
 	{
 		var membershipId = this.GetMembershipId();
 		if (string.IsNullOrEmpty(membershipId))
@@ -429,7 +432,7 @@ public class TokensController : ControllerBase
 			return this.InvalidCredentials();
 		}
 		
-		var otp = await this._oneTimePasswordService.VerifyOtpAsync(username, password, membershipId, host);
+		var otp = await this._oneTimePasswordService.VerifyOtpAsync(username, password, membershipId, host, cancellationToken: cancellationToken);
 		if (otp != null)
 		{
 			return this.Ok(otp.Token);

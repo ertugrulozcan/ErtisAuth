@@ -87,14 +87,15 @@ public class TokenCodesController : ControllerBase
 	/// <remarks>Anonymous: returns a token for the user who approved the code. Fails while the code is not approved yet or after it expires.</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="code">Approved token code</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[Unauthorized]
 	[HttpGet("generate-token/{code}")]
 	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> GenerateToken([FromRoute] string membershipId, [FromRoute] string code)
+	public async Task<IActionResult> GenerateToken([FromRoute] string membershipId, [FromRoute] string code, CancellationToken cancellationToken = default)
 	{
-		var token = await this._tokenCodeService.GenerateTokenAsync(code, membershipId);
+		var token = await this._tokenCodeService.GenerateTokenAsync(code, membershipId, cancellationToken: cancellationToken);
 		return this.Created($"{this.Request.Scheme}://{this.Request.Host}", token);
 	}
 	

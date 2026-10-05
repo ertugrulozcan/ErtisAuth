@@ -51,6 +51,7 @@ public class UserTypesController : QueryControllerBase
 	/// <remarks>Returns the user type with the fields inherited from its base types.</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">User type id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
@@ -58,9 +59,9 @@ public class UserTypesController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<UserType>> Get([FromRoute] string membershipId, [FromRoute] string id)
+	public async Task<ActionResult<UserType>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var userType = id.IsObjectId() ? await this._userTypeService.GetAsync(id, membershipId) : await this._userTypeService.GetBySlugAsync(id, membershipId);
+		var userType = id.IsObjectId() ? await this._userTypeService.GetAsync(id, membershipId, cancellationToken: cancellationToken) : await this._userTypeService.GetBySlugAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (userType != null)
 		{
 			return this.Ok(userType);

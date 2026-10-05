@@ -50,6 +50,7 @@ public class MembershipsController : QueryControllerBase
 	/// <summary>Get a membership</summary>
 	/// <remarks>**Note:** the response contains the secret key of the membership (the key the tokens are signed with); grant the read permission of memberships carefully.</remarks>
 	/// <param name="id">Membership id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
@@ -57,9 +58,9 @@ public class MembershipsController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> Get([FromRoute] string id)
+	public async Task<IActionResult> Get([FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var membership = id.IsObjectId() ? await this._membershipService.GetAsync(id) : await this._membershipService.GetBySlugAsync(id);
+		var membership = id.IsObjectId() ? await this._membershipService.GetAsync(id, cancellationToken: cancellationToken) : await this._membershipService.GetBySlugAsync(id, cancellationToken: cancellationToken);
 		if (membership != null)
 		{
 			return this.Ok(membership);
