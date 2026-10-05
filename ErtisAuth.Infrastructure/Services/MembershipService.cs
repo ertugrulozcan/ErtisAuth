@@ -4,6 +4,7 @@ using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
 using Ertis.MongoDB.Queries;
+using ErtisAuth.Core.Constants;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using Microsoft.Extensions.Caching.Memory;
@@ -334,6 +335,21 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	public override async Task<Membership> CreateAsync(Membership model, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
+		if (string.IsNullOrEmpty(model.HashAlgorithm))
+		{
+			model.HashAlgorithm = Defaults.GetDefaultHashAlgorithm();
+		}
+		
+		if (string.IsNullOrEmpty(model.DefaultEncoding))
+		{
+			model.DefaultEncoding = Defaults.GetDefaultEncodingName();
+		}
+		
+		if (string.IsNullOrEmpty(model.DefaultLanguage))
+		{
+			model.DefaultLanguage = Defaults.GetDefaultLocale();
+		}
+		
 		// LEGACY-APP-SECRET: new memberships have no legacy applications
 		model.AllowMembershipSecretForApplications = false;
 		

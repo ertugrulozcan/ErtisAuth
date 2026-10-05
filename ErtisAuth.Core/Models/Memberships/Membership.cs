@@ -159,10 +159,10 @@ public class Membership : ResourceBase, IHasSlug, IHasSysInfo
 	{
 		if (string.IsNullOrEmpty(this.DefaultEncoding))
 		{
-			return Constants.Defaults.DEFAULT_ENCODING;
+			return Constants.Defaults.GetDefaultEncoding();
 		}
 		
-		var encoding = Constants.Defaults.DEFAULT_ENCODING;
+		var encoding = Constants.Defaults.GetDefaultEncoding();
 		var encodings = Encoding.GetEncodings();
 		var encodingInfo = encodings.FirstOrDefault(x => x.Name.Equals(this.DefaultEncoding, StringComparison.InvariantCultureIgnoreCase));
 		if (encodingInfo != null)

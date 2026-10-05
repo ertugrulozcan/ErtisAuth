@@ -50,12 +50,14 @@ public class MembershipServiceValidationTests
 		var membershipService = this.CreateMembershipService();
 		var membership = TestServiceFactory.CreateMembership(hashAlgorithm);
 		
-		await AssertValidationErrorAsync(() => membershipService.CreateAsync(membership, Utilizer.GetSystemUtilizer(string.Empty), TestContext.Current.CancellationToken), "hash_algorithm is a required field");
-		await this._repository.DidNotReceiveWithAnyArgs().InsertAsync(null!, cancellationToken: TestContext.Current.CancellationToken);
+		await membershipService.CreateAsync(membership, Utilizer.GetSystemUtilizer(string.Empty), TestContext.Current.CancellationToken);
+		Assert.Equal(Core.Constants.Defaults.GetDefaultHashAlgorithm(), membership.HashAlgorithm);
+		await this._repository.Received(1).InsertAsync(membership, Arg.Any<InsertOptions?>(), Arg.Any<CancellationToken>());
 	}
 	
 	[Theory]
 	[InlineData("UNKNOWN")]
+	[InlineData("SHA2_512")]
 	[InlineData("SHA3_512")]
 	[InlineData("ARGON2")]
 	[InlineData("PBKDF2-SHA1")]

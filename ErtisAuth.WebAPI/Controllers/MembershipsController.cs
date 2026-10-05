@@ -226,11 +226,11 @@ public class MembershipsController : QueryControllerBase
 				displayName = x.DisplayName,
 				name = x.Name.ToUpperInvariant()
 			}).ToArray(),
-			defaultEncoding = Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName.ToUpperInvariant(),
+			defaultEncoding = Core.Constants.Defaults.GetDefaultEncodingName(),
 			hashAlgorithms = Enum.GetNames<HashAlgorithms>().Select(x => x.Replace('_', '-')).ToArray(),
-			defaultHashAlgorithm = Core.Constants.Defaults.RECOMMENDED_HASH_ALGORITHM.ToString().Replace('_', '-'),
+			defaultHashAlgorithm = Core.Constants.Defaults.GetDefaultHashAlgorithm(),
 			dbLocales = TextSearchLanguage.All.ToArray(),
-			defaultDbLocale = TextSearchLanguage.None.ISO6391Code
+			defaultDbLocale = Core.Constants.Defaults.GetDefaultLocale()
 		});
 	}
 	
@@ -259,7 +259,7 @@ public class MembershipsController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public IActionResult GetDefaultEncoding()
 	{
-		return this.Ok(Core.Constants.Defaults.DEFAULT_ENCODING.HeaderName.ToUpperInvariant());
+		return this.Ok(Core.Constants.Defaults.GetDefaultEncodingName());
 	}
 	
 	/// <summary>List the hash algorithms</summary>
@@ -284,7 +284,7 @@ public class MembershipsController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public IActionResult GetDefaultHashAlgorithm()
 	{
-		return this.Ok(Core.Constants.Defaults.RECOMMENDED_HASH_ALGORITHM.ToString().Replace('_', '-'));
+		return this.Ok(Core.Constants.Defaults.GetDefaultHashAlgorithm());
 	}
 	
 	/// <summary>List the database locales</summary>
@@ -308,7 +308,7 @@ public class MembershipsController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public IActionResult GetDefaultDbLocale()
 	{
-		return this.Ok(TextSearchLanguage.None.ISO6391Code);
+		return this.Ok(Core.Constants.Defaults.GetDefaultLocale());
 	}
 	
 	#endregion
