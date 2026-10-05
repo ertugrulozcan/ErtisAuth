@@ -177,6 +177,8 @@ public class ApplicationsController : QueryControllerBase
 			Name = model.Name ?? string.Empty, 
 			Slug = model.Slug ?? string.Empty,
 			Role = model.Role ?? string.Empty,
+			Permissions = model.Permissions,
+			Forbidden = model.Forbidden,
 			MembershipId = membershipId
 		};
 		
@@ -213,6 +215,8 @@ public class ApplicationsController : QueryControllerBase
 			Name = model.Name ?? string.Empty,
 			Slug = model.Slug ?? string.Empty,
 			Role = model.Role ?? string.Empty,
+			Permissions = model.Permissions,
+			Forbidden = model.Forbidden,
 			MembershipId = membershipId
 		};
 		

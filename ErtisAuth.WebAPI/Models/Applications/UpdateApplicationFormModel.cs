@@ -20,5 +20,11 @@ public class UpdateApplicationFormModel
 	[JsonPropertyName("role")]
 	public string? Role { get; set; }
 	
+	[JsonPropertyName("permissions")]
+	public IEnumerable<string>? Permissions { get; set; }
+	
+	[JsonPropertyName("forbidden")]
+	public IEnumerable<string>? Forbidden { get; set; }
+	
 	#endregion
 }

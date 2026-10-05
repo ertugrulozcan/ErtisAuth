@@ -36,11 +36,15 @@ public class Application : MembershipBoundedResource, IHasSlug, IUtilizer, IHasS
 	public required string Role { get; set; }
 	
 	[JsonPropertyName("permissions")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("permissions")]
+	[BsonIgnoreIfNull]
 	public IEnumerable<string>? Permissions { get; set; }
 	
 	[JsonPropertyName("forbidden")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("forbidden")]
+	[BsonIgnoreIfNull]
 	public IEnumerable<string>? Forbidden { get; set; }
 	
 	/// <summary>
