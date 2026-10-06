@@ -228,6 +228,11 @@ public static class ControllerExtensions
 		return controller.BadRequest(ErtisAuthException.UnsupportedProvider().Error);
 	}
 	
+	public static BadRequestObjectResult UnknownProvider(this ControllerBase controller, string name)
+	{
+		return controller.BadRequest(ErtisAuthException.UnknownProvider(name).Error);
+	}
+	
 	public static BadRequestObjectResult ProviderTypeRequired(this ControllerBase controller)
 	{
 		return controller.BadRequest(ErtisAuthException.ProviderTypeRequired().Error);

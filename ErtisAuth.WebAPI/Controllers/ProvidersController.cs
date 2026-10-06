@@ -161,21 +161,26 @@ public class ProvidersController : ControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
 	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] CreateProviderFormModel model, CancellationToken cancellationToken = default)
 	{
-		if (model.Type == null)
+		if (string.IsNullOrEmpty(model.Type))
 		{
 			return this.ProviderTypeRequired();
+		}
+		
+		if (!Enum.TryParse<ProviderType>(model.Type, out var providerType))
+		{
+			return this.UnknownProvider(model.Type);
 		}
 		
 		Provider? provider = null;
 		
 		// ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
-		switch (model.Type)
+		switch (providerType)
 		{
 			case ProviderType.Facebook:
 				provider = new FacebookProvider
 				{
 					MembershipId = membershipId,
-					Name = model.Name!,
+					Name = model.Name ?? providerType.ToString(),
 					Slug = model.Slug!,
 					Description = model.Description,
 					DefaultRole = model.DefaultRole,
@@ -189,7 +194,7 @@ public class ProvidersController : ControllerBase
 				provider = new GoogleProvider
 				{
 					MembershipId = membershipId,
-					Name = model.Name!,
+					Name = model.Name ?? providerType.ToString(),
 					Slug = model.Slug!,
 					Description = model.Description,
 					DefaultRole = model.DefaultRole,
@@ -203,7 +208,7 @@ public class ProvidersController : ControllerBase
 				provider = new MicrosoftProvider
 				{
 					MembershipId = membershipId,
-					Name = model.Name!,
+					Name = model.Name ?? providerType.ToString(),
 					Slug = model.Slug!,
 					Description = model.Description,
 					DefaultRole = model.DefaultRole,
@@ -218,7 +223,7 @@ public class ProvidersController : ControllerBase
 				provider = new AppleProvider
 				{
 					MembershipId = membershipId,
-					Name = model.Name!,
+					Name = model.Name ?? providerType.ToString(),
 					Slug = model.Slug!,
 					Description = model.Description,
 					DefaultRole = model.DefaultRole,
@@ -236,7 +241,7 @@ public class ProvidersController : ControllerBase
 				provider = new AppleNativeProvider
 				{
 					MembershipId = membershipId,
-					Name = model.Name!,
+					Name = model.Name ?? providerType.ToString(),
 					Slug = model.Slug!,
 					Description = model.Description,
 					DefaultRole = model.DefaultRole,

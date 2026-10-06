@@ -480,11 +480,6 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"The provider is already exists with same slug ({slug})", "ProviderAlreadyExists");
 	}
 	
-	public static ErtisAuthException YouCanNotCreateCustomProvider()
-	{
-		return new ErtisAuthException(HttpStatusCode.Forbidden, "You can not create custom provider", "YouCanNotCreateCustomProvider");
-	}
-	
 	public static ErtisAuthException ProviderIsDisable()
 	{
 		return new ErtisAuthException(HttpStatusCode.Forbidden, "Provider is disable", "ProviderIsDisable");
@@ -528,6 +523,11 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException UnsupportedProvider()
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "Provider is not supported", "UnsupportedProvider");
+	}
+	
+	public static ErtisAuthException UnknownProvider(string name)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, $"Unknown provider: {name}", "UnknownProvider");
 	}
 	
 	public static ErtisAuthException ProviderTypeRequired()
