@@ -30,6 +30,7 @@ public class ProviderServiceLoginTests
 	private const string MembershipId = "5f8a1b2c3d4e5f6a7b8c9d00";
 	private const string ProviderUserId = "provider-user-id";
 	private const string Email = "john.doe@example.com";
+	private const string ProviderSlug = "facebook";
 	
 	#endregion
 	
@@ -61,9 +62,6 @@ public class ProviderServiceLoginTests
 	{
 		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		this._providers = InMemoryRepository.Setup(this._repository, x => x.Id ??= Guid.NewGuid().ToString("N")[..24]);
-		this._repository
-			.FindOneByTypeAsync(Arg.Any<ProviderType>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-			.Returns(callInfo => this._providers.FirstOrDefault(x => x.Type == callInfo.ArgAt<ProviderType>(0) && x.MembershipId == callInfo.ArgAt<string>(1)));
 		this._membershipService.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(callInfo => CreateMembership(callInfo.ArgAt<string>(0)));
 		
 		this._userService
@@ -115,18 +113,22 @@ public class ProviderServiceLoginTests
 			NullLogger<ProviderService>.Instance);
 	}
 	
-	private void AddProvider(bool isActive = true, bool trustEmail = false)
+	private FacebookProvider AddProvider(bool isActive = true, bool trustEmail = false, string slug = ProviderSlug, string id = "5f8a1b2c3d4e5f6a7b8c9d10")
 	{
-		this._providers.Add(new FacebookProvider
+		var provider = new FacebookProvider
 		{
-			Id = "5f8a1b2c3d4e5f6a7b8c9d10",
+			Id = id,
+			Slug = slug,
 			MembershipId = MembershipId,
 			IsActive = isActive,
 			TrustEmail = trustEmail,
 			AppClientId = "app-id",
 			DefaultRole = "user",
 			DefaultUserType = "base-user"
-		});
+		};
+		
+		this._providers.Add(provider);
+		return provider;
 	}
 	
 	// ReSharper disable once UnusedMethodReturnValue.Local
@@ -186,9 +188,12 @@ public class ProviderServiceLoginTests
 		return new DynamicObject(user);
 	}
 	
-	private Task<BearerToken> LoginAsync(ProviderService service, TestLoginRequest request)
+	/// <summary>
+	/// Login with the provider of the given slug (the controller reads the provider by the slug of the url).
+	/// </summary>
+	private Task<BearerToken> LoginAsync(ProviderService service, TestLoginRequest request, string slug = ProviderSlug)
 	{
-		return service.LoginAsync(request, MembershipId, cancellationToken: TestContext.Current.CancellationToken);
+		return service.LoginAsync(this._providers.Single(x => x.Slug == slug), request, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	#endregion
@@ -199,7 +204,7 @@ public class ProviderServiceLoginTests
 	public async Task LoginAsync_WithLinkedAccount_LogsInTheLinkedUser()
 	{
 		this.AddProvider();
-		this.AddUser("5f8a1b2c3d4e5f6a7b8c9d01", "linked@example.com", connectedAccounts: [new ProviderAccountInfo { Provider = "Facebook", UserId = ProviderUserId }]);
+		this.AddUser("5f8a1b2c3d4e5f6a7b8c9d01", "linked@example.com", connectedAccounts: [new ProviderAccountInfo { Provider = "Facebook", Slug = ProviderSlug, UserId = ProviderUserId }]);
 		this.AuthenticatorReturns(true);
 		
 		await this.LoginAsync(this.CreateService(), CreateRequest(email: "other@example.com"));
@@ -258,7 +263,10 @@ public class ProviderServiceLoginTests
 		var created = Assert.Single(this._users);
 		Assert.Equal(created.Id, this._tokenOwner?.Id);
 		Assert.Equal(Email, created.EmailAddress);
-		Assert.Equal(ProviderUserId, Assert.Single(created.ConnectedAccounts!).UserId);
+		var account = Assert.Single(created.ConnectedAccounts!);
+		Assert.Equal(ProviderUserId, account.UserId);
+		Assert.Equal("Facebook", account.Provider);
+		Assert.Equal(ProviderSlug, account.Slug);
 	}
 	
 	[Fact]
@@ -278,7 +286,7 @@ public class ProviderServiceLoginTests
 	public async Task LoginAsync_WithInactiveUser_ThrowsUserInactive()
 	{
 		this.AddProvider();
-		this.AddUser("5f8a1b2c3d4e5f6a7b8c9d01", Email, isActive: false, connectedAccounts: [new ProviderAccountInfo { Provider = "Facebook", UserId = ProviderUserId }]);
+		this.AddUser("5f8a1b2c3d4e5f6a7b8c9d01", Email, isActive: false, connectedAccounts: [new ProviderAccountInfo { Provider = "Facebook", Slug = ProviderSlug, UserId = ProviderUserId }]);
 		this.AuthenticatorReturns(true);
 		
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.LoginAsync(this.CreateService(), CreateRequest()));
@@ -323,34 +331,61 @@ public class ProviderServiceLoginTests
 		Assert.Equal("ProviderIsDisable", exception.ErrorCode);
 	}
 	
-	[Fact]
-	public async Task LoginAsync_WithoutProvider_ThrowsProviderNotConfigured()
-	{
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.LoginAsync(this.CreateService(), CreateRequest()));
-		
-		Assert.Equal("ProviderNotConfigured", exception.ErrorCode);
-	}
-	
 	#endregion
 	
-	#region Provider Lookup
+	#region Providers Of The Same Type
 	
 	[Fact]
-	public async Task LoginAsync_WithOnlyAnotherTypeOfProvider_ThrowsProviderNotConfigured()
+	public async Task LoginAsync_WithAProviderOfAnotherType_ThrowsUnsupportedProvider()
 	{
 		this._providers.Add(new GoogleProvider
 		{
 			MembershipId = MembershipId,
+			Slug = "google",
 			IsActive = true,
 			AppClientId = "google-client-id",
 			DefaultRole = "user",
 			DefaultUserType = "base-user"
 		});
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.LoginAsync(this.CreateService(), CreateRequest()));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.LoginAsync(this.CreateService(), CreateRequest(), "google"));
 		
-		Assert.Equal("ProviderNotConfigured", exception.ErrorCode);
-		await this._repository.Received().FindOneByTypeAsync(ProviderType.Facebook, MembershipId, Arg.Any<CancellationToken>());
+		Assert.Equal("UnsupportedProvider", exception.ErrorCode);
+		await this._authenticator.DidNotReceiveWithAnyArgs().VerifyTokenAsync(null!, null!);
+	}
+	
+	/// <summary>
+	/// Another provider of the same type (e.g. another app) finds the user by type and user id, and gets its own connected account.
+	/// </summary>
+	[Fact]
+	public async Task LoginAsync_WithAnotherProviderOfTheSameType_AddsItsOwnAccount()
+	{
+		this.AddProvider();
+		this.AddProvider(slug: "facebook-kids", id: "5f8a1b2c3d4e5f6a7b8c9d11");
+		this.AddUser("5f8a1b2c3d4e5f6a7b8c9d01", "linked@example.com", connectedAccounts: [new ProviderAccountInfo { Provider = "Facebook", Slug = ProviderSlug, UserId = ProviderUserId, Token = "first-token" }]);
+		this.AuthenticatorReturns(true);
+		
+		await this.LoginAsync(this.CreateService(), CreateRequest(email: null), "facebook-kids");
+		
+		Assert.Equal("5f8a1b2c3d4e5f6a7b8c9d01", this._tokenOwner?.Id);
+		var accounts = this._users.Single().ConnectedAccounts!;
+		Assert.Equal(["facebook", "facebook-kids"], accounts.Select(x => x.Slug).Order());
+		Assert.All(accounts, x => Assert.Equal("Facebook", x.Provider));
+		Assert.Equal("first-token", accounts.Single(x => x.Slug == ProviderSlug).Token);
+	}
+	
+	[Fact]
+	public async Task LoginAsync_WithTheSameProviderAgain_ReplacesItsAccount()
+	{
+		this.AddProvider();
+		this.AddUser("5f8a1b2c3d4e5f6a7b8c9d01", "linked@example.com", connectedAccounts: [new ProviderAccountInfo { Provider = "Facebook", Slug = ProviderSlug, UserId = ProviderUserId, Token = "old-token" }]);
+		this.AuthenticatorReturns(true);
+		
+		await this.LoginAsync(this.CreateService(), new TestLoginRequest { UserId = ProviderUserId, AccessToken = "new-token" });
+		
+		var account = Assert.Single(this._users.Single().ConnectedAccounts!);
+		Assert.Equal(ProviderSlug, account.Slug);
+		Assert.Equal("new-token", account.Token);
 	}
 	
 	#endregion
@@ -361,15 +396,50 @@ public class ProviderServiceLoginTests
 	public async Task LogoutAsync_RevokesTheAccountTokenWithItsProviderAndForgetsIt()
 	{
 		this.AddProvider();
-		var user = this.AddUser("5f8a1b2c3d4e5f6a7b8c9d01", Email, connectedAccounts: [new ProviderAccountInfo { Provider = "Facebook", UserId = ProviderUserId, Token = "facebook-access-token" }]);
+		var user = this.AddUser("5f8a1b2c3d4e5f6a7b8c9d01", Email, connectedAccounts: [new ProviderAccountInfo { Provider = "Facebook", Slug = ProviderSlug, UserId = ProviderUserId, Token = "facebook-access-token" }]);
 		this._tokenService.GetTokenOwnerUserAsync("access-token", Arg.Any<CancellationToken>()).Returns(user);
 		
 		await this.CreateService().LogoutAsync("access-token", TestContext.Current.CancellationToken);
 		
-		await this._authenticator.Received(1).RevokeTokenAsync("facebook-access-token", Arg.Is<Provider>(x => x is FacebookProvider), Arg.Any<CancellationToken>());
+		await this._authenticator.Received(1).RevokeTokenAsync("facebook-access-token", Arg.Is<Provider>(x => x.Slug == ProviderSlug), Arg.Any<CancellationToken>());
 		var account = Assert.Single(this._users.Single().ConnectedAccounts!);
 		Assert.Equal(ProviderUserId, account.UserId);
+		Assert.Equal(ProviderSlug, account.Slug);
 		Assert.Null(account.Token);
+	}
+	
+	/// <summary>
+	/// Each token is revoked with the provider (client id) that issued it, not with another provider of the same type.
+	/// </summary>
+	[Fact]
+	public async Task LogoutAsync_RevokesEveryTokenWithItsOwnProvider()
+	{
+		this.AddProvider();
+		this.AddProvider(slug: "facebook-kids", id: "5f8a1b2c3d4e5f6a7b8c9d11");
+		var user = this.AddUser("5f8a1b2c3d4e5f6a7b8c9d01", Email, connectedAccounts:
+		[
+			new ProviderAccountInfo { Provider = "Facebook", Slug = ProviderSlug, UserId = ProviderUserId, Token = "token-1" },
+			new ProviderAccountInfo { Provider = "Facebook", Slug = "facebook-kids", UserId = "kids-user-id", Token = "token-2" }
+		]);
+		this._tokenService.GetTokenOwnerUserAsync("access-token", Arg.Any<CancellationToken>()).Returns(user);
+		
+		await this.CreateService().LogoutAsync("access-token", TestContext.Current.CancellationToken);
+		
+		await this._authenticator.Received(1).RevokeTokenAsync("token-1", Arg.Is<Provider>(x => x.Slug == ProviderSlug), Arg.Any<CancellationToken>());
+		await this._authenticator.Received(1).RevokeTokenAsync("token-2", Arg.Is<Provider>(x => x.Slug == "facebook-kids"), Arg.Any<CancellationToken>());
+		Assert.All(this._users.Single().ConnectedAccounts!, x => Assert.Null(x.Token));
+	}
+	
+	[Fact]
+	public async Task LogoutAsync_WithAccountOfADeletedProvider_KeepsTheAccount()
+	{
+		var user = this.AddUser("5f8a1b2c3d4e5f6a7b8c9d01", Email, connectedAccounts: [new ProviderAccountInfo { Provider = "Facebook", Slug = "deleted", UserId = ProviderUserId, Token = "facebook-access-token" }]);
+		this._tokenService.GetTokenOwnerUserAsync("access-token", Arg.Any<CancellationToken>()).Returns(user);
+		
+		await this.CreateService().LogoutAsync("access-token", TestContext.Current.CancellationToken);
+		
+		await this._authenticator.DidNotReceiveWithAnyArgs().RevokeTokenAsync(null!, null!);
+		Assert.Equal("facebook-access-token", Assert.Single(this._users.Single().ConnectedAccounts!).Token);
 	}
 	
 	#endregion
@@ -388,7 +458,7 @@ public class ProviderServiceLoginTests
 		
 		public string? AvatarUrl => null;
 		
-		public string AccessToken => "provider-access-token";
+		public string AccessToken { get; init; } = "provider-access-token";
 		
 		public bool IsValid() => true;
 		

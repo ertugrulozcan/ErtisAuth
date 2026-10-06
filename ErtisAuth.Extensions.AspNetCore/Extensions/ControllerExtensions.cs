@@ -116,11 +116,6 @@ public static class ControllerExtensions
 		return controller.NotFound(ErtisAuthException.ActiveTokenNotFound(activeTokenId).Error);
 	}
 	
-	public static BadRequestObjectResult UnknownPlatform(this ControllerBase controller, string platformName)
-	{
-		return controller.BadRequest(ErtisAuthException.UnknownPlatform(platformName).Error);
-	}
-	
 	public static NotFoundObjectResult CodePolicyNotFound(this ControllerBase controller, string id)
 	{
 		return controller.NotFound(ErtisAuthException.TokenCodePolicyNotFound(id).Error);

@@ -90,16 +90,7 @@ public class GoogleLoginRequest : IProviderLoginRequest<GoogleToken, GoogleUser>
 			EmailAddress = this.User?.EmailAddress,
 			Role = role ?? string.Empty,
 			UserType = userType,
-			SourceProvider = ProviderType.Google.ToString(),
-			ConnectedAccounts = new ProviderAccountInfo[]
-			{
-				new()
-				{
-					Provider = ProviderType.Google.ToString(),
-					UserId = this.UserId,
-					Token = this.AccessToken
-				}
-			}
+			SourceProvider = ProviderType.Google.ToString()
 		};
 	}
 	

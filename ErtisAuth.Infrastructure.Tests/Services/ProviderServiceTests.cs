@@ -339,6 +339,18 @@ public class ProviderServiceTests
 	}
 	
 	[Fact]
+	public async Task UpdateAsync_WithAnotherSlug_ThrowsProviderSlugCannotBeChanged()
+	{
+		var stored = this.AddConfiguredProvider(nameof(GoogleProvider));
+		var update = CreateUpdate(stored, x => x.Slug = "another-slug");
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateService().UpdateAsync(update, MembershipId, Utilizer, CancellationToken));
+		
+		Assert.Equal("ProviderSlugCannotBeChanged", exception.ErrorCode);
+		Assert.Equal("google", Assert.Single(this._providers).Slug);
+	}
+	
+	[Fact]
 	public async Task UpdateAsync_WithoutAnyChange_ThrowsIdenticalDocument()
 	{
 		this.AddConfiguredProvider(nameof(MicrosoftProvider));

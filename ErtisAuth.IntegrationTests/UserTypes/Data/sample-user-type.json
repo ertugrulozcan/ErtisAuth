@@ -490,22 +490,26 @@
             "itemSchema": {
                 "type": "object",
                 "properties": {
-                    "Provider": {
+                    "provider": {
                         "type": "string",
                         "isRequired": true
                     },
-                    "UserId": {
+                    "slug": {
                         "type": "string",
                         "isRequired": true
                     },
-                    "Token": {
+                    "user_id": {
+                        "type": "string",
+                        "isRequired": true
+                    },
+                    "token": {
                         "type": "string"
                     }
                 }
             },
             "uniqueItems": true,
             "uniqueBy": [
-                "Provider"
+                "slug"
             ],
             "displayName": "Connected Accounts",
             "description": "Connected Provider Accounts",

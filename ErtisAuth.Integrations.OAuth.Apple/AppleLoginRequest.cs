@@ -83,16 +83,7 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken, 
     		EmailAddress = this.User?.EmailAddress,
     		Role = role ?? string.Empty,
     		UserType = userType,
-    		SourceProvider = ProviderType.Apple.ToString(),
-    		ConnectedAccounts = new ProviderAccountInfo[]
-    		{
-    			new()
-    			{
-    				Provider = ProviderType.Apple.ToString(),
-    				UserId = this.UserId,
-    				Token = this.AccessToken
-    			}
-    		}
+    		SourceProvider = ProviderType.Apple.ToString()
     	};
     }
 	

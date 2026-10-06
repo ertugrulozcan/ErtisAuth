@@ -128,6 +128,40 @@ public class ProviderManagementTests : IClassFixture<OAuthErtisAuthInstance>
 	}
 	
 	[Fact]
+	public async Task CreateProvider_OfTheSameTypeWithAnotherSlug_IsCreated()
+	{
+		await this._instance.ConfigureProviderAsync("Google", x => x["appClientId"] = "google-client-id");
+		
+		using var response = await this.CreateAsync(new { type = "Google", slug = $"google-{Guid.NewGuid():N}", isActive = false });
+		
+		var created = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.Created);
+		Assert.Equal("Google", created!["type"]!.GetValue<string>());
+	}
+	
+	[Fact]
+	public async Task CreateProvider_WithAnExistingSlug_ReturnsProviderAlreadyExists()
+	{
+		await this._instance.ConfigureProviderAsync("Google", x => x["appClientId"] = "google-client-id");
+		
+		using var response = await this.CreateAsync(new { type = "Facebook", slug = OAuthErtisAuthInstance.SlugOf("Google"), isActive = false });
+		
+		var error = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.Conflict);
+		Assert.Equal("ProviderAlreadyExists", error!["errorCode"]!.GetValue<string>());
+	}
+	
+	/// <summary>
+	/// The slug is unique in the membership in the database too (the check of the service alone is not atomic).
+	/// </summary>
+	[Fact]
+	public async Task Providers_HaveAUniqueSlugIndex()
+	{
+		var indexes = await (await this._instance.Database.GetCollection<BsonDocument>("providers").Indexes.ListAsync(CancellationToken)).ToListAsync(CancellationToken);
+		
+		var index = Assert.Single(indexes, x => x["key"].AsBsonDocument.Names.SequenceEqual(["membership_id", "slug"]));
+		Assert.True(index.GetValue("unique", false).ToBoolean());
+	}
+	
+	[Fact]
 	public async Task CreateProvider_WithoutType_ReturnsProviderTypeRequired()
 	{
 		using var response = await this.CreateAsync(new { name = "Provider", isActive = false });
@@ -314,6 +348,19 @@ public class ProviderManagementTests : IClassFixture<OAuthErtisAuthInstance>
 	}
 	
 	[Fact]
+	public async Task UpdateProvider_WithAnotherSlug_ReturnsProviderSlugCannotBeChanged()
+	{
+		var provider = await this._instance.ConfigureProviderAsync("Facebook", x => x["appClientId"] = "facebook-app-id");
+		var adminClient = await this._instance.CreateAdminClientAsync();
+		
+		using var response = await adminClient.PutAsJsonAsync($"{this.ProvidersUrl}/{provider["_id"]!.GetValue<string>()}", new { slug = "renamed-facebook" }, CancellationToken);
+		
+		var error = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.BadRequest);
+		Assert.Equal("ProviderSlugCannotBeChanged", error!["errorCode"]!.GetValue<string>());
+		Assert.NotNull(await this._instance.FindProviderAsync("Facebook"));
+	}
+	
+	[Fact]
 	public async Task UpdateProvider_WithUnknownId_ReturnsProviderNotFound()
 	{
 		var adminClient = await this._instance.CreateAdminClientAsync();
@@ -383,6 +430,8 @@ public class ProviderManagementTests : IClassFixture<OAuthErtisAuthInstance>
 		var facebookId = (await this._instance.FindProviderAsync("Facebook"))!["_id"]!.GetValue<string>();
 		var apple = providers.Single(x => x!["_id"]!.GetValue<string>() == appleId);
 		Assert.Equal("com.example.app", apple!["appClientId"]!.GetValue<string>());
+		Assert.Equal(OAuthErtisAuthInstance.SlugOf("Apple"), apple["slug"]!.GetValue<string>());
+		Assert.Equal("Apple", apple["type"]!.GetValue<string>());
 		Assert.DoesNotContain(providers, x => x!["_id"]!.GetValue<string>() == facebookId);
 		Assert.DoesNotContain("PRIVATE KEY", providers.ToJsonString());
 		Assert.DoesNotContain("privateKey", providers.ToJsonString());

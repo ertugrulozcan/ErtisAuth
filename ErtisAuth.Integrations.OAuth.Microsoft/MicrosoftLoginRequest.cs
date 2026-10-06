@@ -88,16 +88,7 @@ public class MicrosoftLoginRequest : IProviderLoginRequest<MicrosoftToken, Micro
 			EmailAddress = this.User?.EmailAddress,
 			Role = role ?? string.Empty,
 			UserType = userType,
-			SourceProvider = ProviderType.Microsoft.ToString(),
-			ConnectedAccounts = new ProviderAccountInfo[]
-			{
-				new()
-				{
-					Provider = ProviderType.Microsoft.ToString(),
-					UserId = this.UserId,
-					Token = this.AccessToken
-				}
-			}
+			SourceProvider = ProviderType.Microsoft.ToString()
 		};
 	}
 	

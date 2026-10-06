@@ -475,11 +475,6 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.NotFound, $"Provider not found in db by given _id: <{providerId}>", "ProviderNotFound");
 	}
 	
-	public static ErtisAuthException UnknownPlatform(string platformName)
-	{
-		return new ErtisAuthException(HttpStatusCode.NotFound, $"Unknown platform ({platformName}). The platform parameter must be one of ios, android or web", "UnknownPlatform");
-	}
-	
 	public static ErtisAuthException ProviderAlreadyExists(string slug)
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"The provider is already exists with same slug ({slug})", "ProviderAlreadyExists");
@@ -538,6 +533,16 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException ProviderTypeRequired()
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "Provider type is required", "ProviderTypeRequired");
+	}
+	
+	public static ErtisAuthException ProviderSlugCannotBeChanged(string slug)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, $"The slug of a provider can not be changed ({slug}); it's used in the login url and in the users' connected accounts", "ProviderSlugCannotBeChanged");
+	}
+	
+	public static ErtisAuthException InvalidProviderLoginRequest(string providerType, string? message = null)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, $"The request body is not a valid {providerType} login request" + (string.IsNullOrEmpty(message) ? string.Empty : $" ({message})"), "InvalidProviderLoginRequest");
 	}
 	
 	#endregion

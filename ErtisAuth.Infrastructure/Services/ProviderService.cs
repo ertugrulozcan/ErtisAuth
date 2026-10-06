@@ -30,7 +30,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Services
 	
-	private readonly IProviderRepository _providerRepository;
 	private readonly IUserService _userService;
 	private readonly IUserTypeService _userTypeService;
 	private readonly ITokenService _tokenService;
@@ -66,7 +65,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		IProviderRepository repository, 
 		ILogger<ProviderService> logger) : base(membershipService, repository)
 	{
-		this._providerRepository = repository;
 		this._userService = userService;
 		this._userTypeService = userTypeService;
 		this._tokenService = tokenService;
@@ -207,6 +205,12 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		destination.MembershipId = source.MembershipId;
 		destination.Sys = source.Sys;
 		
+		// The slug is in the login url (oauth/{slug}/login) and in the users' connected accounts
+		if (destination.Slug != source.Slug)
+		{
+			throw ErtisAuthException.ProviderSlugCannotBeChanged(source.Slug);
+		}
+		
 		if (this.IsIdentical(destination, source))
 		{
 			throw ErtisAuthException.IdenticalDocument();
@@ -303,11 +307,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Read Methods
 	
-	public async Task<Provider?> GetByTypeAsync(ProviderType type, string membershipId, CancellationToken cancellationToken = default)
-	{
-		return await this._providerRepository.FindOneByTypeAsync(type, membershipId, cancellationToken: cancellationToken);
-	}
-	
 	public async Task<Provider?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
 	{
 		return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
@@ -367,56 +366,52 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Authentication Methods
 	
-	public async Task<BearerToken> LoginAsync(IProviderLoginRequest request, string membershipId, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default)
+	public async Task<BearerToken> LoginAsync(Provider provider, IProviderLoginRequest request, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default)
 	{
-		var provider = await this.GetByTypeAsync(request.Provider, membershipId, cancellationToken: cancellationToken);
-		if (provider != null)
+		if (provider.Type != request.Provider)
 		{
-			if (provider.IsActive)
+			throw ErtisAuthException.UnsupportedProvider();
+		}
+		
+		var membershipId = provider.MembershipId;
+		if (!provider.IsActive)
+		{
+			throw ErtisAuthException.ProviderIsDisable();
+		}
+		
+		var providerAuthenticator = this._authenticatorFactory.GetAuthenticator(provider);
+		var isVerified = await providerAuthenticator.VerifyTokenAsync(request, provider, cancellationToken: cancellationToken);
+		
+		// The authenticator sets the identity from verified provider data; without it the login can't be matched safely
+		if (isVerified && !string.IsNullOrEmpty(request.UserId))
+		{
+			var user = await this.FindUserAsync(request, provider, membershipId, cancellationToken: cancellationToken);
+			var isNewUser = user == null;
+			if (isNewUser)
 			{
-				var providerAuthenticator = this._authenticatorFactory.GetAuthenticator(provider);
-				var isVerified = await providerAuthenticator.VerifyTokenAsync(request, provider, cancellationToken: cancellationToken);
-				
-				// The authenticator sets the identity from verified provider data; without it the login can't be matched safely
-				if (isVerified && !string.IsNullOrEmpty(request.UserId))
-				{
-					var user = await this.FindUserAsync(request, provider, membershipId, cancellationToken: cancellationToken);
-					var isNewUser = user == null;
-					if (isNewUser)
-					{
-						user = request.ToUser(membershipId, provider.DefaultRole, provider.DefaultUserType) as User;
-					}
-					else if (user is not { IsActive: true })
-					{
-						throw ErtisAuthException.UserInactive(user?.Id ?? string.Empty);
-					}
-					
-					var userType = await this._userTypeService.GetBySlugAsync((isNewUser ? provider.DefaultUserType : user?.UserType)!, membershipId, cancellationToken: cancellationToken);
-					
-					this.EnsureConnectedAccounts(user!, request, provider);
-					var dynamicUser = new DynamicObject(user!);
-					this.SetAvatar(dynamicUser, request, userType);
-					
-					var utilizer = Utilizer.GetSystemUtilizer(membershipId);
-					var upsertedUser = isNewUser ?
-						await this._userService.CreateAsync(dynamicUser, membershipId, utilizer, cancellationToken: cancellationToken) :
-						await this._userService.UpdateAsync(dynamicUser, user!.Id, membershipId, utilizer, false, cancellationToken: cancellationToken);
-					
-					return await this._tokenService.GenerateTokenAsync(upsertedUser?.Deserialize<User>()!, membershipId, ipAddress, userAgent, cancellationToken: cancellationToken);
-				}
-				else
-				{
-					throw ErtisAuthException.Unauthorized("Token was not verified by provider");
-				}
+				user = request.ToUser(membershipId, provider.DefaultRole, provider.DefaultUserType) as User;
 			}
-			else
+			else if (user is not { IsActive: true })
 			{
-				throw ErtisAuthException.ProviderIsDisable();
+				throw ErtisAuthException.UserInactive(user?.Id ?? string.Empty);
 			}
+			
+			var userType = await this._userTypeService.GetBySlugAsync((isNewUser ? provider.DefaultUserType : user?.UserType)!, membershipId, cancellationToken: cancellationToken);
+			
+			this.EnsureConnectedAccounts(user!, request, provider);
+			var dynamicUser = new DynamicObject(user!);
+			this.SetAvatar(dynamicUser, request, userType);
+			
+			var utilizer = Utilizer.GetSystemUtilizer(membershipId);
+			var upsertedUser = isNewUser ?
+				await this._userService.CreateAsync(dynamicUser, membershipId, utilizer, cancellationToken: cancellationToken) :
+				await this._userService.UpdateAsync(dynamicUser, user!.Id, membershipId, utilizer, false, cancellationToken: cancellationToken);
+			
+			return await this._tokenService.GenerateTokenAsync(upsertedUser?.Deserialize<User>()!, membershipId, ipAddress, userAgent, cancellationToken: cancellationToken);
 		}
 		else
 		{
-			throw ErtisAuthException.ProviderNotConfigured();
+			throw ErtisAuthException.Unauthorized("Token was not verified by provider");
 		}
 	}
 	
@@ -431,9 +426,10 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 				var connectedAccounts = new List<ProviderAccountInfo>();
 				foreach (var accountInfo in user.ConnectedAccounts)
 				{
-					if (!string.IsNullOrEmpty(accountInfo.Token) && Enum.TryParse<ProviderType>(accountInfo.Provider, true, out var providerType))
+					if (!string.IsNullOrEmpty(accountInfo.Token) && !string.IsNullOrEmpty(accountInfo.Slug))
 					{
-						var provider = await this.GetByTypeAsync(providerType, user.MembershipId, cancellationToken: cancellationToken);
+						// The token is revoked with the provider (client id) that issued it
+						var provider = await this.GetBySlugAsync(accountInfo.Slug, user.MembershipId, cancellationToken: cancellationToken);
 						if (provider is { IsActive: true })
 						{
 							var providerAuthenticator = this._authenticatorFactory.GetAuthenticator(provider);
@@ -442,6 +438,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 							connectedAccounts.Add(new ProviderAccountInfo
 							{
 								Provider = accountInfo.Provider,
+								Slug = accountInfo.Slug,
 								UserId = accountInfo.UserId,
 								Token = null
 							});
@@ -477,13 +474,14 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	private async Task<User?> FindUserAsync(IProviderLoginRequest request, Provider provider, string membershipId, CancellationToken cancellationToken = default)
 	{
-		// The provider and its user id must match in the same connected account (not in two different array elements)
+		// The provider type and its user id must match in the same connected account (not in two different array elements).
+		// By type, not by slug: providers of the same type identify the same account with the same id (e.g. Google 'sub').
 		var query = QueryBuilder.Where(
 			QueryBuilder.Equals("membership_id", membershipId), 
 			QueryBuilder.ElemMatch(
 				"connected_accounts",
-				QueryBuilder.Equals("Provider", provider.Type.ToString()),
-				QueryBuilder.Equals("UserId", request.UserId))).ToString();
+				QueryBuilder.Equals("provider", provider.Type.ToString()),
+				QueryBuilder.Equals("user_id", request.UserId))).ToString();
 		
 		var queryUsersResult = await this._userService.QueryAsync(query, membershipId, 0, 1, cancellationToken: cancellationToken);
 		if (queryUsersResult.Items.Any())
@@ -525,15 +523,12 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 			connectedAccounts.AddRange(user.ConnectedAccounts);
 		}
 		
-		var account = connectedAccounts.FirstOrDefault(x => x.Provider == provider.Type.ToString());
-		if (account != null)
-		{
-			connectedAccounts.Remove(account);
-		}
-		
+		// One account per provider (slug): a provider of the same type (e.g. another Facebook app) has its own account
+		connectedAccounts.RemoveAll(x => x.Slug == provider.Slug);
 		connectedAccounts.Add(new ProviderAccountInfo
 		{
 			Provider = provider.Type.ToString(),
+			Slug = provider.Slug,
 			UserId = request.UserId,
 			Token = request.AccessToken
 		});

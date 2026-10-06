@@ -93,16 +93,7 @@ public class FacebookLoginRequest : IProviderLoginRequest<FacebookUserToken, Fac
 			EmailAddress = this.User?.EmailAddress,
 			Role = role ?? string.Empty,
 			UserType = userType,
-			SourceProvider = ProviderType.Facebook.ToString(),
-			ConnectedAccounts = new ProviderAccountInfo[]
-			{
-				new()
-				{
-					Provider = ProviderType.Facebook.ToString(),
-					UserId = this.UserId,
-					Token = this.AccessToken
-				}
-			}
+			SourceProvider = ProviderType.Facebook.ToString()
 		};
 	}
 	

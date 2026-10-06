@@ -165,19 +165,25 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 					    {
 							new StringFieldInfo
 						    {
-							    Name = "Provider",
+							    Name = "provider",
 							    IsRequired = true,
 							    IsVirtual = false
 						    },
 						    new StringFieldInfo
 						    {
-							    Name = "UserId",
+							    Name = "slug",
 							    IsRequired = true,
 							    IsVirtual = false
 						    },
 						    new StringFieldInfo
 						    {
-							    Name = "Token",
+							    Name = "user_id",
+							    IsRequired = true,
+							    IsVirtual = false
+						    },
+						    new StringFieldInfo
+						    {
+							    Name = "token",
 							    IsRequired = false,
 							    IsVirtual = false
 						    }
@@ -186,7 +192,7 @@ public class UserTypeService : MembershipBoundedCrudService<UserType>, IUserType
 							Name = "$schema"
 						},
 					    UniqueItems = true,
-					    UniqueBy = new[] { "Provider" }
+					    UniqueBy = new[] { "slug" }
 				    },
 				    new BooleanFieldInfo
 				    {

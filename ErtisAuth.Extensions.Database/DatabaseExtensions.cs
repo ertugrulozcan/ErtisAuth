@@ -75,6 +75,7 @@ public static class DatabaseExtensions
 		});
 		
 		BearerTokenClassMap.Register();
+		ProviderAccountInfoClassMap.Register();
 	}
 	
 	private static void RegisterDiscriminatorConventions()

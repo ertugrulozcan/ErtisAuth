@@ -46,12 +46,13 @@ public sealed class OAuthErtisAuthInstance : ErtisAuthInstance
 	public static string SlugOf(string type) => type.ToLowerInvariant();
 	
 	/// <summary>
-	/// The membership's provider of the given type created by <see cref="ConfigureProviderAsync"/> (found by its slug), or null.
+	/// The membership's provider of the given type created by <see cref="ConfigureProviderAsync"/> (found by its slug,
+	/// by default the type in lower case), or null.
 	/// </summary>
-	public async Task<JsonObject?> FindProviderAsync(string type)
+	public async Task<JsonObject?> FindProviderAsync(string type, string? slug = null)
 	{
 		var adminClient = await this.CreateAdminClientAsync();
-		using var response = await adminClient.GetAsync($"/memberships/{this.MembershipId}/providers/{SlugOf(type)}");
+		using var response = await adminClient.GetAsync($"/memberships/{this.MembershipId}/providers/{slug ?? SlugOf(type)}");
 		if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
 		{
 			return null;
@@ -64,8 +65,9 @@ public sealed class OAuthErtisAuthInstance : ErtisAuthInstance
 	/// <summary>
 	/// Creates (POST) or updates (PUT) the provider of the given type: active, default role 'admin' and user type
 	/// 'user', plus the given fields. Configuring it again with the same values is a no-op (the API answers IdenticalDocumentError).
+	/// The provider is found (and created) by the given slug, by default the type in lower case.
 	/// </summary>
-	public async Task<JsonObject> ConfigureProviderAsync(string type, Action<JsonObject> configure)
+	public async Task<JsonObject> ConfigureProviderAsync(string type, Action<JsonObject> configure, string? slug = null)
 	{
 		var model = new JsonObject
 		{
@@ -77,12 +79,12 @@ public sealed class OAuthErtisAuthInstance : ErtisAuthInstance
 		configure(model);
 		
 		var adminClient = await this.CreateAdminClientAsync();
-		var provider = await this.FindProviderAsync(type);
+		var provider = await this.FindProviderAsync(type, slug);
 		HttpResponseMessage response;
 		if (provider == null)
 		{
 			model["type"] = type;
-			model["slug"] = SlugOf(type);
+			model["slug"] = slug ?? SlugOf(type);
 			response = await adminClient.PostAsJsonAsync($"/memberships/{this.MembershipId}/providers", model);
 		}
 		else

@@ -83,7 +83,7 @@ public class ProvidersController : ControllerBase
 	}
 	
 	/// <summary>List active providers</summary>
-	/// <remarks>Anonymous: returns only the public settings (name, client id, tenant id) of the active providers, for the login pages.</remarks>
+	/// <remarks>Anonymous: returns only the public settings (name, slug, type, client id, tenant id, redirect uri) of the active providers, for the login pages (login url: <c>oauth/{slug}/login</c>).</remarks>
 	/// <param name="membershipId">Membership id</param>
 	[HttpGet("active-providers")]
 	[Unauthorized]
@@ -101,6 +101,8 @@ public class ProvidersController : ControllerBase
 				{
 					_id = appleProvider.Id,
 					name = appleProvider.Name,
+					slug = appleProvider.Slug,
+					type = appleProvider.Type.ToString(),
 					appClientId = appleProvider.AppClientId,
 					redirectUri = appleProvider.RedirectUri,
 					membership_id = appleProvider.MembershipId
@@ -109,6 +111,8 @@ public class ProvidersController : ControllerBase
 				{
 					_id = facebookProvider.Id,
 					name = facebookProvider.Name,
+					slug = facebookProvider.Slug,
+					type = facebookProvider.Type.ToString(),
 					appClientId = facebookProvider.AppClientId,
 					membership_id = facebookProvider.MembershipId
 				},
@@ -116,6 +120,8 @@ public class ProvidersController : ControllerBase
 				{
 					_id = googleProvider.Id,
 					name = googleProvider.Name,
+					slug = googleProvider.Slug,
+					type = googleProvider.Type.ToString(),
 					appClientId = googleProvider.AppClientId,
 					membership_id = googleProvider.MembershipId
 				},
@@ -123,6 +129,8 @@ public class ProvidersController : ControllerBase
 				{
 					_id = microsoftProvider.Id,
 					name = microsoftProvider.Name,
+					slug = microsoftProvider.Slug,
+					type = microsoftProvider.Type.ToString(),
 					appClientId = microsoftProvider.AppClientId,
 					tenantId = microsoftProvider.TenantId,
 					membership_id = microsoftProvider.MembershipId
@@ -139,7 +147,7 @@ public class ProvidersController : ControllerBase
 	#region Create Methods
 	
 	/// <summary>Create a provider</summary>
-	/// <remarks>The <c>type</c> (Google, Facebook, Microsoft, Apple or AppleNative) is required and can't be changed later; <c>name</c> defaults to the type and <c>slug</c> to the name. An active provider needs <c>defaultRole</c>, <c>defaultUserType</c> and <c>appClientId</c> (Apple types also <c>teamId</c>, <c>privateKey</c>, <c>privateKeyId</c> and <c>redirectUri</c>).</remarks>
+	/// <remarks>The <c>type</c> (Google, Facebook, Microsoft, Apple or AppleNative) is required and can't be changed later; <c>name</c> defaults to the type and <c>slug</c> to the name. The slug is unique in the membership, can't be changed later and is the provider's login url (<c>oauth/{slug}/login</c>); several providers of the same type can be created. An active provider needs <c>defaultRole</c>, <c>defaultUserType</c> and <c>appClientId</c> (Apple types also <c>teamId</c>, <c>privateKey</c>, <c>privateKeyId</c> and <c>redirectUri</c>).</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="model">Provider</param>
 	/// <param name="cancellationToken">Cancellation token</param>
@@ -262,7 +270,7 @@ public class ProvidersController : ControllerBase
 	#region Update Methods
 	
 	/// <summary>Update a provider</summary>
-	/// <remarks>The provider's <c>type</c> can't be changed. Omitted fields keep their current values. **Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
+	/// <remarks>The provider's <c>type</c> and <c>slug</c> can't be changed (a different slug answers 400 <c>ProviderSlugCannotBeChanged</c>). Omitted fields keep their current values. **Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Provider id</param>
 	/// <param name="model">Provider</param>

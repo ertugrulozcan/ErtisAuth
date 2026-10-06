@@ -1,14 +1,18 @@
+using System.Text.Json;
 using Ertis.Core.Models;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Apple;
+using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Integrations.OAuth.Facebook;
 using ErtisAuth.Integrations.OAuth.Google;
 using ErtisAuth.Integrations.OAuth.Microsoft;
 using ErtisAuth.Extensions.AspNetCore.Extensions;
 using ErtisAuth.WebAPI.Models.Tokens;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace ErtisAuth.WebAPI.Controllers;
 
@@ -22,6 +26,7 @@ public class TokensController : ControllerBase
 	private readonly IUserService _userService;
 	private readonly IProviderService _providerService;
 	private readonly IOneTimePasswordService _oneTimePasswordService;
+	private readonly JsonSerializerOptions _jsonSerializerOptions;
 	
 	#endregion
 	
@@ -34,16 +39,19 @@ public class TokensController : ControllerBase
 	/// <param name="userService"></param>
 	/// <param name="providerService"></param>
 	/// <param name="oneTimePasswordService"></param>
+	/// <param name="jsonOptions"></param>
 	public TokensController(
 		ITokenService tokenService, 
 		IUserService userService, 
 		IProviderService providerService, 
-		IOneTimePasswordService oneTimePasswordService)
+		IOneTimePasswordService oneTimePasswordService,
+		IOptions<JsonOptions> jsonOptions)
 	{
 		this._tokenService = tokenService;
 		this._userService = userService;
 		this._providerService = providerService;
 		this._oneTimePasswordService = oneTimePasswordService;
+		this._jsonSerializerOptions = jsonOptions.Value.JsonSerializerOptions;
 	}
 	
 	#endregion
@@ -447,12 +455,24 @@ public class TokensController : ControllerBase
 	
 	#region Provider Methods
 	
-	/// <summary>Sign in with Facebook</summary>
-	/// <remarks>Signs in (or signs up) the user with a Facebook login result. <c>limited_flow=true</c> is for Facebook Limited Login. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). The optional <c>X-IpAddress</c> and <c>X-UserAgent</c> headers are stored with the active token.</remarks>
-	/// <param name="request">Facebook login result</param>
+	/// <summary>Sign in with a provider</summary>
+	/// <remarks>
+	/// Signs in (or signs up) the user with the login result of the provider whose slug is given in the url (several
+	/// providers of the same type can be used, e.g. for different apps). The body is the login result of the provider's type:
+	/// 
+	/// - **Facebook:** <c>{ "appId", "user": { "id", "first_name", "last_name", "email", "accessToken", ... } }</c>; <c>limited_flow=true</c> is for Facebook Limited Login.
+	/// - **Google:** <c>{ "clientId", "token": { "idToken", "clientId", ... } }</c>
+	/// - **Microsoft:** <c>{ "clientId", "token": { "accessToken", ... } }</c>
+	/// - **Apple, AppleNative:** <c>{ "user": { "name": { "firstName", "lastName" }, "email" }, "authorization": { "code", "id_token" } }</c>
+	/// 
+	/// The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). The optional <c>X-IpAddress</c> and <c>X-UserAgent</c> headers are stored with the active token.
+	/// **Note:** an unknown slug answers 403 (<c>ProviderNotConfigured</c>), like a provider that was never set up.
+	/// </remarks>
+	/// <param name="slug">Provider slug</param>
+	/// <param name="body">Login result of the provider</param>
 	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
-	[Route("oauth/facebook/login")]
+	[Route("oauth/{slug}/login")]
 	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
@@ -460,13 +480,21 @@ public class TokensController : ControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status501NotImplemented)]
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status503ServiceUnavailable)]
-	public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequest request, CancellationToken cancellationToken = default)
+	public async Task<IActionResult> ProviderLogin([FromRoute] string slug, [FromBody] JsonElement body, CancellationToken cancellationToken = default)
 	{
 		var membershipId = this.GetMembershipId();
 		if (string.IsNullOrEmpty(membershipId))
 		{
 			return this.MembershipIdRequired();
 		}
+		
+		var provider = await this._providerService.GetBySlugAsync(slug, membershipId, cancellationToken: cancellationToken);
+		if (provider == null)
+		{
+			throw ErtisAuthException.ProviderNotConfigured();
+		}
+		
+		var request = this.ReadLoginRequest(provider, body);
 		
 		string? ipAddress = null;
 		if (this.Request.Headers.TryGetValue("X-IpAddress", out var ipAddressHeader))
@@ -480,16 +508,11 @@ public class TokensController : ControllerBase
 			userAgent = userAgentHeader.ToString();
 		}
 		
-		if (this.Request.Query.ContainsKey("limited_flow") && this.Request.Query["limited_flow"] == "true")
-		{
-			request.IsLimited = true;
-		}
-		
 		return this.Created(
 			$"{this.Request.Scheme}://{this.Request.Host}", 
 			await this._providerService.LoginAsync(
+				provider, 
 				request, 
-				membershipId, 
 				ipAddress: ipAddress, 
 				userAgent: userAgent,
 				cancellationToken: cancellationToken
@@ -497,151 +520,39 @@ public class TokensController : ControllerBase
 		);
 	}
 	
-	/// <summary>Sign in with Google</summary>
-	/// <remarks>Signs in (or signs up) the user with a Google login result. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). The optional <c>X-IpAddress</c> and <c>X-UserAgent</c> headers are stored with the active token.</remarks>
-	/// <param name="request">Google login result</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	[HttpPost]
-	[Route("oauth/google/login")]
-	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status501NotImplemented)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status503ServiceUnavailable)]
-	public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken = default)
+	/// <summary>
+	/// The body is bound by the provider's type, which is known only after the provider is read by its slug.
+	/// </summary>
+	private IProviderLoginRequest ReadLoginRequest(Provider provider, JsonElement body)
 	{
-		var membershipId = this.GetMembershipId();
-		if (string.IsNullOrEmpty(membershipId))
+		try
 		{
-			return this.MembershipIdRequired();
+			switch (provider)
+			{
+				case FacebookProvider:
+					var facebookLoginRequest = body.Deserialize<FacebookLoginRequest>(this._jsonSerializerOptions) ?? throw ErtisAuthException.InvalidProviderLoginRequest(provider.Type.ToString());
+					facebookLoginRequest.IsLimited = this.Request.Query.TryGetValue("limited_flow", out var limitedFlow) && limitedFlow == "true";
+					return facebookLoginRequest;
+				case GoogleProvider:
+					return body.Deserialize<GoogleLoginRequest>(this._jsonSerializerOptions) ?? throw ErtisAuthException.InvalidProviderLoginRequest(provider.Type.ToString());
+				case MicrosoftProvider:
+					return body.Deserialize<MicrosoftLoginRequest>(this._jsonSerializerOptions) ?? throw ErtisAuthException.InvalidProviderLoginRequest(provider.Type.ToString());
+				case BaseAppleProvider:
+					var appleLoginModel = body.Deserialize<AppleLoginModel>(this._jsonSerializerOptions) ?? throw ErtisAuthException.InvalidProviderLoginRequest(provider.Type.ToString());
+					return appleLoginModel.ToLoginRequest(provider is AppleNativeProvider);
+				default:
+					throw ErtisAuthException.UnsupportedProvider();
+			}
 		}
-		
-		string? ipAddress = null;
-		if (this.Request.Headers.TryGetValue("X-IpAddress", out var ipAddressHeader))
+		catch (JsonException ex)
 		{
-			ipAddress = ipAddressHeader.ToString();
+			throw ErtisAuthException.InvalidProviderLoginRequest(provider.Type.ToString(), ex.Message);
 		}
-		
-		string? userAgent = null;
-		if (this.Request.Headers.TryGetValue("X-UserAgent", out var userAgentHeader))
+		catch (ArgumentException ex)
 		{
-			userAgent = userAgentHeader.ToString();
+			// Apple: an id_token that can't be read
+			throw ErtisAuthException.InvalidProviderLoginRequest(provider.Type.ToString(), ex.Message);
 		}
-		
-		return this.Created(
-			$"{this.Request.Scheme}://{this.Request.Host}", 
-			await this._providerService.LoginAsync(
-				request, 
-				membershipId, 
-				ipAddress: ipAddress, 
-				userAgent: userAgent,
-				cancellationToken: cancellationToken
-			)
-		);
-	}
-	
-	/// <summary>Sign in with Microsoft</summary>
-	/// <remarks>Signs in (or signs up) the user with a Microsoft login result. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). The optional <c>X-IpAddress</c> and <c>X-UserAgent</c> headers are stored with the active token.</remarks>
-	/// <param name="request">Microsoft login result</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	[HttpPost]
-	[Route("oauth/microsoft/login")]
-	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status501NotImplemented)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status503ServiceUnavailable)]
-	public async Task<IActionResult> MicrosoftLogin([FromBody] MicrosoftLoginRequest request, CancellationToken cancellationToken = default)
-	{
-		var membershipId = this.GetMembershipId();
-		if (string.IsNullOrEmpty(membershipId))
-		{
-			return this.MembershipIdRequired();
-		}
-		
-		string? ipAddress = null;
-		if (this.Request.Headers.TryGetValue("X-IpAddress", out var ipAddressHeader))
-		{
-			ipAddress = ipAddressHeader.ToString();
-		}
-		
-		string? userAgent = null;
-		if (this.Request.Headers.TryGetValue("X-UserAgent", out var userAgentHeader))
-		{
-			userAgent = userAgentHeader.ToString();
-		}
-		
-		return this.Created(
-			$"{this.Request.Scheme}://{this.Request.Host}", 
-			await this._providerService.LoginAsync(
-				request, 
-				membershipId, 
-				ipAddress: ipAddress, 
-				userAgent: userAgent,
-				cancellationToken: cancellationToken
-			)
-		);
-	}
-	
-	/// <summary>Sign in with Apple</summary>
-	/// <remarks>Signs in (or signs up) the user with a Sign in with Apple result. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). The optional <c>X-IpAddress</c> and <c>X-UserAgent</c> headers are stored with the active token.</remarks>
-	/// <param name="request">Sign in with Apple result</param>
-	/// <param name="platform">Client platform: <c>ios</c>, <c>android</c> or <c>web</c></param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	[HttpPost]
-	[Route("oauth/apple/login")]
-	[ProducesResponseType<BearerToken>(StatusCodes.Status201Created)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status501NotImplemented)]
-	[ProducesResponseType<ErrorModel>(StatusCodes.Status503ServiceUnavailable)]
-	public async Task<IActionResult> AppleLogin([FromBody] AppleLoginModel request, [FromQuery] string platform, CancellationToken cancellationToken = default)
-	{
-		var membershipId = this.GetMembershipId();
-		if (string.IsNullOrEmpty(membershipId))
-		{
-			return this.MembershipIdRequired();
-		}
-		
-		var platforms = new []
-		{
-			"ios", "android", "web"
-		};
-		
-		if (!string.IsNullOrEmpty(platform) && !platforms.Contains(platform))
-		{
-			return this.UnknownPlatform(platform);
-		}
-		
-		string? ipAddress = null;
-		if (this.Request.Headers.TryGetValue("X-IpAddress", out var ipAddressHeader))
-		{
-			ipAddress = ipAddressHeader.ToString();
-		}
-		
-		string? userAgent = null;
-		if (this.Request.Headers.TryGetValue("X-UserAgent", out var userAgentHeader))
-		{
-			userAgent = userAgentHeader.ToString();
-		}
-		
-		return this.Created(
-			$"{this.Request.Scheme}://{this.Request.Host}", 
-			await this._providerService.LoginAsync(
-				request.ToLoginRequest(platform == "ios"), 
-				membershipId, 
-				ipAddress: ipAddress, 
-				userAgent: userAgent,
-				cancellationToken: cancellationToken
-			)
-		);
 	}
 	
 	#endregion

@@ -7,17 +7,11 @@ namespace ErtisAuth.Dao.Serialization;
 
 public static class ProviderDiscriminatorConvention
 {
-	#region Constants
-	
-	public const string ElementName = "type";
-	
-	#endregion
-	
 	#region Methods
 	
 	public static void Register()
 	{
-		var convention = new ScalarDiscriminatorConvention(ElementName);
+		var convention = new ScalarDiscriminatorConvention("type");
 		
 		BsonSerializer.RegisterDiscriminatorConvention(typeof(Provider), convention);
 		BsonSerializer.RegisterDiscriminatorConvention(typeof(BaseAppleProvider), convention);

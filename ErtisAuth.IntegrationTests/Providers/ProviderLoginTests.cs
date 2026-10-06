@@ -111,8 +111,8 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 	private static string[] ConnectedAccountsOf(JsonObject user, string provider)
 	{
 		return user["connected_accounts"]?.AsArray()
-			.Where(x => x!["Provider"]!.GetValue<string>() == provider)
-			.Select(x => x!["UserId"]!.GetValue<string>())
+			.Where(x => x!["provider"]!.GetValue<string>() == provider)
+			.Select(x => x!["user_id"]!.GetValue<string>())
 			.ToArray() ?? [];
 	}
 	
@@ -284,8 +284,8 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 			Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(victimId)),
 			Builders<BsonDocument>.Update.Set("connected_accounts", new BsonArray
 			{
-				new BsonDocument { { "Provider", "Google" }, { "UserId", googleId } },
-				new BsonDocument { { "Provider", "Facebook" }, { "UserId", Guid.NewGuid().ToString("N") } }
+				new BsonDocument { { "provider", "Google" }, { "slug", "google" }, { "user_id", googleId } },
+				new BsonDocument { { "provider", "Facebook" }, { "slug", "facebook" }, { "user_id", Guid.NewGuid().ToString("N") } }
 			}),
 			cancellationToken: CancellationToken);
 		
@@ -348,7 +348,7 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 		var appleEmail = $"{Guid.NewGuid():N}@privaterelay.appleid.com";
 		this.Providers.RespondToAppleCodeExchange(AppleClientId, appleSub, appleEmail);
 		
-		var (user, _) = await this.AssertLoginAsync(await this.LoginAsync("apple", this.AppleLogin("forged-sub", $"victim-{Guid.NewGuid():N}@example.com"), "?platform=web"));
+		var (user, _) = await this.AssertLoginAsync(await this.LoginAsync("apple", this.AppleLogin("forged-sub", $"victim-{Guid.NewGuid():N}@example.com")));
 		
 		Assert.Equal(appleEmail, user["email_address"]!.GetValue<string>());
 		Assert.Equal([appleSub], ConnectedAccountsOf(user, "Apple"));
@@ -363,7 +363,7 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 	{
 		this.Providers.RespondToAppleCodeExchange(AppleClientId, $"000123.{Guid.NewGuid():N}.0456", $"{Guid.NewGuid():N}@privaterelay.appleid.com");
 		this.Providers.Respond(FakeOAuthProviders.AppleRevokeUrl, "{}");
-		var (_, accessToken) = await this.AssertLoginAsync(await this.LoginAsync("apple", this.AppleLogin("client-sub", "client@example.com"), "?platform=web"));
+		var (_, accessToken) = await this.AssertLoginAsync(await this.LoginAsync("apple", this.AppleLogin("client-sub", "client@example.com")));
 		var revokeCountBefore = this.Providers.RequestsTo(FakeOAuthProviders.AppleRevokeUrl).Count();
 		
 		using var response = await this._instance.CreateClient($"Bearer {accessToken}").GetAsync("/revoke-token", CancellationToken);
@@ -392,10 +392,166 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 		var appleEmail = $"{Guid.NewGuid():N}@privaterelay.appleid.com";
 		this.Providers.RespondToAppleCodeExchange(AppleClientId, appleSub, appleEmail);
 		
-		var (user, _) = await this.AssertLoginAsync(await this.SendLoginAsync("apple", this.AppleLogin("forged-sub", $"victim-{Guid.NewGuid():N}@example.com"), "?platform=ios"));
+		var (user, _) = await this.AssertLoginAsync(await this.SendLoginAsync("applenative", this.AppleLogin("forged-sub", $"victim-{Guid.NewGuid():N}@example.com")));
 		
 		Assert.Equal(appleEmail, user["email_address"]!.GetValue<string>());
 		Assert.Equal([appleSub], ConnectedAccountsOf(user, "AppleNative"));
+	}
+	
+	#endregion
+	
+	#region Providers Of The Same Type
+	
+	private const string SecondMicrosoftSlug = "microsoft-second-app";
+	
+	private const string SecondMicrosoftClientId = "microsoft-second-client-id";
+	
+	private async Task ConfigureSecondMicrosoftProviderAsync()
+	{
+		await this._instance.ConfigureProviderAsync("Microsoft", x => x["appClientId"] = SecondMicrosoftClientId, SecondMicrosoftSlug);
+	}
+	
+	/// <summary>
+	/// Two Microsoft providers (two apps): each login is verified with its own provider's settings, the same Microsoft
+	/// account is the same user, and the user gets a connected account per provider.
+	/// </summary>
+	[Fact]
+	public async Task SameType_EachProviderSignsInTheSameUserWithItsOwnAccount()
+	{
+		await this.ConfigureProvidersAsync();
+		await this.ConfigureSecondMicrosoftProviderAsync();
+		var graphId = Guid.NewGuid().ToString("N");
+		this.Providers.Respond(FakeOAuthProviders.MicrosoftMeUrl, new { id = graphId, mail = $"{graphId}@example.com", givenName = "Graph", surname = "User" });
+		
+		var (first, _) = await this.AssertLoginAsync(await this.SendLoginAsync(SecondMicrosoftSlug, MicrosoftLogin(clientId: SecondMicrosoftClientId)));
+		var (second, _) = await this.AssertLoginAsync(await this.SendLoginAsync("microsoft", MicrosoftLogin()));
+		
+		Assert.Equal(first["_id"]!.GetValue<string>(), second["_id"]!.GetValue<string>());
+		var accounts = second["connected_accounts"]!.AsArray();
+		Assert.Equal([SecondMicrosoftSlug, "microsoft"], accounts.Select(x => x!["slug"]!.GetValue<string>()));
+		Assert.All(accounts, x => Assert.Equal("Microsoft", x!["provider"]!.GetValue<string>()));
+		Assert.All(accounts, x => Assert.Equal(graphId, x!["user_id"]!.GetValue<string>()));
+		
+		// Stored with the lower case element names
+		var stored = await this._instance.Database.GetCollection<BsonDocument>("users").Find(Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(second["_id"]!.GetValue<string>()))).SingleAsync(CancellationToken);
+		Assert.All(stored["connected_accounts"].AsBsonArray, x => Assert.Equal(["provider", "slug", "token", "user_id"], x.AsBsonDocument.Names.Order()));
+	}
+	
+	[Fact]
+	public async Task SameType_TokenOfTheOtherProvidersApp_IsRejected()
+	{
+		await this.ConfigureProvidersAsync();
+		await this.ConfigureSecondMicrosoftProviderAsync();
+		
+		using var response = await this.SendLoginAsync(SecondMicrosoftSlug, MicrosoftLogin());
+		
+		await AssertErrorAsync(response, HttpStatusCode.Forbidden, "UntrustedProvider");
+	}
+	
+	/// <summary>
+	/// The Apple token is revoked with the provider (client id) that issued it, not with the other Apple provider.
+	/// </summary>
+	[Fact]
+	public async Task SameType_LogoutRevokesTheTokenWithItsOwnProvider()
+	{
+		const string clientId = "com.example.second";
+		await this.ConfigureProvidersAsync();
+		await this._instance.ConfigureProviderAsync("Apple", x =>
+		{
+			x["appClientId"] = clientId;
+			x["teamId"] = "TEAM123456";
+			x["privateKeyId"] = "KEY1234567";
+			x["privateKey"] = FakeOAuthProviders.CreateApplePrivateKeyPem();
+			x["redirectUri"] = "https://second.example.com/apple/callback";
+		}, "apple-second-app");
+		this.Providers.RespondToAppleCodeExchange(clientId, $"000123.{Guid.NewGuid():N}.0456", $"{Guid.NewGuid():N}@privaterelay.appleid.com");
+		this.Providers.Respond(FakeOAuthProviders.AppleRevokeUrl, "{}");
+		var (_, accessToken) = await this.AssertLoginAsync(await this.SendLoginAsync("apple-second-app", this.AppleLogin("client-sub", "client@example.com")));
+		
+		using var response = await this._instance.CreateClient($"Bearer {accessToken}").GetAsync("/revoke-token", CancellationToken);
+		await ResourceClient.AssertStatusAsync(response, HttpStatusCode.NoContent);
+		
+		var revoke = this.Providers.RequestsTo(FakeOAuthProviders.AppleRevokeUrl).Last();
+		Assert.Contains($"client_id={Uri.EscapeDataString(clientId)}", revoke.Body);
+	}
+	
+	/// <summary>
+	/// A user type stored before the connected accounts got their lower case names (and slug) keeps a copy of the base
+	/// user type's connected_accounts definition (Provider/UserId, unique by Provider), which rejects the new accounts:
+	/// the rollout migration of the user types (the same $set as below) lets its users sign in.
+	/// </summary>
+	[Fact]
+	public async Task UserTypeWithTheFormerConnectedAccountsDefinition_SignsInAfterTheMigration()
+	{
+		// ReSharper disable once MethodHasAsyncOverload
+		var document = BsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "UserTypes", "Data", "sample-user-type.bson.js")));
+		document["_id"] = ObjectId.GenerateNewId();
+		document["name"] = $"Former Member {Guid.NewGuid():N}";
+		document["slug"] = $"former-member-{Guid.NewGuid():N}";
+		document["membership_id"] = this._instance.MembershipId;
+		Assert.True(document["properties"]["connected_accounts"]["itemSchema"]["properties"].AsBsonDocument.Contains("Provider"));
+		var userTypes = this._instance.Database.GetCollection<BsonDocument>("user-types");
+		await userTypes.InsertOneAsync(document, cancellationToken: CancellationToken);
+		
+		// db["user-types"].updateMany({"properties.connected_accounts": {$exists: true}}, {$set: {...}})
+		var itemProperties = new BsonDocument
+		{
+			{ "provider", new BsonDocument { { "type", "string" }, { "isRequired", true } } },
+			{ "slug", new BsonDocument { { "type", "string" }, { "isRequired", true } } },
+			{ "user_id", new BsonDocument { { "type", "string" }, { "isRequired", true } } },
+			{ "token", new BsonDocument { { "type", "string" } } }
+		};
+		await userTypes.UpdateManyAsync(
+			Builders<BsonDocument>.Filter.And(Builders<BsonDocument>.Filter.Eq("_id", document["_id"]), Builders<BsonDocument>.Filter.Exists("properties.connected_accounts")),
+			Builders<BsonDocument>.Update
+				.Set("properties.connected_accounts.itemSchema.properties", itemProperties)
+				.Set("properties.connected_accounts.uniqueBy", new BsonArray { "slug" }),
+			cancellationToken: CancellationToken);
+		
+		await this.ConfigureProvidersAsync();
+		await this._instance.ConfigureProviderAsync("Microsoft", x =>
+		{
+			x["appClientId"] = SecondMicrosoftClientId;
+			x["defaultUserType"] = document["slug"].AsString;
+		}, "microsoft-former-member");
+		var graphId = Guid.NewGuid().ToString("N");
+		this.Providers.Respond(FakeOAuthProviders.MicrosoftMeUrl, new { id = graphId, mail = $"{graphId}@example.com", givenName = "Former", surname = "Member" });
+		
+		var (user, _) = await this.AssertLoginAsync(await this.SendLoginAsync("microsoft-former-member", MicrosoftLogin(clientId: SecondMicrosoftClientId)));
+		
+		Assert.Equal([graphId], ConnectedAccountsOf(user, "Microsoft"));
+	}
+	
+	#endregion
+	
+	#region Request
+	
+	[Fact]
+	public async Task UnknownSlug_IsNotConfigured()
+	{
+		using var response = await this.SendLoginAsync("unknown-provider", MicrosoftLogin());
+		
+		await AssertErrorAsync(response, HttpStatusCode.Forbidden, "ProviderNotConfigured");
+	}
+	
+	[Fact]
+	public async Task BodyOfAnotherShape_IsABadRequest()
+	{
+		await this.ConfigureProvidersAsync();
+		
+		using var response = await this.SendLoginAsync("microsoft", new[] { 1, 2 });
+		
+		await AssertErrorAsync(response, HttpStatusCode.BadRequest, "InvalidProviderLoginRequest");
+	}
+	
+	[Fact]
+	public async Task Apple_WithoutAuthorization_IsABadRequest()
+	{
+		await this.ConfigureProvidersAsync();
+		
+		using var response = await this.SendLoginAsync("apple", new { user = new { email = "client@example.com" } });
+		
+		await AssertErrorAsync(response, HttpStatusCode.BadRequest, "InvalidProviderLoginRequest");
 	}
 	
 	#endregion
@@ -408,7 +564,7 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 		await this.ConfigureProvidersAsync();
 		await this._instance.ConfigureProviderAsync("AppleNative", x => x["isActive"] = false);
 		
-		using var response = await this.LoginAsync("apple", this.AppleLogin("client-sub", "client@example.com"), "?platform=ios");
+		using var response = await this.SendLoginAsync("applenative", this.AppleLogin("client-sub", "client@example.com"));
 		
 		await AssertErrorAsync(response, HttpStatusCode.Forbidden, "ProviderIsDisable");
 	}
