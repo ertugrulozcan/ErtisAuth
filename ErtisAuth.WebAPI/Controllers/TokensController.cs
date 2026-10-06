@@ -416,7 +416,7 @@ public class TokensController : ControllerBase
 	}
 	
 	/// <summary>Verify a one time password</summary>
-	/// <remarks>Verifies the one time password (<c>password</c>) of the user (<c>username</c> or email address) and returns a reset token, to set a new password with the set password endpoint. The <c>X-Host</c> header must match the OTP host of the membership. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). **Note:** the returned token is not an access token. Failed attempts are limited; the one time password is deleted when they are used up.</remarks>
+	/// <remarks>Verifies the one time password (<c>password</c>) of the user (<c>username</c> or email address) and returns a reset token, to set a new password with the set password endpoint. The <c>X-Host</c> header must match the OTP host of the membership. The membership is given by the <c>X-Ertis-Alias</c> header (or <c>Membership</c>, <c>MembershipId</c>). The reset token is generated now, and a one time password can be used only once. **Note:** the returned token is not an access token. Failed attempts are limited; the one time password is deleted when they are used up.</remarks>
 	/// <param name="model">Username and one time password</param>
 	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpPost]
@@ -441,10 +441,10 @@ public class TokensController : ControllerBase
 			return this.InvalidCredentials();
 		}
 		
-		var otp = await this._oneTimePasswordService.VerifyOtpAsync(username, password, membershipId, host, cancellationToken: cancellationToken);
-		if (otp != null)
+		var resetPasswordToken = await this._oneTimePasswordService.VerifyOtpAsync(username, password, membershipId, host, cancellationToken: cancellationToken);
+		if (resetPasswordToken != null)
 		{
-			return this.Ok(otp.Token);
+			return this.Ok(resetPasswordToken);
 		}
 		else
 		{

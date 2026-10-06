@@ -1,12 +1,12 @@
 using System.Security.Cryptography;
 using System.Text;
 using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Constants;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Helpers;
-using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -17,7 +17,6 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	private readonly IUserService _userService;
 	private readonly IPasswordResetService _passwordResetService;
 	private readonly IOneTimePasswordRepository _oneTimePasswordRepository;
-	private readonly ILogger<OneTimePasswordService> _logger;
 	
 	#endregion
 	
@@ -30,18 +29,15 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	/// <param name="userService"></param>
 	/// <param name="passwordResetService"></param>
 	/// <param name="repository"></param>
-	/// <param name="logger"></param>
 	public OneTimePasswordService(
 		IMembershipService membershipService,
 		IUserService userService, 
 		IPasswordResetService passwordResetService,
-		IOneTimePasswordRepository repository,
-		ILogger<OneTimePasswordService> logger) : base(membershipService, repository)
+		IOneTimePasswordRepository repository) : base(membershipService, repository)
 	{
 		this._userService = userService;
 		this._passwordResetService = passwordResetService;
 		this._oneTimePasswordRepository = repository;
-		this._logger = logger;
 	}
 	
 	#endregion
@@ -90,11 +86,6 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		if (string.IsNullOrEmpty(model.PasswordHash))
 		{
 			errorList.Add($"The {nameof(model.PasswordHash)} is required.");
-		}
-		
-		if (model.Token == null)
-		{
-			errorList.Add($"The {nameof(model.Token)} is required.");
 		}
 		
 		return Task.FromResult<IEnumerable<string>>(errorList);
@@ -149,6 +140,12 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			throw ErtisAuthException.UserNotFound(userId, "userId");
 		}
 		
+		// Inactive or frozen accounts can't recover their password
+		if (!user.IsActive)
+		{
+			throw ErtisAuthException.UserInactive(user.Id);
+		}
+		
 		// Only the hash of a code is stored, so an active code can't be returned again: a new one replaces it
 		var previousOtps = await this._repository.FindAsync(x => x.MembershipId == membershipId && x.UserId == user.Id, sorting: null, cancellationToken: cancellationToken);
 		foreach (var previousOtp in previousOtps.Items)
@@ -158,14 +155,20 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		
 		var policy = membership.OtpSettings.Policy;
 		var code = RandomCodeGenerator.Generate(policy.Length, policy.ContainsLetters, policy.ContainsDigits);
-		var resetPasswordToken = await this._passwordResetService.GenerateResetPasswordTokenAsync(user, membership, true, ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword, cancellationToken: cancellationToken);
+		
+		// No reset token yet: it is generated when the code is verified, so only the one who knows the code gets it
+		// (not the caller generating the code, nor a reader of the database)
+		var expiresIn = policy.ExpiresIn is > 0 ? policy.ExpiresIn.Value : (int) TTLs.RESET_PASSWORD_TOKEN_TTL.TotalSeconds;
+		var now = DateTime.UtcNow;
 		var model = new OneTimePassword
 		{
 			UserId = user.Id,
 			EmailAddress = user.EmailAddress,
 			Username = user.Username,
 			PasswordHash = HashCode(membership, user.Id, code),
-			Token = resetPasswordToken,
+			ExpiresIn = expiresIn,
+			CreatedAt = now,
+			ExpireTime = now.AddSeconds(expiresIn),
 			MembershipId = membershipId
 		};
 		
@@ -197,7 +200,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		return CryptographicOperations.FixedTimeEquals(expected, actual);
 	}
 	
-	public async Task<OneTimePassword?> VerifyOtpAsync(
+	public async Task<ResetPasswordToken?> VerifyOtpAsync(
 		string username, 
 		string password, 
 		string membershipId, 
@@ -216,7 +219,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		}
 		
 		var otp = await this._repository.FindOneAsync(x => x.MembershipId == membershipId && (x.Username == username || x.EmailAddress == username), cancellationToken: cancellationToken);
-		if (otp?.Token == null)
+		if (otp == null)
 		{
 			return null;
 		}
@@ -241,33 +244,26 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			return null;
 		}
 		
-		// Not a failed attempt: give the reservation back
-		await this._oneTimePasswordRepository.ReleaseAttemptAsync(otp.Id, cancellationToken: cancellationToken);
-		
-		if (otp.Token.IsExpired)
+		if (otp.IsExpired)
 		{
+			await this._repository.DeleteAsync(otp.Id, cancellationToken: cancellationToken);
 			throw ErtisAuthException.OtpExpired();
 		}
 		
-		// The one-time password stays until set-password consumes its reset token (RevokeResetPasswordTokenAsync)
-		return otp;
-	}
-	
-	public async Task RevokeResetPasswordTokenAsync(Utilizer utilizer, string membershipId, string resetToken, CancellationToken cancellationToken = default)
-	{
-		try
+		// Single use: only the request that deletes the one-time password gets a reset token
+		if (!await this._repository.DeleteAsync(otp.Id, cancellationToken: cancellationToken))
 		{
-			await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-			var otp = await this._repository.FindOneAsync(x => x.MembershipId == membershipId && x.Token != null && x.Token.Token == resetToken, cancellationToken: cancellationToken);
-			if (otp != null)
-			{
-				await this.DeleteAsync(otp.Id, membershipId, utilizer, cancellationToken: cancellationToken);
-			}
+			return null;
 		}
-		catch (Exception ex)
+		
+		var user = await this._userService.GetUserAsync(otp.UserId!, membershipId, cancellationToken: cancellationToken);
+		if (user == null)
 		{
-			this._logger.LogError(ex, "OneTimePasswordService.RevokeResetPasswordTokenAsync occured an error");
+			return null;
 		}
+		
+		// The reset token's lifetime is the one-time password policy's, from now on
+		return await this._passwordResetService.GenerateResetPasswordTokenAsync(user, membership, true, ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword, cancellationToken: cancellationToken);
 	}
 	
 	#endregion

@@ -4,13 +4,17 @@ using System.Text.Json.Nodes;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.IntegrationTests.Infrastructure;
+using ErtisAuth.IntegrationTests.Resources;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace ErtisAuth.IntegrationTests.Otp;
 
 /// <summary>
-/// The OTP attempt limit on a real MongoDB: attempts are reserved atomically (FindOneAndUpdate with the limit in the
-/// filter), so parallel guesses can't exceed max_attempts. The unit tests only mock this filter.
+/// One-time passwords on a real MongoDB: the attempt limit (attempts are reserved atomically, FindOneAndUpdate with the
+/// limit in the filter, so parallel guesses can't exceed max_attempts) and the whole recovery flow, in which the reset
+/// token exists only after the code is verified.
 /// </summary>
 public class OtpAttemptTests : IClassFixture<ErtisAuthInstance>
 {
@@ -53,7 +57,9 @@ public class OtpAttemptTests : IClassFixture<ErtisAuthInstance>
 			Username = $"otp-user-{Guid.NewGuid():N}",
 			EmailAddress = "otp.user@example.com",
 			PasswordHash = "hash",
-			Token = new ResetPasswordToken("reset-token", TimeSpan.FromMinutes(5))
+			ExpiresIn = 300,
+			CreatedAt = DateTime.UtcNow,
+			ExpireTime = DateTime.UtcNow.AddMinutes(5)
 		}, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
@@ -73,10 +79,10 @@ public class OtpAttemptTests : IClassFixture<ErtisAuthInstance>
 		});
 	}
 	
-	private async Task<HttpResponseMessage> VerifyOtpAsync(string code)
+	private async Task<HttpResponseMessage> VerifyOtpAsync(string code, string username = ErtisAuthInstance.AdminUsername)
 	{
 		using var request = new HttpRequestMessage(HttpMethod.Post, "/verify-otp");
-		request.Content = JsonContent.Create(new { username = ErtisAuthInstance.AdminUsername, password = code });
+		request.Content = JsonContent.Create(new { username, password = code });
 		
 		request.Headers.Add("Membership", this._instance.MembershipId);
 		request.Headers.Add("X-Host", OtpHost);
@@ -125,12 +131,6 @@ public class OtpAttemptTests : IClassFixture<ErtisAuthInstance>
 		var code = otp!["password"]!.GetValue<string>();
 		var wrongCode = code == "999999" ? "888888" : "999999";
 		
-		// A correct verification works and doesn't use up an attempt
-		using (var response = await this.VerifyOtpAsync(code))
-		{
-			Assert.True(response.IsSuccessStatusCode, (await ErtisAuthInstance.ReadJsonAsync(response)).ToString());
-		}
-		
 		// Attack: many parallel guesses
 		var guesses = await Task.WhenAll(Enumerable.Range(0, 3 * MaxAttempts).Select(_ => this.VerifyOtpAsync(wrongCode)));
 		Assert.All(guesses, x => Assert.Equal(HttpStatusCode.Unauthorized, x.StatusCode));
@@ -138,6 +138,59 @@ public class OtpAttemptTests : IClassFixture<ErtisAuthInstance>
 		// The attempts are used up: the one-time password is gone, even the correct code is rejected
 		using var afterAttack = await this.VerifyOtpAsync(code);
 		Assert.Equal(HttpStatusCode.Unauthorized, afterAttack.StatusCode);
+	}
+	
+	[Fact]
+	public async Task OtpRecovery_TheResetTokenExistsOnlyAfterTheVerification()
+	{
+		// Regression: generate-otp returned the reset token (and stored it in plain text), so the caller generating
+		// the code could set the user's password without the code
+		await this.EnableOtpAsync();
+		var adminClient = await this._instance.CreateAdminClientAsync();
+		var users = new ResourceClient(adminClient, $"/memberships/{this._instance.MembershipId}/users");
+		var username = $"otp{Guid.NewGuid():N}";
+		var user = await users.CreateAsync(new
+		{
+			username,
+			firstname = "Otp",
+			lastname = "User",
+			email_address = $"{username}@example.com",
+			password = "Old-P@ssw0rd!",
+			role = "admin",
+			user_type = "user"
+		});
+		var userId = user["_id"]!.GetValue<string>();
+		
+		// The code: no reset token in the response, nor in the database
+		var otp = await adminClient.GetFromJsonAsync<JsonObject>($"/memberships/{this._instance.MembershipId}/users/{userId}/generate-otp", TestContext.Current.CancellationToken);
+		Assert.False(otp!.ContainsKey("token"), otp.ToJsonString());
+		var code = otp["password"]!.GetValue<string>();
+		var stored = await this._instance.Database.GetCollection<BsonDocument>("otps").Find(Builders<BsonDocument>.Filter.Eq("user_id", userId)).SingleAsync(TestContext.Current.CancellationToken);
+		Assert.False(stored.Contains("token"), stored.ToJson());
+		Assert.True(stored.Contains("expire_time"));
+		
+		// The verification gives the reset token, once
+		string resetToken;
+		using (var response = await this.VerifyOtpAsync(code, username))
+		{
+			var body = await ErtisAuthInstance.ReadJsonAsync(response);
+			Assert.True(response.IsSuccessStatusCode, body.ToString());
+			resetToken = body.GetProperty("reset_token").GetString()!;
+		}
+		
+		using (var secondVerification = await this.VerifyOtpAsync(code, username))
+		{
+			Assert.Equal(HttpStatusCode.Unauthorized, secondVerification.StatusCode);
+		}
+		
+		// The reset token sets the new password
+		using (var response = await adminClient.PostAsJsonAsync($"/memberships/{this._instance.MembershipId}/users/set-password", new { username, reset_token = resetToken, password = "New-P@ssw0rd!" }, TestContext.Current.CancellationToken))
+		{
+			Assert.True(response.IsSuccessStatusCode, (await ErtisAuthInstance.ReadJsonAsync(response)).ToString());
+		}
+		
+		using var signIn = await this._instance.RequestTokenAsync(username, "New-P@ssw0rd!");
+		Assert.Equal(HttpStatusCode.Created, signIn.StatusCode);
 	}
 	
 	#endregion

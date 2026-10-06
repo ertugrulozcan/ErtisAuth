@@ -38,7 +38,7 @@ public class StartupIndexTests : IClassFixture<ErtisAuthInstance>
 	[Theory]
 	[InlineData("active_tokens", "retain_until")]
 	[InlineData("revoked_tokens", "retain_until")]
-	[InlineData("otps", "token.expire_time")]
+	[InlineData("otps", "expire_time")]
 	[InlineData("codes", "expire_time")]
 	public async Task Startup_CreatesTheTtlIndexes(string collection, string field)
 	{

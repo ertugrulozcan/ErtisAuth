@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Identity;
@@ -6,7 +7,6 @@ using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Services;
 using ErtisAuth.Infrastructure.Tests.Helpers;
-using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Bson;
 using NSubstitute;
 
@@ -14,7 +14,8 @@ namespace ErtisAuth.Infrastructure.Tests.Services;
 
 /// <summary>
 /// One-time passwords: POST tokens/verify-otp is anonymous and answers with a reset token (set-password),
-/// so codes must be unpredictable, stored only as a keyed hash and protected by an attempt limit.
+/// so codes must be unpredictable, stored only as a keyed hash and protected by an attempt limit. The reset token is
+/// generated only when the code is verified, so only the one who knows the code gets it.
 /// </summary>
 public class OneTimePasswordServiceTests
 {
@@ -96,6 +97,7 @@ public class OneTimePasswordServiceTests
 			Username = Username,
 			EmailAddress = Email,
 			Role = "user",
+			IsActive = true,
 			MembershipId = MembershipId
 		});
 		
@@ -114,8 +116,7 @@ public class OneTimePasswordServiceTests
 			this._membershipService,
 			this._userService,
 			this._passwordResetService,
-			this._repository,
-			NullLogger<OneTimePasswordService>.Instance);
+			this._repository);
 	}
 	
 	private Task<OneTimePassword> GenerateAsync(OneTimePasswordService service)
@@ -123,7 +124,7 @@ public class OneTimePasswordServiceTests
 		return service.GenerateAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, UserId, TestContext.Current.CancellationToken);
 	}
 	
-	private Task<OneTimePassword?> VerifyAsync(OneTimePasswordService service, string code, string username = Username, string? host = Host)
+	private Task<ResetPasswordToken?> VerifyAsync(OneTimePasswordService service, string code, string username = Username, string? host = Host)
 	{
 		return service.VerifyOtpAsync(username, code, MembershipId, host, TestContext.Current.CancellationToken);
 	}
@@ -146,6 +147,31 @@ public class OneTimePasswordServiceTests
 		Assert.Equal(6, otp.Password.Length);
 		Assert.All(otp.Password, x => Assert.True(char.IsAsciiDigit(x)));
 		Assert.NotEqual('0', otp.Password[0]);
+		Assert.Equal(300, otp.ExpiresIn);
+		Assert.Equal(otp.CreatedAt.AddSeconds(300), otp.ExpireTime);
+	}
+	
+	[Fact]
+	public async Task GenerateAsync_GeneratesNoResetToken()
+	{
+		// Regression: the reset token was generated with the code, returned to the caller and stored in plain text,
+		// so the one who generated the code (or a reader of the database) could set the password without the code
+		var otp = await this.GenerateAsync(this.CreateService());
+		
+		await this._passwordResetService.DidNotReceiveWithAnyArgs().GenerateResetPasswordTokenAsync(default!, default!);
+		Assert.DoesNotContain("token", JsonSerializer.Serialize(otp));
+		Assert.False(Assert.Single(this._otps).ToBsonDocument().Contains("token"));
+	}
+	
+	[Fact]
+	public async Task GenerateAsync_ForInactiveUser_ThrowsUserInactive()
+	{
+		(await this._userService.GetUserAsync(UserId, MembershipId, TestContext.Current.CancellationToken))!.IsActive = false;
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateAsync(this.CreateService()));
+		
+		Assert.Equal("UserInactive", exception.ErrorCode);
+		Assert.Empty(this._otps);
 	}
 	
 	[Fact]
@@ -224,9 +250,15 @@ public class OneTimePasswordServiceTests
 		var service = this.CreateService();
 		var otp = await this.GenerateAsync(service);
 		
-		var verified = await this.VerifyAsync(service, otp.Password!, username);
+		var resetToken = await this.VerifyAsync(service, otp.Password!, username);
 		
-		Assert.Equal("reset-token-1", verified?.Token?.Token);
+		Assert.Equal("reset-token-1", resetToken?.Token);
+		await this._passwordResetService.Received(1).GenerateResetPasswordTokenAsync(
+			Arg.Is<User>(x => x.Id == UserId),
+			this._membership,
+			true,
+			ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword,
+			Arg.Any<CancellationToken>());
 	}
 	
 	[Fact]
@@ -240,14 +272,15 @@ public class OneTimePasswordServiceTests
 	}
 	
 	[Fact]
-	public async Task VerifyOtpAsync_DoesNotConsumeTheOneTimePassword()
+	public async Task VerifyOtpAsync_ConsumesTheOneTimePassword()
 	{
-		// It stays until set-password revokes its reset token
+		// Single use: the reset token is handed out once
 		var service = this.CreateService();
 		var otp = await this.GenerateAsync(service);
 		
 		Assert.NotNull(await this.VerifyAsync(service, otp.Password!));
-		Assert.NotNull(await this.VerifyAsync(service, otp.Password!));
+		Assert.Empty(this._otps);
+		Assert.Null(await this.VerifyAsync(service, otp.Password!));
 	}
 	
 	[Fact]
@@ -257,18 +290,6 @@ public class OneTimePasswordServiceTests
 		var otp = await this.GenerateAsync(service);
 		
 		Assert.Null(await this.VerifyAsync(service, WrongCode(otp.Password!)));
-		
-		Assert.Equal(1, Assert.Single(this._otps).FailedAttempts);
-	}
-	
-	[Fact]
-	public async Task VerifyOtpAsync_WithCorrectCode_DoesNotCountAsAFailedAttempt()
-	{
-		var service = this.CreateService();
-		var otp = await this.GenerateAsync(service);
-		await this.VerifyAsync(service, WrongCode(otp.Password!));
-		
-		Assert.NotNull(await this.VerifyAsync(service, otp.Password!));
 		
 		Assert.Equal(1, Assert.Single(this._otps).FailedAttempts);
 	}
@@ -320,12 +341,14 @@ public class OneTimePasswordServiceTests
 	{
 		var service = this.CreateService();
 		var otp = await this.GenerateAsync(service);
-		Assert.Single(this._otps).Token = new ResetPasswordToken("reset-token-1", TimeSpan.FromMinutes(5), DateTime.UtcNow.AddHours(-1));
+		Assert.Single(this._otps).ExpireTime = DateTime.UtcNow.AddSeconds(-1);
 		
 		Assert.Null(await this.VerifyAsync(service, WrongCode(otp.Password!)));
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.VerifyAsync(service, otp.Password!));
 		
 		Assert.Equal("OtpExpired", exception.ErrorCode);
+		Assert.Empty(this._otps);
+		await this._passwordResetService.DidNotReceiveWithAnyArgs().GenerateResetPasswordTokenAsync(default!, default!);
 	}
 	
 	[Fact]
@@ -362,25 +385,12 @@ public class OneTimePasswordServiceTests
 			Username = "jane.doe",
 			EmailAddress = "jane.doe@example.com",
 			PasswordHash = stored.PasswordHash,
-			Token = stored.Token
+			ExpiresIn = stored.ExpiresIn,
+			CreatedAt = stored.CreatedAt,
+			ExpireTime = stored.ExpireTime
 		});
 		
 		Assert.Null(await this.VerifyAsync(service, otp.Password!, "jane.doe"));
-	}
-	
-	#endregion
-	
-	#region Revoke
-	
-	[Fact]
-	public async Task RevokeResetPasswordTokenAsync_DeletesTheOneTimePassword()
-	{
-		var service = this.CreateService();
-		await this.GenerateAsync(service);
-		
-		await service.RevokeResetPasswordTokenAsync(Utilizer.GetSystemUtilizer(MembershipId), MembershipId, "reset-token-1", TestContext.Current.CancellationToken);
-		
-		Assert.Empty(this._otps);
 	}
 	
 	#endregion

@@ -523,7 +523,6 @@ public class UsersController : QueryControllerBase
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var user = await this._passwordResetService.SetPasswordAsync(model.UsernameOrEmailAddress, model.Password, model.ResetToken, membershipId, utilizer, cancellationToken: cancellationToken);
 		await this.RevokeTokensAfterPasswordChangeAsync(user.Id, membershipId, utilizer, cancellationToken);
-		await this._oneTimePasswordService.RevokeResetPasswordTokenAsync(utilizer, membershipId, model.ResetToken, cancellationToken: cancellationToken);
 		return this.Ok();
 	}
 	
@@ -564,7 +563,7 @@ public class UsersController : QueryControllerBase
 	#region OTP Methods
 	
 	/// <summary>Generate a one time password</summary>
-	/// <remarks>Generates a one time password for the user and deletes the previous ones; the user exchanges it for a reset token with the verify OTP endpoint. **Note:** needs the create permission of the <c>otp</c> resource, not of users.</remarks>
+	/// <remarks>Generates a one time password for the user and deletes the previous ones; the user exchanges it for a reset token with the verify OTP endpoint. The plain code (<c>password</c>) is returned only in this response, and no reset token exists until the code is verified. **Note:** needs the create permission of the <c>otp</c> resource, not of users.</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">User id</param>
 	/// <param name="cancellationToken">Cancellation token</param>

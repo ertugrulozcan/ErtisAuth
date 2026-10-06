@@ -130,9 +130,9 @@ public class TokenRetentionTests
 	}
 	
 	[Fact]
-	public void OneTimePasswordRepository_DeletesByTokenExpireTime()
+	public void OneTimePasswordRepository_DeletesByExpireTime()
 	{
-		Assert.Equal("token.expire_time", GetTTLIndex<OneTimePasswordRepository>().Field);
+		Assert.Equal("expire_time", GetTTLIndex<OneTimePasswordRepository>().Field);
 	}
 	
 	[Fact]

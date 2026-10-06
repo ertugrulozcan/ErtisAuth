@@ -39,9 +39,24 @@ public class OneTimePassword : MembershipBoundedResource
 	[BsonElement("failed_attempts")]
 	public int FailedAttempts { get; set; }
 	
-    [JsonPropertyName("token")]
-    [BsonElement("token")]
-    public ResetPasswordToken? Token { get; set; }
+	[JsonPropertyName("expires_in")]
+	[BsonElement("expires_in")]
+	public int ExpiresIn { get; set; }
+	
+	[JsonPropertyName("created_at")]
+	[BsonElement("created_at")]
+	public DateTime CreatedAt { get; set; }
+	
+	/// <summary>
+	/// Stored (not computed), so that the TTL index can delete the one-time password after it.
+	/// </summary>
+	[JsonPropertyName("expire_time")]
+	[BsonElement("expire_time")]
+	public DateTime ExpireTime { get; set; }
+	
+	[JsonIgnore]
+	[BsonIgnore]
+	public bool IsExpired => this.ExpireTime <= DateTime.UtcNow;
     
     #endregion
 }

@@ -18,8 +18,7 @@ public class OneTimePasswordRepository : RepositoryBase<OneTimePassword>, IOneTi
         new SingleIndexDefinition("user_id"),
 		new CompoundIndexDefinition("email_address", "membership_id"),
 		new CompoundIndexDefinition("username", "membership_id"),
-		new CompoundIndexDefinition("token.reset_token", "membership_id"),
-        new TTLIndexDefinition("token.expire_time", SortDirection.Ascending, TTLGracePeriod)
+		new TTLIndexDefinition("expire_time", SortDirection.Ascending, TTLGracePeriod)
     };
     
     #endregion
