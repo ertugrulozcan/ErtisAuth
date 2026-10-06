@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using ErtisAuth.IntegrationTests.Infrastructure;
 using ErtisAuth.IntegrationTests.Resources;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace ErtisAuth.IntegrationTests.Authorization;
 
@@ -285,6 +287,51 @@ public class RoleBasedAccessTests : IClassFixture<ErtisAuthInstance>
 		await AssertStatusAsync(adminClient.GetAsync($"{url}?permission=users.read", CancellationToken), HttpStatusCode.OK);
 		await AssertStatusAsync(adminClient.GetAsync($"{url}?permission=users.delete", CancellationToken), HttpStatusCode.Unauthorized);
 		await AssertStatusAsync(adminClient.GetAsync($"{url}?permission=roles.read", CancellationToken), HttpStatusCode.Unauthorized);
+	}
+	
+	#endregion
+	
+	#region Utilizers Without A Role
+	
+	/// <summary>
+	/// The API requires a role, but data changed outside of it (a script, a migration) may leave it empty.
+	/// </summary>
+	private async Task RemoveRoleInTheDatabaseAsync(string collection, string id)
+	{
+		await this._instance.Database.GetCollection<BsonDocument>(collection).UpdateOneAsync(
+			Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(id)),
+			Builders<BsonDocument>.Update.Set("role", string.Empty),
+			cancellationToken: CancellationToken);
+	}
+	
+	[Fact]
+	public async Task UserWithoutRole_IsDenied()
+	{
+		// Regression: an empty role skipped the permission check, i.e. allowed every action
+		var user = await this.CreateUserAsync("admin");
+		await this.RemoveRoleInTheDatabaseAsync("users", user["_id"]!.GetValue<string>());
+		var (accessToken, _) = await this._instance.GenerateTokenAsync(user["username"]!.GetValue<string>(), Password);
+		var client = this._instance.CreateClient($"Bearer {accessToken}");
+		
+		using var response = await client.GetAsync($"{this.MembershipUrl}/users", CancellationToken);
+		
+		Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+		Assert.Equal("The user has no role", (await ErtisAuthInstance.ReadJsonAsync(response)).GetProperty("message").GetString());
+	}
+	
+	[Fact]
+	public async Task ApplicationWithoutRole_IsDenied()
+	{
+		var applications = await this.AdminResourceClientAsync("applications");
+		var application = await applications.CreateAsync(new { name = $"Application {Guid.NewGuid():N}", role = "admin" });
+		var applicationId = application["_id"]!.GetValue<string>();
+		await this.RemoveRoleInTheDatabaseAsync("applications", applicationId);
+		var client = this._instance.CreateClient($"Basic {applicationId}:{application["secret"]!.GetValue<string>()}");
+		
+		using var response = await client.GetAsync($"{this.MembershipUrl}/users", CancellationToken);
+		
+		Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+		Assert.Equal("The application has no role", (await ErtisAuthInstance.ReadJsonAsync(response)).GetProperty("message").GetString());
 	}
 	
 	#endregion

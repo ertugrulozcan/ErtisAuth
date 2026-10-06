@@ -148,26 +148,9 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				
 				var application = validationResult.Application;
 				Utilizer applicationUtilizer= application;
-				if (checkPermission && !string.IsNullOrEmpty(application.Role))
+				if (checkPermission)
 				{
-					var role = await this.roleService.GetBySlugAsync(application.Role, application.MembershipId);
-					if (role != null)
-					{
-						var rbac = this.Context.GetRbacDefinition(application.Id);
-						if (rbac == null)
-						{
-							throw ErtisAuthException.AccessDenied("Rbac definition not found");
-						}
-						
-						if (!this.accessControlService.HasPermission(role, rbac, applicationUtilizer))
-						{
-							throw ErtisAuthException.AccessDenied($"Your authorization role ({role.Slug}) is unauthorized for this action ({rbac})");	
-						}
-					}
-					else
-					{
-						throw ErtisAuthException.AccessDenied($"The application role is not found by the given slug: '{application.Role}'");
-					}
+					await this.CheckPermissionAsync(applicationUtilizer, "application");
 				}
 				
 				applicationUtilizer.Token = token;
@@ -198,26 +181,9 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				var scopes = verifyTokenResult.Scopes?.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
 				userUtilizer.Scopes = scopes is { Length: > 0 } ? scopes : null;
 				
-				if (checkPermission && !string.IsNullOrEmpty(user.Role))
+				if (checkPermission)
 				{
-					var role = await this.roleService.GetBySlugAsync(user.Role, user.MembershipId);
-					if (role != null)
-					{
-						var rbac = this.Context.GetRbacDefinition(user.Id);
-						if (rbac == null)
-						{
-							throw ErtisAuthException.AccessDenied("Rbac definition not found");
-						}
-						
-						if (!this.accessControlService.HasPermission(role, rbac, userUtilizer))
-						{
-							throw ErtisAuthException.AccessDenied($"Your authorization role ({role.Slug}) is unauthorized for this action ({rbac})");		
-						}
-					}
-					else
-					{
-						throw ErtisAuthException.AccessDenied($"The user role is not found by the given slug: '{user.Role}'");
-					}
+					await this.CheckPermissionAsync(userUtilizer, "user");
 				}
 				
 				userUtilizer.Token = token;
@@ -226,6 +192,38 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 				return userUtilizer;
 			default:
 				throw ErtisAuthException.UnsupportedTokenType();
+		}
+	}
+	
+	/// <summary>
+	/// The permission check of an authorized endpoint, for users and applications alike. A utilizer without a role is
+	/// denied: the API requires a role, so an empty one can only come from data changed outside of it, and must not
+	/// skip the check (it used to allow every action).
+	/// </summary>
+	/// <param name="utilizer"></param>
+	/// <param name="utilizerKind">"user" or "application", for the error messages</param>
+	private async Task CheckPermissionAsync(Utilizer utilizer, string utilizerKind)
+	{
+		if (string.IsNullOrEmpty(utilizer.Role))
+		{
+			throw ErtisAuthException.AccessDenied($"The {utilizerKind} has no role");
+		}
+		
+		var role = await this.roleService.GetBySlugAsync(utilizer.Role, utilizer.MembershipId);
+		if (role == null)
+		{
+			throw ErtisAuthException.AccessDenied($"The {utilizerKind} role is not found by the given slug: '{utilizer.Role}'");
+		}
+		
+		var rbac = this.Context.GetRbacDefinition(utilizer.Id);
+		if (rbac == null)
+		{
+			throw ErtisAuthException.AccessDenied("Rbac definition not found");
+		}
+		
+		if (!this.accessControlService.HasPermission(role, rbac, utilizer))
+		{
+			throw ErtisAuthException.AccessDenied($"Your authorization role ({role.Slug}) is unauthorized for this action ({rbac})");
 		}
 	}
 	

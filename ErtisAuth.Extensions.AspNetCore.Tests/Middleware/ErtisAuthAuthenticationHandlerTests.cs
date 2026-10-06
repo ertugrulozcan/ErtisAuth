@@ -32,6 +32,8 @@ public class ErtisAuthAuthenticationHandlerTests
 	
 	private const string OtherMembershipId = "membership-b";
 	
+	private const string PermittedRole = "user";
+	
 	#endregion
 	
 	#region Fields
@@ -86,13 +88,23 @@ public class ErtisAuthAuthenticationHandlerTests
 		return await handler.AuthenticateAsync();
 	}
 	
-	private void SetupBearerValidation(bool isRefreshToken = false, string role = "")
+	/// <summary>
+	/// A role which permits the action, so that the tests which are not about permissions pass the permission check.
+	/// </summary>
+	private void SetupPermittedRole()
 	{
+		this._roleService.GetBySlugAsync(PermittedRole, OwnMembershipId, Arg.Any<CancellationToken>()).Returns(new Role { Id = "role-id", Name = "User", MembershipId = OwnMembershipId });
+		this._accessControlService.HasPermission(Arg.Any<Role>(), Arg.Any<Rbac>(), Arg.Any<Utilizer>()).Returns(true);
+	}
+	
+	private void SetupBearerValidation(bool isRefreshToken = false, string? role = PermittedRole)
+	{
+		this.SetupPermittedRole();
 		var user = new User
 		{
 			Id = "user-id",
 			Username = "john.doe",
-			Role = role,
+			Role = role!,
 			IsActive = true,
 			MembershipId = OwnMembershipId
 		};
@@ -102,13 +114,14 @@ public class ErtisAuthAuthenticationHandlerTests
 			.Returns(new BearerTokenValidationResult(true, Token, user, TimeSpan.FromHours(1), isRefreshToken));
 	}
 	
-	private void SetupBasicValidation()
+	private void SetupBasicValidation(string? role = PermittedRole)
 	{
+		this.SetupPermittedRole();
 		var application = new Application
 		{
 			Id = "application-id",
 			Name = "Test Application",
-			Role = string.Empty,
+			Role = role!,
 			MembershipId = OwnMembershipId
 		};
 		
@@ -294,6 +307,60 @@ public class ErtisAuthAuthenticationHandlerTests
 		
 		Assert.True(result.Succeeded);
 		Assert.Equal(ClaimExtensions.PublicClaimName, result.Principal!.Identities.Single().NameClaimType);
+	}
+	
+	#endregion
+	
+	#region Utilizers Without A Role
+	
+	[Theory]
+	[InlineData("")]
+	[InlineData(null)]
+	public async Task AuthorizedEndpoint_WithUserWithoutRole_FailsWithAccessDenied(string? role)
+	{
+		// Regression: an empty role skipped the permission check, i.e. allowed every action
+		this.SetupBearerValidation(role: role);
+		
+		var result = await this.AuthenticateAsync($"Bearer {Token}");
+		
+		Assert.False(result.Succeeded);
+		Assert.Equal("The user has no role", result.Failure?.Message);
+		this._accessControlService.DidNotReceiveWithAnyArgs().HasPermission(null!, default(Rbac)!, default);
+	}
+	
+	[Theory]
+	[InlineData("")]
+	[InlineData(null)]
+	public async Task AuthorizedEndpoint_WithApplicationWithoutRole_FailsWithAccessDenied(string? role)
+	{
+		this.SetupBasicValidation(role);
+		
+		var result = await this.AuthenticateAsync($"Basic {BasicToken}");
+		
+		Assert.False(result.Succeeded);
+		Assert.Equal("The application has no role", result.Failure?.Message);
+	}
+	
+	[Fact]
+	public async Task AuthorizedEndpoint_WithUserOfDeletedRole_FailsWithAccessDenied()
+	{
+		this.SetupBearerValidation(role: "deleted-role");
+		
+		var result = await this.AuthenticateAsync($"Bearer {Token}");
+		
+		Assert.False(result.Succeeded);
+		Assert.Equal("The user role is not found by the given slug: 'deleted-role'", result.Failure?.Message);
+	}
+	
+	[Fact]
+	public async Task SelfAuthorizedEndpoint_WithUserWithoutRole_StillAuthenticates()
+	{
+		// Self authorized endpoints check the permission themselves (e.g. check-permission answers RoleNotFound)
+		this.SetupBearerValidation(role: string.Empty);
+		
+		var result = await this.AuthenticateAsync($"Bearer {Token}", authorization: [new SelfAuthorizedAttribute()]);
+		
+		Assert.True(result.Succeeded);
 	}
 	
 	#endregion
