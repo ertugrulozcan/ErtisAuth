@@ -158,7 +158,7 @@ public class OneTimePasswordServiceTests
 		// so the one who generated the code (or a reader of the database) could set the password without the code
 		var otp = await this.GenerateAsync(this.CreateService());
 		
-		await this._passwordResetService.DidNotReceiveWithAnyArgs().GenerateResetPasswordTokenAsync(default!, default!);
+		await this._passwordResetService.DidNotReceiveWithAnyArgs().GenerateResetPasswordTokenAsync(null!, null!, cancellationToken: TestContext.Current.CancellationToken);
 		Assert.DoesNotContain("token", JsonSerializer.Serialize(otp));
 		Assert.False(Assert.Single(this._otps).ToBsonDocument().Contains("token"));
 	}
@@ -348,7 +348,7 @@ public class OneTimePasswordServiceTests
 		
 		Assert.Equal("OtpExpired", exception.ErrorCode);
 		Assert.Empty(this._otps);
-		await this._passwordResetService.DidNotReceiveWithAnyArgs().GenerateResetPasswordTokenAsync(default!, default!);
+		await this._passwordResetService.DidNotReceiveWithAnyArgs().GenerateResetPasswordTokenAsync(null!, null!, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	[Fact]

@@ -334,7 +334,7 @@ public class TokenCodeServiceTests
 		Assert.Equal(UserId, stored.UserId);
 		Assert.NotNull(stored.DecidedAt);
 		// The token is generated when the device gets it, so no token is stored with the code
-		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateTokenAsync(default(User)!, default!);
+		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateTokenAsync(null!, null!, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	[Fact]
@@ -490,12 +490,12 @@ public class TokenCodeServiceTests
 		Assert.Equal($"scoped-token-of-{UserId}", token.AccessToken);
 		await this._tokenService.Received(1).GenerateScopedTokenAsync(
 			Arg.Is<User>(x => x.Id == UserId),
-			Arg.Is<string[]>(x => x.SequenceEqual(new[] { "tokens.create", "users.read" })),
+			Arg.Is<string[]>(x => ((IEnumerable<string>)x).SequenceEqual(new[] { "tokens.create", "users.read" })),
 			MembershipId,
 			"203.0.113.42",
 			"SmartTV/1.0",
 			Arg.Any<CancellationToken>());
-		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateTokenAsync(default(User)!, default!);
+		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateTokenAsync(null!, null!, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	[Fact]
@@ -507,7 +507,7 @@ public class TokenCodeServiceTests
 		
 		await this.GenerateTokenAsync(service, tokenCode.DeviceCode);
 		
-		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateScopedTokenAsync(default!, default!, default!);
+		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateScopedTokenAsync(null!, null!, null!, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	[Fact]
@@ -533,7 +533,7 @@ public class TokenCodeServiceTests
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.DeviceCode));
 		
 		Assert.Equal("TokenCodeDenied", exception.ErrorCode);
-		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateTokenAsync(default(User)!, default!);
+		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateTokenAsync(null!, null!, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	[Fact]

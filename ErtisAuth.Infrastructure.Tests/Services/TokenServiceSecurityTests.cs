@@ -528,12 +528,12 @@ public class TokenServiceSecurityTests
 		var token = await tokenService.GenerateScopedTokenAsync(user, ["users.read", "tokens.create"], membership.Id, "203.0.113.42", "SmartTV/1.0", TestContext.Current.CancellationToken);
 		
 		var result = await tokenService.VerifyBearerTokenAsync(token.AccessToken, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
-		Assert.Equal(["users.read", "tokens.create"], result.Scopes);
+		Assert.Equal<string[]>(["users.read", "tokens.create"], result.Scopes);
 		Assert.Equal(TTLs.SCOPED_TOKEN_TTL.TotalSeconds, token.ExpiresInTimeStamp);
 		
 		var refreshed = await tokenService.RefreshTokenAsync(token.RefreshToken!, revokeBefore: false, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
 		var refreshedResult = await tokenService.VerifyBearerTokenAsync(refreshed.AccessToken, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
-		Assert.Equal(["users.read", "tokens.create"], refreshedResult.Scopes);
+		Assert.Equal<string[]>(["users.read", "tokens.create"], refreshedResult.Scopes);
 	}
 	
 	[Fact]
