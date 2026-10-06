@@ -1,0 +1,42 @@
+# ErtisAuth with a MongoDB, for local development and trying it out.
+#
+#   docker compose up -d --build
+#
+# API:           http://localhost:9716
+# API reference: http://localhost:9716/docs
+# Then set the installation up (see the "Getting Started" page of the wiki).
+
+name: ertisauth
+
+services:
+  mongo:
+    image: mongo:7.0
+    restart: unless-stopped
+    # Not published: ErtisAuth reaches it on the compose network. Add "27017:27017" under ports to connect with a client.
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ertisauth:
+    image: ertisauth:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "9716:8080"
+    environment:
+      # Development: serves the OpenAPI document and the API reference at /docs
+      ASPNETCORE_ENVIRONMENT: Development
+      Database__ConnectionString: mongodb://mongo:27017
+      Database__DefaultAuthDatabase: auth
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo-data:

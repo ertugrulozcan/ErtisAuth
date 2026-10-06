@@ -176,9 +176,22 @@ In the development environment the API listens on `http://localhost:9716` and th
 
 ### Run with Docker
 
+With Docker Compose, ErtisAuth and a MongoDB start together, from the root of the repository:
+
 ```shell
-docker run -p 9716:80 -e Database__ConnectionString=<connection_string> ertugrulozcan/ertisauth:latest
+docker compose up -d --build
 ```
+
+The API listens on `http://localhost:9716` and the API reference opens at `http://localhost:9716/docs`.
+
+To build and run the image on its own, with a MongoDB of your own:
+
+```shell
+docker build -t ertisauth:latest .
+docker run -p 9716:8080 -e Database__ConnectionString=<connection_string> ertisauth:latest
+```
+
+The container listens on port `8080` and runs as a non-root user.
 
 ### Setup
 
