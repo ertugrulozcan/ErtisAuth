@@ -157,14 +157,19 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 			errorList.Add("Membership id is required");
 		}
 		
-		if (model.Length <= 0)
+		if (model.Length < TokenCodePolicy.MinLength || model.Length > TokenCodePolicy.MaxLength)
 		{
-			errorList.Add("Length must be greater than zero");
+			errorList.Add($"Length must be between {TokenCodePolicy.MinLength} and {TokenCodePolicy.MaxLength}");
 		}
-		
-		if (model.ExpiresIn <= 0)
+
+		if (!model.ContainsLetters && !model.ContainsDigits)
 		{
-			errorList.Add("Expires in must be greater than zero");
+			errorList.Add("The codes must contain letters, digits or both (contains_letters, contains_digits)");
+		}
+
+		if (model.ExpiresIn <= 0 || model.ExpiresIn > TokenCodePolicy.MaxExpiresIn)
+		{
+			errorList.Add($"Expires in must be between 1 and {TokenCodePolicy.MaxExpiresIn} seconds");
 		}
 		
 		return Task.FromResult<IEnumerable<string>>(errorList);

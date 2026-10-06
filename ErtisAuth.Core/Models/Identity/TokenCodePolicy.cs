@@ -8,6 +8,20 @@ namespace ErtisAuth.Core.Models.Identity;
 
 public class TokenCodePolicy : MembershipBoundedResource, IHasSlug, IHasSysInfo
 {
+	#region Constants
+	
+	/// <summary>
+	/// The limits of a policy, checked when the policy is created or updated. The length of the codes is always the
+	/// length of the policy, for every character set.
+	/// </summary>
+	public const int MinLength = 5;
+	
+	public const int MaxLength = 12;
+	
+	public const int MaxExpiresIn = 1800;
+	
+	#endregion
+	
     #region Properties
     
     [JsonPropertyName("name")]

@@ -74,7 +74,6 @@ public static class DatabaseExtensions
 			classMap.MapMember(x => x.ModifiedBy).SetElementName("modified_by").SetIgnoreIfNull(true);
 		});
 		
-		BearerTokenClassMap.Register();
 		ProviderAccountInfoClassMap.Register();
 	}
 	

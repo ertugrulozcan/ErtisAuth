@@ -1,23 +1,46 @@
-using Ertis.Data.Models;
+using System.Security.Cryptography;
+using System.Text;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Helpers;
+using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
 
 namespace ErtisAuth.Infrastructure.Services;
 
+/// <summary>
+/// Device login (e.g. a smart TV), like the OAuth 2.0 device authorization grant (RFC 8628): the device shows the user
+/// code and polls with the device code, which only it knows; a signed in user approves or denies the user code.
+/// </summary>
 public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeService
 {
+	#region Constants
+	
+	/// <summary>
+	/// The minimum number of seconds between two polls of a device.
+	/// </summary>
+	public const int PollInterval = 5;
+	
+	private const int DeviceCodeByteCount = 32;
+	
+	private const int MaxGenerationAttempts = 10;
+	
+	#endregion
+	
 	#region Services
 	
 	private readonly ITokenCodePolicyService _tokenCodePolicyService;
 	private readonly ITokenService _tokenService;
 	private readonly IUserService _userService;
+	private readonly IEventService _eventService;
+	private readonly ITokenCodeRepository _tokenCodeRepository;
 	
 	#endregion
 	
-    #region Constructors
+	#region Constructors
 	
 	/// <summary>
 	/// Constructor
@@ -26,34 +49,29 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 	/// <param name="tokenCodePolicyService"></param>
 	/// <param name="tokenService"></param>
 	/// <param name="userService"></param>
+	/// <param name="eventService"></param>
 	/// <param name="repository"></param>
 	public TokenCodeService(
 		IMembershipService membershipService,
 		ITokenCodePolicyService tokenCodePolicyService,
 		ITokenService tokenService,
 		IUserService userService,
-		ITokenCodeRepository repository) : 
+		IEventService eventService,
+		ITokenCodeRepository repository) :
 		base(membershipService, repository)
 	{
 		this._tokenCodePolicyService = tokenCodePolicyService;
 		this._tokenService = tokenService;
 		this._userService = userService;
+		this._eventService = eventService;
+		this._tokenCodeRepository = repository;
 	}
 	
 	#endregion
 	
-	#region Methods
+	#region Create Methods
 	
-	private async Task<TokenCode?> GetTokenCode(
-		string code, 
-		string membershipId,
-		CancellationToken cancellationToken = default)
-	{
-		var results = await this._repository.FindAsync(x => x.Code == code && x.MembershipId == membershipId, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
-		return results.Items.FirstOrDefault();
-	}
-	
-	public async Task<TokenCode> CreateAsync(string membershipId, CancellationToken cancellationToken = default)
+	public async Task<TokenCodeWithDeviceCode> CreateAsync(string membershipId, ClientInfo? clientInfo = null, CancellationToken cancellationToken = default)
 	{
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
@@ -72,89 +90,184 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 			throw ErtisAuthException.TokenCodePolicyNotFound(membership.CodePolicy);
 		}
 		
-		var code = GenerateCode(policy);
-		var current = await this._repository.FindAsync(x => x.Code == code && x.MembershipId == membershipId, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
-		while (current.Items.Any())
+		var deviceCode = Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(DeviceCodeByteCount));
+		var now = DateTime.UtcNow;
+		
+		// The unique index of the user codes rejects a code which is in use; a new one is generated then
+		for (var i = 0; i < MaxGenerationAttempts; i++)
 		{
-			code = GenerateCode(policy);
-			current = await this._repository.FindAsync(x => x.Code == code && x.MembershipId == membershipId, 0, 1, false, null, null, null, cancellationToken: cancellationToken);
+			try
+			{
+				var tokenCode = await this._repository.InsertAsync(new TokenCode
+				{
+					UserCode = RandomCodeGenerator.Generate(policy.Length, policy.ContainsLetters, policy.ContainsDigits),
+					DeviceCodeHash = HashDeviceCode(deviceCode),
+					Status = TokenCodeStatus.Pending,
+					ExpiresIn = policy.ExpiresIn,
+					Interval = PollInterval,
+					CreatedAt = now,
+					ExpireTime = now.AddSeconds(policy.ExpiresIn),
+					ClientInfo = clientInfo,
+					MembershipId = membershipId
+				}, cancellationToken: cancellationToken);
+				
+				return new TokenCodeWithDeviceCode
+				{
+					Id = tokenCode.Id,
+					UserCode = tokenCode.UserCode,
+					Status = tokenCode.Status,
+					ExpiresIn = tokenCode.ExpiresIn,
+					Interval = tokenCode.Interval,
+					CreatedAt = tokenCode.CreatedAt,
+					ExpireTime = tokenCode.ExpireTime,
+					ClientInfo = tokenCode.ClientInfo,
+					MembershipId = tokenCode.MembershipId,
+					DeviceCode = deviceCode
+				};
+			}
+			catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+			{
+				// The user code is in use, try another one
+			}
 		}
 		
-		return await this._repository.InsertAsync(new TokenCode
-		{
-			Code = code,
-			ExpiresIn = policy.ExpiresIn,
-			CreatedAt = DateTime.UtcNow,
-			MembershipId = membershipId
-		}, cancellationToken: cancellationToken);
+		throw ErtisAuthException.TokenCodeCouldNotBeGenerated();
 	}
 	
-	private static string GenerateCode(TokenCodePolicy policy)
+	/// <summary>
+	/// The device code is a 256-bit random value, so a plain hash is enough to keep a leaked database from revealing it.
+	/// </summary>
+	private static string HashDeviceCode(string deviceCode)
 	{
-		return RandomCodeGenerator.Generate(policy.Length, policy.ContainsLetters, policy.ContainsDigits);
+		return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(deviceCode)));
 	}
 	
-	public async Task<TokenCode> AuthorizeCodeAsync(string code, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
+	#endregion
+	
+	#region Approval Methods
+	
+	public async Task<TokenCode> GetByUserCodeAsync(string userCode, string membershipId, CancellationToken cancellationToken = default)
 	{
-		var tokenCode = await this.GetTokenCode(code, membershipId, cancellationToken: cancellationToken);
-		if (tokenCode == null)
+		var tokenCode = await this.FindByUserCodeAsync(userCode, membershipId, cancellationToken: cancellationToken);
+		if (tokenCode == null || tokenCode.IsExpired)
 		{
-			throw ErtisAuthException.InvalidTokenCode();
+			throw ErtisAuthException.TokenCodeNotFound();
 		}
 		
-		if (tokenCode.ExpireTime < DateTime.UtcNow)
-		{
-			throw ErtisAuthException.TokenCodeExpired();
-		}
-		
-		// Re-approving would log the waiting device in as another user
-		if (tokenCode.Token != null)
-		{
-			throw ErtisAuthException.TokenCodeAlreadyAuthorized();
-		}
-		
+		return tokenCode;
+	}
+	
+	public async Task<TokenCode> ApproveAsync(string userCode, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
+	{
+		return await this.DecideAsync(userCode, membershipId, utilizer, TokenCodeStatus.Approved, ErtisAuthEventType.TokenCodeApproved, cancellationToken: cancellationToken);
+	}
+	
+	public async Task<TokenCode> DenyAsync(string userCode, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
+	{
+		return await this.DecideAsync(userCode, membershipId, utilizer, TokenCodeStatus.Denied, ErtisAuthEventType.TokenCodeDenied, cancellationToken: cancellationToken);
+	}
+	
+	private async Task<TokenCode> DecideAsync(string userCode, string membershipId, Utilizer utilizer, string status, ErtisAuthEventType eventType, CancellationToken cancellationToken = default)
+	{
 		var user = await this._userService.GetUserAsync(utilizer.Id!, membershipId, cancellationToken: cancellationToken);
 		if (user == null)
 		{
 			throw ErtisAuthException.UserNotFound(utilizer.Id ?? string.Empty, "id");
 		}
 		
-		var token = await this._tokenService.GenerateTokenAsync(user, membershipId, cancellationToken: cancellationToken);
-		tokenCode.AssignToken(token, user.Id);
-		
-		return await this._repository.UpdateAsync(tokenCode, tokenCode.Id, new UpdateOptions
+		var normalizedUserCode = TokenCode.NormalizeUserCode(userCode);
+		var decided = await this._tokenCodeRepository.TryDecideAsync(normalizedUserCode, membershipId, status, user.Id, DateTime.UtcNow, cancellationToken: cancellationToken);
+		if (decided == null)
 		{
-			TriggerBeforeActionBinder = false,
-			TriggerAfterActionBinder = false
-		}, cancellationToken: cancellationToken);
+			// Why the code could not be decided: re-deciding would log the waiting device in as another user
+			var tokenCode = await this.FindByUserCodeAsync(normalizedUserCode, membershipId, cancellationToken: cancellationToken);
+			if (tokenCode == null)
+			{
+				throw ErtisAuthException.TokenCodeNotFound();
+			}
+			
+			if (tokenCode.IsExpired)
+			{
+				throw ErtisAuthException.TokenCodeExpired();
+			}
+			
+			throw ErtisAuthException.TokenCodeAlreadyAuthorized();
+		}
+		
+		// The device code never leaves the creation response
+		var codeInfo = new
+		{
+			user_code = decided.UserCode,
+			client_info = decided.ClientInfo,
+			created_at = decided.CreatedAt
+		};
+		
+		await this._eventService.FireEventAsync(eventType, utilizer, membershipId, new { user, code = codeInfo }, cancellationToken: cancellationToken);
+		return decided;
 	}
 	
-	public async Task<BearerToken> GenerateTokenAsync(string code, string membershipId, CancellationToken cancellationToken = default)
+	private async Task<TokenCode?> FindByUserCodeAsync(string userCode, string membershipId, CancellationToken cancellationToken = default)
 	{
-		var tokenCode = await this.GetTokenCode(code, membershipId, cancellationToken: cancellationToken);
+		var normalizedUserCode = TokenCode.NormalizeUserCode(userCode);
+		return await this._repository.FindOneAsync(x => x.UserCode == normalizedUserCode && x.MembershipId == membershipId, cancellationToken: cancellationToken);
+	}
+	
+	#endregion
+	
+	#region Token Methods
+	
+	public async Task<BearerToken> GenerateTokenAsync(string deviceCode, string membershipId, CancellationToken cancellationToken = default)
+	{
+		if (string.IsNullOrEmpty(deviceCode))
+		{
+			throw ErtisAuthException.InvalidToken();
+		}
+		
+		var deviceCodeHash = HashDeviceCode(deviceCode);
+		var tokenCode = await this._repository.FindOneAsync(x => x.DeviceCodeHash == deviceCodeHash && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 		if (tokenCode == null)
 		{
 			throw ErtisAuthException.InvalidToken();
 		}
 		
-		if (tokenCode.ExpireTime < DateTime.UtcNow)
+		if (tokenCode.IsExpired)
 		{
 			throw ErtisAuthException.TokenCodeExpired();
 		}
 		
-		if (tokenCode.Token == null)
+		if (!await this._tokenCodeRepository.TryRegisterPollAsync(tokenCode.Id, tokenCode.Interval, DateTime.UtcNow, cancellationToken: cancellationToken))
 		{
-			throw ErtisAuthException.UnauthorizedTokenCode();
+			throw ErtisAuthException.TokenCodeSlowDown(tokenCode.Interval);
 		}
 		
-		if (tokenCode.Token.IsExpired)
+		switch (tokenCode.Status)
 		{
-			throw ErtisAuthException.TokenWasExpired();
+			case TokenCodeStatus.Pending:
+				throw ErtisAuthException.UnauthorizedTokenCode();
+			case TokenCodeStatus.Denied:
+				throw ErtisAuthException.TokenCodeDenied();
 		}
 		
-		// Single use: the token is handed out once, to the polling device
-		await this._repository.DeleteAsync(tokenCode.Id, cancellationToken: cancellationToken);
-		return tokenCode.Token;
+		// Single use: only one request deletes the approved code and gets the token
+		var consumed = await this._tokenCodeRepository.TryConsumeAsync(tokenCode.Id, cancellationToken: cancellationToken);
+		if (consumed?.UserId == null)
+		{
+			throw ErtisAuthException.InvalidToken();
+		}
+		
+		var user = await this._userService.GetUserAsync(consumed.UserId, membershipId, cancellationToken: cancellationToken);
+		if (user == null)
+		{
+			throw ErtisAuthException.UserNotFound(consumed.UserId, "id");
+		}
+		
+		if (!user.IsActive)
+		{
+			throw ErtisAuthException.UserInactive(user.Id);
+		}
+		
+		// Generated now (not at the approval): its lifetime starts when the device gets it, and it is never stored here
+		return await this._tokenService.GenerateTokenAsync(user, membershipId, consumed.ClientInfo?.IPAddress, consumed.ClientInfo?.UserAgent, cancellationToken: cancellationToken);
 	}
 	
 	#endregion

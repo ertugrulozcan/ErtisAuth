@@ -43,5 +43,7 @@ public enum ErtisAuthEventType
 	
 	TokenCodePolicyCreated = 800,
 	TokenCodePolicyUpdated = 801,
-	TokenCodePolicyDeleted = 802
+	TokenCodePolicyDeleted = 802,
+	TokenCodeApproved = 820,
+	TokenCodeDenied = 821
 }

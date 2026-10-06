@@ -1,5 +1,9 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
@@ -12,8 +16,9 @@ using NSubstitute;
 namespace ErtisAuth.Infrastructure.Tests.Services;
 
 /// <summary>
-/// Token codes (device login, e.g. a smart TV): the device gets a code, a signed-in user approves it, the device polls
-/// the anonymous generate-token endpoint. Codes must be unpredictable and a token is handed out only once.
+/// Token codes (device login, e.g. a smart TV): the device shows the user code and polls with the device code, which
+/// only it knows; a signed-in user approves or denies the user code. Codes must be unpredictable, the user code alone
+/// must never give a token, and a token is handed out only once.
 /// </summary>
 public class TokenCodeServiceTests
 {
@@ -36,9 +41,13 @@ public class TokenCodeServiceTests
 	
 	private readonly IUserService _userService = Substitute.For<IUserService>();
 	
+	private readonly IEventService _eventService = Substitute.For<IEventService>();
+	
 	private readonly ITokenCodeRepository _repository = Substitute.For<ITokenCodeRepository>();
 	
 	private readonly List<TokenCode> _tokenCodes;
+	
+	private readonly Dictionary<string, User> _users = new();
 	
 	private readonly Membership _membership;
 	
@@ -52,6 +61,7 @@ public class TokenCodeServiceTests
 	{
 		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		this._tokenCodes = InMemoryRepository.Setup(this._repository, x => x.Id ??= ObjectId.GenerateNewId().ToString());
+		this.SetupAtomicMethods();
 		
 		this._membership = TestServiceFactory.CreateMembership();
 		this._membership.Id = MembershipId;
@@ -61,14 +71,17 @@ public class TokenCodeServiceTests
 		
 		foreach (var userId in new[] { UserId, OtherUserId })
 		{
-			this._userService.GetUserAsync(userId, MembershipId, Arg.Any<CancellationToken>()).Returns(new User
+			this._users[userId] = new User
 			{
 				Id = userId,
 				Username = userId,
 				EmailAddress = $"{userId}@example.com",
 				Role = "user",
+				IsActive = true,
 				MembershipId = MembershipId
-			});
+			};
+			
+			this._userService.GetUserAsync(userId, MembershipId, Arg.Any<CancellationToken>()).Returns(callInfo => this._users[callInfo.ArgAt<string>(0)]);
 		}
 		
 		this._tokenService
@@ -80,9 +93,69 @@ public class TokenCodeServiceTests
 	
 	#region Helpers
 	
+	/// <summary>
+	/// The atomic repository methods on the in-memory store, with the same filters as the MongoDB implementation.
+	/// </summary>
+	private void SetupAtomicMethods()
+	{
+		this._repository
+			.TryDecideAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo =>
+			{
+				var now = callInfo.ArgAt<DateTime>(4);
+				var tokenCode = this._tokenCodes.FirstOrDefault(x =>
+					x.UserCode == callInfo.ArgAt<string>(0) &&
+					x.MembershipId == callInfo.ArgAt<string>(1) &&
+					x.Status == TokenCodeStatus.Pending &&
+					x.ExpireTime > now);
+				
+				if (tokenCode != null)
+				{
+					tokenCode.Status = callInfo.ArgAt<string>(2);
+					tokenCode.UserId = callInfo.ArgAt<string>(3);
+					tokenCode.DecidedAt = now;
+				}
+				
+				return tokenCode;
+			});
+		
+		this._repository
+			.TryRegisterPollAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo =>
+			{
+				var now = callInfo.ArgAt<DateTime>(2);
+				var tokenCode = this._tokenCodes.FirstOrDefault(x => x.Id == callInfo.ArgAt<string>(0));
+				if (tokenCode == null || (tokenCode.LastPolledAt != null && tokenCode.LastPolledAt > now.AddSeconds(-callInfo.ArgAt<int>(1))))
+				{
+					return false;
+				}
+				
+				tokenCode.LastPolledAt = now;
+				return true;
+			});
+		
+		this._repository
+			.TryConsumeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo =>
+			{
+				var tokenCode = this._tokenCodes.FirstOrDefault(x => x.Id == callInfo.ArgAt<string>(0) && x.Status == TokenCodeStatus.Approved);
+				if (tokenCode != null)
+				{
+					this._tokenCodes.Remove(tokenCode);
+				}
+				
+				return tokenCode;
+			});
+	}
+	
 	private TokenCodeService CreateService()
 	{
-		return new TokenCodeService(this._membershipService, this._tokenCodePolicyService, this._tokenService, this._userService, this._repository);
+		return new TokenCodeService(this._membershipService, this._tokenCodePolicyService, this._tokenService, this._userService, this._eventService, this._repository);
+	}
+	
+	private Task<TokenCodeWithDeviceCode> CreateCodeAsync(TokenCodeService service, ClientInfo? clientInfo = null)
+	{
+		return service.CreateAsync(MembershipId, clientInfo, TestContext.Current.CancellationToken);
 	}
 	
 	private static Utilizer UserUtilizer(string userId)
@@ -90,14 +163,30 @@ public class TokenCodeServiceTests
 		return new Utilizer { Id = userId, Username = userId, Type = Utilizer.UtilizerType.User, MembershipId = MembershipId };
 	}
 	
-	private Task<TokenCode> AuthorizeAsync(TokenCodeService service, string code, string userId = UserId)
+	private Task<TokenCode> ApproveAsync(TokenCodeService service, string userCode, string userId = UserId)
 	{
-		return service.AuthorizeCodeAsync(code, MembershipId, UserUtilizer(userId), TestContext.Current.CancellationToken);
+		return service.ApproveAsync(userCode, MembershipId, UserUtilizer(userId), TestContext.Current.CancellationToken);
 	}
 	
-	private Task<BearerToken> GenerateTokenAsync(TokenCodeService service, string code)
+	private Task<TokenCode> DenyAsync(TokenCodeService service, string userCode, string userId = UserId)
 	{
-		return service.GenerateTokenAsync(code, MembershipId, TestContext.Current.CancellationToken);
+		return service.DenyAsync(userCode, MembershipId, UserUtilizer(userId), TestContext.Current.CancellationToken);
+	}
+	
+	private Task<BearerToken> GenerateTokenAsync(TokenCodeService service, string deviceCode)
+	{
+		return service.GenerateTokenAsync(deviceCode, MembershipId, TestContext.Current.CancellationToken);
+	}
+	
+	/// <summary>
+	/// Lets the next poll of the device through, as if the interval had passed.
+	/// </summary>
+	private void WaitForTheInterval()
+	{
+		foreach (var tokenCode in this._tokenCodes)
+		{
+			tokenCode.LastPolledAt = null;
+		}
 	}
 	
 	#endregion
@@ -107,14 +196,38 @@ public class TokenCodeServiceTests
 	[Fact]
 	public async Task CreateAsync_ReturnsACodeMatchingThePolicy()
 	{
-		var tokenCode = await this.CreateService().CreateAsync(MembershipId, TestContext.Current.CancellationToken);
+		var tokenCode = await this.CreateCodeAsync(this.CreateService());
 		
-		Assert.NotNull(tokenCode.Code);
-		Assert.Equal(6, tokenCode.Code.Length);
-		Assert.All(tokenCode.Code, x => Assert.True(char.IsAsciiDigit(x)));
+		Assert.Equal(6, tokenCode.UserCode.Length);
+		Assert.All(tokenCode.UserCode, x => Assert.True(char.IsAsciiDigit(x)));
 		Assert.Equal(300, tokenCode.ExpiresIn);
-		Assert.Null(tokenCode.Token);
+		Assert.Equal(TokenCodeService.PollInterval, tokenCode.Interval);
+		Assert.Equal(TokenCodeStatus.Pending, tokenCode.Status);
+		Assert.Equal(tokenCode.CreatedAt.AddSeconds(300), tokenCode.ExpireTime);
 		Assert.Equal(tokenCode.Id, Assert.Single(this._tokenCodes).Id);
+	}
+	
+	[Fact]
+	public async Task CreateAsync_StoresOnlyTheHashOfTheDeviceCode()
+	{
+		var tokenCode = await this.CreateCodeAsync(this.CreateService());
+		
+		// 32 random bytes, base64url
+		Assert.Equal(43, tokenCode.DeviceCode.Length);
+		var stored = Assert.Single(this._tokenCodes);
+		Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(tokenCode.DeviceCode))), stored.DeviceCodeHash);
+		Assert.IsNotType<TokenCodeWithDeviceCode>(stored);
+		Assert.DoesNotContain(tokenCode.DeviceCode, stored.ToBsonDocument().ToJson());
+	}
+	
+	[Fact]
+	public async Task CreateAsync_StoresTheClientInfoOfTheDevice()
+	{
+		await this.CreateCodeAsync(this.CreateService(), new ClientInfo { IPAddress = "203.0.113.42", UserAgent = "SmartTV/1.0" });
+		
+		var stored = Assert.Single(this._tokenCodes);
+		Assert.Equal("203.0.113.42", stored.ClientInfo?.IPAddress);
+		Assert.Equal("SmartTV/1.0", stored.ClientInfo?.UserAgent);
 	}
 	
 	[Fact]
@@ -122,25 +235,41 @@ public class TokenCodeServiceTests
 	{
 		this._policy = new TokenCodePolicy { Name = "TV Code", Length = 8, ContainsLetters = true, ExpiresIn = 300, MembershipId = MembershipId };
 		
-		var tokenCode = await this.CreateService().CreateAsync(MembershipId, TestContext.Current.CancellationToken);
+		var tokenCode = await this.CreateCodeAsync(this.CreateService());
 		
-		Assert.All(tokenCode.Code!, x => Assert.True(char.IsAsciiLetterUpper(x)));
+		Assert.All(tokenCode.UserCode, x => Assert.True(char.IsAsciiLetterUpper(x)));
+	}
+	
+	[Fact]
+	public async Task CreateAsync_WithMixedPolicy_LeavesOutTheAmbiguousCharacters()
+	{
+		this._policy = new TokenCodePolicy { Name = "TV Code", Length = 12, ContainsLetters = true, ContainsDigits = true, ExpiresIn = 300, MembershipId = MembershipId };
+		var service = this.CreateService();
+		
+		for (var i = 0; i < 200; i++)
+		{
+			var tokenCode = await this.CreateCodeAsync(service);
+			Assert.DoesNotContain(tokenCode.UserCode, x => x is '0' or 'O' or '1' or 'I');
+		}
 	}
 	
 	[Fact]
 	public async Task CreateAsync_ProducesUnpredictableCodes()
 	{
-		// Regression: codes came from new Random(DateTime.Now.Microsecond), i.e. at most 1000 codes per policy, and
-		// generate-token is anonymous: anyone could poll all of them and collect the tokens of approving users
+		// Regression: codes came from new Random(DateTime.Now.Microsecond), i.e. at most 1000 codes per policy
+		this._policy = new TokenCodePolicy { Name = "TV Code", Length = 8, ContainsLetters = true, ContainsDigits = true, ExpiresIn = 300, MembershipId = MembershipId };
 		var service = this.CreateService();
-		var codes = new HashSet<string>();
+		var userCodes = new HashSet<string>();
+		var deviceCodes = new HashSet<string>();
 		for (var i = 0; i < 300; i++)
 		{
-			codes.Add((await service.CreateAsync(MembershipId, TestContext.Current.CancellationToken)).Code!);
+			var tokenCode = await this.CreateCodeAsync(service);
+			userCodes.Add(tokenCode.UserCode);
+			deviceCodes.Add(tokenCode.DeviceCode);
 		}
 		
-		// The service regenerates a code already in use, so all 300 are distinct
-		Assert.Equal(300, codes.Count);
+		Assert.Equal(300, userCodes.Count);
+		Assert.Equal(300, deviceCodes.Count);
 	}
 	
 	[Fact]
@@ -148,72 +277,150 @@ public class TokenCodeServiceTests
 	{
 		this._membership.CodePolicy = null;
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateService().CreateAsync(MembershipId, TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateCodeAsync(this.CreateService()));
 		
 		Assert.Equal("TokenCodePolicyNotFound", exception.ErrorCode);
 	}
 	
 	#endregion
 	
-	#region Authorize
+	#region Get
 	
 	[Fact]
-	public async Task AuthorizeCodeAsync_AssignsATokenOfTheApprovingUser()
+	public async Task GetByUserCodeAsync_ReturnsTheDeviceForTheApprovalScreen()
 	{
 		var service = this.CreateService();
-		var tokenCode = await service.CreateAsync(MembershipId, TestContext.Current.CancellationToken);
+		var tokenCode = await this.CreateCodeAsync(service, new ClientInfo { IPAddress = "203.0.113.42", UserAgent = "SmartTV/1.0" });
 		
-		await this.AuthorizeAsync(service, tokenCode.Code!);
+		var found = await service.GetByUserCodeAsync(tokenCode.UserCode, MembershipId, TestContext.Current.CancellationToken);
 		
-		var stored = Assert.Single(this._tokenCodes);
-		Assert.Equal(UserId, stored.UserId);
-		Assert.Equal($"access-token-of-{UserId}", stored.Token?.AccessToken);
+		Assert.Equal("SmartTV/1.0", found.ClientInfo?.UserAgent);
+		Assert.Equal(TokenCodeStatus.Pending, found.Status);
 	}
 	
 	[Fact]
-	public async Task AuthorizeCodeAsync_WhenAlreadyAuthorized_IsRejectedAndKeepsTheFirstToken()
+	public async Task GetByUserCodeAsync_WithExpiredCode_ThrowsTokenCodeNotFound()
+	{
+		var service = this.CreateService();
+		var tokenCode = await this.CreateCodeAsync(service);
+		Assert.Single(this._tokenCodes).ExpireTime = DateTime.UtcNow.AddSeconds(-1);
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => service.GetByUserCodeAsync(tokenCode.UserCode, MembershipId, TestContext.Current.CancellationToken));
+		
+		Assert.Equal("TokenCodeNotFound", exception.ErrorCode);
+	}
+	
+	#endregion
+	
+	#region Approve & Deny
+	
+	[Fact]
+	public async Task ApproveAsync_RecordsTheApprovingUserWithoutGeneratingAToken()
+	{
+		var service = this.CreateService();
+		var tokenCode = await this.CreateCodeAsync(service);
+		
+		await this.ApproveAsync(service, tokenCode.UserCode);
+		
+		var stored = Assert.Single(this._tokenCodes);
+		Assert.Equal(TokenCodeStatus.Approved, stored.Status);
+		Assert.Equal(UserId, stored.UserId);
+		Assert.NotNull(stored.DecidedAt);
+		// The token is generated when the device gets it, so no token is stored with the code
+		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateTokenAsync(default(User)!, default!);
+	}
+	
+	[Fact]
+	public async Task ApproveAsync_IgnoresCaseAndSeparators()
+	{
+		this._policy = new TokenCodePolicy { Name = "TV Code", Length = 6, ContainsLetters = true, ExpiresIn = 300, MembershipId = MembershipId };
+		var service = this.CreateService();
+		var tokenCode = await this.CreateCodeAsync(service);
+		var typed = $"{tokenCode.UserCode[..3].ToLowerInvariant()}- {tokenCode.UserCode[3..].ToLowerInvariant()}";
+		
+		await this.ApproveAsync(service, typed);
+		
+		Assert.Equal(TokenCodeStatus.Approved, Assert.Single(this._tokenCodes).Status);
+	}
+	
+	[Fact]
+	public async Task ApproveAsync_WhenAlreadyApproved_IsRejectedAndKeepsTheFirstUser()
 	{
 		// Attack: approving the code shown on the victim's device with the attacker's account
 		var service = this.CreateService();
-		var tokenCode = await service.CreateAsync(MembershipId, TestContext.Current.CancellationToken);
-		await this.AuthorizeAsync(service, tokenCode.Code!);
+		var tokenCode = await this.CreateCodeAsync(service);
+		await this.ApproveAsync(service, tokenCode.UserCode);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.AuthorizeAsync(service, tokenCode.Code!, OtherUserId));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.ApproveAsync(service, tokenCode.UserCode, OtherUserId));
 		
 		Assert.Equal("TokenCodeAlreadyAuthorized", exception.ErrorCode);
 		Assert.Equal(UserId, Assert.Single(this._tokenCodes).UserId);
 	}
 	
 	[Fact]
-	public async Task AuthorizeCodeAsync_WithUnknownCode_ThrowsInvalidTokenCode()
+	public async Task ApproveAsync_AfterDenial_IsRejected()
 	{
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.AuthorizeAsync(this.CreateService(), "000000"));
+		var service = this.CreateService();
+		var tokenCode = await this.CreateCodeAsync(service);
+		await this.DenyAsync(service, tokenCode.UserCode);
 		
-		Assert.Equal("InvalidTokenCode", exception.ErrorCode);
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.ApproveAsync(service, tokenCode.UserCode));
+		
+		Assert.Equal("TokenCodeAlreadyAuthorized", exception.ErrorCode);
+		Assert.Equal(TokenCodeStatus.Denied, Assert.Single(this._tokenCodes).Status);
 	}
 	
 	[Fact]
-	public async Task AuthorizeCodeAsync_WithExpiredCode_ThrowsTokenCodeExpired()
+	public async Task ApproveAsync_WithUnknownCode_ThrowsTokenCodeNotFound()
+	{
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.ApproveAsync(this.CreateService(), "999999"));
+		
+		Assert.Equal("TokenCodeNotFound", exception.ErrorCode);
+	}
+	
+	[Fact]
+	public async Task ApproveAsync_WithExpiredCode_ThrowsTokenCodeExpired()
 	{
 		var service = this.CreateService();
-		var tokenCode = await service.CreateAsync(MembershipId, TestContext.Current.CancellationToken);
-		Assert.Single(this._tokenCodes).CreatedAt = DateTime.UtcNow.AddHours(-1);
+		var tokenCode = await this.CreateCodeAsync(service);
+		Assert.Single(this._tokenCodes).ExpireTime = DateTime.UtcNow.AddSeconds(-1);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.AuthorizeAsync(service, tokenCode.Code!));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.ApproveAsync(service, tokenCode.UserCode));
 		
 		Assert.Equal("TokenCodeExpired", exception.ErrorCode);
 	}
 	
 	[Fact]
-	public async Task AuthorizeCodeAsync_WithCodeOfAnotherMembership_ThrowsInvalidTokenCode()
+	public async Task ApproveAsync_WithCodeOfAnotherMembership_ThrowsTokenCodeNotFound()
 	{
 		var service = this.CreateService();
-		var tokenCode = await service.CreateAsync(MembershipId, TestContext.Current.CancellationToken);
+		var tokenCode = await this.CreateCodeAsync(service);
 		Assert.Single(this._tokenCodes).MembershipId = "5f8a1b2c3d4e5f6a7b8c9dff";
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.AuthorizeAsync(service, tokenCode.Code!));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.ApproveAsync(service, tokenCode.UserCode));
 		
-		Assert.Equal("InvalidTokenCode", exception.ErrorCode);
+		Assert.Equal("TokenCodeNotFound", exception.ErrorCode);
+	}
+	
+	[Theory]
+	[InlineData(true, ErtisAuthEventType.TokenCodeApproved)]
+	[InlineData(false, ErtisAuthEventType.TokenCodeDenied)]
+	public async Task Decision_FiresAnEventWithoutTheDeviceCode(bool approve, ErtisAuthEventType expectedEventType)
+	{
+		var service = this.CreateService();
+		var tokenCode = await this.CreateCodeAsync(service, new ClientInfo { UserAgent = "SmartTV/1.0" });
+		object? document = null;
+		this._eventService
+			.When(x => x.FireEventAsync(expectedEventType, Arg.Any<Utilizer>(), MembershipId, Arg.Any<object?>(), Arg.Any<object?>(), Arg.Any<CancellationToken>()))
+			.Do(x => document = x.ArgAt<object?>(3));
+		
+		await (approve ? this.ApproveAsync(service, tokenCode.UserCode) : this.DenyAsync(service, tokenCode.UserCode));
+		
+		var json = JsonSerializer.Serialize(document);
+		Assert.Contains(tokenCode.UserCode, json);
+		Assert.Contains("SmartTV/1.0", json);
+		Assert.DoesNotContain(tokenCode.DeviceCode, json);
+		Assert.DoesNotContain(Assert.Single(this._tokenCodes).DeviceCodeHash!, json);
 	}
 	
 	#endregion
@@ -221,56 +428,108 @@ public class TokenCodeServiceTests
 	#region Generate Token
 	
 	[Fact]
-	public async Task GenerateTokenAsync_BeforeApproval_ThrowsUnauthorizedTokenCode()
+	public async Task GenerateTokenAsync_WithTheUserCode_IsRejected()
 	{
+		// Attack: someone who sees the code on the screen polls with it, to get the token before the device
 		var service = this.CreateService();
-		var tokenCode = await service.CreateAsync(MembershipId, TestContext.Current.CancellationToken);
+		var tokenCode = await this.CreateCodeAsync(service);
+		await this.ApproveAsync(service, tokenCode.UserCode);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.Code!));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.UserCode));
 		
-		Assert.Equal("UnauthorizedTokenCode", exception.ErrorCode);
+		Assert.Equal("InvalidToken", exception.ErrorCode);
 		Assert.Single(this._tokenCodes);
 	}
 	
 	[Fact]
-	public async Task GenerateTokenAsync_AfterApproval_ReturnsTheTokenOnlyOnce()
+	public async Task GenerateTokenAsync_BeforeApproval_ThrowsUnauthorizedTokenCode()
 	{
 		var service = this.CreateService();
-		var tokenCode = await service.CreateAsync(MembershipId, TestContext.Current.CancellationToken);
-		await this.AuthorizeAsync(service, tokenCode.Code!);
+		var tokenCode = await this.CreateCodeAsync(service);
 		
-		var token = await this.GenerateTokenAsync(service, tokenCode.Code!);
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.DeviceCode));
+		
+		Assert.Equal("UnauthorizedTokenCode", exception.ErrorCode);
+	}
+	
+	[Fact]
+	public async Task GenerateTokenAsync_AfterApproval_ReturnsATokenOfTheApprovingUserOnlyOnce()
+	{
+		var service = this.CreateService();
+		var tokenCode = await this.CreateCodeAsync(service, new ClientInfo { IPAddress = "203.0.113.42", UserAgent = "SmartTV/1.0" });
+		await this.ApproveAsync(service, tokenCode.UserCode);
+		
+		var token = await this.GenerateTokenAsync(service, tokenCode.DeviceCode);
 		
 		Assert.Equal($"access-token-of-{UserId}", token.AccessToken);
+		// The session shows the device, not the browser of the approving user
+		await this._tokenService.Received(1).GenerateTokenAsync(Arg.Is<User>(x => x.Id == UserId), MembershipId, "203.0.113.42", "SmartTV/1.0", Arg.Any<bool>(), Arg.Any<CancellationToken>());
 		Assert.Empty(this._tokenCodes);
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.Code!));
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.DeviceCode));
 		Assert.Equal("InvalidToken", exception.ErrorCode);
+	}
+	
+	[Fact]
+	public async Task GenerateTokenAsync_AfterDenial_ThrowsTokenCodeDenied()
+	{
+		var service = this.CreateService();
+		var tokenCode = await this.CreateCodeAsync(service);
+		await this.DenyAsync(service, tokenCode.UserCode);
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.DeviceCode));
+		
+		Assert.Equal("TokenCodeDenied", exception.ErrorCode);
+		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateTokenAsync(default(User)!, default!);
+	}
+	
+	[Fact]
+	public async Task GenerateTokenAsync_PolledTooOften_ThrowsTokenCodeSlowDown()
+	{
+		var service = this.CreateService();
+		var tokenCode = await this.CreateCodeAsync(service);
+		await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.DeviceCode));
+		await this.ApproveAsync(service, tokenCode.UserCode);
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.DeviceCode));
+		
+		Assert.Equal("TokenCodeSlowDown", exception.ErrorCode);
+		this.WaitForTheInterval();
+		Assert.Equal($"access-token-of-{UserId}", (await this.GenerateTokenAsync(service, tokenCode.DeviceCode)).AccessToken);
 	}
 	
 	[Fact]
 	public async Task GenerateTokenAsync_WithExpiredCode_ThrowsTokenCodeExpired()
 	{
 		var service = this.CreateService();
-		var tokenCode = await service.CreateAsync(MembershipId, TestContext.Current.CancellationToken);
-		await this.AuthorizeAsync(service, tokenCode.Code!);
-		Assert.Single(this._tokenCodes).CreatedAt = DateTime.UtcNow.AddHours(-1);
+		var tokenCode = await this.CreateCodeAsync(service);
+		await this.ApproveAsync(service, tokenCode.UserCode);
+		Assert.Single(this._tokenCodes).ExpireTime = DateTime.UtcNow.AddSeconds(-1);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.Code!));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.DeviceCode));
 		
 		Assert.Equal("TokenCodeExpired", exception.ErrorCode);
 	}
 	
 	[Fact]
-	public async Task GenerateTokenAsync_WithExpiredToken_ThrowsTokenWasExpired()
+	public async Task GenerateTokenAsync_WhenTheApprovingUserWasDeactivated_ThrowsUserInactive()
 	{
 		var service = this.CreateService();
-		var tokenCode = await service.CreateAsync(MembershipId, TestContext.Current.CancellationToken);
-		await this.AuthorizeAsync(service, tokenCode.Code!);
-		Assert.Single(this._tokenCodes).Token = new BearerToken("old-token", TimeSpan.FromMinutes(1), createdAt: DateTime.UtcNow.AddHours(-1));
+		var tokenCode = await this.CreateCodeAsync(service);
+		await this.ApproveAsync(service, tokenCode.UserCode);
+		this._users[UserId].IsActive = false;
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.Code!));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.DeviceCode));
 		
-		Assert.Equal("TokenWasExpired", exception.ErrorCode);
+		Assert.Equal("UserInactive", exception.ErrorCode);
+	}
+	
+	[Fact]
+	public async Task GenerateTokenAsync_WithUnknownDeviceCode_ThrowsInvalidToken()
+	{
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(this.CreateService(), "unknown-device-code"));
+		
+		Assert.Equal("InvalidToken", exception.ErrorCode);
 	}
 	
 	#endregion

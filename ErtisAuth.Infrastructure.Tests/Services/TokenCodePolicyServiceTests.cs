@@ -61,9 +61,9 @@ public class TokenCodePolicyServiceTests
 		return new TokenCodePolicyService(this._membershipService, Substitute.For<IEventService>(), this._repository, NullLogger<TokenCodePolicyService>.Instance);
 	}
 	
-	private static TokenCodePolicy CreatePolicy(string name = "TV Code", int length = 6, int expiresIn = 300)
+	private static TokenCodePolicy CreatePolicy(string name = "TV Code", int length = 6, int expiresIn = 300, bool containsLetters = false, bool containsDigits = true)
 	{
-		return new TokenCodePolicy { Name = name, Length = length, ContainsDigits = true, ExpiresIn = expiresIn, MembershipId = MembershipId };
+		return new TokenCodePolicy { Name = name, Length = length, ContainsLetters = containsLetters, ContainsDigits = containsDigits, ExpiresIn = expiresIn, MembershipId = MembershipId };
 	}
 	
 	private Task<TokenCodePolicy> CreateAsync(TokenCodePolicyService service, TokenCodePolicy policy)
@@ -76,13 +76,51 @@ public class TokenCodePolicyServiceTests
 	#region Create
 	
 	[Theory]
-	[InlineData(0, 300, "Length must be greater than zero")]
-	[InlineData(6, 0, "Expires in must be greater than zero")]
+	[InlineData(0, 300, "Length must be between 5 and 12")]
+	[InlineData(4, 300, "Length must be between 5 and 12")]
+	[InlineData(13, 300, "Length must be between 5 and 12")]
+	[InlineData(6, 0, "Expires in must be between 1 and 1800 seconds")]
+	[InlineData(6, 1801, "Expires in must be between 1 and 1800 seconds")]
 	public async Task CreateAsync_WithInvalidPolicy_ThrowsValidationError(int length, int expiresIn, string expectedError)
 	{
 		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateAsync(this.CreateService(), CreatePolicy(length: length, expiresIn: expiresIn)));
 		
 		Assert.Contains(expectedError, exception.Errors!);
+	}
+	
+	[Fact]
+	public async Task CreateAsync_WithoutLettersAndDigits_ThrowsValidationError()
+	{
+		// Such a policy used to produce mixed codes silently
+		var policy = CreatePolicy(containsLetters: false, containsDigits: false);
+		
+		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateAsync(this.CreateService(), policy));
+		
+		Assert.Contains("The codes must contain letters, digits or both (contains_letters, contains_digits)", exception.Errors!);
+	}
+	
+	[Theory]
+	[InlineData(5, 1800, true, false)]
+	[InlineData(5, 300, false, true)]
+	[InlineData(12, 1, true, true)]
+	public async Task CreateAsync_WithinTheLimits_Creates(int length, int expiresIn, bool containsLetters, bool containsDigits)
+	{
+		var created = await this.CreateAsync(this.CreateService(), CreatePolicy(length: length, expiresIn: expiresIn, containsLetters: containsLetters, containsDigits: containsDigits));
+		
+		Assert.Equal(length, created.Length);
+	}
+	
+	[Fact]
+	public async Task UpdateAsync_OutOfTheLimits_ThrowsValidationError()
+	{
+		var service = this.CreateService();
+		var created = await this.CreateAsync(service, CreatePolicy());
+		var update = CreatePolicy(length: 4);
+		update.Id = created.Id;
+
+		var exception = await Assert.ThrowsAsync<ValidationException>(() => service.UpdateAsync(update, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken));
+		
+		Assert.Contains("Length must be between 5 and 12", exception.Errors!);
 	}
 	
 	[Fact]

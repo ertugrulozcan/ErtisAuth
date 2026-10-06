@@ -174,6 +174,21 @@ public class ErtisAuthException : ErtisException
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, "Token code was already authorized", "TokenCodeAlreadyAuthorized");
 	}
+
+	public static ErtisAuthException TokenCodeDenied()
+	{
+		return new ErtisAuthException(HttpStatusCode.Unauthorized, "Token code was denied", "TokenCodeDenied");
+	}
+
+	public static ErtisAuthException TokenCodeSlowDown(int interval)
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, $"Token code is polled too often, wait at least {interval} seconds between the polls", "TokenCodeSlowDown");
+	}
+
+	public static ErtisAuthException TokenCodeCouldNotBeGenerated()
+	{
+		return new ErtisAuthException(HttpStatusCode.ServiceUnavailable, "A unique token code could not be generated, please try again", "TokenCodeCouldNotBeGenerated");
+	}
 	
 	public static ErtisAuthException TokenCodePolicyInUse(string slug)
 	{

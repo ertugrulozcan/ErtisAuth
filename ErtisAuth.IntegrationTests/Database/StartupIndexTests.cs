@@ -50,6 +50,17 @@ public class StartupIndexTests : IClassFixture<ErtisAuthInstance>
 	}
 	
 	[Fact]
+	public async Task Startup_CreatesTheUniqueUserCodeIndex()
+	{
+		// Two token codes generated at the same time can't get the same user code
+		var codes = this._instance.Database.GetCollection<BsonDocument>("codes");
+		var indexes = await (await codes.Indexes.ListAsync(TestContext.Current.CancellationToken)).ToListAsync(TestContext.Current.CancellationToken);
+
+		var index = Assert.Single(indexes, x => x["key"].AsBsonDocument.Names.SequenceEqual(["membership_id", "user_code"]));
+		Assert.True(index.GetValue("unique", false).ToBoolean(), index.ToJson());
+	}
+
+	[Fact]
 	public async Task Startup_CreatesTheRevokedTokenLookupIndex()
 	{
 		var indexes = await (await this._instance.Database.GetCollection<BsonDocument>("revoked_tokens").Indexes.ListAsync(TestContext.Current.CancellationToken)).ToListAsync(TestContext.Current.CancellationToken);
