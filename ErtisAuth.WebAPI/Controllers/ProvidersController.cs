@@ -47,7 +47,7 @@ public class ProvidersController : ControllerBase
 	/// <summary>Get a provider</summary>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Provider id</param>
-	/// <param name="cancellationToken">Provider id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet("{id}")]
 	[RbacObject("{id}")]
 	[RbacAction(Rbac.CrudActions.Read)]
@@ -60,7 +60,7 @@ public class ProvidersController : ControllerBase
 		var provider = id.IsObjectId() ? await this._providerService.GetAsync(id, membershipId, cancellationToken: cancellationToken) : await this._providerService.GetBySlugAsync(id, membershipId, cancellationToken: cancellationToken);
 		if (provider != null)
 		{
-			return this.Ok(provider);
+			return ProviderResult(provider);
 		}
 		else
 		{
@@ -69,7 +69,7 @@ public class ProvidersController : ControllerBase
 	}
 	
 	/// <summary>List providers</summary>
-	/// <remarks>Returns the external identity providers (Google, Facebook, Apple, Microsoft) of the membership; the missing ones are created as inactive.</remarks>
+	/// <remarks>Returns the external identity providers (Google, Facebook, Apple, Microsoft) of the membership.</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="cancellationToken">Cancellation token</param>
 	[HttpGet]
@@ -97,21 +97,13 @@ public class ProvidersController : ControllerBase
 		{
 			return provider switch
 			{
-				AppleProvider appleProvider => new
+				BaseAppleProvider appleProvider => new
 				{
 					_id = appleProvider.Id,
 					name = appleProvider.Name,
 					appClientId = appleProvider.AppClientId,
 					redirectUri = appleProvider.RedirectUri,
 					membership_id = appleProvider.MembershipId
-				},
-				AppleNativeProvider appleNativeProvider => new
-				{
-					_id = appleNativeProvider.Id,
-					name = appleNativeProvider.Name,
-					appClientId = appleNativeProvider.AppClientId,
-					redirectUri = appleNativeProvider.RedirectUri,
-					membership_id = appleNativeProvider.MembershipId
 				},
 				FacebookProvider facebookProvider => new
 				{
@@ -147,7 +139,7 @@ public class ProvidersController : ControllerBase
 	#region Create Methods
 	
 	/// <summary>Create a provider</summary>
-	/// <remarks>The provider is identified by its <c>name</c> (Google, Facebook, Apple or Microsoft). Omitted <c>is_active</c>, <c>trust_email</c> and <c>private_key</c> keep their current values. **Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
+	/// <remarks>The <c>type</c> (Google, Facebook, Microsoft, Apple or AppleNative) is required and can't be changed later; <c>name</c> defaults to the type and <c>slug</c> to the name. An active provider needs <c>defaultRole</c>, <c>defaultUserType</c> and <c>appClientId</c> (Apple types also <c>teamId</c>, <c>privateKey</c>, <c>privateKeyId</c> and <c>redirectUri</c>).</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="model">Provider</param>
 	/// <param name="cancellationToken">Cancellation token</param>
@@ -259,7 +251,10 @@ public class ProvidersController : ControllerBase
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var createdProvider = await this._providerService.CreateAsync(provider, membershipId, utilizer, cancellationToken: cancellationToken);
-		return this.Ok(createdProvider);
+		return new CreatedResult($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{createdProvider.Id}", createdProvider)
+		{
+			DeclaredType = typeof(Provider)
+		};
 	}
 	
 	#endregion
@@ -267,7 +262,7 @@ public class ProvidersController : ControllerBase
 	#region Update Methods
 	
 	/// <summary>Update a provider</summary>
-	/// <remarks>The provider is identified by its <c>name</c> (Google, Facebook, Apple or Microsoft). Omitted <c>is_active</c>, <c>trust_email</c> and <c>private_key</c> keep their current values. **Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
+	/// <remarks>The provider's <c>type</c> can't be changed. Omitted fields keep their current values. **Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Provider id</param>
 	/// <param name="model">Provider</param>
@@ -301,7 +296,7 @@ public class ProvidersController : ControllerBase
 				var facebookProvider = current as FacebookProvider;
 				provider = new FacebookProvider
 				{
-					Id = id,
+					Id = current.Id,
 					MembershipId = membershipId,
 					Name = model.Name ?? current.Name,
 					Slug = model.Slug ?? current.Slug,
@@ -317,7 +312,7 @@ public class ProvidersController : ControllerBase
 				var googleProvider = current as GoogleProvider;
 				provider = new GoogleProvider
 				{
-					Id = id,
+					Id = current.Id,
 					MembershipId = membershipId,
 					Name = model.Name ?? current.Name,
 					Slug = model.Slug ?? current.Slug,
@@ -333,7 +328,7 @@ public class ProvidersController : ControllerBase
 				var microsoftProvider = current as MicrosoftProvider;
 				provider = new MicrosoftProvider
 				{
-					Id = id,
+					Id = current.Id,
 					MembershipId = membershipId,
 					Name = model.Name ?? current.Name,
 					Slug = model.Slug ?? current.Slug,
@@ -350,7 +345,7 @@ public class ProvidersController : ControllerBase
 				var appleProvider = current as AppleProvider;
 				provider = new AppleProvider
 				{
-					Id = id,
+					Id = current.Id,
 					MembershipId = membershipId,
 					Name = model.Name ?? current.Name,
 					Slug = model.Slug ?? current.Slug,
@@ -370,7 +365,7 @@ public class ProvidersController : ControllerBase
 				var appleNativeProvider = current as AppleNativeProvider;
 				provider = new AppleNativeProvider
 				{
-					Id = id,
+					Id = current.Id,
 					MembershipId = membershipId,
 					Name = model.Name ?? current.Name,
 					Slug = model.Slug ?? current.Slug,
@@ -395,14 +390,14 @@ public class ProvidersController : ControllerBase
 		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
 		var updatedProvider = await this._providerService.UpdateAsync(provider, membershipId, utilizer, cancellationToken: cancellationToken);
-		return this.Ok(updatedProvider);
+		return ProviderResult(updatedProvider);
 	}
 	
 	#endregion
 	
 	#region Delete Methods
 	
-	/// <summary>Delete an provider</summary>
+	/// <summary>Delete a provider</summary>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Provider id</param>
 	/// <param name="cancellationToken">Cancellation token</param>
@@ -415,8 +410,14 @@ public class ProvidersController : ControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
+		var providerId = id.IsObjectId() ? id : (await this._providerService.GetBySlugAsync(id, membershipId, cancellationToken: cancellationToken))?.Id;
+		if (providerId == null)
+		{
+			return this.ProviderNotFound(id);
+		}
+		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		if (await this._providerService.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken))
+		if (await this._providerService.DeleteAsync(providerId, membershipId, utilizer, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}
@@ -424,6 +425,21 @@ public class ProvidersController : ControllerBase
 		{
 			return this.ProviderNotFound(id);
 		}
+	}
+	
+	#endregion
+	
+	#region Helpers
+	
+	/// <summary>
+	/// Serialized as <see cref="Provider"/>, not as its concrete type: only then the "type" discriminator is written.
+	/// </summary>
+	private static OkObjectResult ProviderResult(Provider provider)
+	{
+		return new OkObjectResult(provider)
+		{
+			DeclaredType = typeof(Provider)
+		};
 	}
 	
 	#endregion

@@ -30,6 +30,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Services
 	
+	private readonly IProviderRepository _providerRepository;
 	private readonly IUserService _userService;
 	private readonly IUserTypeService _userTypeService;
 	private readonly ITokenService _tokenService;
@@ -65,6 +66,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		IProviderRepository repository, 
 		ILogger<ProviderService> logger) : base(membershipService, repository)
 	{
+		this._providerRepository = repository;
 		this._userService = userService;
 		this._userTypeService = userTypeService;
 		this._tokenService = tokenService;
@@ -167,13 +169,13 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 				errorList.Add("Default user type is required");
 			}
 			
-			if (model is AppleProvider appleProvider)
+			if (string.IsNullOrEmpty(GetAppClientId(model)))
 			{
-				if (string.IsNullOrEmpty(appleProvider.AppClientId))
-				{
-					errorList.Add("App client id is required");
-				}
-				
+				errorList.Add("App client id is required");
+			}
+			
+			if (model is BaseAppleProvider appleProvider)
+			{
 				if (string.IsNullOrEmpty(appleProvider.TeamId))
 				{
 					errorList.Add("Team id is required");
@@ -192,54 +194,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 				if (string.IsNullOrEmpty(appleProvider.RedirectUri))
 				{
 					errorList.Add("Redirect uri is required");
-				}
-			}
-			else if (model is AppleNativeProvider appleNativeProvider)
-			{
-				if (string.IsNullOrEmpty(appleNativeProvider.AppClientId))
-				{
-					errorList.Add("App client id is required");
-				}
-				
-				if (string.IsNullOrEmpty(appleNativeProvider.TeamId))
-				{
-					errorList.Add("Team id is required");
-				}
-				
-				if (string.IsNullOrEmpty(appleNativeProvider.PrivateKey))
-				{
-					errorList.Add("Private key is required");
-				}
-				
-				if (string.IsNullOrEmpty(appleNativeProvider.PrivateKeyId))
-				{
-					errorList.Add("Private key id is required");
-				}
-				
-				if (string.IsNullOrEmpty(appleNativeProvider.RedirectUri))
-				{
-					errorList.Add("Redirect uri is required");
-				}
-			}
-			else if (model is FacebookProvider facebookProvider)
-			{
-				if (string.IsNullOrEmpty(facebookProvider.AppClientId))
-				{
-					errorList.Add("App client id is required");
-				}
-			}
-			else if (model is GoogleProvider googleProvider)
-			{
-				if (string.IsNullOrEmpty(googleProvider.AppClientId))
-				{
-					errorList.Add("App client id is required");
-				}
-			}
-			else if (model is MicrosoftProvider microsoftProvider)
-			{
-				if (string.IsNullOrEmpty(microsoftProvider.AppClientId))
-				{
-					errorList.Add("App client id is required");
 				}
 			}
 		}
@@ -262,34 +216,38 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		destination.DefaultRole ??= source.DefaultRole;
 		destination.DefaultUserType ??= source.DefaultUserType;
 		
-		if (destination is AppleProvider appleDestination && source is AppleProvider appleSource)
+		switch (destination)
 		{
-			appleDestination.AppClientId ??= appleSource.AppClientId;
-			appleDestination.TeamId ??= appleSource.TeamId;
-			appleDestination.PrivateKey ??= appleSource.PrivateKey;
-			appleDestination.PrivateKeyId ??= appleSource.PrivateKeyId;
-			appleDestination.RedirectUri ??= appleSource.RedirectUri;
+			case BaseAppleProvider appleDestination when source is BaseAppleProvider appleSource:
+				appleDestination.AppClientId ??= appleSource.AppClientId;
+				appleDestination.TeamId ??= appleSource.TeamId;
+				appleDestination.PrivateKey ??= appleSource.PrivateKey;
+				appleDestination.PrivateKeyId ??= appleSource.PrivateKeyId;
+				appleDestination.RedirectUri ??= appleSource.RedirectUri;
+				break;
+			case FacebookProvider facebookDestination when source is FacebookProvider facebookSource:
+				facebookDestination.AppClientId ??= facebookSource.AppClientId;
+				break;
+			case GoogleProvider googleDestination when source is GoogleProvider googleSource:
+				googleDestination.AppClientId ??= googleSource.AppClientId;
+				break;
+			case MicrosoftProvider microsoftDestination when source is MicrosoftProvider microsoftSource:
+				microsoftDestination.AppClientId ??= microsoftSource.AppClientId;
+				microsoftDestination.TenantId ??= microsoftSource.TenantId;
+				break;
 		}
-		else if (destination is AppleNativeProvider appleNativeDestination && source is AppleNativeProvider appleNativeSource)
+	}
+	
+	private static string? GetAppClientId(Provider provider)
+	{
+		return provider switch
 		{
-			appleNativeDestination.AppClientId = appleNativeSource.AppClientId;
-			appleNativeDestination.TeamId ??= appleNativeSource.TeamId;
-			appleNativeDestination.PrivateKey ??= appleNativeSource.PrivateKey;
-			appleNativeDestination.PrivateKeyId ??= appleNativeSource.PrivateKeyId;
-			appleNativeDestination.RedirectUri ??= appleNativeSource.RedirectUri;
-		}
-		else if (destination is FacebookProvider facebookDestination && source is FacebookProvider facebookSource)
-		{
-			facebookDestination.AppClientId = facebookSource.AppClientId;
-		}
-		else if (destination is GoogleProvider googleDestination && source is GoogleProvider googleSource)
-		{
-			googleDestination.AppClientId = googleSource.AppClientId;
-		}
-		else if (destination is MicrosoftProvider microsoftDestination && source is MicrosoftProvider microsoftSource)
-		{
-			microsoftDestination.AppClientId = microsoftSource.AppClientId;
-		}
+			BaseAppleProvider appleProvider => appleProvider.AppClientId,
+			FacebookProvider facebookProvider => facebookProvider.AppClientId,
+			GoogleProvider googleProvider => googleProvider.AppClientId,
+			MicrosoftProvider microsoftProvider => microsoftProvider.AppClientId,
+			_ => null
+		};
 	}
 	
 	protected override async Task<bool> IsAlreadyExistAsync(Provider model, string membershipId, Provider? exclude = null, CancellationToken cancellationToken = default)
@@ -347,7 +305,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	public async Task<Provider?> GetByTypeAsync(ProviderType type, string membershipId, CancellationToken cancellationToken = default)
 	{
-		return await this._repository.FindOneAsync(x => x.Type == type && x.MembershipId == membershipId, cancellationToken: cancellationToken);
+		return await this._providerRepository.FindOneByTypeAsync(type, membershipId, cancellationToken: cancellationToken);
 	}
 	
 	public async Task<Provider?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)

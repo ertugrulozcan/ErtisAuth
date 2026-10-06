@@ -175,7 +175,8 @@ public abstract class MembershipBoundedCrudService<TModel> :
 			return false;
 		}
 		
-		var properties = typeof(TModel).GetProperties();
+		// Runtime type: a polymorphic model (e.g. a Provider subclass) is compared with its own properties too
+		var properties = newModel.GetType().GetProperties();
 		foreach (var propertyInfo in properties)
 		{
 			var oldValue = propertyInfo.GetValue(currentModel);

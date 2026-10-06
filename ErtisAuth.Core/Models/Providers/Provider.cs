@@ -12,12 +12,21 @@ using MongoDB.Bson.Serialization.Attributes;
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 namespace ErtisAuth.Core.Models.Providers;
 
+/// <summary>
+/// The "type" field is the discriminator, both in JSON and in BSON (ProviderDiscriminatorConvention); it's written
+/// only when the provider is serialized as <see cref="Provider"/>, not as its concrete type.
+/// </summary>
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+[JsonDerivedType(typeof(AppleProvider), nameof(ProviderType.Apple))]
+[JsonDerivedType(typeof(AppleNativeProvider), nameof(ProviderType.AppleNative))]
+[JsonDerivedType(typeof(FacebookProvider), nameof(ProviderType.Facebook))]
+[JsonDerivedType(typeof(GoogleProvider), nameof(ProviderType.Google))]
+[JsonDerivedType(typeof(MicrosoftProvider), nameof(ProviderType.Microsoft))]
 public abstract class Provider : MembershipBoundedResource, IHasSlug, IHasSysInfo
 {
 	#region Properties
 	
-	[JsonPropertyName("type")]
-	[JsonConverter(typeof(JsonStringEnumConverter))]
+	[JsonIgnore]
 	[BsonIgnore]
 	public abstract ProviderType Type { get; }
 	

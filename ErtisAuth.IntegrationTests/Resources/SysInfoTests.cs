@@ -88,7 +88,10 @@ public class SysInfoTests : IClassFixture<ErtisAuthInstance>
 			name => MembershipBody(name, 7200)),
 		["users"] = ("users",
 			name => UserBody(name, "Created"),
-			name => UserBody(name, "Changed"))
+			name => UserBody(name, "Changed")),
+		["providers"] = ("providers",
+			name => new JsonObject { ["type"] = "Microsoft", ["name"] = name, ["isActive"] = false, ["appClientId"] = "microsoft-client-id" },
+			name => new JsonObject { ["name"] = name, ["description"] = "Changed" })
 	};
 	
 	private static JsonObject WebhookBody(string name, int tryCount) => new()
@@ -234,29 +237,6 @@ public class SysInfoTests : IClassFixture<ErtisAuthInstance>
 	}
 	
 	/// <summary>
-	/// Providers are created by the system (on the first listing) and updated by administrators.
-	/// </summary>
-	[Fact]
-	public async Task Provider_IsCreatedByTheSystem_AndModifiedByTheUpdater()
-	{
-		var client = await this._instance.CreateAdminClientAsync();
-		var providers = (await client.GetFromJsonAsync<JsonArray>($"{this.MembershipUrl}/providers", CancellationToken))!;
-		var provider = providers.Single(x => x!["name"]!.GetValue<string>() == "Microsoft")!.AsObject();
-		Assert.Equal("system", provider["sys"]!["created_by"]!.GetValue<string>());
-		
-		var before = DateTime.UtcNow;
-		var body = new JsonObject { ["name"] = "Microsoft", ["description"] = UniqueName(), ["defaultRole"] = "admin", ["defaultUserType"] = "user" };
-		await SendAsync(client, HttpMethod.Put, $"{this.MembershipUrl}/providers/{provider["_id"]!.GetValue<string>()}", body);
-		var after = DateTime.UtcNow;
-		
-		var updated = (await client.GetFromJsonAsync<JsonObject>($"{this.MembershipUrl}/providers/{provider["_id"]!.GetValue<string>()}", CancellationToken))!;
-		Assert.Equal(ReadTime(provider["sys"]!["created_at"]), ReadTime(updated["sys"]!["created_at"]));
-		Assert.Equal("system", updated["sys"]!["created_by"]!.GetValue<string>());
-		AssertTimeBetween(before, after, updated["sys"]!["modified_at"]);
-		Assert.Equal(ErtisAuthInstance.AdminUsername, updated["sys"]!["modified_by"]!.GetValue<string>());
-	}
-	
-	/// <summary>
 	/// An application (Basic token) is recorded by its slug.
 	/// </summary>
 	[Fact]
@@ -321,8 +301,6 @@ public class SysInfoTests : IClassFixture<ErtisAuthInstance>
 		{
 			await this.CreateAndUpdateAsync(client, resource);
 		}
-		
-		await client.GetFromJsonAsync<JsonArray>($"{this.MembershipUrl}/providers", CancellationToken);
 		
 		foreach (var collection in SysCollections)
 		{

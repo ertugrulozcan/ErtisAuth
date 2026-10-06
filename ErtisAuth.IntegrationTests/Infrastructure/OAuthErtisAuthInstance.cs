@@ -41,26 +41,34 @@ public sealed class OAuthErtisAuthInstance : ErtisAuthInstance
 	}
 	
 	/// <summary>
-	/// The membership's provider of the given name (the providers are created on the first listing).
+	/// The default slug of a provider created by <see cref="ConfigureProviderAsync"/>: its type in lower case.
 	/// </summary>
-	public async Task<JsonObject> GetProviderAsync(string name)
+	public static string SlugOf(string type) => type.ToLowerInvariant();
+	
+	/// <summary>
+	/// The membership's provider of the given type created by <see cref="ConfigureProviderAsync"/> (found by its slug), or null.
+	/// </summary>
+	public async Task<JsonObject?> FindProviderAsync(string type)
 	{
 		var adminClient = await this.CreateAdminClientAsync();
-		var providers = await adminClient.GetFromJsonAsync<JsonArray>($"/memberships/{this.MembershipId}/providers");
-		return providers!.Single(x => x!["name"]!.GetValue<string>() == name)!.AsObject();
+		using var response = await adminClient.GetAsync($"/memberships/{this.MembershipId}/providers/{SlugOf(type)}");
+		if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+		{
+			return null;
+		}
+		
+		response.EnsureSuccessStatusCode();
+		return (await response.Content.ReadFromJsonAsync<JsonObject>())!;
 	}
 	
 	/// <summary>
-	/// Configures (PUT) the provider of the given name: active, default role 'admin' and user type 'user', plus the
-	/// given fields. Configuring it again with the same values is a no-op (the API answers IdenticalDocumentError).
+	/// Creates (POST) or updates (PUT) the provider of the given type: active, default role 'admin' and user type
+	/// 'user', plus the given fields. Configuring it again with the same values is a no-op (the API answers IdenticalDocumentError).
 	/// </summary>
-	public async Task<JsonObject> ConfigureProviderAsync(string name, Action<JsonObject> configure)
+	public async Task<JsonObject> ConfigureProviderAsync(string type, Action<JsonObject> configure)
 	{
-		var provider = await this.GetProviderAsync(name);
-		var id = provider["_id"]!.GetValue<string>();
 		var model = new JsonObject
 		{
-			["name"] = name,
 			["defaultRole"] = "admin",
 			["defaultUserType"] = "user",
 			["isActive"] = true
@@ -69,18 +77,33 @@ public sealed class OAuthErtisAuthInstance : ErtisAuthInstance
 		configure(model);
 		
 		var adminClient = await this.CreateAdminClientAsync();
-		using var response = await adminClient.PutAsJsonAsync($"/memberships/{this.MembershipId}/providers/{id}", model);
-		if (response.StatusCode == System.Net.HttpStatusCode.Conflict && (await ReadJsonAsync(response)).GetProperty("errorCode").GetString() == "IdenticalDocumentError")
+		var provider = await this.FindProviderAsync(type);
+		HttpResponseMessage response;
+		if (provider == null)
 		{
-			return await this.GetProviderAsync(name);
+			model["type"] = type;
+			model["slug"] = SlugOf(type);
+			response = await adminClient.PostAsJsonAsync($"/memberships/{this.MembershipId}/providers", model);
+		}
+		else
+		{
+			response = await adminClient.PutAsJsonAsync($"/memberships/{this.MembershipId}/providers/{provider["_id"]!.GetValue<string>()}", model);
 		}
 		
-		if (!response.IsSuccessStatusCode)
+		using (response)
 		{
-			throw new InvalidOperationException($"Provider '{name}' could not be configured ({(int) response.StatusCode}): {await ReadJsonAsync(response)}");
+			if (response.StatusCode == System.Net.HttpStatusCode.Conflict && (await ReadJsonAsync(response)).GetProperty("errorCode").GetString() == "IdenticalDocumentError")
+			{
+				return provider!;
+			}
+			
+			if (!response.IsSuccessStatusCode)
+			{
+				throw new InvalidOperationException($"Provider '{type}' could not be configured ({(int) response.StatusCode}): {await ReadJsonAsync(response)}");
+			}
+			
+			return (await response.Content.ReadFromJsonAsync<JsonObject>())!;
 		}
-		
-		return (await response.Content.ReadFromJsonAsync<JsonObject>())!;
 	}
 	
 	#endregion

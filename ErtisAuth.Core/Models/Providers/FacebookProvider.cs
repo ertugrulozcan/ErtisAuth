@@ -14,8 +14,7 @@ public class FacebookProvider : Provider
 {
 	#region Properties
 	
-	[JsonPropertyName("type")]
-	[JsonConverter(typeof(JsonStringEnumConverter))]
+	[JsonIgnore]
 	[BsonIgnore]
 	public override ProviderType Type => ProviderType.Facebook;
 	

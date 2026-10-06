@@ -532,22 +532,12 @@ public class ErtisAuthException : ErtisException
 	
 	public static ErtisAuthException UnsupportedProvider()
 	{
-		return new ErtisAuthException(HttpStatusCode.Forbidden, "Provider is not supported", "UnsupportedProvider");
-	}
-	
-	public static ErtisAuthException ProviderNameRequired()
-	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, "Provider name is required", "ProviderNameRequired");
-	}
-	
-	public static ErtisAuthException UnknownProvider(string providerName)
-	{
-		return new ErtisAuthException(HttpStatusCode.NotFound, "Unknown provider: " + providerName, "UnknownProvider");
+		return new ErtisAuthException(HttpStatusCode.BadRequest, "Provider is not supported", "UnsupportedProvider");
 	}
 	
 	public static ErtisAuthException ProviderTypeRequired()
 	{
-		return new ErtisAuthException(HttpStatusCode.NotFound, "Provider type required", "ProviderTypeRequired");
+		return new ErtisAuthException(HttpStatusCode.BadRequest, "Provider type is required", "ProviderTypeRequired");
 	}
 	
 	#endregion

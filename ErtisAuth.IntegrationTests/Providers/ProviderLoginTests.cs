@@ -74,6 +74,14 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 	private async Task<HttpResponseMessage> LoginAsync(string provider, object body, string? query = null)
 	{
 		await this.ConfigureProvidersAsync();
+		return await this.SendLoginAsync(provider, body, query);
+	}
+	
+	/// <summary>
+	/// The login request as it is, without configuring the providers first.
+	/// </summary>
+	private async Task<HttpResponseMessage> SendLoginAsync(string provider, object body, string? query = null)
+	{
 		using var request = new HttpRequestMessage(HttpMethod.Post, $"/oauth/{provider}/login{query}");
 		request.Content = JsonContent.Create(body);
 		
@@ -364,6 +372,32 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 		Assert.Equal(revokeCountBefore + 1, this.Providers.RequestsTo(FakeOAuthProviders.AppleRevokeUrl).Count());
 	}
 	
+	/// <summary>
+	/// Regression: the native flow (AppleNativeProvider) was given the authenticator of the web flow only (500).
+	/// </summary>
+	[Fact]
+	public async Task AppleNative_TakesTheIdentityFromTheCodeExchange()
+	{
+		await this.ConfigureProvidersAsync();
+		await this._instance.ConfigureProviderAsync("AppleNative", x =>
+		{
+			x["appClientId"] = AppleClientId;
+			x["teamId"] = "TEAM123456";
+			x["privateKeyId"] = "KEY1234567";
+			x["privateKey"] = FakeOAuthProviders.CreateApplePrivateKeyPem();
+			x["redirectUri"] = "https://app.example.com/apple/callback";
+		});
+		
+		var appleSub = $"000123.{Guid.NewGuid():N}.0456";
+		var appleEmail = $"{Guid.NewGuid():N}@privaterelay.appleid.com";
+		this.Providers.RespondToAppleCodeExchange(AppleClientId, appleSub, appleEmail);
+		
+		var (user, _) = await this.AssertLoginAsync(await this.SendLoginAsync("apple", this.AppleLogin("forged-sub", $"victim-{Guid.NewGuid():N}@example.com"), "?platform=ios"));
+		
+		Assert.Equal(appleEmail, user["email_address"]!.GetValue<string>());
+		Assert.Equal([appleSub], ConnectedAccountsOf(user, "AppleNative"));
+	}
+	
 	#endregion
 	
 	#region Provider State
@@ -377,6 +411,22 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 		using var response = await this.LoginAsync("apple", this.AppleLogin("client-sub", "client@example.com"), "?platform=ios");
 		
 		await AssertErrorAsync(response, HttpStatusCode.Forbidden, "ProviderIsDisable");
+	}
+	
+	[Fact]
+	public async Task DeletedProvider_IsNotConfigured()
+	{
+		await this.ConfigureProvidersAsync();
+		var provider = (await this._instance.FindProviderAsync("Microsoft"))!;
+		var adminClient = await this._instance.CreateAdminClientAsync();
+		using (var deleteResponse = await adminClient.DeleteAsync($"/memberships/{this._instance.MembershipId}/providers/{provider["_id"]!.GetValue<string>()}", CancellationToken))
+		{
+			await ResourceClient.AssertStatusAsync(deleteResponse, HttpStatusCode.NoContent);
+		}
+		
+		using var response = await this.SendLoginAsync("microsoft", MicrosoftLogin());
+		
+		await AssertErrorAsync(response, HttpStatusCode.Forbidden, "ProviderNotConfigured");
 	}
 	
 	#endregion

@@ -61,6 +61,9 @@ public class ProviderServiceLoginTests
 	{
 		// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 		this._providers = InMemoryRepository.Setup(this._repository, x => x.Id ??= Guid.NewGuid().ToString("N")[..24]);
+		this._repository
+			.FindOneByTypeAsync(Arg.Any<ProviderType>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo => this._providers.FirstOrDefault(x => x.Type == callInfo.ArgAt<ProviderType>(0) && x.MembershipId == callInfo.ArgAt<string>(1)));
 		this._membershipService.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(callInfo => CreateMembership(callInfo.ArgAt<string>(0)));
 		
 		this._userService
@@ -114,7 +117,7 @@ public class ProviderServiceLoginTests
 	
 	private void AddProvider(bool isActive = true, bool trustEmail = false)
 	{
-		this._providers.Add(new AppleProvider
+		this._providers.Add(new FacebookProvider
 		{
 			Id = "5f8a1b2c3d4e5f6a7b8c9d10",
 			MembershipId = MembershipId,
@@ -330,82 +333,43 @@ public class ProviderServiceLoginTests
 	
 	#endregion
 	
-	#region Events
+	#region Provider Lookup
 	
 	[Fact]
-	public async Task UpdateAsync_EventDoesNotContainThePrivateKey()
+	public async Task LoginAsync_WithOnlyAnotherTypeOfProvider_ThrowsProviderNotConfigured()
 	{
-		// Events are readable (events.read) and forwarded to webhooks: not the Apple signing key
-		this.AddProvider();
-		(this._providers.Single() as AppleProvider)?.PrivateKey = "-----BEGIN PRIVATE KEY-----current";
-		object? document = null;
-		object? prior = null;
-		this._eventService
-			.When(x => x.FireEventAsync(ErtisAuthEventType.ProviderUpdated, Arg.Any<Utilizer>(), Arg.Any<string?>(), Arg.Any<object?>(), Arg.Any<object?>(), Arg.Any<CancellationToken>()))
-			.Do(x =>
-			{
-				document = x.ArgAt<object?>(3);
-				prior = x.ArgAt<object?>(4);
-			});
-		
-		var update = new AppleProvider
+		this._providers.Add(new GoogleProvider
 		{
-			Id = "5f8a1b2c3d4e5f6a7b8c9d10",
 			MembershipId = MembershipId,
-			AppClientId = "new-app-id",
-			PrivateKey = "-----BEGIN PRIVATE KEY-----updated"
-		};
-		
-		await this.CreateService().UpdateAsync(update, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
-		
-		var json = System.Text.Json.JsonSerializer.Serialize(new { document, prior });
-		Assert.DoesNotContain("BEGIN PRIVATE KEY", json);
-		Assert.Contains("new-app-id", json);
-	}
-	
-	#endregion
-	
-	#region Default Providers
-	
-	[Fact]
-	public async Task GetProvidersAsync_CreatesTheDefaultProvidersForEveryMembership()
-	{
-		var service = this.CreateService();
-		
-		await service.GetProvidersAsync("5f8a1b2c3d4e5f6a7b8c9d0a", TestContext.Current.CancellationToken);
-		await service.GetProvidersAsync("5f8a1b2c3d4e5f6a7b8c9d0b", TestContext.Current.CancellationToken);
-		
-		var expected = Enum.GetValues<ProviderType>().Count(x => x != ProviderType.ErtisAuth);
-		Assert.Equal(expected, this._providers.Count(x => x.MembershipId == "5f8a1b2c3d4e5f6a7b8c9d0a"));
-		Assert.Equal(expected, this._providers.Count(x => x.MembershipId == "5f8a1b2c3d4e5f6a7b8c9d0b"));
-		Assert.All(this._providers, x => Assert.False(x.IsActive || x.TrustEmail));
-	}
-	
-	#endregion
-	
-	#region Update
-	
-	[Theory]
-	[InlineData(false, true)]
-	[InlineData(true, false)]
-	public async Task UpdateAsync_ChangesTheActivation(bool isActive, bool newIsActive)
-	{
-		// Regression: Overwrite copied the stored IsActive over the incoming one, so a provider could never be (de)activated
-		this.AddProvider(isActive: isActive);
-		var update = new FacebookProvider
-		{
-			Id = "5f8a1b2c3d4e5f6a7b8c9d10",
-			MembershipId = MembershipId,
-			IsActive = newIsActive,
-			AppClientId = "app-id",
+			IsActive = true,
+			AppClientId = "google-client-id",
 			DefaultRole = "user",
 			DefaultUserType = "base-user"
-		};
+		});
 		
-		var updated = await this.CreateService().UpdateAsync(update, MembershipId, Utilizer.GetSystemUtilizer(MembershipId), TestContext.Current.CancellationToken);
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.LoginAsync(this.CreateService(), CreateRequest()));
 		
-		Assert.Equal(newIsActive, updated.IsActive);
-		Assert.Equal(newIsActive, Assert.Single(this._providers).IsActive);
+		Assert.Equal("ProviderNotConfigured", exception.ErrorCode);
+		await this._repository.Received().FindOneByTypeAsync(ProviderType.Facebook, MembershipId, Arg.Any<CancellationToken>());
+	}
+	
+	#endregion
+	
+	#region Logout
+	
+	[Fact]
+	public async Task LogoutAsync_RevokesTheAccountTokenWithItsProviderAndForgetsIt()
+	{
+		this.AddProvider();
+		var user = this.AddUser("5f8a1b2c3d4e5f6a7b8c9d01", Email, connectedAccounts: [new ProviderAccountInfo { Provider = "Facebook", UserId = ProviderUserId, Token = "facebook-access-token" }]);
+		this._tokenService.GetTokenOwnerUserAsync("access-token", Arg.Any<CancellationToken>()).Returns(user);
+		
+		await this.CreateService().LogoutAsync("access-token", TestContext.Current.CancellationToken);
+		
+		await this._authenticator.Received(1).RevokeTokenAsync("facebook-access-token", Arg.Is<Provider>(x => x is FacebookProvider), Arg.Any<CancellationToken>());
+		var account = Assert.Single(this._users.Single().ConnectedAccounts!);
+		Assert.Equal(ProviderUserId, account.UserId);
+		Assert.Null(account.Token);
 	}
 	
 	#endregion

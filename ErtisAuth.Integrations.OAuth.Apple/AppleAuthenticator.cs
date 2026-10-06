@@ -10,7 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace ErtisAuth.Integrations.OAuth.Apple;
 
-public interface IAppleAuthenticator : IProviderAuthenticator<AppleProvider, AppleLoginRequestBase, AppleToken, AppleUser>;
+public interface IAppleAuthenticator : IProviderAuthenticator<BaseAppleProvider, AppleLoginRequestBase, AppleToken, AppleUser>;
 
 public class AppleAuthenticator : IAppleAuthenticator
 {
@@ -54,7 +54,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 	/// a provider configuration Apple can't use is ProviderNotConfiguredCorrectly, and Apple not answering (network
 	/// error, timeout, 5xx, unreadable response) is ProviderUnavailable (503).
 	/// </summary>
-	public async Task<bool> VerifyTokenAsync(AppleLoginRequestBase request, AppleProvider provider, CancellationToken cancellationToken = default)
+	public async Task<bool> VerifyTokenAsync(AppleLoginRequestBase request, BaseAppleProvider provider, CancellationToken cancellationToken = default)
 	{
 		if (request.Token == null || string.IsNullOrEmpty(request.Token.Code))
 		{
@@ -144,7 +144,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 	/// <summary>
 	/// The client secret signed with the provider's private key; a key that can't be read is a configuration error.
 	/// </summary>
-	private string CreateClientSecret(AppleProvider provider)
+	private string CreateClientSecret(BaseAppleProvider provider)
 	{
 		try
 		{
@@ -173,7 +173,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 		}
 	}
 	
-	public async Task<bool> RevokeTokenAsync(string accessToken, AppleProvider provider, CancellationToken cancellationToken = default)
+	public async Task<bool> RevokeTokenAsync(string accessToken, BaseAppleProvider provider, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -205,7 +205,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 	/// exchange, so TLS server validation replaces the signature check (OpenID Connect Core 3.1.3.7);
 	/// issuer, audience and expiration are still verified.
 	/// </summary>
-	private JsonWebToken? ReadIdentity(string? idToken, AppleProvider provider)
+	private JsonWebToken? ReadIdentity(string? idToken, BaseAppleProvider provider)
 	{
 		if (string.IsNullOrEmpty(idToken) || !this._tokenHandler.CanReadToken(idToken))
 		{
@@ -254,7 +254,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 		return claim != null && bool.TryParse(claim.Value, out var value) && value;
 	}
 	
-	private string? GenerateAppleClientSecret(AppleProvider provider)
+	private string? GenerateAppleClientSecret(BaseAppleProvider provider)
 	{
 		if (string.IsNullOrEmpty(provider.PrivateKey) || string.IsNullOrEmpty(provider.AppClientId))
 		{

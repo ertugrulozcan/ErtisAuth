@@ -7,13 +7,20 @@ namespace ErtisAuth.Dao.Serialization;
 
 public static class ProviderDiscriminatorConvention
 {
+	#region Constants
+	
+	public const string ElementName = "type";
+	
+	#endregion
+	
 	#region Methods
 	
 	public static void Register()
 	{
-		var convention = new ScalarDiscriminatorConvention("type");
+		var convention = new ScalarDiscriminatorConvention(ElementName);
 		
 		BsonSerializer.RegisterDiscriminatorConvention(typeof(Provider), convention);
+		BsonSerializer.RegisterDiscriminatorConvention(typeof(BaseAppleProvider), convention);
 		BsonSerializer.RegisterDiscriminatorConvention(typeof(AppleProvider), convention);
 		BsonSerializer.RegisterDiscriminatorConvention(typeof(AppleNativeProvider), convention);
 		BsonSerializer.RegisterDiscriminatorConvention(typeof(FacebookProvider), convention);
@@ -50,6 +57,6 @@ public static class ProviderDiscriminatorConvention
 			classMap.SetDiscriminator(nameof(ProviderType.Microsoft));
 		});
 	}
-    
-    #endregion
+	
+	#endregion
 }

@@ -50,7 +50,7 @@ public class CreateProviderFormModel
 	public bool IsActive { get; set; }
 	
 	/// <summary>
-	/// Omitted: the current value is kept.
+	/// Link a login to an existing user by email address even when the provider does not assert that the email is verified (default false).
 	/// </summary>
 	[JsonPropertyName("trust_email")]
 	public bool TrustEmail { get; set; }

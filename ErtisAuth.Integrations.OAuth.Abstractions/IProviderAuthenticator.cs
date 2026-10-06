@@ -11,15 +11,6 @@ public interface IProviderAuthenticator
 	Task<bool> RevokeTokenAsync(string accessToken, Provider provider, CancellationToken cancellationToken = default);
 }
 
-/*
-public interface IProviderAuthenticator<in TProvider> : IProviderAuthenticator where TProvider : Provider
-{
-	Task<bool> VerifyTokenAsync(IProviderLoginRequest request, TProvider provider, CancellationToken cancellationToken = default);
-	
-	Task<bool> RevokeTokenAsync(string accessToken, TProvider provider, CancellationToken cancellationToken = default);
-}
-*/
-
 public interface IProviderAuthenticator<in TProvider, in TProviderLoginRequest, TToken, TUser> : IProviderAuthenticator 
 	where TProvider : Provider 
 	where TProviderLoginRequest : IProviderLoginRequest<TToken, TUser> 
