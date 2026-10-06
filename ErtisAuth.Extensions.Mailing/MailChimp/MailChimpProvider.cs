@@ -19,6 +19,7 @@ public class MailChimpProvider : IMailProvider
     
     [JsonPropertyName("type")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
+    [BsonIgnore]
     public MailProviderType Type => MailProviderType.MailChimp;
     
     [JsonPropertyName("deliveryMode")]

@@ -30,9 +30,9 @@ public class MicrosoftAuthenticatorTests
 	
 	private IMicrosoftAuthenticator Authenticator => this._services.Get<IMicrosoftAuthenticator>();
 	
-	private static Provider CreateProvider()
+	private static MicrosoftProvider CreateProvider()
 	{
-		return new Provider(KnownProviders.Microsoft)
+		return new MicrosoftProvider
 		{
 			MembershipId = "5f8a1b2c3d4e5f6a7b8c9d00",
 			IsActive = true,

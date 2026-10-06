@@ -1,12 +1,17 @@
 using System.Text.Json.Serialization;
+using ErtisAuth.Integrations.OAuth.Core;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.WebAPI.Models.Providers;
 
-public class UpdateProviderFormModel
+public class CreateProviderFormModel
 {
 	#region Properties
+	
+	[JsonPropertyName("type")]
+	[JsonConverter(typeof(JsonStringEnumConverter))]
+	public ProviderType? Type { get; set; }
 	
 	[JsonPropertyName("name")]
 	public string? Name { get; set; }
@@ -42,13 +47,13 @@ public class UpdateProviderFormModel
 	public string? RedirectUri { get; set; }
 	
 	[JsonPropertyName("isActive")]
-	public bool? IsActive { get; set; }
+	public bool IsActive { get; set; }
 	
 	/// <summary>
 	/// Omitted: the current value is kept.
 	/// </summary>
 	[JsonPropertyName("trust_email")]
-	public bool? TrustEmail { get; set; }
+	public bool TrustEmail { get; set; }
 	
 	#endregion
 }

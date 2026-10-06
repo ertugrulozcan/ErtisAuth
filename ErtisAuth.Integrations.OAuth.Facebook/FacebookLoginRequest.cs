@@ -12,7 +12,7 @@ public class FacebookLoginRequest : IProviderLoginRequest<FacebookUserToken, Fac
 	#region Properties
 	
 	[JsonIgnore]
-	public KnownProviders Provider => KnownProviders.Facebook;
+	public ProviderType Provider => ProviderType.Facebook;
 	
 	[JsonPropertyName("user")]
 	public FacebookUserToken? User { get; set; }
@@ -93,12 +93,12 @@ public class FacebookLoginRequest : IProviderLoginRequest<FacebookUserToken, Fac
 			EmailAddress = this.User?.EmailAddress,
 			Role = role ?? string.Empty,
 			UserType = userType,
-			SourceProvider = KnownProviders.Facebook.ToString(),
+			SourceProvider = ProviderType.Facebook.ToString(),
 			ConnectedAccounts = new ProviderAccountInfo[]
 			{
 				new()
 				{
-					Provider = KnownProviders.Facebook.ToString(),
+					Provider = ProviderType.Facebook.ToString(),
 					UserId = this.UserId,
 					Token = this.AccessToken
 				}

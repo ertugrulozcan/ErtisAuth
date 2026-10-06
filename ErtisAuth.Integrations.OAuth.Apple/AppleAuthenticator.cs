@@ -4,14 +4,13 @@ using System.Text.Json;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Abstractions;
-using ErtisAuth.Integrations.OAuth.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ErtisAuth.Integrations.OAuth.Apple;
 
-public interface IAppleAuthenticator : IProviderAuthenticator, IProviderAuthenticator<AppleLoginRequestBase, AppleToken, AppleUser>;
+public interface IAppleAuthenticator : IProviderAuthenticator<AppleProvider, AppleLoginRequestBase, AppleToken, AppleUser>;
 
 public class AppleAuthenticator : IAppleAuthenticator
 {
@@ -50,19 +49,14 @@ public class AppleAuthenticator : IAppleAuthenticator
 	
 	#region Methods
 	
-	public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
-	{
-		return await this.VerifyTokenAsync(request as AppleLoginRequestBase, provider, cancellationToken: cancellationToken);
-	}
-	
 	/// <summary>
 	/// Exchanges the authorization code. Only a code (or token) Apple does not accept is a failed login (false or 401);
 	/// a provider configuration Apple can't use is ProviderNotConfiguredCorrectly, and Apple not answering (network
 	/// error, timeout, 5xx, unreadable response) is ProviderUnavailable (503).
 	/// </summary>
-	public async Task<bool> VerifyTokenAsync(AppleLoginRequestBase? request, Provider provider, CancellationToken cancellationToken = default)
+	public async Task<bool> VerifyTokenAsync(AppleLoginRequestBase request, AppleProvider provider, CancellationToken cancellationToken = default)
 	{
-		if (request?.Token == null || string.IsNullOrEmpty(request.Token.Code))
+		if (request.Token == null || string.IsNullOrEmpty(request.Token.Code))
 		{
 			return false;
 		}
@@ -150,7 +144,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 	/// <summary>
 	/// The client secret signed with the provider's private key; a key that can't be read is a configuration error.
 	/// </summary>
-	private string CreateClientSecret(Provider provider)
+	private string CreateClientSecret(AppleProvider provider)
 	{
 		try
 		{
@@ -179,7 +173,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 		}
 	}
 	
-	public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider, CancellationToken cancellationToken = default)
+	public async Task<bool> RevokeTokenAsync(string accessToken, AppleProvider provider, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -211,7 +205,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 	/// exchange, so TLS server validation replaces the signature check (OpenID Connect Core 3.1.3.7);
 	/// issuer, audience and expiration are still verified.
 	/// </summary>
-	private JsonWebToken? ReadIdentity(string? idToken, Provider provider)
+	private JsonWebToken? ReadIdentity(string? idToken, AppleProvider provider)
 	{
 		if (string.IsNullOrEmpty(idToken) || !this._tokenHandler.CanReadToken(idToken))
 		{
@@ -260,7 +254,7 @@ public class AppleAuthenticator : IAppleAuthenticator
 		return claim != null && bool.TryParse(claim.Value, out var value) && value;
 	}
 	
-	private string? GenerateAppleClientSecret(Provider provider)
+	private string? GenerateAppleClientSecret(AppleProvider provider)
 	{
 		if (string.IsNullOrEmpty(provider.PrivateKey) || string.IsNullOrEmpty(provider.AppClientId))
 		{

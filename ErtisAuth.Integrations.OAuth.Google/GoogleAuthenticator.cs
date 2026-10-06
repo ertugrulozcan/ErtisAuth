@@ -1,12 +1,11 @@
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Abstractions;
-using ErtisAuth.Integrations.OAuth.Core;
 using GoogleOAuth = Google.Apis.Auth;
 
 namespace ErtisAuth.Integrations.OAuth.Google;
 
-public interface IGoogleAuthenticator : IProviderAuthenticator, IProviderAuthenticator<GoogleLoginRequest, GoogleToken, GoogleUser>;
+public interface IGoogleAuthenticator : IProviderAuthenticator<GoogleProvider, GoogleLoginRequest, GoogleToken, GoogleUser>;
 
 public class GoogleAuthenticator : IGoogleAuthenticator
 {
@@ -31,12 +30,7 @@ public class GoogleAuthenticator : IGoogleAuthenticator
 	
 	#region Methods
 	
-	public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
-	{
-		return await this.VerifyTokenAsync((GoogleLoginRequest) request, provider, cancellationToken: cancellationToken);
-	}
-	
-	public async Task<bool> VerifyTokenAsync(GoogleLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
+	public async Task<bool> VerifyTokenAsync(GoogleLoginRequest request, GoogleProvider provider, CancellationToken cancellationToken = default)
 	{
 		if (request.Token == null || string.IsNullOrEmpty(request.AccessToken) || string.IsNullOrEmpty(provider.AppClientId))
 		{
@@ -88,11 +82,10 @@ public class GoogleAuthenticator : IGoogleAuthenticator
 		}
 	}
 	
-	public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider, CancellationToken cancellationToken = default)
+	public async Task<bool> RevokeTokenAsync(string accessToken, GoogleProvider provider, CancellationToken cancellationToken = default)
 	{
 		// Google ID tokens not revoke, they already have a short lifetime.
-		await Task.CompletedTask;
-		return true;
+		return await Task.FromResult(true);
 	}
     
 	#endregion

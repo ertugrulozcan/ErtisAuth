@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
-using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Integrations.OAuth.Facebook;
 using ErtisAuth.Integrations.OAuth.Tests.Helpers;
 
@@ -42,7 +41,7 @@ public class FacebookAuthenticatorTests
 	
 	private static Provider CreateProvider()
 	{
-		return new Provider(KnownProviders.Facebook)
+		return new FacebookProvider
 		{
 			MembershipId = "5f8a1b2c3d4e5f6a7b8c9d00",
 			IsActive = true,
@@ -110,7 +109,7 @@ public class FacebookAuthenticatorTests
 	{
 		var request = CreateClientRequest(FacebookUserId, FacebookEmail, appId: "another-app");
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("UntrustedProvider", exception.ErrorCode);
 	}
@@ -122,7 +121,7 @@ public class FacebookAuthenticatorTests
 		this.RespondWithProfile();
 		var request = CreateClientRequest(FacebookUserId, FacebookEmail);
 		
-		Assert.False(await this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.False(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 	}
 	
 	[Fact]
@@ -132,7 +131,7 @@ public class FacebookAuthenticatorTests
 		this.RespondWithProfile();
 		var request = CreateClientRequest(FacebookUserId, FacebookEmail);
 		
-		Assert.False(await this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.False(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 	}
 	
 	[Fact]
@@ -142,7 +141,7 @@ public class FacebookAuthenticatorTests
 		this.RespondWithProfile();
 		var request = CreateClientRequest("victim-facebook-id", FacebookEmail);
 		
-		Assert.False(await this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.False(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 	}
 	
 	[Fact]
@@ -153,7 +152,7 @@ public class FacebookAuthenticatorTests
 		this.RespondWithProfile();
 		var request = CreateClientRequest(FacebookUserId, "victim@example.com");
 		
-		Assert.True(await this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.True(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal(FacebookUserId, request.UserId);
 		Assert.Equal(FacebookEmail, request.EmailAddress);
@@ -170,7 +169,7 @@ public class FacebookAuthenticatorTests
 		this.RespondWithProfile(email: null);
 		var request = CreateClientRequest(FacebookUserId, "victim@example.com");
 		
-		Assert.True(await this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.True(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Null(request.EmailAddress);
 	}
@@ -182,7 +181,7 @@ public class FacebookAuthenticatorTests
 		this.RespondWithProfile(id: "another-facebook-id");
 		var request = CreateClientRequest(FacebookUserId, FacebookEmail);
 		
-		Assert.False(await this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.False(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 	}
 	
 	[Fact]
@@ -193,7 +192,7 @@ public class FacebookAuthenticatorTests
 		this.RespondWithProfile();
 		var request = CreateClientRequest(FacebookUserId, FacebookEmail);
 		
-		await this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken);
+		await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken);
 		
 		Assert.False(request.IsEmailVerified);
 	}
@@ -209,7 +208,7 @@ public class FacebookAuthenticatorTests
 		this._services.Handler.Respond(JwksUrl, TestJwt.JwksJson(this._facebookKey1));
 		var request = CreateClientRequest("victim-facebook-id", "victim@example.com", this.CreateLimitedToken(this._facebookKey1), isLimited: true);
 		
-		Assert.True(await this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.True(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal(FacebookUserId, request.UserId);
 		Assert.Equal(FacebookEmail, request.EmailAddress);
@@ -224,7 +223,7 @@ public class FacebookAuthenticatorTests
 		this._services.Handler.Respond(JwksUrl, TestJwt.JwksJson(this._facebookKey1));
 		var request = CreateClientRequest(FacebookUserId, FacebookEmail, this.CreateLimitedToken(this._facebookKey1, audience: "attacker-app"), appId: "attacker-app", isLimited: true);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("UntrustedProvider", exception.ErrorCode);
 	}
@@ -236,7 +235,7 @@ public class FacebookAuthenticatorTests
 		this._services.Handler.Respond(JwksUrl, TestJwt.JwksJson(this._facebookKey1, this._facebookKey2));
 		var request = CreateClientRequest(FacebookUserId, FacebookEmail, this.CreateLimitedToken(this._facebookKey2), isLimited: true);
 		
-		Assert.True(await this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.True(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 	}
 	
 	[Fact]
@@ -245,7 +244,7 @@ public class FacebookAuthenticatorTests
 		this._services.Handler.Respond(JwksUrl, TestJwt.JwksJson(this._facebookKey1));
 		var request = CreateClientRequest(FacebookUserId, FacebookEmail, this.CreateLimitedToken(new TestJwt("attacker-key")), isLimited: true);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal(HttpStatusCode.Unauthorized, exception.StatusCode);
 	}
@@ -256,7 +255,7 @@ public class FacebookAuthenticatorTests
 		this._services.Handler.Respond(JwksUrl, TestJwt.JwksJson(this._facebookKey1));
 		var request = CreateClientRequest(FacebookUserId, FacebookEmail, this.CreateLimitedToken(this._facebookKey1, issuer: "https://attacker.example.com"), isLimited: true);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal(HttpStatusCode.Unauthorized, exception.StatusCode);
 	}

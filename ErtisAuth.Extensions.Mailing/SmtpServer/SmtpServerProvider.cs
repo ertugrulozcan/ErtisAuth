@@ -19,6 +19,7 @@ public class SmtpServerProvider : IMailProvider
 	
 	[JsonPropertyName("type")]
 	[JsonConverter(typeof(JsonStringEnumConverter))]
+	[BsonIgnore]
 	public MailProviderType Type => MailProviderType.SmtpServer;
 	
 	[JsonPropertyName("deliveryMode")]

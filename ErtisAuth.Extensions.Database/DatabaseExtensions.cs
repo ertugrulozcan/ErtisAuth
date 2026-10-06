@@ -79,7 +79,10 @@ public static class DatabaseExtensions
 	
 	private static void RegisterDiscriminatorConventions()
 	{
-		// IMailProvider
+		// OAuth Providers
+		ProviderDiscriminatorConvention.Register();
+		
+		// Mail Providers
 		MailProviderDiscriminatorConvention.Register();
 	}
 	

@@ -256,8 +256,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 			model.Forbidden = model.Forbidden.Distinct().Order().ToArray();
 		}
 		
-		await Task.CompletedTask;
-		return model;
+		return await Task.FromResult(model);
 	}
 	
 	protected override void Overwrite(Role destination, Role source)

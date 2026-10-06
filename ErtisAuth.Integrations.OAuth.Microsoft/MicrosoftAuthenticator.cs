@@ -4,12 +4,11 @@ using Ertis.Net.Rest;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Abstractions;
-using ErtisAuth.Integrations.OAuth.Core;
 
 // ReSharper disable UnusedMember.Local
 namespace ErtisAuth.Integrations.OAuth.Microsoft;
 
-public interface IMicrosoftAuthenticator : IProviderAuthenticator, IProviderAuthenticator<MicrosoftLoginRequest, MicrosoftToken, MicrosoftUser>;
+public interface IMicrosoftAuthenticator : IProviderAuthenticator<MicrosoftProvider, MicrosoftLoginRequest, MicrosoftToken, MicrosoftUser>;
 
 public class MicrosoftAuthenticator : IMicrosoftAuthenticator
 {
@@ -62,12 +61,7 @@ public class MicrosoftAuthenticator : IMicrosoftAuthenticator
 		return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken);
 	}
 	
-	public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
-	{
-		return await this.VerifyTokenAsync((MicrosoftLoginRequest) request, provider, cancellationToken: cancellationToken);
-	}
-	
-	public async Task<bool> VerifyTokenAsync(MicrosoftLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
+	public async Task<bool> VerifyTokenAsync(MicrosoftLoginRequest request, MicrosoftProvider provider, CancellationToken cancellationToken = default)
 	{
 		if (provider.AppClientId == request.ClientId)
 		{
@@ -90,7 +84,7 @@ public class MicrosoftAuthenticator : IMicrosoftAuthenticator
 		}
 	}
 	
-	public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider, CancellationToken cancellationToken = default)
+	public async Task<bool> RevokeTokenAsync(string accessToken, MicrosoftProvider provider, CancellationToken cancellationToken = default)
 	{
 		/*
 		 * https://learn.microsoft.com/en-us/azure/active-directory/develop/active-directory-configurable-token-lifetimes#access-tokens
@@ -104,8 +98,7 @@ public class MicrosoftAuthenticator : IMicrosoftAuthenticator
 		 * The default lifetime also varies depending on the client application requesting the token or if conditional access is enabled in the tenant. For more information, see Access token lifetime.
 		*/
 		
-		await Task.CompletedTask;
-		return true;
+		return await Task.FromResult(true);
 	}
     
 	#endregion

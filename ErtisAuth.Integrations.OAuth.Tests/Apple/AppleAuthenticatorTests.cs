@@ -3,7 +3,6 @@ using System.Text.Json;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Apple;
-using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Integrations.OAuth.Tests.Helpers;
 
 namespace ErtisAuth.Integrations.OAuth.Tests.Apple;
@@ -36,9 +35,23 @@ public class AppleAuthenticatorTests
 	
 	private IAppleAuthenticator Authenticator => this._services.Get<IAppleAuthenticator>();
 	
-	private static Provider CreateProvider(KnownProviders providerType = KnownProviders.Apple)
+	private static AppleProvider CreateAppleProvider()
 	{
-		return new Provider(providerType)
+		return new AppleProvider
+		{
+			MembershipId = "5f8a1b2c3d4e5f6a7b8c9d00",
+			IsActive = true,
+			AppClientId = ClientId,
+			TeamId = "TEAM123456",
+			PrivateKeyId = "KEY1234567",
+			PrivateKey = TestJwt.CreateApplePrivateKeyPem(),
+			RedirectUri = "https://app.example.com/apple/callback"
+		};
+	}
+	
+	private static AppleNativeProvider CreateAppleNativeProvider()
+	{
+		return new AppleNativeProvider
 		{
 			MembershipId = "5f8a1b2c3d4e5f6a7b8c9d00",
 			IsActive = true,
@@ -119,7 +132,7 @@ public class AppleAuthenticatorTests
 		this.RespondWithAppleIdToken(AppleClaims());
 		var request = CreateClientRequest(AppleSub, AppleEmail);
 		
-		await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken);
+		await this.Authenticator.VerifyTokenAsync(request, CreateAppleProvider(), TestContext.Current.CancellationToken);
 		
 		var exchange = this._services.Handler.SingleRequestTo(TokenEndpoint);
 		Assert.Equal(HttpMethod.Post, exchange.Method);
@@ -135,7 +148,7 @@ public class AppleAuthenticatorTests
 		this._services.Handler.Respond(TokenEndpoint, """{"error":"invalid_grant"}""", HttpStatusCode.BadRequest);
 		var request = CreateClientRequest(AppleSub, AppleEmail);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(request, CreateAppleProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal(HttpStatusCode.Unauthorized, exception.StatusCode);
 	}
@@ -146,7 +159,7 @@ public class AppleAuthenticatorTests
 		this.RespondWithAppleIdToken(AppleClaims());
 		var request = CreateClientRequest(AppleSub, AppleEmail);
 		
-		Assert.True(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.True(await this.Authenticator.VerifyTokenAsync(request, CreateAppleProvider(), TestContext.Current.CancellationToken));
 	}
 	
 	#endregion
@@ -161,7 +174,7 @@ public class AppleAuthenticatorTests
 	{
 		this._services.Handler.Fail(TokenEndpoint, new HttpRequestException("Name or service not known"));
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), CreateProvider(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), CreateAppleProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("ProviderUnavailable", exception.ErrorCode);
 		Assert.Equal(HttpStatusCode.ServiceUnavailable, exception.StatusCode);
@@ -175,7 +188,7 @@ public class AppleAuthenticatorTests
 	{
 		this._services.Handler.Respond(TokenEndpoint, body, statusCode);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), CreateProvider(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), CreateAppleProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("ProviderUnavailable", exception.ErrorCode);
 	}
@@ -190,7 +203,7 @@ public class AppleAuthenticatorTests
 	{
 		this._services.Handler.Respond(TokenEndpoint, $$"""{"error":"{{error}}"}""", HttpStatusCode.BadRequest);
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), CreateProvider(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), CreateAppleProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("ProviderNotConfiguredCorrectly", exception.ErrorCode);
 	}
@@ -198,7 +211,7 @@ public class AppleAuthenticatorTests
 	[Fact]
 	public async Task VerifyTokenAsync_WithUnreadablePrivateKey_ThrowsProviderNotConfiguredCorrectly()
 	{
-		var provider = CreateProvider();
+		var provider = CreateAppleProvider();
 		provider.PrivateKey = "-----BEGIN PRIVATE KEY-----\nnot a key\n-----END PRIVATE KEY-----";
 		
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), provider, TestContext.Current.CancellationToken));
@@ -210,7 +223,7 @@ public class AppleAuthenticatorTests
 	[Fact]
 	public async Task VerifyTokenAsync_WithoutRedirectUri_ThrowsProviderNotConfiguredCorrectly()
 	{
-		var provider = CreateProvider();
+		var provider = CreateAppleProvider();
 		provider.RedirectUri = null;
 		
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.Authenticator.VerifyTokenAsync(CreateClientRequest(AppleSub, AppleEmail), provider, TestContext.Current.CancellationToken));
@@ -231,7 +244,8 @@ public class AppleAuthenticatorTests
 		this.RespondWithAppleIdToken(AppleClaims());
 		var request = CreateClientRequest("victim-apple-sub", "victim@example.com", isNative);
 		
-		var isVerified = await this.Authenticator.VerifyTokenAsync(request, CreateProvider(isNative ? KnownProviders.AppleNative : KnownProviders.Apple), TestContext.Current.CancellationToken);
+		Provider provider = isNative ? CreateAppleNativeProvider() : CreateAppleProvider();
+		var isVerified = await this.Authenticator.VerifyTokenAsync(request, provider, TestContext.Current.CancellationToken);
 		
 		Assert.True(isVerified);
 		Assert.Equal(AppleSub, request.UserId);
@@ -245,7 +259,7 @@ public class AppleAuthenticatorTests
 		this.RespondWithAppleIdToken(AppleClaims());
 		var request = CreateClientRequest(AppleSub, AppleEmail);
 		
-		await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken);
+		await this.Authenticator.VerifyTokenAsync(request, CreateAppleProvider(), TestContext.Current.CancellationToken);
 		
 		Assert.Equal("Client", request.User?.FirstName);
 		Assert.Equal("Name", request.User?.LastName);
@@ -257,7 +271,7 @@ public class AppleAuthenticatorTests
 		this.RespondWithAppleIdToken(new Dictionary<string, object> { ["sub"] = AppleSub });
 		var request = CreateClientRequest(AppleSub, "victim@example.com");
 		
-		Assert.True(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.True(await this.Authenticator.VerifyTokenAsync(request, CreateAppleProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal(AppleSub, request.UserId);
 		Assert.Null(request.EmailAddress);
@@ -274,7 +288,7 @@ public class AppleAuthenticatorTests
 		this.RespondWithAppleIdToken(AppleClaims(emailVerified));
 		var request = CreateClientRequest(AppleSub, AppleEmail);
 		
-		await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken);
+		await this.Authenticator.VerifyTokenAsync(request, CreateAppleProvider(), TestContext.Current.CancellationToken);
 		
 		Assert.Equal(expected, request.IsEmailVerified);
 	}
@@ -285,7 +299,7 @@ public class AppleAuthenticatorTests
 		this.RespondWithAppleIdToken(AppleClaims(), audience: "com.attacker.app");
 		var request = CreateClientRequest(AppleSub, AppleEmail);
 		
-		Assert.False(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.False(await this.Authenticator.VerifyTokenAsync(request, CreateAppleProvider(), TestContext.Current.CancellationToken));
 	}
 	
 	[Fact]
@@ -294,7 +308,7 @@ public class AppleAuthenticatorTests
 		this.RespondWithAppleIdToken(AppleClaims(), issuer: "https://attacker.example.com");
 		var request = CreateClientRequest(AppleSub, AppleEmail);
 		
-		Assert.False(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.False(await this.Authenticator.VerifyTokenAsync(request, CreateAppleProvider(), TestContext.Current.CancellationToken));
 	}
 	
 	[Fact]
@@ -303,7 +317,7 @@ public class AppleAuthenticatorTests
 		this.RespondWithAppleIdToken(AppleClaims(), expires: DateTime.UtcNow.AddHours(-1));
 		var request = CreateClientRequest(AppleSub, AppleEmail);
 		
-		Assert.False(await this.Authenticator.VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.False(await this.Authenticator.VerifyTokenAsync(request, CreateAppleProvider(), TestContext.Current.CancellationToken));
 	}
 	
 	#endregion

@@ -10,7 +10,7 @@ public class MicrosoftLoginRequest : IProviderLoginRequest<MicrosoftToken, Micro
 	#region Properties
 	
 	[JsonIgnore]
-	public KnownProviders Provider => KnownProviders.Microsoft;
+	public ProviderType Provider => ProviderType.Microsoft;
 	
 	[JsonIgnore]
 	public MicrosoftUser? User { get; set; }
@@ -88,12 +88,12 @@ public class MicrosoftLoginRequest : IProviderLoginRequest<MicrosoftToken, Micro
 			EmailAddress = this.User?.EmailAddress,
 			Role = role ?? string.Empty,
 			UserType = userType,
-			SourceProvider = KnownProviders.Microsoft.ToString(),
+			SourceProvider = ProviderType.Microsoft.ToString(),
 			ConnectedAccounts = new ProviderAccountInfo[]
 			{
 				new()
 				{
-					Provider = KnownProviders.Microsoft.ToString(),
+					Provider = ProviderType.Microsoft.ToString(),
 					UserId = this.UserId,
 					Token = this.AccessToken
 				}

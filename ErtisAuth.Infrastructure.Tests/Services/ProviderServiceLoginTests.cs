@@ -114,7 +114,7 @@ public class ProviderServiceLoginTests
 	
 	private void AddProvider(bool isActive = true, bool trustEmail = false)
 	{
-		this._providers.Add(new Provider(KnownProviders.Facebook)
+		this._providers.Add(new AppleProvider
 		{
 			Id = "5f8a1b2c3d4e5f6a7b8c9d10",
 			MembershipId = MembershipId,
@@ -167,7 +167,7 @@ public class ProviderServiceLoginTests
 	{
 		// FindUserAsync queries by connected account (provider + provider user id) or by email address
 		var matches = query.Contains("connected_accounts")
-			? this._users.Where(x => x.ConnectedAccounts?.Any(a => a.Provider == KnownProviders.Facebook.ToString() && query.Contains($"\"{a.UserId}\"")) == true)
+			? this._users.Where(x => x.ConnectedAccounts?.Any(a => a.Provider == ProviderType.Facebook.ToString() && query.Contains($"\"{a.UserId}\"")) == true)
 			: this._users.Where(x => query.Contains($"\"{x.EmailAddress}\""));
 		
 		var items = matches.Select(x => new DynamicObject(x)).ToArray();
@@ -337,7 +337,7 @@ public class ProviderServiceLoginTests
 	{
 		// Events are readable (events.read) and forwarded to webhooks: not the Apple signing key
 		this.AddProvider();
-		this._providers.Single().PrivateKey = "-----BEGIN PRIVATE KEY-----current";
+		(this._providers.Single() as AppleProvider)?.PrivateKey = "-----BEGIN PRIVATE KEY-----current";
 		object? document = null;
 		object? prior = null;
 		this._eventService
@@ -348,7 +348,7 @@ public class ProviderServiceLoginTests
 				prior = x.ArgAt<object?>(4);
 			});
 		
-		var update = new Provider(KnownProviders.Facebook)
+		var update = new AppleProvider
 		{
 			Id = "5f8a1b2c3d4e5f6a7b8c9d10",
 			MembershipId = MembershipId,
@@ -375,7 +375,7 @@ public class ProviderServiceLoginTests
 		await service.GetProvidersAsync("5f8a1b2c3d4e5f6a7b8c9d0a", TestContext.Current.CancellationToken);
 		await service.GetProvidersAsync("5f8a1b2c3d4e5f6a7b8c9d0b", TestContext.Current.CancellationToken);
 		
-		var expected = Enum.GetValues<KnownProviders>().Count(x => x != KnownProviders.ErtisAuth);
+		var expected = Enum.GetValues<ProviderType>().Count(x => x != ProviderType.ErtisAuth);
 		Assert.Equal(expected, this._providers.Count(x => x.MembershipId == "5f8a1b2c3d4e5f6a7b8c9d0a"));
 		Assert.Equal(expected, this._providers.Count(x => x.MembershipId == "5f8a1b2c3d4e5f6a7b8c9d0b"));
 		Assert.All(this._providers, x => Assert.False(x.IsActive || x.TrustEmail));
@@ -392,7 +392,7 @@ public class ProviderServiceLoginTests
 	{
 		// Regression: Overwrite copied the stored IsActive over the incoming one, so a provider could never be (de)activated
 		this.AddProvider(isActive: isActive);
-		var update = new Provider(KnownProviders.Facebook)
+		var update = new FacebookProvider
 		{
 			Id = "5f8a1b2c3d4e5f6a7b8c9d10",
 			MembershipId = MembershipId,
@@ -414,7 +414,7 @@ public class ProviderServiceLoginTests
 	
 	private sealed class TestLoginRequest : IProviderLoginRequest
 	{
-		public KnownProviders Provider => KnownProviders.Facebook;
+		public ProviderType Provider => ProviderType.Facebook;
 		
 		public string? UserId { get; init; }
 		
@@ -437,7 +437,7 @@ public class ProviderServiceLoginTests
 				EmailAddress = this.EmailAddress,
 				Role = role ?? string.Empty,
 				UserType = userType,
-				SourceProvider = KnownProviders.Facebook.ToString()
+				SourceProvider = ProviderType.Facebook.ToString()
 			};
 		}
 	}

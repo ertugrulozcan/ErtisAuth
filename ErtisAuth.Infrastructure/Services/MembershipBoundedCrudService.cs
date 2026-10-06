@@ -59,8 +59,7 @@ public abstract class MembershipBoundedCrudService<TModel> :
 	
 	protected virtual async Task<TModel> TouchAsync(TModel model, CrudOperation crudOperation, CancellationToken cancellationToken = default)
 	{
-		await Task.CompletedTask;
-		return model;
+		return await Task.FromResult(model);
 	}
 	
 	#endregion

@@ -593,14 +593,14 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
     #region Provider Methods
 	
-    private KnownProviders GetSourceProvider(DynamicObject model)
+    private ProviderType GetSourceProvider(DynamicObject model)
     {
-        if (model.TryGetValue<string>("source_provider", out var sourceProviderName, out _) && Enum.TryParse<KnownProviders>(sourceProviderName, out var sourceProvider))
+        if (model.TryGetValue<string>("source_provider", out var sourceProviderName, out _) && Enum.TryParse<ProviderType>(sourceProviderName, out var sourceProvider))
         {
 	        return sourceProvider;
         }
         
-        return KnownProviders.ErtisAuth;
+        return ProviderType.ErtisAuth;
     }
 	
     #endregion
@@ -795,18 +795,18 @@ public class UserService : DynamicObjectCrudService, IUserService
 		
         string? password = null;
         var sourceProvider = this.GetSourceProvider(model);
-        if (sourceProvider == KnownProviders.ErtisAuth)
+        if (sourceProvider == ProviderType.ErtisAuth)
         {
 	        this.EnsurePassword(model, out password);
         }
         
-        var userType = await this.GetUserTypeAsync(model, null, membershipId, sourceProvider == KnownProviders.ErtisAuth, cancellationToken: cancellationToken);
+        var userType = await this.GetUserTypeAsync(model, null, membershipId, sourceProvider == ProviderType.ErtisAuth, cancellationToken: cancellationToken);
         NormalizeUserType(model, userType, isCreate: true);
         this.EnsureManagedProperties(model, membershipId);
         
 		await this.ValidateAsync(userType, model, null, null, membershipId, utilizer, cancellationToken: cancellationToken);
         
-        if (sourceProvider == KnownProviders.ErtisAuth && !string.IsNullOrEmpty(password))
+        if (sourceProvider == ProviderType.ErtisAuth && !string.IsNullOrEmpty(password))
         {
 	        this.SetPasswordHash(model, membership, password);
         }

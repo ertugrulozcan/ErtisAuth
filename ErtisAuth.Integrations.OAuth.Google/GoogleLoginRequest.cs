@@ -12,7 +12,7 @@ public class GoogleLoginRequest : IProviderLoginRequest<GoogleToken, GoogleUser>
 	#region Properties
 	
 	[JsonIgnore]
-	public KnownProviders Provider => KnownProviders.Google;
+	public ProviderType Provider => ProviderType.Google;
 	
 	[JsonIgnore]
 	public GoogleUser? User { get; set; }
@@ -90,12 +90,12 @@ public class GoogleLoginRequest : IProviderLoginRequest<GoogleToken, GoogleUser>
 			EmailAddress = this.User?.EmailAddress,
 			Role = role ?? string.Empty,
 			UserType = userType,
-			SourceProvider = KnownProviders.Google.ToString(),
+			SourceProvider = ProviderType.Google.ToString(),
 			ConnectedAccounts = new ProviderAccountInfo[]
 			{
 				new()
 				{
-					Provider = KnownProviders.Google.ToString(),
+					Provider = ProviderType.Google.ToString(),
 					UserId = this.UserId,
 					Token = this.AccessToken
 				}

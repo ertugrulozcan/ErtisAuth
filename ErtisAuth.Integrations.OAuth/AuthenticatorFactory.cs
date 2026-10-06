@@ -40,26 +40,14 @@ public class AuthenticatorFactory : IAuthenticatorFactory
 	
 	public IProviderAuthenticator GetAuthenticator(Provider provider)
 	{
-		if (provider.Name == KnownProviders.Facebook.ToString())
+		return provider.Type switch
 		{
-			return this._serviceProvider.GetRequiredService<IFacebookAuthenticator>();
-		}
-		else if (provider.Name == KnownProviders.Google.ToString())
-		{
-			return this._serviceProvider.GetRequiredService<IGoogleAuthenticator>();
-		}
-		else if (provider.Name == KnownProviders.Microsoft.ToString())
-		{
-			return this._serviceProvider.GetRequiredService<IMicrosoftAuthenticator>();
-		}
-		else if (provider.Name == KnownProviders.Apple.ToString() || provider.Name == KnownProviders.AppleNative.ToString())
-		{
-			return this._serviceProvider.GetRequiredService<IAppleAuthenticator>();
-		}
-		else
-		{
-			throw ErtisAuthException.UnsupportedProvider();
-		}
+			ProviderType.Facebook => this._serviceProvider.GetRequiredService<IFacebookAuthenticator>(),
+			ProviderType.Google => this._serviceProvider.GetRequiredService<IGoogleAuthenticator>(),
+			ProviderType.Microsoft => this._serviceProvider.GetRequiredService<IMicrosoftAuthenticator>(),
+			ProviderType.Apple or ProviderType.AppleNative => this._serviceProvider.GetRequiredService<IAppleAuthenticator>(),
+			_ => throw ErtisAuthException.UnsupportedProvider()
+		};
 	}
 	
 	#endregion

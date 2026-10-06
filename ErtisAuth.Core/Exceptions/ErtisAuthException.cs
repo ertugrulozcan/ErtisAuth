@@ -542,7 +542,12 @@ public class ErtisAuthException : ErtisException
 	
 	public static ErtisAuthException UnknownProvider(string providerName)
 	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, "Unknown provider: " + providerName, "UnknownProvider");
+		return new ErtisAuthException(HttpStatusCode.NotFound, "Unknown provider: " + providerName, "UnknownProvider");
+	}
+	
+	public static ErtisAuthException ProviderTypeRequired()
+	{
+		return new ErtisAuthException(HttpStatusCode.NotFound, "Provider type required", "ProviderTypeRequired");
 	}
 	
 	#endregion

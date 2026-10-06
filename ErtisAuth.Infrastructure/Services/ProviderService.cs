@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Ertis.MongoDB.Queries;
@@ -38,15 +37,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	private readonly IAuthenticatorFactory _authenticatorFactory;
 	private readonly IMemoryCache _memoryCache;
 	private readonly ILogger<ProviderService> _logger;
-	
-	#endregion
-	
-	#region Fields
-	
-	/// <summary>
-	/// Memberships whose default providers have been created (the service is a singleton shared by all memberships).
-	/// </summary>
-	private readonly ConcurrentDictionary<string, bool> _initializedMemberships = new();
 	
 	#endregion
 	
@@ -147,46 +137,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Methods
 	
-	private async ValueTask InitializeAsync(string membershipId, CancellationToken cancellationToken = default)
-	{
-		if (this._initializedMemberships.ContainsKey(membershipId))
-		{
-			return;
-		}
-		
-		try
-		{
-			var utilizer = Utilizer.GetSystemUtilizer(membershipId);
-			
-			var providers = await this.GetAsync(membershipId, null, null, cancellationToken: cancellationToken);
-			var providerTypes = Enum.GetValues<KnownProviders>().Where(x => x != KnownProviders.ErtisAuth);
-			foreach (var providerType in providerTypes)
-			{
-				try
-				{
-					if (providers.Items.All(x => !string.IsNullOrEmpty(x.Name) && x.Name != providerType.ToString()))
-					{
-						await this.CreateAsync(new Provider(providerType)
-						{
-							MembershipId = membershipId,
-							IsActive = false
-						}, membershipId, utilizer, cancellationToken: cancellationToken);
-					}
-				}
-				catch (Exception ex)
-				{
-					this._logger.LogError(ex, "ProviderService.InitializeAsync occured an error when creating {ProviderType} provider", providerType.ToString());
-				}
-			}
-			
-			this._initializedMemberships[membershipId] = true;
-		}
-		catch (Exception ex)
-		{
-			this._logger.LogError(ex, "ProviderService.InitializeAsync occured an error");
-		}
-	}
-	
 	protected override Task<IEnumerable<string>> ValidateModelAsync(Provider model, CancellationToken cancellationToken = default)
 	{
 		var errorList = new List<string>();
@@ -207,11 +157,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		
 		if (model.IsActive)
 		{
-			if (string.IsNullOrEmpty(model.AppClientId))
-			{
-				errorList.Add("App client id is required");
-			}
-			
 			if (string.IsNullOrEmpty(model.DefaultRole))
 			{
 				errorList.Add("Default role is required");
@@ -222,26 +167,79 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 				errorList.Add("Default user type is required");
 			}
 			
-			if (model.Name == KnownProviders.Apple.ToString() || model.Name == KnownProviders.AppleNative.ToString())
+			if (model is AppleProvider appleProvider)
 			{
-				if (string.IsNullOrEmpty(model.TeamId))
+				if (string.IsNullOrEmpty(appleProvider.AppClientId))
+				{
+					errorList.Add("App client id is required");
+				}
+				
+				if (string.IsNullOrEmpty(appleProvider.TeamId))
 				{
 					errorList.Add("Team id is required");
 				}
 				
-				if (string.IsNullOrEmpty(model.PrivateKey))
+				if (string.IsNullOrEmpty(appleProvider.PrivateKey))
 				{
 					errorList.Add("Private key is required");
 				}
 				
-				if (string.IsNullOrEmpty(model.PrivateKeyId))
+				if (string.IsNullOrEmpty(appleProvider.PrivateKeyId))
 				{
 					errorList.Add("Private key id is required");
 				}
 				
-				if (string.IsNullOrEmpty(model.RedirectUri))
+				if (string.IsNullOrEmpty(appleProvider.RedirectUri))
 				{
 					errorList.Add("Redirect uri is required");
+				}
+			}
+			else if (model is AppleNativeProvider appleNativeProvider)
+			{
+				if (string.IsNullOrEmpty(appleNativeProvider.AppClientId))
+				{
+					errorList.Add("App client id is required");
+				}
+				
+				if (string.IsNullOrEmpty(appleNativeProvider.TeamId))
+				{
+					errorList.Add("Team id is required");
+				}
+				
+				if (string.IsNullOrEmpty(appleNativeProvider.PrivateKey))
+				{
+					errorList.Add("Private key is required");
+				}
+				
+				if (string.IsNullOrEmpty(appleNativeProvider.PrivateKeyId))
+				{
+					errorList.Add("Private key id is required");
+				}
+				
+				if (string.IsNullOrEmpty(appleNativeProvider.RedirectUri))
+				{
+					errorList.Add("Redirect uri is required");
+				}
+			}
+			else if (model is FacebookProvider facebookProvider)
+			{
+				if (string.IsNullOrEmpty(facebookProvider.AppClientId))
+				{
+					errorList.Add("App client id is required");
+				}
+			}
+			else if (model is GoogleProvider googleProvider)
+			{
+				if (string.IsNullOrEmpty(googleProvider.AppClientId))
+				{
+					errorList.Add("App client id is required");
+				}
+			}
+			else if (model is MicrosoftProvider microsoftProvider)
+			{
+				if (string.IsNullOrEmpty(microsoftProvider.AppClientId))
+				{
+					errorList.Add("App client id is required");
 				}
 			}
 		}
@@ -261,10 +259,37 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		}
 		
 		destination.Description ??= source.Description;
-		destination.AppClientId ??= source.AppClientId;
-		destination.TenantId ??= source.TenantId;
 		destination.DefaultRole ??= source.DefaultRole;
 		destination.DefaultUserType ??= source.DefaultUserType;
+		
+		if (destination is AppleProvider appleDestination && source is AppleProvider appleSource)
+		{
+			appleDestination.AppClientId ??= appleSource.AppClientId;
+			appleDestination.TeamId ??= appleSource.TeamId;
+			appleDestination.PrivateKey ??= appleSource.PrivateKey;
+			appleDestination.PrivateKeyId ??= appleSource.PrivateKeyId;
+			appleDestination.RedirectUri ??= appleSource.RedirectUri;
+		}
+		else if (destination is AppleNativeProvider appleNativeDestination && source is AppleNativeProvider appleNativeSource)
+		{
+			appleNativeDestination.AppClientId = appleNativeSource.AppClientId;
+			appleNativeDestination.TeamId ??= appleNativeSource.TeamId;
+			appleNativeDestination.PrivateKey ??= appleNativeSource.PrivateKey;
+			appleNativeDestination.PrivateKeyId ??= appleNativeSource.PrivateKeyId;
+			appleNativeDestination.RedirectUri ??= appleNativeSource.RedirectUri;
+		}
+		else if (destination is FacebookProvider facebookDestination && source is FacebookProvider facebookSource)
+		{
+			facebookDestination.AppClientId = facebookSource.AppClientId;
+		}
+		else if (destination is GoogleProvider googleDestination && source is GoogleProvider googleSource)
+		{
+			googleDestination.AppClientId = googleSource.AppClientId;
+		}
+		else if (destination is MicrosoftProvider microsoftDestination && source is MicrosoftProvider microsoftSource)
+		{
+			microsoftDestination.AppClientId = microsoftSource.AppClientId;
+		}
 	}
 	
 	protected override async Task<bool> IsAlreadyExistAsync(Provider model, string membershipId, Provider? exclude = null, CancellationToken cancellationToken = default)
@@ -320,6 +345,11 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	#region Read Methods
 	
+	public async Task<Provider?> GetByTypeAsync(ProviderType type, string membershipId, CancellationToken cancellationToken = default)
+	{
+		return await this._repository.FindOneAsync(x => x.Type == type && x.MembershipId == membershipId, cancellationToken: cancellationToken);
+	}
+	
 	public async Task<Provider?> GetBySlugAsync(string slug, string membershipId, CancellationToken cancellationToken = default)
 	{
 		return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId, cancellationToken: cancellationToken);
@@ -327,8 +357,6 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	public async Task<IEnumerable<Provider>> GetProvidersAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
-		await this.InitializeAsync(membershipId, cancellationToken: cancellationToken);
-		
 		var cacheKey = GetCacheKey(membershipId);
 		if (this._memoryCache.TryGetValue<IEnumerable<Provider>>(cacheKey, out var cacheResults))
 		{
@@ -383,7 +411,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 	
 	public async Task<BearerToken> LoginAsync(IProviderLoginRequest request, string membershipId, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default)
 	{
-		var provider = await this.GetAsync(x => x.MembershipId == membershipId && x.Name == request.Provider.ToString(), membershipId, cancellationToken: cancellationToken);
+		var provider = await this.GetByTypeAsync(request.Provider, membershipId, cancellationToken: cancellationToken);
 		if (provider != null)
 		{
 			if (provider.IsActive)
@@ -445,9 +473,9 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 				var connectedAccounts = new List<ProviderAccountInfo>();
 				foreach (var accountInfo in user.ConnectedAccounts)
 				{
-					if (!string.IsNullOrEmpty(accountInfo.Token))
+					if (!string.IsNullOrEmpty(accountInfo.Token) && Enum.TryParse<ProviderType>(accountInfo.Provider, true, out var providerType))
 					{
-						var provider = await this.GetAsync(x => x.MembershipId == user.MembershipId && x.Name == accountInfo.Provider, user.MembershipId, cancellationToken: cancellationToken);
+						var provider = await this.GetByTypeAsync(providerType, user.MembershipId, cancellationToken: cancellationToken);
 						if (provider is { IsActive: true })
 						{
 							var providerAuthenticator = this._authenticatorFactory.GetAuthenticator(provider);
@@ -496,7 +524,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 			QueryBuilder.Equals("membership_id", membershipId), 
 			QueryBuilder.ElemMatch(
 				"connected_accounts",
-				QueryBuilder.Equals("Provider", provider.Name),
+				QueryBuilder.Equals("Provider", provider.Type.ToString()),
 				QueryBuilder.Equals("UserId", request.UserId))).ToString();
 		
 		var queryUsersResult = await this._userService.QueryAsync(query, membershipId, 0, 1, cancellationToken: cancellationToken);
@@ -539,7 +567,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 			connectedAccounts.AddRange(user.ConnectedAccounts);
 		}
 		
-		var account = connectedAccounts.FirstOrDefault(x => x.Provider == provider.Name);
+		var account = connectedAccounts.FirstOrDefault(x => x.Provider == provider.Type.ToString());
 		if (account != null)
 		{
 			connectedAccounts.Remove(account);
@@ -547,7 +575,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		
 		connectedAccounts.Add(new ProviderAccountInfo
 		{
-			Provider = provider.Name,
+			Provider = provider.Type.ToString(),
 			UserId = request.UserId,
 			Token = request.AccessToken
 		});

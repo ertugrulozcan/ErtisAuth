@@ -113,8 +113,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 	
 	protected override async Task<bool> IsAlreadyExistAsync(OneTimePassword model, string membershipId, OneTimePassword? exclude = null, CancellationToken cancellationToken = default)
 	{
-		await Task.CompletedTask;
-		return false;
+		return await Task.FromResult(false);
 	}
 	
 	protected override ErtisAuthException GetAlreadyExistError(OneTimePassword model)

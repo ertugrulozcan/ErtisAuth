@@ -168,8 +168,7 @@ public class ApplicationService : MembershipBoundedCrudService<Application>, IAp
 			model.Forbidden = model.Forbidden.Distinct().Order().ToArray();
 		}
 		
-		await Task.CompletedTask;
-		return model;
+		return await Task.FromResult(model);
 	}
 	
 	protected override void Overwrite(Application destination, Application source)

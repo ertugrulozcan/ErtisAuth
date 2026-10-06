@@ -228,6 +228,16 @@ public static class ControllerExtensions
 		return controller.NotFound(ErtisAuthException.ProviderNotFound(providerId).Error);
 	}
 	
+	public static NotFoundObjectResult UnsupportedProvider(this ControllerBase controller)
+	{
+		return controller.NotFound(ErtisAuthException.UnsupportedProvider().Error);
+	}
+	
+	public static NotFoundObjectResult ProviderTypeRequired(this ControllerBase controller)
+	{
+		return controller.NotFound(ErtisAuthException.ProviderTypeRequired().Error);
+	}
+	
 	#endregion
 	
 	#region Event Methods

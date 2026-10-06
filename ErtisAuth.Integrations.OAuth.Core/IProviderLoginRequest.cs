@@ -5,7 +5,7 @@ public interface IProviderLoginRequest
 {
 	#region Properties
 	
-	KnownProviders Provider { get; }
+	ProviderType Provider { get; }
 	
 	string? UserId { get; }
 	

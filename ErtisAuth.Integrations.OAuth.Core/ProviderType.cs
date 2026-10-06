@@ -1,6 +1,6 @@
 namespace ErtisAuth.Integrations.OAuth.Core;
 
-public enum KnownProviders
+public enum ProviderType
 {
     ErtisAuth,
     Facebook,

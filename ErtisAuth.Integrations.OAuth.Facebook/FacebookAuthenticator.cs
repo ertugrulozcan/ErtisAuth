@@ -4,7 +4,6 @@ using Ertis.Net.Rest;
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Abstractions;
-using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Integrations.OAuth.Facebook.Models;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -12,10 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 // ReSharper disable UnusedMemberInSuper.Global
 namespace ErtisAuth.Integrations.OAuth.Facebook;
 
-public interface IFacebookAuthenticator : IProviderAuthenticator, IProviderAuthenticator<FacebookLoginRequest, FacebookUserToken, FacebookUserToken>
-{
-	Task<bool> VerifyLimitedTokenAsync(FacebookLoginRequest request, Provider provider, CancellationToken cancellationToken = default);
-}
+public interface IFacebookAuthenticator : IProviderAuthenticator<FacebookProvider, FacebookLoginRequest, FacebookUserToken, FacebookUserToken>;
 
 public class FacebookAuthenticator : IFacebookAuthenticator
 {
@@ -68,25 +64,19 @@ public class FacebookAuthenticator : IFacebookAuthenticator
 		return await this.restHandler.ExecuteRequestAsync<TResult>(method, baseUrl, queryString, headers, body, cancellationToken: cancellationToken);
 	}
 	
-	public async Task<bool> VerifyTokenAsync(IProviderLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
+	public async Task<bool> VerifyTokenAsync(FacebookLoginRequest request, FacebookProvider provider, CancellationToken cancellationToken = default)
 	{
-		var facebookLoginRequest = request as FacebookLoginRequest;
-		if (facebookLoginRequest == null)
+		if (request.IsLimited)
 		{
-			return false;
-		}
-		
-		if (facebookLoginRequest.IsLimited)
-		{
-			return await this.VerifyLimitedTokenAsync(facebookLoginRequest, provider, cancellationToken);
+			return await this.VerifyLimitedTokenAsync(request, provider, cancellationToken);
 		}
 		else
 		{
-			return await this.VerifyTokenAsync(facebookLoginRequest, provider, cancellationToken);
+			return await this.VerifyStandardTokenAsync(request, provider, cancellationToken);
 		}
 	}
 	
-	public async Task<bool> VerifyTokenAsync(FacebookLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
+	private async Task<bool> VerifyStandardTokenAsync(FacebookLoginRequest request, FacebookProvider provider, CancellationToken cancellationToken = default)
 	{
 		if (!request.IsValid())
 		{
@@ -143,7 +133,7 @@ public class FacebookAuthenticator : IFacebookAuthenticator
 		return true;
 	}
 	
-	public async Task<bool> VerifyLimitedTokenAsync(FacebookLoginRequest request, Provider provider, CancellationToken cancellationToken = default)
+	private async Task<bool> VerifyLimitedTokenAsync(FacebookLoginRequest request, FacebookProvider provider, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(provider.AppClientId) || provider.AppClientId != request.AppId)
 		{
@@ -210,7 +200,7 @@ public class FacebookAuthenticator : IFacebookAuthenticator
 		return jwt.TryGetPayloadValue<string>(claimType, out var value) && !string.IsNullOrEmpty(value) ? value : null;
 	}
 	
-	public async Task<bool> RevokeTokenAsync(string accessToken, Provider provider, CancellationToken cancellationToken = default)
+	public async Task<bool> RevokeTokenAsync(string accessToken, FacebookProvider provider, CancellationToken cancellationToken = default)
 	{
 		var response = await this.ExecuteRequestAsync(
 			HttpMethod.Delete, 

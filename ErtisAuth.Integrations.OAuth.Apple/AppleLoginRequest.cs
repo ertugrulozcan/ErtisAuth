@@ -12,7 +12,7 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken, 
 	#region Properties
 	
 	[JsonIgnore]
-	public abstract KnownProviders Provider { get; }
+	public abstract ProviderType Provider { get; }
 	
 	[JsonPropertyName("user")]
     public AppleUser? User { get; set; }
@@ -83,12 +83,12 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken, 
     		EmailAddress = this.User?.EmailAddress,
     		Role = role ?? string.Empty,
     		UserType = userType,
-    		SourceProvider = KnownProviders.Apple.ToString(),
+    		SourceProvider = ProviderType.Apple.ToString(),
     		ConnectedAccounts = new ProviderAccountInfo[]
     		{
     			new()
     			{
-    				Provider = KnownProviders.Apple.ToString(),
+    				Provider = ProviderType.Apple.ToString(),
     				UserId = this.UserId,
     				Token = this.AccessToken
     			}
@@ -104,7 +104,7 @@ public class AppleLoginRequest : AppleLoginRequestBase
 	#region Properties
 	
 	[JsonIgnore]
-	public override KnownProviders Provider => KnownProviders.Apple;
+	public override ProviderType Provider => ProviderType.Apple;
 	
 	#endregion
 }
@@ -114,7 +114,7 @@ public class AppleNativeLoginRequest : AppleLoginRequestBase
 	#region Properties
 	
 	[JsonIgnore]
-	public override KnownProviders Provider => KnownProviders.AppleNative;
+	public override ProviderType Provider => ProviderType.AppleNative;
 	
 	#endregion
 }

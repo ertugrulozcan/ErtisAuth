@@ -19,6 +19,7 @@ public class SendGridProvider : IMailProvider
 	
 	[JsonPropertyName("type")]
 	[JsonConverter(typeof(JsonStringEnumConverter))]
+	[BsonIgnore]
 	public MailProviderType Type => MailProviderType.SendGrid;
 	
 	[JsonPropertyName("deliveryMode")]

@@ -6,18 +6,28 @@ using MongoDB.Bson.Serialization.Attributes;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable MemberCanBeProtected.Global
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Local
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 namespace ErtisAuth.Core.Models.Providers;
 
-public class Provider : MembershipBoundedResource, IHasSlug, IHasSysInfo
+public abstract class Provider : MembershipBoundedResource, IHasSlug, IHasSysInfo
 {
 	#region Properties
 	
+	[JsonPropertyName("type")]
+	[JsonConverter(typeof(JsonStringEnumConverter))]
+	[BsonIgnore]
+	public abstract ProviderType Type { get; }
+	
 	[JsonPropertyName("name")]
 	[BsonElement("name")]
-	public string Name { get; private set; }
+	public string Name
+	{
+		get => string.IsNullOrEmpty(field) ? this.Type.ToString() : field;
+		set;
+	}
 	
 	[JsonPropertyName("slug")]
 	[BsonElement("slug")]
@@ -53,42 +63,6 @@ public class Provider : MembershipBoundedResource, IHasSlug, IHasSysInfo
 	[BsonIgnoreIfNull]
 	public string? DefaultUserType { get; set; }
 	
-	[JsonPropertyName("appClientId")]
-	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[BsonElement("appClientId")]
-	[BsonIgnoreIfNull]
-	public string? AppClientId { get; set; }
-	
-	[JsonPropertyName("teamId")]
-	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[BsonElement("teamId")]
-	[BsonIgnoreIfNull]
-	public string? TeamId { get; set; }
-	
-	[JsonPropertyName("tenantId")]
-	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[BsonElement("tenantId")]
-	[BsonIgnoreIfNull]
-	public string? TenantId { get; set; }
-	
-	[JsonPropertyName("privateKey")]
-	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[BsonElement("privateKey")]
-	[BsonIgnoreIfNull]
-	public string? PrivateKey { get; set; }
-	
-	[JsonPropertyName("privateKeyId")]
-	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[BsonElement("privateKeyId")]
-	[BsonIgnoreIfNull]
-	public string? PrivateKeyId { get; set; }
-	
-	[JsonPropertyName("redirectUri")]
-	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-	[BsonElement("redirectUri")]
-	[BsonIgnoreIfNull]
-	public string? RedirectUri { get; set; }
-	
 	[JsonPropertyName("isActive")]
 	[BsonElement("isActive")]
 	public bool IsActive { get; set; }
@@ -104,19 +78,6 @@ public class Provider : MembershipBoundedResource, IHasSlug, IHasSysInfo
 	[JsonPropertyName("sys")]
 	[BsonElement("sys")]
 	public SysModel? Sys { get; set; }
-	
-	#endregion
-	
-	#region Constructors
-	
-	/// <summary>
-	/// Constructor
-	/// </summary>
-	/// <param name="provider"></param>
-	public Provider(KnownProviders provider)
-	{
-		this.Name = provider.ToString();
-	}
 	
 	#endregion
 }

@@ -1,6 +1,5 @@
 using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Models.Providers;
-using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Integrations.OAuth.Google;
 using Google.Apis.Auth;
 using NSubstitute;
@@ -31,9 +30,9 @@ public class GoogleAuthenticatorTests
 	
 	private GoogleAuthenticator CreateAuthenticator() => new(this._validator);
 	
-	private static Provider CreateProvider()
+	private static GoogleProvider CreateProvider()
 	{
-		return new Provider(KnownProviders.Google)
+		return new GoogleProvider
 		{
 			MembershipId = "5f8a1b2c3d4e5f6a7b8c9d00",
 			IsActive = true,
@@ -75,7 +74,7 @@ public class GoogleAuthenticatorTests
 		this.ValidatorReturns();
 		var request = CreateClientRequest();
 		
-		Assert.True(await this.CreateAuthenticator().VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.True(await this.CreateAuthenticator().VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("google-sub", request.UserId);
 		Assert.Equal("john.doe@gmail.com", request.EmailAddress);
@@ -93,7 +92,7 @@ public class GoogleAuthenticatorTests
 		this.ValidatorReturns(emailVerified);
 		var request = CreateClientRequest();
 		
-		await this.CreateAuthenticator().VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken);
+		await this.CreateAuthenticator().VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken);
 		
 		Assert.Equal(emailVerified, request.IsEmailVerified);
 	}
@@ -103,7 +102,7 @@ public class GoogleAuthenticatorTests
 	{
 		this.ValidatorReturns();
 		
-		await this.CreateAuthenticator().VerifyTokenAsync((IProviderLoginRequest) CreateClientRequest(), CreateProvider(), TestContext.Current.CancellationToken);
+		await this.CreateAuthenticator().VerifyTokenAsync(CreateClientRequest(), CreateProvider(), TestContext.Current.CancellationToken);
 		
 		await this._validator.Received(1).ValidateAsync(IdToken, ClientId);
 	}
@@ -114,7 +113,7 @@ public class GoogleAuthenticatorTests
 		this._validator.ValidateAsync(IdToken, ClientId).ThrowsAsync(new InvalidJwtException("JWT invalid, unable to verify signature."));
 		var request = CreateClientRequest();
 		
-		Assert.False(await this.CreateAuthenticator().VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.False(await this.CreateAuthenticator().VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		Assert.Null(request.UserId);
 	}
 	
@@ -123,7 +122,7 @@ public class GoogleAuthenticatorTests
 	{
 		var request = CreateClientRequest(idToken: null);
 		
-		Assert.False(await this.CreateAuthenticator().VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.False(await this.CreateAuthenticator().VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		await this._validator.DidNotReceiveWithAnyArgs().ValidateAsync(null!, null!);
 	}
 	
@@ -132,7 +131,7 @@ public class GoogleAuthenticatorTests
 	{
 		var request = CreateClientRequest(clientId: "another-client");
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateAuthenticator().VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateAuthenticator().VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("UntrustedProvider", exception.ErrorCode);
 	}
@@ -144,7 +143,7 @@ public class GoogleAuthenticatorTests
 		this.ValidatorReturns(givenName: null, name: "Cher");
 		var request = CreateClientRequest();
 		
-		Assert.True(await this.CreateAuthenticator().VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		Assert.True(await this.CreateAuthenticator().VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("Cher", request.User?.FirstName);
 	}
@@ -158,7 +157,7 @@ public class GoogleAuthenticatorTests
 		this.ValidatorReturns(givenName: givenName, name: name, email: email);
 		var request = CreateClientRequest();
 		
-		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateAuthenticator().VerifyTokenAsync((IProviderLoginRequest) request, CreateProvider(), TestContext.Current.CancellationToken));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.CreateAuthenticator().VerifyTokenAsync(request, CreateProvider(), TestContext.Current.CancellationToken));
 		
 		Assert.Equal("ProviderProfileIncomplete", exception.ErrorCode);
 		Assert.Equal(System.Net.HttpStatusCode.Unauthorized, exception.StatusCode);

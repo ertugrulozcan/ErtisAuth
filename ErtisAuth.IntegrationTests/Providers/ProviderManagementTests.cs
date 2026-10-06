@@ -122,14 +122,14 @@ public class ProviderManagementTests : IClassFixture<OAuthErtisAuthInstance>
 	}
 	
 	[Fact]
-	public async Task UpdateProvider_WithUnknownName_ReturnsBadRequest()
+	public async Task UpdateProvider_WithUnknownName_ReturnsNotFound()
 	{
 		var provider = await this._instance.GetProviderAsync("Microsoft");
 		var adminClient = await this._instance.CreateAdminClientAsync();
 		
 		using var response = await adminClient.PutAsJsonAsync($"{this.ProvidersUrl}/{provider["_id"]!.GetValue<string>()}", new { name = "Twitter" }, CancellationToken);
 		
-		var error = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.BadRequest);
+		var error = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.NotFound);
 		Assert.Equal("UnknownProvider", error!["errorCode"]!.GetValue<string>());
 	}
 	
