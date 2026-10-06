@@ -36,12 +36,13 @@ public static class ErrorHandlingExtensions
 							break;
 						case CumulativeValidationException cumulativeValidationException:
 							context.Response.StatusCode = 400;
-							errorModel = new 
+							// Explicit names: the anonymous object is serialized without a naming policy
+							errorModel = new
 							{
-								contextFeature.Error.Message,
-								ErrorCode = "ValidationException",
-								StatusCode = 400,
-								Errors = cumulativeValidationException.Errors.Select(x => new
+								message = contextFeature.Error.Message,
+								errorCode = "ValidationException",
+								statusCode = 400,
+								errors = cumulativeValidationException.Errors.Select(x => new
 								{
 									message = x.Message,
 									fieldName = x.FieldName,

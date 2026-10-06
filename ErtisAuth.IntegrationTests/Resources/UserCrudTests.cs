@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using ErtisAuth.IntegrationTests.Infrastructure;
 
@@ -115,6 +116,30 @@ public class UserCrudTests : IClassFixture<ErtisAuthInstance>
 		var found = await users.SearchAsync(name);
 		Assert.Contains(id, ResourceClient.IdsOf(found));
 		Assert.All(found.Select(x => x!.AsObject()), AssertNoPasswordFields);
+	}
+	
+	[Fact]
+	public async Task User_WithDuplicateEmailAddress_AnswersACamelCaseValidationError()
+	{
+		// Regression: this error body (CumulativeValidationException) was the only one with PascalCase names
+		var users = await this.CreateResourceClientAsync();
+		var username = $"duplicate{Guid.NewGuid():N}";
+		await users.CreateAsync(UserBody(username, "First"));
+		var duplicate = UserBody($"other{Guid.NewGuid():N}", "Second");
+		duplicate["email_address"] = $"{username}@example.com";
+		
+		var adminClient = await this._instance.CreateAdminClientAsync();
+		using var response = await adminClient.PostAsJsonAsync(users.Url, duplicate, TestContext.Current.CancellationToken);
+		var error = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.BadRequest);
+		
+		Assert.Equal("ValidationException", error!["errorCode"]!.GetValue<string>());
+		Assert.Equal(400, error["statusCode"]!.GetValue<int>());
+		Assert.False(string.IsNullOrEmpty(error["message"]!.GetValue<string>()));
+		var fieldError = Assert.Single(error["errors"]!.AsArray())!;
+		Assert.Equal("email_address", fieldError["fieldName"]!.GetValue<string>());
+		Assert.Equal("email_address", fieldError["fieldPath"]!.GetValue<string>());
+		Assert.False(error.AsObject().ContainsKey("ErrorCode"), error.ToJsonString());
+		Assert.False(error.AsObject().ContainsKey("Errors"), error.ToJsonString());
 	}
 	
 	#endregion
