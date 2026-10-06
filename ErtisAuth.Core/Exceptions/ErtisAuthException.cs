@@ -155,11 +155,6 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.NotFound, "Token code not found", "TokenCodeNotFound");
 	}
 	
-	public static ErtisAuthException InvalidTokenCode()
-	{
-		return new ErtisAuthException(HttpStatusCode.Unauthorized, "Token code is invalid", "InvalidTokenCode");
-	}
-	
 	public static ErtisAuthException TokenCodeExpired()
 	{
 		return new ErtisAuthException(HttpStatusCode.Unauthorized, "Token code was expired", "TokenCodeExpired");
@@ -317,11 +312,6 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.Unauthorized, "Username or password is invalid", "InvalidCredentials");
 	}
 	
-	public static ErtisAuthException UserWithSameUsernameAlreadyExists(string usernameOrEmail)
-	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"The user with same username or email is already exists ({usernameOrEmail})", "UserWithSameUsernameAlreadyExists");
-	}
-	
 	public static ErtisAuthException PasswordRequired()
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "Password is required", "PasswordRequired");
@@ -344,11 +334,6 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException UserTypeNameRequired()
 	{
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "User type name is required.", "UserTypeNameRequired");
-	}
-	
-	public static ErtisAuthException UserTypePropertiesRequired()
-	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, "User type properties is required.", "UserTypePropertiesRequired");
 	}
 	
 	public static ErtisAuthException UserTypeCannotBeBothAbstractAndSealed()
@@ -384,16 +369,6 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException ReservedUserTypeSlug(string slug)
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"'{slug}' is a reserved slug. It's can not be used as user type slug.", "ReservedUserTypeSlug");
-	}
-	
-	public static ErtisAuthException DuplicateFieldWithBaseType(string fieldName)
-	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"'{fieldName}' field is already exist in base user type.", "DuplicateFieldWithBaseType");
-	}
-	
-	public static ErtisAuthException VirtualFieldTypeCanNotOverwrite(string fieldName)
-	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, $"The field type cannot be overwritten on virtual fields. ('{fieldName}')", "VirtualFieldTypeCanNotOverwrite");
 	}
 	
 	public static ErtisAuthException UniqueFieldHasDuplicates(string fieldPath, string duplicateKey)
@@ -444,11 +419,6 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException ApplicationAlreadyExists(string slug)
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"The application is already exists with same slug ({slug})", "ApplicationAlreadyExists");
-	}
-	
-	public static ErtisAuthException ApplicationSecretMismatch()
-	{
-		return new ErtisAuthException(HttpStatusCode.Unauthorized, "Application secret mismatch", "ApplicationSecretMismatch");
 	}
 	
 	#endregion
@@ -603,11 +573,6 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.NotImplemented, "No mail provider has been defined yet", "NotDefinedAnyMailProvider");
 	}
 	
-	public static ErtisAuthException UnknownMailProvider(string type)
-	{
-		return new ErtisAuthException(HttpStatusCode.NotImplemented, $"Unknown mail provider: <{type}>", "UnknownMailProvider");
-	}
-	
 	#endregion
 	
 	#region Event Exceptions
@@ -712,15 +677,6 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException OneTimePasswordAlreadyExists()
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, "The otp is already exists", "OneTimePasswordAlreadyExists");
-	}
-	
-	#endregion
-	
-	#region Terminal Exceptions
-	
-	public static ErtisAuthException CommandRequired()
-	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, "Command required", "CommandRequired");
 	}
 	
 	#endregion
