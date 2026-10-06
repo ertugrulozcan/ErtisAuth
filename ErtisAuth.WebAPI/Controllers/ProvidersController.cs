@@ -418,14 +418,8 @@ public class ProvidersController : ControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
 	{
-		var providerId = id.IsObjectId() ? id : (await this._providerService.GetBySlugAsync(id, membershipId, cancellationToken: cancellationToken))?.Id;
-		if (providerId == null)
-		{
-			return this.ProviderNotFound(id);
-		}
-		
 		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
-		if (await this._providerService.DeleteAsync(providerId, membershipId, utilizer, cancellationToken: cancellationToken))
+		if (await this._providerService.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken))
 		{
 			return this.NoContent();
 		}
@@ -442,6 +436,7 @@ public class ProvidersController : ControllerBase
 	/// <summary>
 	/// Serialized as <see cref="Provider"/>, not as its concrete type: only then the "type" discriminator is written.
 	/// </summary>
+	[NonAction]
 	private static OkObjectResult ProviderResult(Provider provider)
 	{
 		return new OkObjectResult(provider)

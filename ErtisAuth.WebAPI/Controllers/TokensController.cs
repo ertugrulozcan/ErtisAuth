@@ -3,6 +3,7 @@ using Ertis.Core.Models;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models.Providers;
 using ErtisAuth.Integrations.OAuth.Apple;
 using ErtisAuth.Integrations.OAuth.Core;
@@ -488,7 +489,10 @@ public class TokensController : ControllerBase
 			return this.MembershipIdRequired();
 		}
 		
-		var provider = await this._providerService.GetBySlugAsync(slug, membershipId, cancellationToken: cancellationToken);
+		var provider = slug.IsObjectId() ?
+			await this._providerService.GetAsync(slug, membershipId, cancellationToken: cancellationToken) :
+			await this._providerService.GetBySlugAsync(slug, membershipId, cancellationToken: cancellationToken);
+		
 		if (provider == null)
 		{
 			throw ErtisAuthException.ProviderNotConfigured();
@@ -523,6 +527,7 @@ public class TokensController : ControllerBase
 	/// <summary>
 	/// The body is bound by the provider's type, which is known only after the provider is read by its slug.
 	/// </summary>
+	[NonAction]
 	private IProviderLoginRequest ReadLoginRequest(Provider provider, JsonElement body)
 	{
 		try

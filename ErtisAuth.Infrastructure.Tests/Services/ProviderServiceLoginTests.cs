@@ -351,7 +351,7 @@ public class ProviderServiceLoginTests
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.LoginAsync(this.CreateService(), CreateRequest(), "google"));
 		
 		Assert.Equal("UnsupportedProvider", exception.ErrorCode);
-		await this._authenticator.DidNotReceiveWithAnyArgs().VerifyTokenAsync(null!, null!);
+		await this._authenticator.DidNotReceiveWithAnyArgs().VerifyTokenAsync(null!, null!, cancellationToken: TestContext.Current.CancellationToken);
 	}
 	
 	/// <summary>
@@ -438,7 +438,7 @@ public class ProviderServiceLoginTests
 		
 		await this.CreateService().LogoutAsync("access-token", TestContext.Current.CancellationToken);
 		
-		await this._authenticator.DidNotReceiveWithAnyArgs().RevokeTokenAsync(null!, null!);
+		await this._authenticator.DidNotReceiveWithAnyArgs().RevokeTokenAsync(null!, null!, cancellationToken: TestContext.Current.CancellationToken);
 		Assert.Equal("facebook-access-token", Assert.Single(this._users.Single().ConnectedAccounts!).Token);
 	}
 	

@@ -375,17 +375,15 @@ public class ProviderManagementTests : IClassFixture<OAuthErtisAuthInstance>
 	
 	#region Delete
 	
-	[Theory]
-	[InlineData(false)]
-	[InlineData(true)]
-	public async Task DeleteProvider_RemovesTheProvider(bool bySlug)
+	[Fact]
+	public async Task DeleteProvider_RemovesTheProvider()
 	{
 		var slug = $"deleted-{Guid.NewGuid():N}";
 		using var createResponse = await this.CreateAsync(new { type = "Google", slug, isActive = false });
 		var id = (await ResourceClient.AssertStatusAsync(createResponse, HttpStatusCode.Created))!["_id"]!.GetValue<string>();
 		var adminClient = await this._instance.CreateAdminClientAsync();
 		
-		using var response = await adminClient.DeleteAsync($"{this.ProvidersUrl}/{(bySlug ? slug : id)}", CancellationToken);
+		using var response = await adminClient.DeleteAsync($"{this.ProvidersUrl}/{id}", CancellationToken);
 		
 		await ResourceClient.AssertStatusAsync(response, HttpStatusCode.NoContent);
 		using var getResponse = await adminClient.GetAsync($"{this.ProvidersUrl}/{id}", CancellationToken);
@@ -397,7 +395,8 @@ public class ProviderManagementTests : IClassFixture<OAuthErtisAuthInstance>
 	{
 		var adminClient = await this._instance.CreateAdminClientAsync();
 		
-		using var response = await adminClient.DeleteAsync($"{this.ProvidersUrl}/unknown-provider", CancellationToken);
+		const string random_id = "664f76b5c54f29816e0df391";
+		using var response = await adminClient.DeleteAsync($"{this.ProvidersUrl}/{random_id}", CancellationToken);
 		
 		var error = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.NotFound);
 		Assert.Equal("ProviderNotFound", error!["errorCode"]!.GetValue<string>());
