@@ -203,7 +203,7 @@ public class UserTypesController : QueryControllerBase
 	#region Update Methods
 	
 	/// <summary>Update a user type</summary>
-	/// <remarks>**Note:** the slug of a user type which has users or derived types does not change (a new slug is ignored), since they refer to it by its slug. **Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
+	/// <remarks>**Note:** the slug of a user type which has users or derived types does not change (a new slug is ignored), since they refer to it by its slug. **Note:** an update without any change answers 409 (<c>IdenticalDocumentError</c>).</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">User type id</param>
 	/// <param name="model">User type</param>

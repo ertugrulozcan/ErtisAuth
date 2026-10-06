@@ -158,7 +158,7 @@ public class MailHooksController : QueryControllerBase
 	#region Update Methods
 	
 	/// <summary>Update a mail hook</summary>
-	/// <remarks>**Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
+	/// <remarks>**Note:** an update without any change answers 409 (<c>IdenticalDocumentError</c>).</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Mail hook id</param>
 	/// <param name="model">Mail hook</param>

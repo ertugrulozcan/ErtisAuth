@@ -275,7 +275,7 @@ public class ProvidersController : ControllerBase
 	#region Update Methods
 	
 	/// <summary>Update a provider</summary>
-	/// <remarks>The provider's <c>type</c> and <c>slug</c> can't be changed (a different slug answers 400 <c>ProviderSlugCannotBeChanged</c>). Omitted fields keep their current values. **Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
+	/// <remarks>The provider's <c>type</c> and <c>slug</c> can't be changed (a different slug answers 400 <c>ProviderSlugCannotBeChanged</c>). Omitted fields keep their current values. **Note:** an update without any change answers 409 (<c>IdenticalDocumentError</c>).</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Provider id</param>
 	/// <param name="model">Provider</param>

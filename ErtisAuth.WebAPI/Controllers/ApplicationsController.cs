@@ -194,7 +194,7 @@ public class ApplicationsController : QueryControllerBase
 	#region Update Methods
 	
 	/// <summary>Update an application</summary>
-	/// <remarks>Updates the name, slug and role of the application; the secret is not changed (see rotate secret). **Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
+	/// <remarks>Updates the name, slug and role of the application; the secret is not changed (see rotate secret). **Note:** an update without any change answers 409 (<c>IdenticalDocumentError</c>).</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Application id</param>
 	/// <param name="model">Application</param>

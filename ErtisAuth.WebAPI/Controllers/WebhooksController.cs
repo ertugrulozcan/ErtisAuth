@@ -173,7 +173,7 @@ public class WebhooksController : QueryControllerBase
 	#region Update Methods
 	
 	/// <summary>Update a webhook</summary>
-	/// <remarks>**Note:** an update without any change answers 409 (<c>IdenticalDocument</c>).</remarks>
+	/// <remarks>**Note:** an update without any change answers 409 (<c>IdenticalDocumentError</c>).</remarks>
 	/// <param name="membershipId">Membership id</param>
 	/// <param name="id">Webhook id</param>
 	/// <param name="model">Webhook</param>
