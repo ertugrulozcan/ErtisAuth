@@ -238,7 +238,7 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		
 		if (RbacExtensions.HasConflict(model.Permissions, model.Forbidden, out var conflict) && conflict != null)
 		{
-			errorList.Add($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{conflict}')");
+			throw ErtisAuthException.RbacsConflicted($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{conflict}')");
 		}
 		
 		return Task.FromResult<IEnumerable<string>>(errorList);
