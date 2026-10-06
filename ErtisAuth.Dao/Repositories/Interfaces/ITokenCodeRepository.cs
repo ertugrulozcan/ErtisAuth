@@ -6,10 +6,10 @@ namespace ErtisAuth.Dao.Repositories.Interfaces;
 public interface ITokenCodeRepository : IMongoRepository<TokenCode>
 {
 	/// <summary>
-	/// Atomically approves or denies a pending, not expired code for the user.
+	/// Atomically approves or denies a pending, not expired code for the user, with the scopes of the deciding token.
 	/// Returns the updated code, or null when there is no such code (unknown, expired or already decided).
 	/// </summary>
-	Task<TokenCode?> TryDecideAsync(string userCode, string membershipId, string status, string userId, DateTime now, CancellationToken cancellationToken = default);
+	Task<TokenCode?> TryDecideAsync(string userCode, string membershipId, string status, string userId, string[]? scopes, DateTime now, CancellationToken cancellationToken = default);
 	
 	/// <summary>
 	/// Atomically records a poll of the device if the previous one was at least <paramref name="interval"/> seconds ago.

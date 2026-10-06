@@ -165,7 +165,7 @@ public class TokenServiceSecurityTests
 		Assert.DoesNotContain(token.AccessToken, json);
 		Assert.Contains("\"token_type\":\"bearer\"", json);
 	}
-
+	
 	[Fact]
 	public async Task RefreshTokenAsync_EventDoesNotContainTheTokens()
 	{
@@ -181,9 +181,9 @@ public class TokenServiceSecurityTests
 				document = x.ArgAt<object?>(3);
 				prior = x.ArgAt<object?>(4);
 			});
-
+		
 		var refreshed = await tokenService.RefreshTokenAsync(token.RefreshToken!, revokeBefore: false, fireEvent: true, cancellationToken: TestContext.Current.CancellationToken);
-
+		
 		var json = JsonSerializer.Serialize(new { document, prior });
 		Assert.DoesNotContain(refreshed.AccessToken, json);
 		Assert.DoesNotContain(refreshed.RefreshToken!, json);
@@ -191,7 +191,7 @@ public class TokenServiceSecurityTests
 		Assert.Contains("\"expires_in\"", json);
 		Assert.Contains("john.doe", json);
 	}
-
+	
 	[Fact]
 	public async Task RevokeTokenAsync_EventDoesNotContainTheToken()
 	{
@@ -213,16 +213,16 @@ public class TokenServiceSecurityTests
 			}
 		]);
 		var document = this.CaptureEventDocument(ErtisAuthEventType.TokenRevoked);
-
+		
 		var isRevoked = await tokenService.RevokeTokenAsync(token.AccessToken, cancellationToken: TestContext.Current.CancellationToken);
-
+		
 		Assert.True(isRevoked);
 		var json = JsonSerializer.Serialize(document());
 		Assert.DoesNotContain(token.AccessToken, json);
 		Assert.DoesNotContain(token.RefreshToken!, json);
 		Assert.Contains("\"expire_time\"", json);
 	}
-
+	
 	#endregion
 	
 	#region Forged Tokens
@@ -516,6 +516,35 @@ public class TokenServiceSecurityTests
 		var narrowedToken = await tokenService.GenerateTokenAsync(scopedToken.AccessToken, [requestedScope], membership.Id, TestContext.Current.CancellationToken);
 		
 		Assert.NotNull(narrowedToken.AccessToken);
+	}
+	
+	[Fact]
+	public async Task GenerateScopedTokenAsync_ForAUser_ReturnsAScopedTokenWhoseRefreshKeepsTheScopes()
+	{
+		// Used for a device approved with a scoped token: the device's token is limited to the same scopes
+		var (membership, user) = this.Setup();
+		var tokenService = this.CreateTokenService();
+		
+		var token = await tokenService.GenerateScopedTokenAsync(user, ["users.read", "tokens.create"], membership.Id, "203.0.113.42", "SmartTV/1.0", TestContext.Current.CancellationToken);
+		
+		var result = await tokenService.VerifyBearerTokenAsync(token.AccessToken, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		Assert.Equal(["users.read", "tokens.create"], result.Scopes);
+		Assert.Equal(TTLs.SCOPED_TOKEN_TTL.TotalSeconds, token.ExpiresInTimeStamp);
+		
+		var refreshed = await tokenService.RefreshTokenAsync(token.RefreshToken!, revokeBefore: false, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		var refreshedResult = await tokenService.VerifyBearerTokenAsync(refreshed.AccessToken, fireEvent: false, cancellationToken: TestContext.Current.CancellationToken);
+		Assert.Equal(["users.read", "tokens.create"], refreshedResult.Scopes);
+	}
+	
+	[Fact]
+	public async Task GenerateScopedTokenAsync_ForAUserWithoutScopes_ThrowsScopeRequired()
+	{
+		var (membership, user) = this.Setup();
+		var tokenService = this.CreateTokenService();
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.GenerateScopedTokenAsync(user, [" "], membership.Id, cancellationToken: TestContext.Current.CancellationToken));
+		
+		Assert.Equal("ScopeRequired", exception.ErrorCode);
 	}
 	
 	#endregion

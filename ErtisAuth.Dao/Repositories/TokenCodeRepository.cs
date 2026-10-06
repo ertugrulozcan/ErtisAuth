@@ -47,7 +47,7 @@ public class TokenCodeRepository : RepositoryBase<TokenCode>, ITokenCodeReposito
 	
 	#region Atomic Methods
 	
-	public async Task<TokenCode?> TryDecideAsync(string userCode, string membershipId, string status, string userId, DateTime now, CancellationToken cancellationToken = default)
+	public async Task<TokenCode?> TryDecideAsync(string userCode, string membershipId, string status, string userId, string[]? scopes, DateTime now, CancellationToken cancellationToken = default)
 	{
 		// ReSharper disable once RedundantTypeArgumentsOfMethod
 		return await this.Collection.FindOneAndUpdateAsync<TokenCode>(
@@ -55,6 +55,7 @@ public class TokenCodeRepository : RepositoryBase<TokenCode>, ITokenCodeReposito
 			Builders<TokenCode>.Update
 				.Set(x => x.Status, status)
 				.Set(x => x.UserId, userId)
+				.Set(x => x.Scopes, scopes)
 				.Set(x => x.DecidedAt, now),
 			new FindOneAndUpdateOptions<TokenCode> { ReturnDocument = ReturnDocument.After },
 			cancellationToken);

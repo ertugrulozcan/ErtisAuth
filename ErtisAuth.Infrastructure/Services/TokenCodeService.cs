@@ -176,7 +176,9 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 		}
 		
 		var normalizedUserCode = TokenCode.NormalizeUserCode(userCode);
-		var decided = await this._tokenCodeRepository.TryDecideAsync(normalizedUserCode, membershipId, status, user.Id, DateTime.UtcNow, cancellationToken: cancellationToken);
+		// A scoped token approves for its scopes only: the device can't get more than the approving session has
+		var scopes = status == TokenCodeStatus.Approved && utilizer.Scopes is { Length: > 0 } ? utilizer.Scopes : null;
+		var decided = await this._tokenCodeRepository.TryDecideAsync(normalizedUserCode, membershipId, status, user.Id, scopes, DateTime.UtcNow, cancellationToken: cancellationToken);
 		if (decided == null)
 		{
 			// Why the code could not be decided: re-deciding would log the waiting device in as another user
@@ -267,7 +269,11 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 		}
 		
 		// Generated now (not at the approval): its lifetime starts when the device gets it, and it is never stored here
-		return await this._tokenService.GenerateTokenAsync(user, membershipId, consumed.ClientInfo?.IPAddress, consumed.ClientInfo?.UserAgent, cancellationToken: cancellationToken);
+		var ipAddress = consumed.ClientInfo?.IPAddress;
+		var userAgent = consumed.ClientInfo?.UserAgent;
+		return consumed.Scopes is { Length: > 0 }
+			? await this._tokenService.GenerateScopedTokenAsync(user, consumed.Scopes, membershipId, ipAddress, userAgent, cancellationToken: cancellationToken)
+			: await this._tokenService.GenerateTokenAsync(user, membershipId, ipAddress, userAgent, cancellationToken: cancellationToken);
 	}
 	
 	#endregion

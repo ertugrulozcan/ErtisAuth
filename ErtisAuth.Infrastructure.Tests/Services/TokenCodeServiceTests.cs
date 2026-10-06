@@ -87,6 +87,10 @@ public class TokenCodeServiceTests
 		this._tokenService
 			.GenerateTokenAsync(Arg.Any<User>(), MembershipId, Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo => new BearerToken($"access-token-of-{callInfo.ArgAt<User>(0).Id}", TimeSpan.FromHours(1), "refresh-token", TimeSpan.FromHours(2)));
+		
+		this._tokenService
+			.GenerateScopedTokenAsync(Arg.Any<User>(), Arg.Any<string[]>(), MembershipId, Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+			.Returns(callInfo => new BearerToken($"scoped-token-of-{callInfo.ArgAt<User>(0).Id}", TimeSpan.FromHours(1), "refresh-token", TimeSpan.FromHours(2)));
 	}
 	
 	#endregion
@@ -99,10 +103,10 @@ public class TokenCodeServiceTests
 	private void SetupAtomicMethods()
 	{
 		this._repository
-			.TryDecideAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+			.TryDecideAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string[]?>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo =>
 			{
-				var now = callInfo.ArgAt<DateTime>(4);
+				var now = callInfo.ArgAt<DateTime>(5);
 				var tokenCode = this._tokenCodes.FirstOrDefault(x =>
 					x.UserCode == callInfo.ArgAt<string>(0) &&
 					x.MembershipId == callInfo.ArgAt<string>(1) &&
@@ -113,6 +117,7 @@ public class TokenCodeServiceTests
 				{
 					tokenCode.Status = callInfo.ArgAt<string>(2);
 					tokenCode.UserId = callInfo.ArgAt<string>(3);
+					tokenCode.Scopes = callInfo.ArgAt<string[]?>(4);
 					tokenCode.DecidedAt = now;
 				}
 				
@@ -163,9 +168,11 @@ public class TokenCodeServiceTests
 		return new Utilizer { Id = userId, Username = userId, Type = Utilizer.UtilizerType.User, MembershipId = MembershipId };
 	}
 	
-	private Task<TokenCode> ApproveAsync(TokenCodeService service, string userCode, string userId = UserId)
+	private Task<TokenCode> ApproveAsync(TokenCodeService service, string userCode, string userId = UserId, string[]? scopes = null)
 	{
-		return service.ApproveAsync(userCode, MembershipId, UserUtilizer(userId), TestContext.Current.CancellationToken);
+		var utilizer = UserUtilizer(userId);
+		utilizer.Scopes = scopes;
+		return service.ApproveAsync(userCode, MembershipId, utilizer, TestContext.Current.CancellationToken);
 	}
 	
 	private Task<TokenCode> DenyAsync(TokenCodeService service, string userCode, string userId = UserId)
@@ -468,6 +475,52 @@ public class TokenCodeServiceTests
 		
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.DeviceCode));
 		Assert.Equal("InvalidToken", exception.ErrorCode);
+	}
+	
+	[Fact]
+	public async Task GenerateTokenAsync_ApprovedWithAScopedToken_ReturnsATokenWithTheSameScopes()
+	{
+		// Regression: a scoped token (with tokens.create) approved a device, which got an unscoped token of the user
+		var service = this.CreateService();
+		var tokenCode = await this.CreateCodeAsync(service, new ClientInfo { IPAddress = "203.0.113.42", UserAgent = "SmartTV/1.0" });
+		await this.ApproveAsync(service, tokenCode.UserCode, scopes: ["tokens.create", "users.read"]);
+		
+		var token = await this.GenerateTokenAsync(service, tokenCode.DeviceCode);
+		
+		Assert.Equal($"scoped-token-of-{UserId}", token.AccessToken);
+		await this._tokenService.Received(1).GenerateScopedTokenAsync(
+			Arg.Is<User>(x => x.Id == UserId),
+			Arg.Is<string[]>(x => x.SequenceEqual(new[] { "tokens.create", "users.read" })),
+			MembershipId,
+			"203.0.113.42",
+			"SmartTV/1.0",
+			Arg.Any<CancellationToken>());
+		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateTokenAsync(default(User)!, default!);
+	}
+	
+	[Fact]
+	public async Task GenerateTokenAsync_ApprovedWithAnUnscopedToken_ReturnsAnUnscopedToken()
+	{
+		var service = this.CreateService();
+		var tokenCode = await this.CreateCodeAsync(service);
+		await this.ApproveAsync(service, tokenCode.UserCode);
+		
+		await this.GenerateTokenAsync(service, tokenCode.DeviceCode);
+		
+		await this._tokenService.DidNotReceiveWithAnyArgs().GenerateScopedTokenAsync(default!, default!, default!);
+	}
+	
+	[Fact]
+	public async Task DenyAsync_WithAScopedToken_StoresNoScopes()
+	{
+		var service = this.CreateService();
+		var tokenCode = await this.CreateCodeAsync(service);
+		var utilizer = UserUtilizer(UserId);
+		utilizer.Scopes = ["tokens.create"];
+		
+		await service.DenyAsync(tokenCode.UserCode, MembershipId, utilizer, TestContext.Current.CancellationToken);
+		
+		Assert.Null(Assert.Single(this._tokenCodes).Scopes);
 	}
 	
 	[Fact]

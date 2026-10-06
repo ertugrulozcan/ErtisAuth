@@ -75,6 +75,15 @@ public class TokenCode : MembershipBoundedResource
 	[BsonIgnoreIfNull]
 	public DateTime? DecidedAt { get; set; }
 	
+	/// <summary>
+	/// The scopes of the token that approved the code: the device gets a token limited to them (a token can only be
+	/// narrowed), none for an approval with an unscoped token.
+	/// </summary>
+	[JsonIgnore]
+	[BsonElement("scopes")]
+	[BsonIgnoreIfNull]
+	public string[]? Scopes { get; set; }
+	
 	[JsonIgnore]
 	[BsonElement("last_polled_at")]
 	[BsonIgnoreIfNull]

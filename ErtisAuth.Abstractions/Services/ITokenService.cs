@@ -17,6 +17,12 @@ public interface ITokenService
 	
 	Task<BearerToken> GenerateTokenAsync(User user, string membershipId, string? ipAddress = null, string? userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default);
 	
+	/// <summary>
+	/// A token of the user limited to the scopes (with a refresh token, whose tokens keep the scopes), e.g. for a device
+	/// approved with a scoped token: a token can only be narrowed, never broadened.
+	/// </summary>
+	Task<BearerToken> GenerateScopedTokenAsync(User user, string[] scopes, string membershipId, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default);
+	
 	Task<ITokenValidationResult> VerifyTokenAsync(string token, SupportedTokenTypes tokenType, bool fireEvent = true, CancellationToken cancellationToken = default);
 	
 	Task<BearerTokenValidationResult> VerifyBearerTokenAsync(string token, bool fireEvent = true, CancellationToken cancellationToken = default);

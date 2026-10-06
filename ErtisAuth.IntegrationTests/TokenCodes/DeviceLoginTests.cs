@@ -234,6 +234,44 @@ public class DeviceLoginTests : IClassFixture<ErtisAuthInstance>
 	}
 	
 	[Fact]
+	public async Task ApprovedWithAScopedToken_TheDeviceGetsTheSameScopes()
+	{
+		// Regression: a scoped token approved a device, which got an unscoped token of the user (a token can only be narrowed)
+		await this.EnableTokenCodesAsync();
+		var adminClient = await this._instance.CreateAdminClientAsync();
+		var (userCode, deviceCode) = await this.CreateCodeAsync(adminClient);
+		
+		using var scopedTokenRequest = new HttpRequestMessage(HttpMethod.Post, "/generate-token");
+		scopedTokenRequest.Headers.Add("Membership", this._instance.MembershipId);
+		scopedTokenRequest.Headers.Authorization = adminClient.DefaultRequestHeaders.Authorization;
+		scopedTokenRequest.Content = JsonContent.Create(new { scopes = new[] { "tokens.create", "users.read" } });
+		using var scopedTokenResponse = await this._instance.CreateClient().SendAsync(scopedTokenRequest, TestContext.Current.CancellationToken);
+		var scopedToken = (await ErtisAuthInstance.ReadJsonAsync(scopedTokenResponse)).GetProperty("access_token").GetString()!;
+		
+		using (var response = await this._instance.CreateClient($"Bearer {scopedToken}").PostAsync($"{this.CodesUrl}/{userCode}/approve", null, TestContext.Current.CancellationToken))
+		{
+			Assert.True(response.IsSuccessStatusCode, (await ErtisAuthInstance.ReadJsonAsync(response)).ToString());
+		}
+		
+		string deviceToken;
+		using (var response = await this.PollAsync(deviceCode))
+		{
+			var token = await ErtisAuthInstance.ReadJsonAsync(response);
+			Assert.True(response.StatusCode == HttpStatusCode.Created, token.ToString());
+			deviceToken = token.GetProperty("access_token").GetString()!;
+		}
+		
+		var deviceClient = this._instance.CreateClient($"Bearer {deviceToken}");
+		using (var users = await deviceClient.GetAsync($"/memberships/{this._instance.MembershipId}/users", TestContext.Current.CancellationToken))
+		{
+			Assert.Equal(HttpStatusCode.OK, users.StatusCode);
+		}
+		
+		using var roles = await deviceClient.GetAsync($"/memberships/{this._instance.MembershipId}/roles", TestContext.Current.CancellationToken);
+		Assert.Equal(HttpStatusCode.Forbidden, roles.StatusCode);
+	}
+	
+	[Fact]
 	public async Task ApprovingWithABasicToken_IsRejected()
 	{
 		// The device is signed in as the user who approves the code, so an application can't approve it

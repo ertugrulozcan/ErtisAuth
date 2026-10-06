@@ -265,6 +265,22 @@ public class TokenService : ITokenService
 	
 	public async Task<BearerToken> GenerateTokenAsync(User user, string membershipId, string? ipAddress = null, string? userAgent = null, bool fireEvent = true, CancellationToken cancellationToken = default)
 	{
+		return await this.GenerateTokenOfUserAsync(user, membershipId, null, ipAddress, userAgent, cancellationToken: cancellationToken);
+	}
+	
+	public async Task<BearerToken> GenerateScopedTokenAsync(User user, string[] scopes, string membershipId, string? ipAddress = null, string? userAgent = null, CancellationToken cancellationToken = default)
+	{
+		var scopeList = scopes.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+		if (scopeList.Length == 0)
+		{
+			throw ErtisAuthException.ScopeRequired();
+		}
+		
+		return await this.GenerateTokenOfUserAsync(user, membershipId, scopeList, ipAddress, userAgent, cancellationToken: cancellationToken);
+	}
+	
+	private async Task<BearerToken> GenerateTokenOfUserAsync(User user, string membershipId, string[]? scopes, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default)
+	{
 		// Check membership
 		var membership = await this._membershipService.GetAsync(membershipId, cancellationToken: cancellationToken);
 		if (membership == null)
@@ -279,7 +295,7 @@ public class TokenService : ITokenService
 			throw ErtisAuthException.UserNotFound(user.Id, "id");
 		}
 		
-		return await this.GenerateBearerTokenAsync(currentUser, membership, null, ipAddress, userAgent, cancellationToken: cancellationToken);
+		return await this.GenerateBearerTokenAsync(currentUser, membership, scopes, ipAddress, userAgent, cancellationToken: cancellationToken);
 	}
 	
 	private async Task<BearerToken> GenerateBearerTokenAsync(
