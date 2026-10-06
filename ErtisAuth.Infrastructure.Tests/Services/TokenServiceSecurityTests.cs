@@ -165,7 +165,64 @@ public class TokenServiceSecurityTests
 		Assert.DoesNotContain(token.AccessToken, json);
 		Assert.Contains("\"token_type\":\"bearer\"", json);
 	}
-	
+
+	[Fact]
+	public async Task RefreshTokenAsync_EventDoesNotContainTheTokens()
+	{
+		var (membership, _) = this.Setup();
+		var tokenService = this.CreateTokenService();
+		var token = await this.GenerateTokenAsync(tokenService, membership);
+		object? document = null;
+		object? prior = null;
+		this._eventService
+			.When(x => x.FireEventAsync(ErtisAuthEventType.TokenRefreshed, Arg.Any<Utilizer>(), Arg.Any<string?>(), Arg.Any<object?>(), Arg.Any<object?>(), Arg.Any<CancellationToken>()))
+			.Do(x =>
+			{
+				document = x.ArgAt<object?>(3);
+				prior = x.ArgAt<object?>(4);
+			});
+
+		var refreshed = await tokenService.RefreshTokenAsync(token.RefreshToken!, revokeBefore: false, fireEvent: true, cancellationToken: TestContext.Current.CancellationToken);
+
+		var json = JsonSerializer.Serialize(new { document, prior });
+		Assert.DoesNotContain(refreshed.AccessToken, json);
+		Assert.DoesNotContain(refreshed.RefreshToken!, json);
+		Assert.DoesNotContain(token.RefreshToken!, json);
+		Assert.Contains("\"expires_in\"", json);
+		Assert.Contains("john.doe", json);
+	}
+
+	[Fact]
+	public async Task RevokeTokenAsync_EventDoesNotContainTheToken()
+	{
+		var (membership, _) = this.Setup();
+		var tokenService = this.CreateTokenService();
+		var token = await this.GenerateTokenAsync(tokenService, membership);
+		this._activeTokenService.GetActiveTokensByUser(UserId, membership.Id, Arg.Any<CancellationToken>()).Returns(
+		[
+			new ActiveToken
+			{
+				Id = "active-token-id",
+				AccessToken = token.AccessToken,
+				RefreshToken = token.RefreshToken,
+				ExpiresIn = token.ExpiresInTimeStamp,
+				RefreshTokenExpiresIn = token.RefreshTokenExpiresInTimeStamp,
+				CreatedAt = token.CreatedAt,
+				UserId = UserId,
+				MembershipId = membership.Id
+			}
+		]);
+		var document = this.CaptureEventDocument(ErtisAuthEventType.TokenRevoked);
+
+		var isRevoked = await tokenService.RevokeTokenAsync(token.AccessToken, cancellationToken: TestContext.Current.CancellationToken);
+
+		Assert.True(isRevoked);
+		var json = JsonSerializer.Serialize(document());
+		Assert.DoesNotContain(token.AccessToken, json);
+		Assert.DoesNotContain(token.RefreshToken!, json);
+		Assert.Contains("\"expire_time\"", json);
+	}
+
 	#endregion
 	
 	#region Forged Tokens

@@ -314,19 +314,24 @@ public class TokenService : ITokenService
 		
 		if (fireEvent)
 		{
-			// Events are readable (events.read) and forwarded to webhooks: only token metadata, never the token itself
-			var tokenInfo = new
-			{
-				token_type = "bearer",
-				expires_in = bearerToken.ExpiresInTimeStamp,
-				refresh_token_expires_in = bearerToken.RefreshTokenExpiresInTimeStamp,
-				created_at = bearerToken.CreatedAt
-			};
-			
-			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenGenerated, user, membership.Id, new { user, token = tokenInfo }, cancellationToken: cancellationToken);
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenGenerated, user, membership.Id, new { user, token = GetTokenEventInfo(bearerToken) }, cancellationToken: cancellationToken);
 		}
 		
 		return bearerToken;
+	}
+	
+	/// <summary>
+	/// Events are readable (events.read) and forwarded to webhooks: only token metadata, never the token itself.
+	/// </summary>
+	private static object GetTokenEventInfo(BearerToken bearerToken)
+	{
+		return new
+		{
+			token_type = "bearer",
+			expires_in = bearerToken.ExpiresInTimeStamp,
+			refresh_token_expires_in = bearerToken.RefreshTokenExpiresInTimeStamp,
+			created_at = bearerToken.CreatedAt
+		};
 	}
 	
 	private bool IsRefreshToken(JsonWebToken securityToken)
@@ -577,7 +582,7 @@ public class TokenService : ITokenService
 		
 		if (fireEvent)
 		{
-			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenRefreshed, user, membership.Id, token, new { refreshToken }, cancellationToken: cancellationToken);	
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenRefreshed, user, membership.Id, new { user, token = GetTokenEventInfo(token) }, cancellationToken: cancellationToken);
 		}
 		
 		return token;
@@ -661,7 +666,9 @@ public class TokenService : ITokenService
 				await this._revokedTokenService.RevokeAsync(activeToken.RefreshToken, user, true, activeToken.RefreshTokenExpireTime, cancellationToken: cancellationToken);
 			}
 			
-			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenRevoked, user, membership.Id, new { activeToken.AccessToken }, cancellationToken: cancellationToken);
+			// Only token metadata, like the other token events
+			var tokenInfo = new { token_type = "bearer", expire_time = activeToken.ExpireTime };
+			await this._eventService.FireEventAsync(ErtisAuthEventType.TokenRevoked, user, membership.Id, new { token = tokenInfo }, cancellationToken: cancellationToken);
 		}
 		
 		await this._activeTokenService.BulkDeleteAsync(activeTokens, cancellationToken: cancellationToken);
