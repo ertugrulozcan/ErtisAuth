@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.WebAPI", "ErtisAuth.WebAPI\ErtisAuth.WebAPI.csproj", "{47AE4554-C608-40D3-B9F9-86617B6EE760}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.WebAPI", "src\ErtisAuth.WebAPI\ErtisAuth.WebAPI.csproj", "{47AE4554-C608-40D3-B9F9-86617B6EE760}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Business", "Business", "{A2AB6BFD-1BC6-4978-B18C-1B29B2690D46}"
 EndProject
@@ -16,63 +16,63 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sdk", "Sdk", "{9FA8DB1C-FC0
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{3A129582-7BF4-4B18-8618-AEAFF1AACC5F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Infrastructure", "ErtisAuth.Infrastructure\ErtisAuth.Infrastructure.csproj", "{BABD6836-FFCC-4CD2-B3D2-F7434D2DDD1B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Infrastructure", "src\ErtisAuth.Infrastructure\ErtisAuth.Infrastructure.csproj", "{BABD6836-FFCC-4CD2-B3D2-F7434D2DDD1B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Dao", "ErtisAuth.Dao\ErtisAuth.Dao.csproj", "{E99002B6-3946-4710-B985-A11767AC3BE9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Dao", "src\ErtisAuth.Dao\ErtisAuth.Dao.csproj", "{E99002B6-3946-4710-B985-A11767AC3BE9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.ApplicationInsights", "ErtisAuth.Extensions.ApplicationInsights\ErtisAuth.Extensions.ApplicationInsights.csproj", "{C0AEA52A-CA88-40E5-A3A0-EB3C8AED807D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.ApplicationInsights", "src\ErtisAuth.Extensions.ApplicationInsights\ErtisAuth.Extensions.ApplicationInsights.csproj", "{C0AEA52A-CA88-40E5-A3A0-EB3C8AED807D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.AspNetCore", "ErtisAuth.Extensions.AspNetCore\ErtisAuth.Extensions.AspNetCore.csproj", "{5126B2A0-9AD8-4C44-A884-EB11888F34A2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.AspNetCore", "src\ErtisAuth.Extensions.AspNetCore\ErtisAuth.Extensions.AspNetCore.csproj", "{5126B2A0-9AD8-4C44-A884-EB11888F34A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Database", "ErtisAuth.Extensions.Database\ErtisAuth.Extensions.Database.csproj", "{2AAF72CA-4923-4414-8B7F-2C629C4BBF87}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Database", "src\ErtisAuth.Extensions.Database\ErtisAuth.Extensions.Database.csproj", "{2AAF72CA-4923-4414-8B7F-2C629C4BBF87}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Prometheus", "ErtisAuth.Extensions.Prometheus\ErtisAuth.Extensions.Prometheus.csproj", "{14D23AD5-547E-4EE1-B78E-EED548FF5145}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Prometheus", "src\ErtisAuth.Extensions.Prometheus\ErtisAuth.Extensions.Prometheus.csproj", "{14D23AD5-547E-4EE1-B78E-EED548FF5145}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth", "ErtisAuth.Integrations.OAuth\ErtisAuth.Integrations.OAuth.csproj", "{84D1F7E5-650F-433C-94E2-6953D2AB678C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth", "src\ErtisAuth.Integrations.OAuth\ErtisAuth.Integrations.OAuth.csproj", "{84D1F7E5-650F-433C-94E2-6953D2AB678C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Abstractions", "ErtisAuth.Integrations.OAuth.Abstractions\ErtisAuth.Integrations.OAuth.Abstractions.csproj", "{C2609295-8BDA-4EF8-90BF-FCE5C6153808}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Abstractions", "src\ErtisAuth.Integrations.OAuth.Abstractions\ErtisAuth.Integrations.OAuth.Abstractions.csproj", "{C2609295-8BDA-4EF8-90BF-FCE5C6153808}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Apple", "ErtisAuth.Integrations.OAuth.Apple\ErtisAuth.Integrations.OAuth.Apple.csproj", "{DE49B411-57E6-431A-8D93-8E136CF9A8B7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Apple", "src\ErtisAuth.Integrations.OAuth.Apple\ErtisAuth.Integrations.OAuth.Apple.csproj", "{DE49B411-57E6-431A-8D93-8E136CF9A8B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Core", "ErtisAuth.Integrations.OAuth.Core\ErtisAuth.Integrations.OAuth.Core.csproj", "{B6886AA3-AEE2-4C29-9EC0-2F8570EFD7C3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Core", "src\ErtisAuth.Integrations.OAuth.Core\ErtisAuth.Integrations.OAuth.Core.csproj", "{B6886AA3-AEE2-4C29-9EC0-2F8570EFD7C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Facebook", "ErtisAuth.Integrations.OAuth.Facebook\ErtisAuth.Integrations.OAuth.Facebook.csproj", "{0BCD6050-F179-454F-AB99-2A7439A3D769}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Facebook", "src\ErtisAuth.Integrations.OAuth.Facebook\ErtisAuth.Integrations.OAuth.Facebook.csproj", "{0BCD6050-F179-454F-AB99-2A7439A3D769}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Google", "ErtisAuth.Integrations.OAuth.Google\ErtisAuth.Integrations.OAuth.Google.csproj", "{5DFBD479-EFCA-4E05-81DB-A766849C9E10}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Google", "src\ErtisAuth.Integrations.OAuth.Google\ErtisAuth.Integrations.OAuth.Google.csproj", "{5DFBD479-EFCA-4E05-81DB-A766849C9E10}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Microsoft", "ErtisAuth.Integrations.OAuth.Microsoft\ErtisAuth.Integrations.OAuth.Microsoft.csproj", "{6F00688B-7750-464C-8ADF-F9F1AA1842A6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Microsoft", "src\ErtisAuth.Integrations.OAuth.Microsoft\ErtisAuth.Integrations.OAuth.Microsoft.csproj", "{6F00688B-7750-464C-8ADF-F9F1AA1842A6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Sdk", "ErtisAuth.Sdk\ErtisAuth.Sdk.csproj", "{9312A17E-9F94-4FE0-A945-9A5B3C051814}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Sdk", "src\ErtisAuth.Sdk\ErtisAuth.Sdk.csproj", "{9312A17E-9F94-4FE0-A945-9A5B3C051814}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Abstractions", "ErtisAuth.Abstractions\ErtisAuth.Abstractions.csproj", "{F6303E4F-C478-440C-AE18-A32A8F7C70D4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Abstractions", "src\ErtisAuth.Abstractions\ErtisAuth.Abstractions.csproj", "{F6303E4F-C478-440C-AE18-A32A8F7C70D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Core", "ErtisAuth.Core\ErtisAuth.Core.csproj", "{1E475A59-C5A4-4DB2-91CA-E660F59BCCF4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Core", "src\ErtisAuth.Core\ErtisAuth.Core.csproj", "{1E475A59-C5A4-4DB2-91CA-E660F59BCCF4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Authorization", "ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj", "{AD8D0D6E-9FBC-4589-A951-0E3C33A4B5C1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Authorization", "src\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj", "{AD8D0D6E-9FBC-4589-A951-0E3C33A4B5C1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Mailing", "ErtisAuth.Extensions.Mailing\ErtisAuth.Extensions.Mailing.csproj", "{38128EDF-7BBD-4803-832A-6E556CF3FA6D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.Mailing", "src\ErtisAuth.Extensions.Mailing\ErtisAuth.Extensions.Mailing.csproj", "{38128EDF-7BBD-4803-832A-6E556CF3FA6D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Infrastructure.Tests", "ErtisAuth.Infrastructure.Tests\ErtisAuth.Infrastructure.Tests.csproj", "{0D9143E6-519C-4FE5-8496-2577E8410DBA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Infrastructure.Tests", "tests\ErtisAuth.Infrastructure.Tests\ErtisAuth.Infrastructure.Tests.csproj", "{0D9143E6-519C-4FE5-8496-2577E8410DBA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.AspNetCore.Tests", "ErtisAuth.Extensions.AspNetCore.Tests\ErtisAuth.Extensions.AspNetCore.Tests.csproj", "{A40CC986-643E-4919-88CE-8F80E57C8455}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Extensions.AspNetCore.Tests", "tests\ErtisAuth.Extensions.AspNetCore.Tests\ErtisAuth.Extensions.AspNetCore.Tests.csproj", "{A40CC986-643E-4919-88CE-8F80E57C8455}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.WebAPI.Tests", "ErtisAuth.WebAPI.Tests\ErtisAuth.WebAPI.Tests.csproj", "{1CD328B7-14A6-44E0-8A40-DC8E1E3B5405}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.WebAPI.Tests", "tests\ErtisAuth.WebAPI.Tests\ErtisAuth.WebAPI.Tests.csproj", "{1CD328B7-14A6-44E0-8A40-DC8E1E3B5405}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Sdk.AspNetCore", "ErtisAuth.Sdk.AspNetCore\ErtisAuth.Sdk.AspNetCore.csproj", "{4723AA1E-2960-4E0F-BCD4-C274605C1418}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Sdk.AspNetCore", "src\ErtisAuth.Sdk.AspNetCore\ErtisAuth.Sdk.AspNetCore.csproj", "{4723AA1E-2960-4E0F-BCD4-C274605C1418}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Sdk.Tests", "ErtisAuth.Sdk.Tests\ErtisAuth.Sdk.Tests.csproj", "{4B6CE0F2-D168-4C26-96C4-F7C7C623460D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Sdk.Tests", "tests\ErtisAuth.Sdk.Tests\ErtisAuth.Sdk.Tests.csproj", "{4B6CE0F2-D168-4C26-96C4-F7C7C623460D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Sdk.AspNetCore.Tests", "ErtisAuth.Sdk.AspNetCore.Tests\ErtisAuth.Sdk.AspNetCore.Tests.csproj", "{581F8F67-2B05-433F-8577-D9A2808C106E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Sdk.AspNetCore.Tests", "tests\ErtisAuth.Sdk.AspNetCore.Tests\ErtisAuth.Sdk.AspNetCore.Tests.csproj", "{581F8F67-2B05-433F-8577-D9A2808C106E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Tests", "ErtisAuth.Integrations.OAuth.Tests\ErtisAuth.Integrations.OAuth.Tests.csproj", "{01189E8F-A318-46A9-A746-026FB76F223A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Integrations.OAuth.Tests", "tests\ErtisAuth.Integrations.OAuth.Tests\ErtisAuth.Integrations.OAuth.Tests.csproj", "{01189E8F-A318-46A9-A746-026FB76F223A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.IntegrationTests", "ErtisAuth.IntegrationTests\ErtisAuth.IntegrationTests.csproj", "{7C1A3B52-2E8F-4D6A-9B1E-5F3C2D4A6B70}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.IntegrationTests", "tests\ErtisAuth.IntegrationTests\ErtisAuth.IntegrationTests.csproj", "{7C1A3B52-2E8F-4D6A-9B1E-5F3C2D4A6B70}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Analyzers", "ErtisAuth.Analyzers\ErtisAuth.Analyzers.csproj", "{6006E389-4C0C-41D5-8468-9EDFB480E059}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Analyzers", "src\ErtisAuth.Analyzers\ErtisAuth.Analyzers.csproj", "{6006E389-4C0C-41D5-8468-9EDFB480E059}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Analyzers.Tests", "ErtisAuth.Analyzers.Tests\ErtisAuth.Analyzers.Tests.csproj", "{3B40FDE8-0388-40DF-A905-2B16B42B2808}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErtisAuth.Analyzers.Tests", "tests\ErtisAuth.Analyzers.Tests\ErtisAuth.Analyzers.Tests.csproj", "{3B40FDE8-0388-40DF-A905-2B16B42B2808}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -9,7 +9,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\ErtisAuth.Sdk\ErtisAuth.Sdk.csproj" />
+        <ProjectReference Include="..\..\src\ErtisAuth.Integrations.OAuth\ErtisAuth.Integrations.OAuth.csproj" />
     </ItemGroup>
     
     <ItemGroup>
@@ -22,9 +22,5 @@
     
     <ItemGroup>
         <Using Include="Xunit" />
-    </ItemGroup>
-    
-    <ItemGroup>
-        <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 </Project>

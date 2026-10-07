@@ -9,7 +9,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\ErtisAuth.WebAPI\ErtisAuth.WebAPI.csproj" />
+        <ProjectReference Include="..\..\src\ErtisAuth.Infrastructure\ErtisAuth.Infrastructure.csproj" />
     </ItemGroup>
     
     <ItemGroup>

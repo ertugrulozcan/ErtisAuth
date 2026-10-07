@@ -9,8 +9,8 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\ErtisAuth.Analyzers\ErtisAuth.Analyzers.csproj" />
-        <ProjectReference Include="..\ErtisAuth.Extensions.AspNetCore\ErtisAuth.Extensions.AspNetCore.csproj" />
+        <ProjectReference Include="..\..\src\ErtisAuth.Analyzers\ErtisAuth.Analyzers.csproj" />
+        <ProjectReference Include="..\..\src\ErtisAuth.Extensions.AspNetCore\ErtisAuth.Extensions.AspNetCore.csproj" />
     </ItemGroup>
     
     <ItemGroup>
