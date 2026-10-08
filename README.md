@@ -163,7 +163,7 @@ Resources and actions are not limited to ErtisAuth's own endpoints: you can use 
 git clone https://github.com/ertugrulozcan/ErtisAuth.git
 cd ErtisAuth
 dotnet build
-dotnet run --project ErtisAuth.WebAPI
+dotnet run --project src/ErtisAuth.WebAPI
 ```
 
 The MongoDB connection is set with the `Database__ConnectionString` environment variable (or the `Database:ConnectionString` setting):
