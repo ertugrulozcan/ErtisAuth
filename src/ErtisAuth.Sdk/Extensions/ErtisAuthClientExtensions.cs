@@ -27,17 +27,54 @@ public static class ErtisAuthClientExtensions
 	#region Methods
 	
 	/// <summary>
-	/// Reads the options from appsettings.json (and appsettings.{ASPNETCORE_ENVIRONMENT}.json) and environment variables.
+	/// Reads the options from the configuration of the host (the IConfiguration registered by WebApplication.CreateBuilder,
+	/// Host.CreateApplicationBuilder etc.), so every configuration source of the application is used: appsettings.json and
+	/// appsettings.{environment}.json, environment variables, user secrets, command line arguments, Azure Key Vault…
+	/// The options are validated when the host starts. Without a host (no IConfiguration registered) the options are read
+	/// from appsettings.json, appsettings.{ASPNETCORE_ENVIRONMENT}.json and the environment variables (see ReadOptions)
+	/// and validated at once.
 	/// </summary>
 	/// <param name="services"></param>
 	/// <param name="sectionName">The configuration section of the options</param>
 	public static IServiceCollection AddErtisAuth(this IServiceCollection services, string sectionName = DefaultSectionName)
 	{
-		return services.AddErtisAuth(ReadOptions(sectionName), $"configuration section '{sectionName}'");
+		var source = $"configuration section '{sectionName}'";
+		if (!services.Any(x => x.ServiceType == typeof(IConfiguration)))
+		{
+			return services.AddErtisAuth(ReadOptions(sectionName), source);
+		}
+		
+		if (IsRegistered(services))
+		{
+			return services;
+		}
+		
+		// The host's IConfiguration is only available once the service provider is built
+		services
+			.AddOptions<ErtisAuthOptions>()
+			.Configure<IConfiguration>((options, configuration) => configuration.GetSection(sectionName).Bind(options))
+			.ValidateOnStart();
+		
+		services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<ErtisAuthOptions>>(new ErtisAuthOptionsValidation(source)));
+		
+		return services.AddErtisAuthServices();
 	}
 	
 	/// <summary>
-	/// Uses the given options only; no configuration file is read.
+	/// Reads the options from the given configuration section (e.g. builder.Configuration.GetSection("ErtisAuth")) and validates them at once.
+	/// </summary>
+	/// <param name="services"></param>
+	/// <param name="configuration">The configuration section of the options</param>
+	public static IServiceCollection AddErtisAuth(this IServiceCollection services, IConfiguration configuration)
+	{
+		var options = new ErtisAuthOptions();
+		configuration.Bind(options);
+		var source = configuration is IConfigurationSection section ? $"configuration section '{section.Path}'" : "configuration";
+		return services.AddErtisAuth(options, source);
+	}
+	
+	/// <summary>
+	/// Uses the given options only; no configuration is read.
 	/// </summary>
 	/// <param name="services"></param>
 	/// <param name="configure"></param>
@@ -50,7 +87,7 @@ public static class ErtisAuthClientExtensions
 	
 	private static IServiceCollection AddErtisAuth(this IServiceCollection services, ErtisAuthOptions options, string source)
 	{
-		if (services.Any(x => x.ServiceType == typeof(IErtisAuthOptions)))
+		if (IsRegistered(services))
 		{
 			return services;
 		}
@@ -64,6 +101,16 @@ public static class ErtisAuthClientExtensions
 			x.BasicTokenCacheTTL = options.BasicTokenCacheTTL;
 		});
 		
+		return services.AddErtisAuthServices();
+	}
+	
+	private static bool IsRegistered(IServiceCollection services)
+	{
+		return services.Any(x => x.ServiceType == typeof(IErtisAuthOptions));
+	}
+	
+	private static IServiceCollection AddErtisAuthServices(this IServiceCollection services)
+	{
 		services.TryAddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);
 		
 		// RestHandler requires IHttpClientFactory, which is not registered by default (not even in ASP.NET Core)
@@ -77,7 +124,8 @@ public static class ErtisAuthClientExtensions
 	}
 	
 	/// <summary>
-	/// Reads the options section from appsettings.json and environment variables (the default behavior of the SDK).
+	/// Reads the options section from appsettings.json, appsettings.{ASPNETCORE_ENVIRONMENT}.json (in the output directory of
+	/// the application) and the environment variables. AddErtisAuth uses it when the application has no host.
 	/// </summary>
 	public static ErtisAuthOptions ReadOptions(string sectionName = DefaultSectionName)
 	{

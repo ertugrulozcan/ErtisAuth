@@ -2,6 +2,7 @@ using Ertis.Net.Rest;
 using ErtisAuth.Sdk.Attributes;
 using ErtisAuth.Sdk.Configuration;
 using ErtisAuth.Sdk.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -9,7 +10,7 @@ namespace ErtisAuth.Sdk.Tests.Extensions;
 
 /// <summary>
 /// Registration of the SDK in any kind of application (AddErtisAuth of ErtisAuth.Sdk).
-/// The default reads appsettings.json of the test project (copied to the output directory).
+/// Without a host, the default reads appsettings.json of the test project (copied to the output directory).
 /// </summary>
 public class ErtisAuthClientExtensionsTests
 {
@@ -32,12 +33,29 @@ public class ErtisAuthClientExtensionsTests
 		return Assert.Throws<OptionsValidationException>(() => new ServiceCollection().AddErtisAuth(configure));
 	}
 	
+	private static IConfigurationRoot CreateConfiguration(Dictionary<string, string?> values)
+	{
+		return new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+	}
+	
+	/// <summary>
+	/// As the hosts register it (WebApplication.CreateBuilder, Host.CreateApplicationBuilder…): a factory, so the configuration
+	/// is not available until the service provider is built
+	/// </summary>
+	private static ServiceCollection CreateHostServices(Dictionary<string, string?> values)
+	{
+		var configuration = CreateConfiguration(values);
+		var services = new ServiceCollection();
+		services.AddSingleton<IConfiguration>(_ => configuration);
+		return services;
+	}
+	
 	#endregion
 	
 	#region Configuration Sources
 	
 	[Fact]
-	public void AddErtisAuth_ByDefault_ReadsErtisAuthSectionOfAppSettings()
+	public void AddErtisAuth_WithoutHost_ReadsErtisAuthSectionOfAppSettings()
 	{
 		var options = new ServiceCollection().AddErtisAuth().BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
 		
@@ -74,6 +92,90 @@ public class ErtisAuthClientExtensionsTests
 		
 		Assert.Contains(exception.Failures, x => x.Contains("configuration section 'Missing'") && x.Contains("BaseUrl is required"));
 		Assert.Contains(exception.Failures, x => x.Contains("MembershipId is required"));
+	}
+	
+	[Fact]
+	public void AddErtisAuth_WithConfigurationSection_ReadsThatSection()
+	{
+		var configuration = CreateConfiguration(new Dictionary<string, string?>
+		{
+			["Identity:BaseUrl"] = "https://auth.from-section.test",
+			["Identity:MembershipId"] = "membership-from-section"
+		});
+		
+		var options = new ServiceCollection().AddErtisAuth(configuration.GetSection("Identity")).BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
+		
+		Assert.Equal("https://auth.from-section.test", options.BaseUrl);
+		Assert.Equal("membership-from-section", options.MembershipId);
+	}
+	
+	[Fact]
+	public void AddErtisAuth_WithInvalidConfigurationSection_FailsAtRegistration()
+	{
+		var configuration = CreateConfiguration(new Dictionary<string, string?> { ["Identity:BaseUrl"] = "not-a-url" });
+		
+		var exception = Assert.Throws<OptionsValidationException>(() => new ServiceCollection().AddErtisAuth(configuration.GetSection("Identity")));
+		
+		Assert.Contains(exception.Failures, x => x.Contains("configuration section 'Identity'") && x.Contains("absolute http or https url"));
+		Assert.Contains(exception.Failures, x => x.Contains("MembershipId is required"));
+	}
+	
+	#endregion
+	
+	#region Host Configuration
+	
+	[Fact]
+	public void AddErtisAuth_WithHost_ReadsTheConfigurationOfTheHost()
+	{
+		// A source of the host the SDK can't know (e.g. user secrets); appsettings.json of the test project has other values
+		var services = CreateHostServices(new Dictionary<string, string?>
+		{
+			["ErtisAuth:BaseUrl"] = "https://auth.from-host.test",
+			["ErtisAuth:MembershipId"] = "membership-from-host",
+			["ErtisAuth:BasicTokenCacheTTL"] = "15"
+		});
+		
+		var options = services.AddErtisAuth().BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
+		
+		Assert.Equal("https://auth.from-host.test", options.BaseUrl);
+		Assert.Equal("membership-from-host", options.MembershipId);
+		Assert.Equal(15, options.BasicTokenCacheTTL);
+	}
+	
+	[Fact]
+	public void AddErtisAuth_WithHostAndSectionName_ReadsThatSectionOfTheHost()
+	{
+		var services = CreateHostServices(new Dictionary<string, string?>
+		{
+			["Identity:BaseUrl"] = "https://auth.from-host.test",
+			["Identity:MembershipId"] = "membership-from-host"
+		});
+		
+		var options = services.AddErtisAuth("Identity").BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
+		
+		Assert.Equal("membership-from-host", options.MembershipId);
+	}
+	
+	[Fact]
+	public void AddErtisAuth_WithHostAndInvalidConfiguration_FailsWhenTheHostStarts()
+	{
+		var services = CreateHostServices(new Dictionary<string, string?> { ["ErtisAuth:BaseUrl"] = "not-a-url" });
+		
+		// The configuration of the host is only read once the service provider is built
+		var serviceProvider = services.AddErtisAuth().BuildServiceProvider();
+		
+		// What the host runs on start (ValidateOnStart)
+		var exception = Assert.Throws<OptionsValidationException>(() => serviceProvider.GetRequiredService<IStartupValidator>().Validate());
+		Assert.Contains(exception.Failures, x => x.Contains("configuration section 'ErtisAuth'") && x.Contains("absolute http or https url"));
+		Assert.Contains(exception.Failures, x => x.Contains("MembershipId is required"));
+	}
+	
+	[Fact]
+	public void AddErtisAuth_WithHostAndInvalidConfiguration_FailsOnFirstUseWithoutHostStart()
+	{
+		var serviceProvider = CreateHostServices([]).AddErtisAuth().BuildServiceProvider();
+		
+		Assert.Throws<OptionsValidationException>(() => serviceProvider.GetRequiredService<IErtisAuthOptions>());
 	}
 	
 	#endregion

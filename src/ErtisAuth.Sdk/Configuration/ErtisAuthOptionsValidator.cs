@@ -50,8 +50,13 @@ public static class ErtisAuthOptionsValidator
 			throw new OptionsValidationException(
 				source,
 				typeof(ErtisAuthOptions),
-				errors.Select(x => $"ErtisAuth SDK configuration is invalid ({source}): {x}"));
+				errors.Select(x => FormatError(source, x)));
 		}
+	}
+	
+	internal static string FormatError(string source, string error)
+	{
+		return $"ErtisAuth SDK configuration is invalid ({source}): {error}";
 	}
 	
 	#endregion

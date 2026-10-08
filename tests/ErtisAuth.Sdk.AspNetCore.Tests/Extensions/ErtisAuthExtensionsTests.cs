@@ -4,9 +4,13 @@ using ErtisAuth.Sdk.AspNetCore.Middleware;
 using ErtisAuth.Sdk.Configuration;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace ErtisAuth.Sdk.AspNetCore.Tests.Extensions;
 
@@ -96,6 +100,56 @@ public class ErtisAuthExtensionsTests
 		Assert.Single(serviceProvider.GetServices<IAuthorizationHandler>(), x => x is ErtisAuthAuthorizationHandler);
 	}
 	
+	/// <summary>
+	/// The options come from builder.Configuration, so every source added to it is used (here one that is not a file)
+	/// </summary>
+	[Fact]
+	public void AddErtisAuth_InWebApplication_ReadsBuilderConfiguration()
+	{
+		var builder = WebApplication.CreateBuilder();
+		builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+		{
+			["ErtisAuth:BaseUrl"] = "https://auth.from-builder.test",
+			["ErtisAuth:MembershipId"] = "membership-from-builder"
+		});
+		
+		builder.Services.AddErtisAuth();
+		using var application = builder.Build();
+		
+		var options = application.Services.GetRequiredService<IErtisAuthOptions>();
+		Assert.Equal("https://auth.from-builder.test", options.BaseUrl);
+		Assert.Equal("membership-from-builder", options.MembershipId);
+	}
+	
+	[Fact]
+	public async Task AddErtisAuth_InWebApplicationWithInvalidConfiguration_FailsOnStart()
+	{
+		var builder = WebApplication.CreateBuilder();
+		builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["ErtisAuth:BaseUrl"] = "https://auth.from-builder.test" });
+		builder.WebHost.UseUrls("http://127.0.0.1:0");
+		
+		builder.Services.AddErtisAuth();
+		await using var application = builder.Build();
+		
+		var exception = await Assert.ThrowsAsync<OptionsValidationException>(() => application.StartAsync(TestContext.Current.CancellationToken));
+		Assert.Contains(exception.Failures, x => x.Contains("configuration section 'ErtisAuth'") && x.Contains("MembershipId is required"));
+	}
+	
+	[Fact]
+	public void AddErtisAuth_WithConfigurationSection_RegistersTheSchemeAndReadsThatSection()
+	{
+		var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+		{
+			["Identity:BaseUrl"] = "https://auth.from-section.test",
+			["Identity:MembershipId"] = "membership-from-section"
+		}).Build();
+		
+		var serviceProvider = Build(x => x.AddErtisAuth(configuration.GetSection("Identity")));
+		
+		Assert.Equal("membership-from-section", serviceProvider.GetRequiredService<IErtisAuthOptions>().MembershipId);
+		Assert.Single(serviceProvider.GetServices<IAuthorizationHandler>(), x => x is ErtisAuthAuthorizationHandler);
+	}
+	
 	#endregion
 	
 	#region Helper Classes
@@ -103,7 +157,7 @@ public class ErtisAuthExtensionsTests
 	private sealed class CustomAuthenticationHandler(
 		IAuthorizationHandler<BasicToken> basicAuthorizationHandler,
 		IAuthorizationHandler<BearerToken> bearerAuthorizationHandler,
-		Microsoft.Extensions.Options.IOptionsMonitor<AuthenticationSchemeOptions> options,
+		IOptionsMonitor<AuthenticationSchemeOptions> options,
 		ILoggerFactory logger,
 		System.Text.Encodings.Web.UrlEncoder encoder)
 		: ErtisAuthAuthenticationHandler(basicAuthorizationHandler, bearerAuthorizationHandler, options, logger, encoder);

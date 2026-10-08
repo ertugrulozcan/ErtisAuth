@@ -4,6 +4,7 @@ using ErtisAuth.Sdk.Extensions;
 using ErtisAuth.Sdk.AspNetCore.Middleware;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -19,13 +20,24 @@ public static class ErtisAuthExtensions
 	#region Methods
 	
 	/// <summary>
-	/// Reads the options from appsettings.json (and appsettings.{ASPNETCORE_ENVIRONMENT}.json) and environment variables.
+	/// Reads the options from the configuration of the host (every configuration source of the application) and validates
+	/// them when the application starts.
 	/// </summary>
 	/// <param name="services"></param>
 	/// <param name="sectionName">The configuration section of the options</param>
 	public static IServiceCollection AddErtisAuth(this IServiceCollection services, string sectionName = ErtisAuthClientExtensions.DefaultSectionName)
 	{
 		return services.AddErtisAuth<ErtisAuthAuthenticationHandler>(sectionName);
+	}
+	
+	/// <summary>
+	/// Reads the options from the given configuration section (e.g. builder.Configuration.GetSection("ErtisAuth")) and validates them at once.
+	/// </summary>
+	/// <param name="services"></param>
+	/// <param name="configuration">The configuration section of the options</param>
+	public static IServiceCollection AddErtisAuth(this IServiceCollection services, IConfiguration configuration)
+	{
+		return services.AddErtisAuth<ErtisAuthAuthenticationHandler>(configuration);
 	}
 	
 	/// <summary>
@@ -45,6 +57,15 @@ public static class ErtisAuthExtensions
 	{
 		// Called through the class name: the client registration of ErtisAuth.Sdk has the same name
 		ErtisAuthClientExtensions.AddErtisAuth(services, sectionName);
+		return services.AddErtisAuthAspNetCore<TAuthenticationHandler>();
+	}
+	
+	// ReSharper disable once MemberCanBePrivate.Global
+	public static IServiceCollection AddErtisAuth<TAuthenticationHandler>(this IServiceCollection services, IConfiguration configuration)
+		where TAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+	{
+		// Called through the class name: the client registration of ErtisAuth.Sdk has the same name
+		ErtisAuthClientExtensions.AddErtisAuth(services, configuration);
 		return services.AddErtisAuthAspNetCore<TAuthenticationHandler>();
 	}
 	
