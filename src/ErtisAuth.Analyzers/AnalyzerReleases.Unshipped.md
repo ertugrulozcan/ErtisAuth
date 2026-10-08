@@ -11,3 +11,4 @@ ERTISAUTH603 | Security | Error | RbacPlaceholderAnalyzer
 ERTISAUTH610 | Security | Warning | EndpointAuthorizationAnalyzer
 ERTISAUTH611 | Usage | Warning | EndpointAuthorizationAnalyzer
 ERTISAUTH612 | Usage | Info | EndpointAuthorizationAnalyzer
+ERTISAUTH613 | Usage | Warning | EndpointAuthorizationAnalyzer

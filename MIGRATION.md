@@ -442,6 +442,7 @@ All routes are under `/memberships/{membershipId}/`.
   - `ERTISAUTH610` (warning): an action has rbac attributes, but neither the action nor its controller has `[Authorized]` or `[SelfAuthorized]`, so the endpoint is public.
   - `ERTISAUTH611` (warning): conflicting `[Authorized]`, `[SelfAuthorized]` and `[Unauthorized]` on the same level.
   - `ERTISAUTH612` (info): the rbac attributes of a `[SelfAuthorized]` or `[Unauthorized]` action are not checked.
+  - `ERTISAUTH613` (warning): an action that is not authenticated calls `GetUtilizer()`, which always returns `null` there. It finds the calls affected by the `GetUtilizer()` change below.
 
 ---
 

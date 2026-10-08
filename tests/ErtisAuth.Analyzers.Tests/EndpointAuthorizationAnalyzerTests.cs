@@ -324,4 +324,131 @@ public class EndpointAuthorizationAnalyzerTests
 	}
 	
 	#endregion
+	
+	#region GetUtilizer On Endpoints Which Are Not Authenticated (ERTISAUTH613)
+	
+	/// <summary>
+	/// The controller extensions of ErtisAuth.Sdk.AspNetCore, matched by their full name
+	/// </summary>
+	private const string ControllerExtensionsStub = """
+		
+		namespace ErtisAuth.Sdk.AspNetCore.Extensions
+		{
+			public static class ControllerExtensions
+			{
+				public static object? GetUtilizer(this ControllerBase controller) => null;
+				
+				public static object? GetUnverifiedUtilizer(this ControllerBase controller) => null;
+			}
+		}
+		""";
+	
+	private static Task<ImmutableArray<Diagnostic>> AnalyzeWithControllerExtensionsAsync(string source)
+	{
+		return AnalyzeAsync("using ErtisAuth.Sdk.AspNetCore.Extensions;\n" + source + ControllerExtensionsStub);
+	}
+	
+	[Theory]
+	[InlineData("", "", "not authenticated (no [Authorized] or [SelfAuthorized])")]
+	[InlineData("[Authorized]", "[Unauthorized]", "public ([Unauthorized])")]
+	[InlineData("[Unauthorized]", "", "public ([Unauthorized])")]
+	public async Task GetUtilizerOnEndpointWhichIsNotAuthenticated_ReportsNullUtilizer(string controllerAttribute, string actionAttribute, string reason)
+	{
+		var diagnostics = await AnalyzeWithControllerExtensionsAsync($$"""
+			{{controllerAttribute}}
+			[Route("items")]
+			public class ItemsController : ControllerBase
+			{
+				[HttpGet]
+				{{actionAttribute}}
+				public IActionResult List() => this.Ok(this.GetUtilizer());
+			}
+			""");
+		
+		var diagnostic = Assert.Single(diagnostics);
+		Assert.Equal(EndpointAuthorizationAnalyzer.NullUtilizerDiagnosticId, diagnostic.Id);
+		Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
+		Assert.StartsWith($"GetUtilizer() always returns null in action 'List', the endpoint is {reason}:", diagnostic.GetMessage());
+		Assert.Equal("this.GetUtilizer()", GetSourceText(diagnostic));
+	}
+	
+	[Theory]
+	[InlineData("[Authorized]", "")]
+	[InlineData("[Authorized]", "[SelfAuthorized]")]
+	[InlineData("[Unauthorized]", "[SelfAuthorized]")]
+	[InlineData("", "[SelfAuthorized]")]
+	public async Task GetUtilizerOnAuthenticatedEndpoint_NoDiagnostic(string controllerAttribute, string actionAttribute)
+	{
+		var diagnostics = await AnalyzeWithControllerExtensionsAsync($$"""
+			{{controllerAttribute}}
+			[Route("items")]
+			public class ItemsController : ControllerBase
+			{
+				[HttpGet]
+				{{actionAttribute}}
+				public IActionResult List() => this.Ok(this.GetUtilizer());
+			}
+			""");
+		
+		Assert.Empty(diagnostics);
+	}
+	
+	[Fact]
+	public async Task GetUtilizerInLambdaOfAction_ReportsNullUtilizer()
+	{
+		var diagnostics = await AnalyzeWithControllerExtensionsAsync("""
+			[Route("items")]
+			public class ItemsController : ControllerBase
+			{
+				[HttpGet]
+				public IActionResult List()
+				{
+					System.Func<object?> read = () => this.GetUtilizer();
+					return this.Ok(read());
+				}
+			}
+			""");
+		
+		var diagnostic = Assert.Single(diagnostics);
+		Assert.Equal(EndpointAuthorizationAnalyzer.NullUtilizerDiagnosticId, diagnostic.Id);
+	}
+	
+	[Fact]
+	public async Task GetUtilizerOutsideAnAction_NoDiagnostic()
+	{
+		// The endpoint of a helper method can't be known
+		var diagnostics = await AnalyzeWithControllerExtensionsAsync("""
+			[Route("items")]
+			public class ItemsController : ControllerBase
+			{
+				[HttpGet]
+				public IActionResult List() => this.Ok(this.ReadUtilizer());
+				
+				private object? ReadUtilizer() => this.GetUtilizer();
+				
+				[NonAction]
+				public object? Helper() => this.GetUtilizer();
+			}
+			""");
+		
+		Assert.Empty(diagnostics);
+	}
+	
+	[Fact]
+	public async Task GetUnverifiedUtilizerOnEndpointWhichIsNotAuthenticated_NoDiagnostic()
+	{
+		var diagnostics = await AnalyzeWithControllerExtensionsAsync("""
+			[Route("items")]
+			public class ItemsController : ControllerBase
+			{
+				[HttpGet]
+				[Unauthorized]
+				public IActionResult List() => this.Ok(this.GetUnverifiedUtilizer());
+			}
+			""");
+		
+		Assert.Empty(diagnostics);
+	}
+	
+	#endregion
 }
