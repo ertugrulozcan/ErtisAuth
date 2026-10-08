@@ -275,5 +275,44 @@ public class RbacSegmentResolverTests
 		AssertAccessDenied(() => httpContext.GetRbacDefinition("user-1"));
 	}
 	
+	/// <summary>
+	/// Endpoint metadata lists the controller's attributes first: an [RbacResource] action of an [RbacResource] controller.
+	/// </summary>
+	[Fact]
+	public void RbacDefinition_ActionAttributeOverridesControllerAttribute()
+	{
+		var httpContext = CreateHttpContext();
+		object[] metadata =
+		[
+			new RbacResourceAttribute("users"),
+			new RbacObjectAttribute("{id}"),
+			new RbacResourceAttribute("otp"),
+			new RbacActionAttribute("create")
+		];
+		
+		httpContext.SetEndpoint(new RouteEndpoint(_ => Task.CompletedTask, RoutePatternFactory.Parse("users/{id}/generate-otp"), 0, new EndpointMetadataCollection(metadata), "test-endpoint"));
+		
+		var rbac = httpContext.GetRbacDefinition("user-1");
+		
+		Assert.NotNull(rbac);
+		Assert.Equal("user-1.otp.create.item-1", rbac.ToString());
+	}
+	
+	[RbacResource("base")]
+	private class BaseController;
+	
+	[RbacResource("derived")]
+	private class DerivedController : BaseController;
+	
+	[Fact]
+	public void RbacResourceOfDerivedController_HidesTheBaseControllerAttribute()
+	{
+		// MVC collects the controller attributes with inheritance; RbacResource allows a single instance, so the derived one hides the base one
+		var attributes = typeof(DerivedController).GetCustomAttributes(typeof(RbacResourceAttribute), inherit: true);
+		
+		var attribute = Assert.IsType<RbacResourceAttribute>(Assert.Single(attributes));
+		Assert.Equal("derived", attribute.Value.Value);
+	}
+	
 	#endregion
 }

@@ -194,4 +194,31 @@ public class OtpAttemptTests : IClassFixture<ErtisAuthInstance>
 	}
 	
 	#endregion
+	
+	#region Permission
+	
+	/// <summary>
+	/// Regression: the [RbacResource("otp")] of the action was overridden by the [RbacResource("users")] of UsersController, so
+	/// generate-otp checked users.create: any application allowed to create users (e.g. a sign-up backend) could generate the
+	/// code of any user and reset their password.
+	/// </summary>
+	[Theory]
+	[InlineData("users.create", HttpStatusCode.Forbidden)]
+	[InlineData("otp.create", HttpStatusCode.OK)]
+	public async Task GenerateOtp_RequiresTheCreatePermissionOfTheOtpResource(string permission, HttpStatusCode expected)
+	{
+		await this.EnableOtpAsync();
+		var adminClient = await this._instance.CreateAdminClientAsync();
+		var membershipUrl = $"/memberships/{this._instance.MembershipId}";
+		var role = await new ResourceClient(adminClient, $"{membershipUrl}/roles").CreateAsync(new { name = $"Service {Guid.NewGuid():N}", permissions = new[] { permission } });
+		var application = await new ResourceClient(adminClient, $"{membershipUrl}/applications").CreateAsync(new { name = $"Service {Guid.NewGuid():N}", role = role["slug"]!.GetValue<string>() });
+		var client = this._instance.CreateClient($"Basic {application["_id"]!.GetValue<string>()}:{application["secret"]!.GetValue<string>()}");
+		var adminUserId = await this._instance.GetAdminUserIdAsync();
+		
+		using var response = await client.GetAsync($"{membershipUrl}/users/{adminUserId}/generate-otp", TestContext.Current.CancellationToken);
+		
+		await ResourceClient.AssertStatusAsync(response, expected);
+	}
+	
+	#endregion
 }

@@ -53,6 +53,15 @@ public class ControllerExtensionsTests
 		});
 	}
 	
+	/// <summary>
+	/// As the authentication handler builds it (the token is part of the identity)
+	/// </summary>
+	private static ClaimsPrincipal CreateAuthenticatedUser()
+	{
+		var utilizer = new Utilizer { Id = "user-1", Username = "john.doe", Role = "user", Type = Utilizer.UtilizerType.User, MembershipId = "membership-id", Token = "access-token", TokenType = SupportedTokenTypes.Bearer };
+		return new ClaimsPrincipal(utilizer.ToClaimsIdentity());
+	}
+	
 	#endregion
 	
 	#region Authorization Header
@@ -87,26 +96,53 @@ public class ControllerExtensionsTests
 	[Fact]
 	public void GetUtilizer_FromUtilizerIdentity_ReturnsIt()
 	{
-		// As the authentication handler builds it (the token is part of the identity)
-		var utilizer = new Utilizer { Id = "user-1", Username = "john.doe", Role = "user", Type = Utilizer.UtilizerType.User, MembershipId = "membership-id", Token = "access-token", TokenType = SupportedTokenTypes.Bearer };
-		var controller = CreateController(user: new ClaimsPrincipal(utilizer.ToClaimsIdentity()));
-		
-		var result = controller.GetUtilizer(fallbackByToken: false);
+		var result = CreateController(user: CreateAuthenticatedUser()).GetUtilizer();
 		
 		Assert.Equal("user-1", result?.Id);
 		Assert.Equal("john.doe", result?.Username);
 	}
 	
-	[Fact]
-	public void GetUtilizer_WithoutIdentityAndFallback_ReturnsNull()
+	/// <summary>
+	/// Regression: GetUtilizer read the token of a request which was not authenticated without verifying it,
+	/// so anyone could send a self-made token claiming any identity
+	/// </summary>
+	[Theory]
+	[InlineData("Bearer")]
+	[InlineData("Basic")]
+	[InlineData(null)]
+	public void GetUtilizer_WithoutUtilizerIdentity_ReturnsNull(string? tokenType)
 	{
-		Assert.Null(CreateController("Bearer access-token").GetUtilizer(fallbackByToken: false));
+		var authorizationHeader = tokenType switch
+		{
+			"Bearer" => $"Bearer {CreateJwt("user-1", "john.doe", "membership-id")}",
+			"Basic" => "Basic app-1:wrong-secret",
+			_ => null
+		};
+		
+		Assert.Null(CreateController(authorizationHeader).GetUtilizer());
 	}
 	
 	[Fact]
-	public void GetUtilizer_FallbackByBasicToken_ReturnsApplication()
+	public void GetUtilizer_OnPublicEndpoint_ReturnsNull()
 	{
-		var result = CreateController("Basic app-1:secret").GetUtilizer();
+		var publicUser = new ClaimsPrincipal(new ClaimsIdentity([], null, ClaimExtensions.PublicClaimName, null));
+		
+		Assert.Null(CreateController($"Bearer {CreateJwt("user-1", "john.doe", "membership-id")}", publicUser).GetUtilizer());
+	}
+	
+	[Fact]
+	public void GetUnverifiedUtilizer_FromUtilizerIdentity_ReturnsIt()
+	{
+		// The verified identity wins over the claims of the token
+		var result = CreateController($"Bearer {CreateJwt("user-2", "jane.doe", "membership-id")}", CreateAuthenticatedUser()).GetUnverifiedUtilizer();
+		
+		Assert.Equal("user-1", result?.Id);
+	}
+	
+	[Fact]
+	public void GetUnverifiedUtilizer_ByBasicToken_ReturnsApplication()
+	{
+		var result = CreateController("Basic app-1:secret").GetUnverifiedUtilizer();
 		
 		Assert.Equal("app-1", result?.Id);
 		Assert.Equal(Utilizer.UtilizerType.Application, result?.Type);
@@ -114,9 +150,9 @@ public class ControllerExtensionsTests
 	}
 	
 	[Fact]
-	public void GetUtilizer_FallbackByBearerToken_ReadsTokenClaims()
+	public void GetUnverifiedUtilizer_ByBearerToken_ReadsTokenClaims()
 	{
-		var result = CreateController($"Bearer {CreateJwt("user-1", "john.doe", "membership-id")}").GetUtilizer();
+		var result = CreateController($"Bearer {CreateJwt("user-1", "john.doe", "membership-id")}").GetUnverifiedUtilizer();
 		
 		Assert.Equal("user-1", result?.Id);
 		Assert.Equal("john.doe", result?.Username);
@@ -125,17 +161,17 @@ public class ControllerExtensionsTests
 	}
 	
 	[Fact]
-	public void GetUtilizer_FallbackWithoutToken_ThrowsInvalidToken()
+	public void GetUnverifiedUtilizer_WithoutToken_ThrowsInvalidToken()
 	{
-		var exception = Assert.Throws<ErtisAuthException>(() => CreateController().GetUtilizer());
+		var exception = Assert.Throws<ErtisAuthException>(() => CreateController().GetUnverifiedUtilizer());
 		
 		Assert.Equal("InvalidToken", exception.ErrorCode);
 	}
 	
 	[Fact]
-	public void GetUtilizer_FallbackWithTokenWithoutType_ThrowsUnsupportedTokenType()
+	public void GetUnverifiedUtilizer_WithTokenWithoutType_ThrowsUnsupportedTokenType()
 	{
-		var exception = Assert.Throws<ErtisAuthException>(() => CreateController("access-token").GetUtilizer());
+		var exception = Assert.Throws<ErtisAuthException>(() => CreateController("access-token").GetUnverifiedUtilizer());
 		
 		Assert.Equal("TokenTypeNotSupported", exception.ErrorCode);
 	}

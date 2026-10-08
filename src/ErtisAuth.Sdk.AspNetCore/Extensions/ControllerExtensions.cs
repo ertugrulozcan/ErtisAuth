@@ -45,15 +45,31 @@ public static class ControllerExtensions
 		return TokenBase.ExtractToken(authorizationHeader, out tokenType);
 	}
 	
-	public static Utilizer? GetUtilizer(this ControllerBase controller, bool fallbackByToken = true)
+	/// <summary>
+	/// The caller authenticated by ErtisAuth: set on the endpoints of an [Authorized] controller and on [SelfAuthorized] endpoints.
+	/// Null on the endpoints which are not authenticated ([Unauthorized], or without any ErtisAuth attribute).
+	/// </summary>
+	public static Utilizer? GetUtilizer(this ControllerBase controller)
 	{
-		var claimUser = controller.User;
-		var utilizerIdentity = claimUser.Identities.FirstOrDefault(x => x.NameClaimType == ClaimExtensions.UtilizerClaimName);
-		if (utilizerIdentity != null)
+		var utilizerIdentity = controller.User.Identities.FirstOrDefault(x => x.NameClaimType == ClaimExtensions.UtilizerClaimName);
+		return utilizerIdentity?.ConvertToUtilizer();
+	}
+	
+	/// <summary>
+	/// The caller authenticated by ErtisAuth, or, on the endpoints which are not authenticated, the caller the token of the
+	/// request claims to be: a Bearer token is read without checking its signature, expiry or revocation, a Basic token
+	/// without checking its secret. **Note:** anyone can send a token claiming any identity; never use the result of this
+	/// method for authorization decisions, use GetUtilizer on an [Authorized] or [SelfAuthorized] endpoint instead.
+	/// Throws when the request has no token or an unsupported token type.
+	/// </summary>
+	public static Utilizer? GetUnverifiedUtilizer(this ControllerBase controller)
+	{
+		var utilizer = controller.GetUtilizer();
+		if (utilizer != null)
 		{
-			return utilizerIdentity.ConvertToUtilizer();
+			return utilizer;
 		}
-		else if (fallbackByToken)
+		else
 		{
 			var token = controller.GetTokenFromHeader(out var tokenTypeString);
 			if (string.IsNullOrEmpty(token))

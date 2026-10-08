@@ -166,6 +166,18 @@ Mail hooks now require `mailSubject`, `fromName`, `fromAddress` and `recipients`
 
 New installations give the admin role CRUD permissions for `code-policies` and `otp`. Existing admin roles lack them. Add them if your admins manage these resources.
 
+#### Roles that generate one-time passwords
+
+`GET users/{id}/generate-otp` now checks `otp.create.{id}`, as documented. Before, it checked `users.create.{id}` by mistake, so every role that could create users could also generate the code of any user and reset their password.
+
+Before you deploy, give `otp.create` to every role that generates one-time passwords, **including existing admin roles** (see above). Roles that only had `users.create` lose this access, which is intended. To find the roles that could generate codes until now:
+
+```javascript
+db.roles.find({ permissions: { $regex: "users\\.(create|\\*)" } }, { name: 1, slug: 1, membership_id: 1, permissions: 1 })
+```
+
+Users and applications can also hold `users.create` in their own `permissions`; check them the same way if you use per-user permissions.
+
 ### 1.3 Recommended cleanup
 
 #### Events containing secrets
@@ -311,6 +323,7 @@ Consider a rate limit at the ingress (for example Istio/Envoy) on the anonymous 
 
 ### One-time passwords (OTP)
 
+- `GET users/{id}/generate-otp` requires `otp.create.{id}` (was `users.create.{id}` by mistake; see [Roles that generate one-time passwords](#roles-that-generate-one-time-passwords)).
 - `GET users/{id}/generate-otp` no longer returns `token`. The response is `{ _id, user_id, email_address, username, password, expires_in, created_at, expire_time, membership_id }`.
 - The reset token is issued by `POST verify-otp` (response unchanged). Its lifetime starts at verification.
 - A code works **once**: a second verify answers `401 InvalidCredentials`.
@@ -420,6 +433,8 @@ All routes are under `/memberships/{membershipId}/`.
   - `RbacSubject` with a query or header source answers 403 and is reported by `ERTISAUTH603`.
   - The analyzers ship in the package.
   - Resolved placeholder values are rejected with 403 if they are exactly `*` or `__all__`, contain `%2E` (any case), or contain whitespace or control characters. This applies to ErtisAuth's own endpoints as well, so check clients whose route, query or header values may contain spaces.
+- **`GetUtilizer()` returns only the caller authenticated by ErtisAuth.** The `fallbackByToken` parameter was removed. On endpoints that are not authenticated (`[Unauthorized]`, or no ErtisAuth attribute), `GetUtilizer()` now returns `null`. Before, it read the token of the request without verifying it, so anyone could claim any identity with a self-made token. Code that needs the old behavior must call **`GetUnverifiedUtilizer()`**, which works like `GetUtilizer(fallbackByToken: true)` did. Never use its result for authorization decisions. Calls with `fallbackByToken: false` no longer compile; remove the argument.
+- **An rbac attribute of an action overrides the same attribute of its controller.** Before, the controller's `[RbacResource]` won, so an action with its own `[RbacResource]` was checked against the controller's resource. Check the permissions of the roles that call such actions.
 - **`[Unauthorized]` on a controller no longer wins over its actions.** The most specific of `[Authorized]`, `[SelfAuthorized]` and `[Unauthorized]` applies, so a `[SelfAuthorized]` action of an `[Unauthorized]` controller now requires a token. Before, such an action was public. Clients that called it without a token now get **401**.
 - **New analyzer rules** report authorization mistakes while you build:
   - `ERTISAUTH610` (warning): an action has rbac attributes, but neither the action nor its controller has `[Authorized]` or `[SelfAuthorized]`, so the endpoint is public.

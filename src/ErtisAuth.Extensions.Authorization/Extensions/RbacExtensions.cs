@@ -9,6 +9,11 @@ public static class RbacExtensions
 {
 	#region Methods
 	
+	/// <summary>
+	/// Builds the rbac of the endpoint from its rbac attributes. The most specific attribute of each segment applies: an
+	/// action's attribute overrides its controller's (the endpoint metadata lists the controller's attributes before the action's),
+	/// e.g. [RbacResource("otp")] on an action of a [RbacResource("users")] controller checks the otp resource.
+	/// </summary>
 	public static Rbac? GetRbacDefinition(this HttpContext httpContext, string utilizerId)
 	{
 		var endpoint = httpContext.GetEndpoint();
@@ -16,7 +21,7 @@ public static class RbacExtensions
 		{
 			// Subject
 			var rbacSubjectSegment = string.IsNullOrEmpty(utilizerId) ? RbacSegment.All : new RbacSegment(utilizerId);
-			var subjectMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x is RbacSubjectAttribute || x.GetType().IsSubclassOf(typeof(RbacSubjectAttribute)));
+			var subjectMetadata = routeEndpoint.Metadata.LastOrDefault(x => x is RbacSubjectAttribute || x.GetType().IsSubclassOf(typeof(RbacSubjectAttribute)));
 			if (subjectMetadata is RbacSubjectAttribute rbacSubjectAttribute)
 			{
 				rbacSubjectSegment = rbacSubjectAttribute.Value;
@@ -30,7 +35,7 @@ public static class RbacExtensions
 			
 			// Resource
 			var rbacResourceSegment = RbacSegment.All;
-			var resourceMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x is RbacResourceAttribute || x.GetType().IsSubclassOf(typeof(RbacResourceAttribute)));
+			var resourceMetadata = routeEndpoint.Metadata.LastOrDefault(x => x is RbacResourceAttribute || x.GetType().IsSubclassOf(typeof(RbacResourceAttribute)));
 			if (resourceMetadata is RbacResourceAttribute rbacResourceAttribute)
 			{
 				rbacResourceSegment = rbacResourceAttribute.Value;
@@ -52,7 +57,7 @@ public static class RbacExtensions
 			
 			// Action
 			var rbacActionSegment = RbacSegment.All;
-			var actionMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x is RbacActionAttribute || x.GetType().IsSubclassOf(typeof(RbacActionAttribute)));
+			var actionMetadata = routeEndpoint.Metadata.LastOrDefault(x => x is RbacActionAttribute || x.GetType().IsSubclassOf(typeof(RbacActionAttribute)));
 			if (actionMetadata is RbacActionAttribute rbacActionAttribute)
 			{
 				rbacActionSegment = rbacActionAttribute.Value;
@@ -66,7 +71,7 @@ public static class RbacExtensions
 			
 			// Object
 			var rbacObjectSegment = RbacSegment.All;
-			var objectMetadata = routeEndpoint.Metadata.FirstOrDefault(x => x is RbacObjectAttribute || x.GetType().IsSubclassOf(typeof(RbacObjectAttribute)));
+			var objectMetadata = routeEndpoint.Metadata.LastOrDefault(x => x is RbacObjectAttribute || x.GetType().IsSubclassOf(typeof(RbacObjectAttribute)));
 			if (objectMetadata is RbacObjectAttribute rbacObjectAttribute)
 			{
 				rbacObjectSegment = rbacObjectAttribute.Value;
