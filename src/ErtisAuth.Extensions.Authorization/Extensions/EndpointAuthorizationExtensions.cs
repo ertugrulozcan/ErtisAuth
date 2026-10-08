@@ -36,10 +36,10 @@ public static class EndpointAuthorizationExtensions
 	#region Methods
 	
 	/// <summary>
-	/// [Unauthorized] on the controller or on the action makes the endpoint public.
-	/// Otherwise the most specific of [Authorized] and [SelfAuthorized] decides: an action's attribute overrides its
+	/// The most specific of [Authorized], [SelfAuthorized] and [Unauthorized] decides: an action's attribute overrides its
 	/// controller's (the endpoint metadata lists the controller's attributes before the action's),
-	/// e.g. a [SelfAuthorized] action of an [Authorized] controller is self authorized.
+	/// e.g. an [Unauthorized] action of an [Authorized] controller is public, a [SelfAuthorized] action of an
+	/// [Unauthorized] controller is self authorized.
 	/// </summary>
 	public static EndpointAuthorization GetEndpointAuthorization(this HttpContext httpContext)
 	{
@@ -47,17 +47,17 @@ public static class EndpointAuthorizationExtensions
 		{
 			return EndpointAuthorization.None;
 		}
-		
-		if (routeEndpoint.Metadata.Any(x => x.GetType() == typeof(UnauthorizedAttribute)))
-		{
-			return EndpointAuthorization.Public;
-		}
-		
-		var mostSpecific = routeEndpoint.Metadata.LastOrDefault(x => x.GetType() == typeof(AuthorizedAttribute) || x.GetType() == typeof(SelfAuthorizedAttribute));
+
+		var mostSpecific = routeEndpoint.Metadata.LastOrDefault(x =>
+			x.GetType() == typeof(AuthorizedAttribute) ||
+			x.GetType() == typeof(SelfAuthorizedAttribute) ||
+			x.GetType() == typeof(UnauthorizedAttribute));
+
 		return mostSpecific switch
 		{
 			AuthorizedAttribute => EndpointAuthorization.Authorized,
 			SelfAuthorizedAttribute => EndpointAuthorization.SelfAuthorized,
+			UnauthorizedAttribute => EndpointAuthorization.Public,
 			_ => EndpointAuthorization.None
 		};
 	}

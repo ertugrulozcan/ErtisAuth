@@ -201,11 +201,35 @@ public class ErtisAuthAuthenticationHandlerTests
 	public async Task SelfAuthorizedAndUnauthorizedEndpoint_IsPublic()
 	{
 		var result = await this.AuthenticateAsync(TestHttpContext.Create(null, new SelfAuthorizedAttribute(), new UnauthorizedAttribute()));
-		
+
 		Assert.True(result.Succeeded);
 		Assert.Equal(ClaimExtensions.PublicClaimName, result.Principal!.Identities.Single().NameClaimType);
 	}
-	
+
+	/// <summary>
+	/// Endpoint metadata lists the controller's attributes first: a [SelfAuthorized] action of an [Unauthorized] controller.
+	/// </summary>
+	[Fact]
+	public async Task SelfAuthorizedActionOfUnauthorizedController_AuthenticatesWithoutPermissionCheck()
+	{
+		this._bearerHandler.CheckAuthenticationAsync(Arg.Any<BearerToken>()).Returns(CreateUser());
+
+		var result = await this.AuthenticateAsync(TestHttpContext.Create("Bearer access-token", new UnauthorizedAttribute(), new SelfAuthorizedAttribute()));
+
+		Assert.True(result.Succeeded);
+		Assert.Equal(ClaimExtensions.UtilizerClaimName, result.Principal!.Identities.Single().NameClaimType);
+		await this._bearerHandler.Received(1).CheckAuthenticationAsync(Arg.Any<BearerToken>());
+		await this._bearerHandler.DidNotReceiveWithAnyArgs().CheckAuthorizationAsync(null!, null!);
+	}
+
+	[Fact]
+	public async Task SelfAuthorizedActionOfUnauthorizedController_WithoutToken_Fails()
+	{
+		var result = await this.AuthenticateAsync(TestHttpContext.Create(null, new UnauthorizedAttribute(), new SelfAuthorizedAttribute()));
+
+		Assert.False(result.Succeeded);
+	}
+
 	#endregion
 	
 	#region Failures

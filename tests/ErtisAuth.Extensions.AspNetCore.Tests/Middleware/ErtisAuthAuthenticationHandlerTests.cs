@@ -308,9 +308,32 @@ public class ErtisAuthAuthenticationHandlerTests
 		Assert.True(result.Succeeded);
 		Assert.Equal(ClaimExtensions.PublicClaimName, result.Principal!.Identities.Single().NameClaimType);
 	}
-	
+
+	/// <summary>
+	/// Endpoint metadata lists the controller's attributes first: a [SelfAuthorized] action of an [Unauthorized] controller.
+	/// </summary>
+	[Fact]
+	public async Task SelfAuthorizedActionOfUnauthorizedController_RequiresAToken()
+	{
+		var result = await this.AuthenticateAsync(string.Empty, authorization: [new UnauthorizedAttribute(), new SelfAuthorizedAttribute()]);
+
+		Assert.False(result.Succeeded);
+	}
+
+	[Fact]
+	public async Task SelfAuthorizedActionOfUnauthorizedController_AuthenticatesWithoutPermissionCheck()
+	{
+		this.SetupBearerValidationWithoutPermission();
+
+		var result = await this.AuthenticateAsync($"Bearer {Token}", authorization: [new UnauthorizedAttribute(), new SelfAuthorizedAttribute()]);
+
+		Assert.True(result.Succeeded);
+		Assert.NotEqual(ClaimExtensions.PublicClaimName, result.Principal!.Identities.Single().NameClaimType);
+		this._accessControlService.DidNotReceiveWithAnyArgs().HasPermission(null!, default(Rbac)!, default);
+	}
+
 	#endregion
-	
+
 	#region Utilizers Without A Role
 	
 	[Theory]

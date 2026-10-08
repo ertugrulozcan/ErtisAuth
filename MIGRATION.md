@@ -420,6 +420,11 @@ All routes are under `/memberships/{membershipId}/`.
   - `RbacSubject` with a query or header source answers 403 and is reported by `ERTISAUTH603`.
   - The analyzers ship in the package.
   - Resolved placeholder values are rejected with 403 if they are exactly `*` or `__all__`, contain `%2E` (any case), or contain whitespace or control characters. This applies to ErtisAuth's own endpoints as well, so check clients whose route, query or header values may contain spaces.
+- **`[Unauthorized]` on a controller no longer wins over its actions.** The most specific of `[Authorized]`, `[SelfAuthorized]` and `[Unauthorized]` applies, so a `[SelfAuthorized]` action of an `[Unauthorized]` controller now requires a token. Before, such an action was public. Clients that called it without a token now get **401**.
+- **New analyzer rules** report authorization mistakes while you build:
+  - `ERTISAUTH610` (warning): an action has rbac attributes, but neither the action nor its controller has `[Authorized]` or `[SelfAuthorized]`, so the endpoint is public.
+  - `ERTISAUTH611` (warning): conflicting `[Authorized]`, `[SelfAuthorized]` and `[Unauthorized]` on the same level.
+  - `ERTISAUTH612` (info): the rbac attributes of a `[SelfAuthorized]` or `[Unauthorized]` action are not checked.
 
 ---
 
