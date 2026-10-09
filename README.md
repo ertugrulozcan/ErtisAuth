@@ -4,6 +4,9 @@
 
 ErtisAuth is a free and open-source OpenID-Connect framework and high performer identity and access management (IAM) API. It's designed to provide a common way to authenticate requests to all of your applications, whether they're web, native, mobile, or Web API endpoints. It is based on the RBAC (Role based access control) and UBAC (User based access control) models for authorization/access control. ErtisAuth incorporates features needed to integrate token-based authentication, SSO and API access control in your applications for authorization and authentication. Memberships are isolated tenants with their own users, user types, roles, applications and token settings; most endpoints are scoped by the membership id in the route. It is licensed under MIT License (an OSI approved license)
 
+[![NuGet Version](https://img.shields.io/nuget/v/ErtisAuth.Sdk?label=ErtisAuth.Sdk&style=flat)](https://www.nuget.org/packages/ErtisAuth.Sdk/)
+[![NuGet Version](https://img.shields.io/nuget/v/ErtisAuth.Sdk.AspNetCore?label=ErtisAuth.Sdk.AspNetCore&style=flat)](https://www.nuget.org/packages/ErtisAuth.Sdk.AspNetCore/)
+
 ---
 
 ## Table of contents
