@@ -3,6 +3,17 @@
 		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<PackageId>ErtisAuth.Sdk.AspNetCore</PackageId>
+		<PackageVersion>10.0.0</PackageVersion>
+		<Version>10.0.0</Version>
+		<Authors>Ertuğrul Özcan</Authors>
+		<Description>ErtisAuth SDK AspNetCore Extension</Description>
+		<PackageTags>authentication;authorization;identity;iam;openid-connect;oauth</PackageTags>
+		<Copyright>© 2026 Ertuğrul Özcan</Copyright>
+		<PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
 	
 	<ItemGroup>
