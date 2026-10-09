@@ -1,0 +1,123 @@
+using Ertis.Core.Models;
+using Ertis.Net.Http;
+using Ertis.Net.Rest;
+using ErtisAuth.Core.Models;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Sdk.Configuration;
+using ErtisAuth.Sdk.Services.Interfaces;
+
+// ReSharper disable UnusedType.Global
+namespace ErtisAuth.Sdk.Services;
+
+public abstract class MembershipBoundedService : BaseRestService
+{
+	#region Properties
+	
+	protected string BaseUrl { get; }
+	
+	protected string MembershipId { get; }
+	
+	#endregion
+	
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="ertisAuthOptions"></param>
+	/// <param name="restHandler"></param>
+	protected MembershipBoundedService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(restHandler)
+	{
+		if (string.IsNullOrEmpty(ertisAuthOptions.BaseUrl))
+		{
+			throw new ArgumentException("BaseUrl is required!");
+		}
+		
+		if (string.IsNullOrEmpty(ertisAuthOptions.MembershipId))
+		{
+			throw new ArgumentException("MembershipId is required!");
+		}
+		
+		this.BaseUrl = ertisAuthOptions.BaseUrl;
+		this.MembershipId = ertisAuthOptions.MembershipId;
+	}
+	
+	#endregion
+}
+
+public abstract class MembershipBoundedService<T> : ReadonlyMembershipBoundedService<T>, IMembershipBoundedService<T> where T : IHasIdentifier
+{
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="ertisAuthOptions"></param>
+	/// <param name="restHandler"></param>
+	protected MembershipBoundedService(IErtisAuthOptions ertisAuthOptions, IRestHandler restHandler) : base(ertisAuthOptions, restHandler)
+	{
+		
+	}
+	
+	#endregion
+	
+	#region Create Methods
+	
+	public async Task<IResponseResult<T>> CreateAsync<TCreateModel>(TCreateModel model, TokenBase token, CancellationToken cancellationToken = default) where TCreateModel : T
+	{
+		return await this.ExecuteRequestAsync<T>(
+			HttpMethod.Post, 
+			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}", 
+			null, 
+			HeaderCollection.Add("Authorization", token.ToString()),
+			new JsonRequestBody(model),
+			cancellationToken: cancellationToken).ConfigureAwait(false);
+	}
+	
+	#endregion
+	
+	#region Update Methods
+	
+	public async Task<IResponseResult<T>> UpdateAsync(T model, TokenBase token, CancellationToken cancellationToken = default)
+	{
+		if (string.IsNullOrEmpty(model.Id))
+		{
+			return new ResponseResult<T>(false, "Id is required!");
+		}
+		
+		return await this.ExecuteRequestAsync<T>(
+			HttpMethod.Put, 
+			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/{model.Id}", 
+			null, 
+			HeaderCollection.Add("Authorization", token.ToString()),
+			new JsonRequestBody(model),
+			cancellationToken: cancellationToken).ConfigureAwait(false);
+	}
+	
+	#endregion
+	
+	#region Delete Methods
+	
+	public async Task<IResponseResult> DeleteAsync(string modelId, TokenBase token, CancellationToken cancellationToken = default)
+	{
+		return await this.ExecuteRequestAsync(
+			HttpMethod.Delete, 
+			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}/{modelId}", 
+			null, 
+			HeaderCollection.Add("Authorization", token.ToString()),
+			cancellationToken: cancellationToken).ConfigureAwait(false);
+	}
+	
+	public async Task<IResponseResult> BulkDeleteAsync(IEnumerable<string> modelIds, TokenBase token, CancellationToken cancellationToken = default)
+	{
+		return await this.ExecuteRequestAsync(
+			HttpMethod.Delete, 
+			$"{this.BaseUrl}/memberships/{this.MembershipId}/{this.Slug}", 
+			null, 
+			HeaderCollection.Add("Authorization", token.ToString()),
+			new JsonRequestBody(modelIds),
+			cancellationToken: cancellationToken).ConfigureAwait(false);
+	}
+	
+	#endregion
+}

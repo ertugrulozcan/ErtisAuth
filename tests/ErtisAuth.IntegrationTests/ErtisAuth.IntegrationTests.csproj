@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <OutputType>Exe</OutputType>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\ErtisAuth.WebAPI\ErtisAuth.WebAPI.csproj" />
+        <ProjectReference Include="..\..\src\ErtisAuth.Sdk.AspNetCore\ErtisAuth.Sdk.AspNetCore.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="coverlet.MTP" Version="10.1.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+        <PackageReference Include="Testcontainers.MongoDb" Version="4.15.0" />
+        <PackageReference Include="xunit.v3" Version="4.0.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <None Update="UserTypes\Data\*" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+</Project>

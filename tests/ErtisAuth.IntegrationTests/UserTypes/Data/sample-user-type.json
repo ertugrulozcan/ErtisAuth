@@ -1,0 +1,576 @@
+{
+    "name": "Member",
+    "slug": "member",
+    "description": "A synthetic user type with the structure of a production one",
+    "properties": {
+        "customer_id": {
+            "type": "string",
+            "formatPattern": "{{firstname}}",
+            "displayName": "Customer Id",
+            "description": ""
+        },
+        "email_address": {
+            "type": "email",
+            "isUnique": true,
+            "displayName": "Email Address",
+            "description": "Email Address",
+            "isRequired": true
+        },
+        "firstname": {
+            "type": "string",
+            "displayName": "First Name",
+            "description": "First Name",
+            "isRequired": true
+        },
+        "lastname": {
+            "type": "string",
+            "displayName": "Last Name",
+            "description": "Last Name"
+        },
+        "username": {
+            "type": "string",
+            "isUnique": true,
+            "displayName": "Username",
+            "description": "Username",
+            "isRequired": true,
+            "isVirtual": true
+        },
+        "avatar": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "uri",
+                    "displayName": "Url",
+                    "description": "Avatar image url"
+                }
+            },
+            "displayName": "Avatar",
+            "description": ""
+        },
+        "phone_number": {
+            "type": "string",
+            "isUnique": true,
+            "displayName": "Phone Number",
+            "description": ""
+        },
+        "notification_preferences": {
+            "type": "object",
+            "properties": {
+                "sms": {
+                    "type": "boolean",
+                    "displayName": "Sms",
+                    "description": ""
+                },
+                "email": {
+                    "type": "boolean",
+                    "displayName": "Email",
+                    "description": ""
+                }
+            },
+            "displayName": "Notification Preferences",
+            "description": ""
+        },
+        "consents": {
+            "type": "object",
+            "properties": {
+                "terms": {
+                    "type": "object",
+                    "properties": {
+                        "document_id": {
+                            "type": "string",
+                            "displayName": "Document Id",
+                            "description": ""
+                        },
+                        "version": {
+                            "type": "integer",
+                            "displayName": "Version",
+                            "description": ""
+                        },
+                        "accepted": {
+                            "type": "boolean",
+                            "displayName": "Accepted",
+                            "description": ""
+                        }
+                    },
+                    "displayName": "Terms",
+                    "description": ""
+                },
+                "privacy": {
+                    "type": "object",
+                    "properties": {
+                        "document_id": {
+                            "type": "string",
+                            "displayName": "Document Id",
+                            "description": ""
+                        },
+                        "version": {
+                            "type": "integer",
+                            "displayName": "Version",
+                            "description": ""
+                        },
+                        "accepted": {
+                            "type": "boolean",
+                            "displayName": "Accepted",
+                            "description": ""
+                        }
+                    },
+                    "displayName": "Privacy",
+                    "description": ""
+                },
+                "cookies": {
+                    "type": "object",
+                    "properties": {
+                        "document_id": {
+                            "type": "string",
+                            "displayName": "Document Id",
+                            "description": ""
+                        },
+                        "version": {
+                            "type": "integer",
+                            "displayName": "Version",
+                            "description": ""
+                        },
+                        "accepted": {
+                            "type": "boolean",
+                            "displayName": "Accepted",
+                            "description": ""
+                        }
+                    },
+                    "displayName": "Cookies",
+                    "description": ""
+                }
+            },
+            "displayName": "Consents",
+            "description": ""
+        },
+        "paid_user": {
+            "type": "boolean",
+            "appearance": "checkbox",
+            "displayName": "Paid User",
+            "description": ""
+        },
+        "signup_platform": {
+            "type": "enum",
+            "items": [
+                {
+                    "displayName": "Android",
+                    "value": "android"
+                },
+                {
+                    "displayName": "Ios",
+                    "value": "ios"
+                },
+                {
+                    "displayName": "Web",
+                    "value": "web"
+                }
+            ],
+            "displayName": "Signup Platform",
+            "description": ""
+        },
+        "region": {
+            "type": "enum",
+            "items": [
+                {
+                    "displayName": "North",
+                    "value": "north"
+                },
+                {
+                    "displayName": "South",
+                    "value": "south"
+                },
+                {
+                    "displayName": "East",
+                    "value": "east"
+                },
+                {
+                    "displayName": "West",
+                    "value": "west"
+                }
+            ],
+            "displayName": "Region",
+            "description": ""
+        },
+        "billing_channel": {
+            "type": "enum",
+            "items": [
+                {
+                    "displayName": "Card",
+                    "value": "card"
+                },
+                {
+                    "displayName": "App Store",
+                    "value": "app_store"
+                },
+                {
+                    "displayName": "Partner",
+                    "value": "partner"
+                }
+            ],
+            "displayName": "Billing Channel",
+            "description": ""
+        },
+        "subscriptions": {
+            "type": "array",
+            "itemSchema": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "displayName": "Product Id",
+                        "description": ""
+                    },
+                    "tier": {
+                        "type": "enum",
+                        "items": [
+                            {
+                                "displayName": "Basic",
+                                "value": "basic"
+                            },
+                            {
+                                "displayName": "Premium",
+                                "value": "premium"
+                            }
+                        ],
+                        "displayName": "Tier",
+                        "description": ""
+                    },
+                    "activation_date": {
+                        "type": "datetime",
+                        "displayName": "Activation Date",
+                        "description": ""
+                    },
+                    "cancellation_date": {
+                        "type": "datetime",
+                        "displayName": "Cancellation Date",
+                        "description": ""
+                    },
+                    "status": {
+                        "type": "enum",
+                        "items": [
+                            {
+                                "displayName": "Active",
+                                "value": "active"
+                            },
+                            {
+                                "displayName": "Inactive",
+                                "value": "inactive"
+                            },
+                            {
+                                "displayName": "Pending",
+                                "value": "pending"
+                            }
+                        ],
+                        "appearance": "list",
+                        "displayName": "Status",
+                        "description": ""
+                    }
+                },
+                "displayName": "Subscription",
+                "description": ""
+            },
+            "displayName": "Subscriptions",
+            "description": ""
+        },
+        "coupons": {
+            "type": "array",
+            "itemSchema": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "displayName": "Code",
+                        "description": ""
+                    },
+                    "type": {
+                        "type": "enum",
+                        "items": [
+                            {
+                                "displayName": "Voucher",
+                                "value": "voucher"
+                            },
+                            {
+                                "displayName": "Coupon",
+                                "value": "coupon"
+                            }
+                        ],
+                        "appearance": "list",
+                        "displayName": "Type",
+                        "description": ""
+                    },
+                    "discount": {
+                        "type": "object",
+                        "properties": {
+                            "interval": {
+                                "type": "string",
+                                "displayName": "Interval",
+                                "description": ""
+                            },
+                            "amount": {
+                                "type": "integer",
+                                "displayName": "Amount",
+                                "description": ""
+                            },
+                            "percentage": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100,
+                                "displayName": "Percentage",
+                                "description": ""
+                            }
+                        },
+                        "displayName": "Discount",
+                        "description": ""
+                    },
+                    "free_trial": {
+                        "type": "object",
+                        "properties": {
+                            "interval": {
+                                "type": "string",
+                                "displayName": "Interval",
+                                "description": ""
+                            },
+                            "amount": {
+                                "type": "integer",
+                                "displayName": "Amount",
+                                "description": ""
+                            }
+                        },
+                        "displayName": "Free Trial",
+                        "description": ""
+                    },
+                    "redeem_date": {
+                        "type": "datetime",
+                        "displayName": "Redeem Date",
+                        "description": ""
+                    }
+                },
+                "displayName": "Coupon",
+                "description": ""
+            },
+            "displayName": "Coupons",
+            "description": ""
+        },
+        "profile_settings": {
+            "type": "object",
+            "properties": {
+                "pin_code": {
+                    "type": "string",
+                    "displayName": "Pin Code",
+                    "description": ""
+                },
+                "profiles": {
+                    "type": "array",
+                    "itemSchema": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "displayName": "Id",
+                                "description": ""
+                            },
+                            "name": {
+                                "type": "string",
+                                "displayName": "Name",
+                                "description": ""
+                            },
+                            "color": {
+                                "type": "string",
+                                "displayName": "Color",
+                                "description": ""
+                            },
+                            "parental_control": {
+                                "type": "object",
+                                "properties": {
+                                    "enabled": {
+                                        "type": "boolean",
+                                        "displayName": "Enabled",
+                                        "description": ""
+                                    },
+                                    "rate": {
+                                        "type": "enum",
+                                        "items": [
+                                            {
+                                                "displayName": "All Ages",
+                                                "value": "all_ages"
+                                            },
+                                            {
+                                                "displayName": "Teen",
+                                                "value": "teen"
+                                            },
+                                            {
+                                                "displayName": "Adult",
+                                                "value": "adult"
+                                            }
+                                        ],
+                                        "displayName": "Rate",
+                                        "description": ""
+                                    }
+                                },
+                                "displayName": "Parental Control",
+                                "description": ""
+                            },
+                            "locale": {
+                                "type": "string",
+                                "displayName": "Locale",
+                                "description": ""
+                            }
+                        },
+                        "displayName": "Profile",
+                        "description": ""
+                    },
+                    "displayName": "Profiles",
+                    "description": ""
+                }
+            },
+            "displayName": "Profile Settings",
+            "description": ""
+        },
+        "parental_control": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean",
+                    "displayName": "Is Active",
+                    "description": ""
+                },
+                "rate": {
+                    "type": "enum",
+                    "items": [
+                        {
+                            "displayName": "All Ages",
+                            "value": "all_ages"
+                        },
+                        {
+                            "displayName": "Teen",
+                            "value": "teen"
+                        },
+                        {
+                            "displayName": "Adult",
+                            "value": "adult"
+                        }
+                    ],
+                    "displayName": "Rate",
+                    "description": ""
+                }
+            },
+            "displayName": "Parental Control",
+            "description": ""
+        },
+        "role": {
+            "type": "string",
+            "displayName": "Role",
+            "description": "Role",
+            "isRequired": true
+        },
+        "password_hash": {
+            "type": "string",
+            "displayName": "Password",
+            "description": "Password Hash",
+            "isHidden": true,
+            "isReadonly": true
+        },
+        "user_type": {
+            "type": "string",
+            "defaultValue": "base-user",
+            "displayName": "User Type",
+            "description": "User Type",
+            "isRequired": true
+        },
+        "source_provider": {
+            "type": "string",
+            "defaultValue": "ErtisAuth",
+            "displayName": "Source Provider",
+            "description": "Initial User Provider",
+            "isRequired": true,
+            "isReadonly": true
+        },
+        "connected_accounts": {
+            "type": "array",
+            "itemSchema": {
+                "type": "object",
+                "properties": {
+                    "provider": {
+                        "type": "string",
+                        "isRequired": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "isRequired": true
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "isRequired": true
+                    },
+                    "token": {
+                        "type": "string"
+                    }
+                }
+            },
+            "uniqueItems": true,
+            "uniqueBy": [
+                "slug"
+            ],
+            "displayName": "Connected Accounts",
+            "description": "Connected Provider Accounts",
+            "isReadonly": true
+        },
+        "is_active": {
+            "type": "boolean",
+            "defaultValue": false,
+            "displayName": "Is Active",
+            "isRequired": true,
+            "isReadonly": true
+        },
+        "membership_id": {
+            "type": "string",
+            "displayName": "Membership Id",
+            "description": "Membership Id",
+            "isRequired": true,
+            "isReadonly": true
+        },
+        "sys": {
+            "type": "object",
+            "properties": {
+                "created_by": {
+                    "type": "string",
+                    "isRequired": true
+                },
+                "created_at": {
+                    "type": "datetime",
+                    "isRequired": true
+                },
+                "modified_by": {
+                    "type": "string"
+                },
+                "modified_at": {
+                    "type": "datetime"
+                }
+            },
+            "isRequired": true,
+            "isReadonly": true
+        },
+        "permissions": {
+            "type": "array",
+            "itemSchema": {
+                "type": "string"
+            },
+            "uniqueItems": true,
+            "displayName": "User Permissions",
+            "description": "UBAC Permissions Array"
+        },
+        "forbidden": {
+            "type": "array",
+            "itemSchema": {
+                "type": "string"
+            },
+            "uniqueItems": true,
+            "displayName": "User Forbidden",
+            "description": "UBAC Forbidden Array"
+        }
+    },
+    "allowAdditionalProperties": false,
+    "isAbstract": false,
+    "isSealed": false,
+    "baseType": "base-user"
+}

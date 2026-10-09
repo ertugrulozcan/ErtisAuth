@@ -1,0 +1,102 @@
+﻿using System.Text.Json.Serialization;
+using ErtisAuth.Core.Models;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Mailing;
+using ErtisAuth.Core.Models.Memberships;
+using ErtisAuth.Core.Serialization;
+
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+namespace ErtisAuth.WebAPI.Models.Memberships;
+
+/// <summary>
+/// The update request of a membership; the id comes from the route (an id in the body is ignored).
+/// Empty fields keep their current values where the membership service does so (e.g. secret_key, hash_algorithm).
+/// </summary>
+public class UpdateMembershipFormModel
+{
+	#region Properties
+	
+	[JsonPropertyName("name")]
+	public string? Name { get; set; }
+	
+	[JsonPropertyName("slug")]
+	public string? Slug { get; set; }
+	
+	[JsonPropertyName("expires_in")]
+	public int ExpiresIn { get; set; }
+	
+	[JsonPropertyName("scoped_token_expires_in")]
+	public int ScopedTokenExpiresIn { get; set; }
+	
+	[JsonPropertyName("refresh_token_expires_in")]
+	public int RefreshTokenExpiresIn { get; set; }
+	
+	[JsonPropertyName("reset_password_token_expires_in")]
+	public int? ResetPasswordTokenExpiresIn { get; set; }
+	
+	[JsonPropertyName("secret_key")]
+	public string? SecretKey { get; set; }
+	
+	[JsonPropertyName("hash_algorithm")]
+	public string? HashAlgorithm { get; set; }
+	
+	[JsonPropertyName("encoding")]
+	public string? DefaultEncoding { get; set; }
+	
+	[JsonPropertyName("default_language")]
+	public string? DefaultLanguage { get; set; }
+	
+	[JsonPropertyName("mail_providers")]
+	public IMailProvider[]? MailProviders { get; set; }
+	
+	[JsonPropertyName("user_activation")]
+	[JsonConverter(typeof(EnumMemberJsonConverter<Status>))]
+	public Status UserActivation { get; set; }
+	
+	[JsonPropertyName("code_policy")]
+	public string? CodePolicy { get; set; }
+	
+	[JsonPropertyName("otp_settings")]
+	public OtpSettings? OtpSettings { get; set; }
+	
+	// LEGACY-APP-SECRET: temporary switch, remove after all applications are migrated to their own secrets
+	[JsonPropertyName("allow_membership_secret_for_applications")]
+	public bool? AllowMembershipSecretForApplications { get; set; }
+	
+	#endregion
+	
+	#region Methods
+	
+	internal Membership ToMembership(string id)
+	{
+		var membership = new Membership
+		{
+			Id = id,
+			Name = this.Name ?? string.Empty,
+			SecretKey = this.SecretKey ?? string.Empty,
+			ExpiresIn = this.ExpiresIn,
+			ScopedTokenExpiresIn = this.ScopedTokenExpiresIn,
+			RefreshTokenExpiresIn = this.RefreshTokenExpiresIn,
+			ResetPasswordTokenExpiresIn = this.ResetPasswordTokenExpiresIn,
+			HashAlgorithm = this.HashAlgorithm,
+			DefaultEncoding = this.DefaultEncoding,
+			DefaultLanguage = this.DefaultLanguage,
+			MailProviders = this.MailProviders,
+			UserActivation = this.UserActivation,
+			CodePolicy = this.CodePolicy,
+			OtpSettings = this.OtpSettings,
+			AllowMembershipSecretForApplications = this.AllowMembershipSecretForApplications // LEGACY-APP-SECRET
+		};
+		
+		// Otherwise derived from the name
+		if (!string.IsNullOrEmpty(this.Slug))
+		{
+			membership.Slug = this.Slug;
+		}
+		
+		return membership;
+	}
+	
+	#endregion
+}

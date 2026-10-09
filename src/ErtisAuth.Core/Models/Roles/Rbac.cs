@@ -1,0 +1,216 @@
+using ErtisAuth.Core.Exceptions;
+
+namespace ErtisAuth.Core.Models.Roles;
+
+public class Rbac : IEquatable<Rbac>
+{
+	#region Constants
+	
+	/// <summary>
+	/// Resource and action segments are names, compared case-insensitively and independent of the current culture
+	/// ("users.read" and "USERS.read" are the same permission). Subject and object segments are ids, compared ordinally.
+	/// </summary>
+	public const StringComparison NameSegmentComparison = StringComparison.OrdinalIgnoreCase;
+	
+	#endregion
+	
+	#region Properties
+	
+	public RbacSegment Subject { get; private init; } = RbacSegment.All;
+	
+	public RbacSegment Resource { get; private init; } = RbacSegment.All;
+	
+	public RbacSegment Action { get; private init; } = RbacSegment.All;
+	
+	public RbacSegment Object { get; private init; } = RbacSegment.All;
+	
+	#endregion
+	
+	#region Constructors
+	
+	/// <summary>
+	/// Default Constructor
+	/// </summary>
+	private Rbac()
+	{ }
+	
+	/// <summary>
+	/// Constructor 1
+	/// </summary>
+	/// <param name="subject"></param>
+	/// <param name="resource"></param>
+	/// <param name="action"></param>
+	/// <param name="obj"></param>
+	public Rbac(RbacSegment subject, RbacSegment resource, RbacSegment action, RbacSegment obj)
+	{
+		this.Subject = subject;
+		this.Resource = resource;
+		this.Action = action;
+		this.Object = obj;
+	}
+	
+	#endregion
+	
+	#region Methods
+	
+	public static Rbac Parse(string path)
+	{
+		if (string.IsNullOrEmpty(path))
+		{
+			throw ErtisAuthException.InvalidRbac("The rbac expression can not be empty");
+		}
+		
+		var segments = path.Split(RbacSegment.SEPARATOR);
+		switch (segments.Length)
+		{
+			case 1:
+				return new Rbac
+				{
+					Subject = RbacSegment.All,
+					Resource = (RbacSegment) segments[0],
+					Action = RbacSegment.All,
+					Object = RbacSegment.All
+				};
+			case 2:
+				return new Rbac
+				{
+					Subject = RbacSegment.All,
+					Resource = (RbacSegment) segments[0],
+					Action = (RbacSegment) segments[1],
+					Object = RbacSegment.All
+				};
+			case 3:
+				return new Rbac
+				{
+					Subject = RbacSegment.All,
+					Resource = (RbacSegment) segments[0],
+					Action = (RbacSegment) segments[1],
+					Object = (RbacSegment) segments[2]
+				};
+			case 4:
+				return new Rbac
+				{
+					Subject = (RbacSegment) segments[0],
+					Resource = (RbacSegment) segments[1],
+					Action = (RbacSegment) segments[2],
+					Object = (RbacSegment) segments[3]
+				};
+			default:
+				throw ErtisAuthException.InvalidRbac(path);
+		}
+	}
+	
+	public static bool TryParse(string path, out Rbac? rbac)
+	{
+		try
+		{
+			rbac = Parse(path);
+			return true;
+		}
+		catch
+		{
+			rbac = null;
+			return false;
+		}
+	}
+	
+	public static RbacSegment GetSegment(CrudActions action)
+	{
+		return action switch
+		{
+			CrudActions.Create => CrudActionSegments.Create,
+			CrudActions.Read => CrudActionSegments.Read,
+			CrudActions.Update => CrudActionSegments.Update,
+			CrudActions.Delete => CrudActionSegments.Delete,
+			_ => new RbacSegment(action.ToString())
+		};
+	}
+	
+	public static bool operator ==(Rbac? rbac1, Rbac? rbac2)
+	{
+		return AreEquals(rbac1, rbac2);
+	}
+	
+	public static bool operator !=(Rbac? rbac1, Rbac? rbac2)
+	{
+		return !(rbac1 == rbac2);
+	}
+	
+	public override bool Equals(object? other)
+	{
+		if (other is Rbac rbac)
+		{
+			return AreEquals(this, rbac);	
+		}
+		
+		return false;
+	}
+	
+	public override int GetHashCode()
+	{
+		return HashCode.Combine(
+			this.Subject,
+			this.Resource.GetHashCode(NameSegmentComparison),
+			this.Action.GetHashCode(NameSegmentComparison),
+			this.Object);
+	}
+	
+	public bool Equals(Rbac? other)
+	{
+		return AreEquals(this, other);
+	}
+	
+	private static bool AreEquals(Rbac? rbac1, Rbac? rbac2)
+	{
+		if (rbac1 is null && rbac2 is null)
+		{
+			return true;
+		}
+		
+		if (rbac1 is null || rbac2 is null)
+		{
+			return false;
+		}
+		
+		// Same rules as permission matching
+		return
+			rbac1.Subject.Equals(rbac2.Subject) &&
+			rbac1.Resource.Equals(rbac2.Resource, NameSegmentComparison) &&
+			rbac1.Action.Equals(rbac2.Action, NameSegmentComparison) &&
+			rbac1.Object.Equals(rbac2.Object);
+	}
+	
+	public override string ToString()
+	{
+		return $"{this.Subject}{RbacSegment.SEPARATOR}{this.Resource}{RbacSegment.SEPARATOR}{this.Action}{RbacSegment.SEPARATOR}{this.Object}";
+	}
+	
+	#endregion
+	
+	#region Enums
+	
+	public enum CrudActions
+	{
+		Create,
+		Read,
+		Update,
+		Delete
+	}
+	
+	#endregion
+	
+	#region Helper Classes
+	
+	public static class CrudActionSegments
+	{
+		public static readonly RbacSegment Create = new("create");
+		
+		public static readonly RbacSegment Read = new("read");
+		
+		public static readonly RbacSegment Update = new("update");
+		
+		public static readonly RbacSegment Delete = new("delete");
+	}
+	
+	#endregion
+}

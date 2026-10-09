@@ -1,0 +1,213 @@
+using System.Security.Claims;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Extensions.Authorization.Extensions;
+using ErtisAuth.Sdk.AspNetCore.Extensions;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace ErtisAuth.Sdk.AspNetCore.Middleware;
+
+public class ErtisAuthAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+{
+	#region Constants
+	
+	private const string AuthenticationErrorItemKey = "ErtisAuth.AuthenticationError";
+	
+	#endregion
+	
+	#region Services
+	
+	private readonly IAuthorizationHandler<BasicToken> _basicAuthorizationHandler;
+	private readonly IAuthorizationHandler<BearerToken> _bearerAuthorizationHandler;
+	private readonly ILogger<ErtisAuthAuthenticationHandler> _logger;
+	
+	#endregion
+	
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="basicAuthorizationHandler"></param>
+	/// <param name="bearerAuthorizationHandler"></param>
+	/// <param name="options"></param>
+	/// <param name="logger"></param>
+	/// <param name="encoder"></param>
+	public ErtisAuthAuthenticationHandler(
+		IAuthorizationHandler<BasicToken> basicAuthorizationHandler,
+		IAuthorizationHandler<BearerToken> bearerAuthorizationHandler,
+		IOptionsMonitor<AuthenticationSchemeOptions> options,
+		ILoggerFactory logger, 
+		UrlEncoder encoder) : 
+		base(options, logger, encoder)
+	{
+		this._basicAuthorizationHandler = basicAuthorizationHandler;
+		this._bearerAuthorizationHandler = bearerAuthorizationHandler;
+		
+		this._logger = logger.CreateLogger<ErtisAuthAuthenticationHandler>();
+	}
+	
+	#endregion
+	
+	/// <summary>
+	/// Writes the authentication error (status code and error body) of the request; 401 responses get the WWW-Authenticate challenge.
+	/// </summary>
+	protected override async Task HandleChallengeAsync(AuthenticationProperties properties)
+	{
+		if (this.Context.Items.TryGetValue(AuthenticationErrorItemKey, out var item) && item is ErtisAuthException ex && !this.Response.HasStarted)
+		{
+			this.Response.StatusCode = (int) ex.StatusCode;
+			if (this.Response.StatusCode == StatusCodes.Status401Unauthorized)
+			{
+				this.Response.Headers.WWWAuthenticate = ErtisAuth.Extensions.Authorization.Scheme.WwwAuthenticate;
+			}
+			
+			this.Response.ContentType = "application/json";
+			await this.Response.WriteAsync(JsonSerializer.Serialize(ex.Error)).ConfigureAwait(false);
+			return;
+		}
+		
+		await base.HandleChallengeAsync(properties).ConfigureAwait(false);
+		this.Response.Headers.WWWAuthenticate = ErtisAuth.Extensions.Authorization.Scheme.WwwAuthenticate;
+	}
+	
+	protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
+	{
+		try
+		{
+			switch (this.Context.GetEndpointAuthorization())
+			{
+				case EndpointAuthorization.Public:
+				{
+					var publicIdentity = new ClaimsIdentity(Array.Empty<Claim>(), null, ClaimExtensions.PublicClaimName, null);
+					this.Context.User.AddIdentity(publicIdentity);
+					var publicPrincipal = new ClaimsPrincipal(publicIdentity);
+					return AuthenticateResult.Success(new AuthenticationTicket(publicPrincipal, this.Scheme.Name));
+				}
+				case EndpointAuthorization.SelfAuthorized:
+				{
+					// The endpoint checks the permission itself
+					var selfIdentity = await this.GetClaimsIdentityAsync(passAuthorization: true).ConfigureAwait(false);
+					this.Context.User.AddIdentity(selfIdentity);
+					var selfPrincipal = new ClaimsPrincipal(selfIdentity);
+					return AuthenticateResult.Success(new AuthenticationTicket(selfPrincipal, this.Scheme.Name));
+				}
+				case EndpointAuthorization.None:
+				{
+					return AuthenticateResult.NoResult();
+				}
+			}
+			
+			var identity = await this.GetClaimsIdentityAsync().ConfigureAwait(false);
+			this.Context.User.AddIdentity(identity);
+			var principal = new ClaimsPrincipal(identity);
+			return AuthenticateResult.Success(new AuthenticationTicket(principal, this.Scheme.Name));
+		}
+		catch (ErtisAuthException ex)
+		{
+			// Written by HandleChallengeAsync: the ErtisAuth policy challenges this scheme for the failed authentication
+			this.Context.Items[AuthenticationErrorItemKey] = ex;
+			return AuthenticateResult.Fail(ex.Error.Message);
+		}
+		catch (Exception ex)
+		{
+			// Not an answer of ErtisAuth about the token (e.g. ErtisAuth unreachable): 503, so that the client
+			// application doesn't take an outage for an invalid token and sign its users out
+			this._logger.LogError(ex, "ErtisAuthAuthenticationHandler.HandleAuthenticateAsync occured an error");
+			var unavailable = ErtisAuthException.AuthenticationServiceUnavailable();
+			this.Context.Items[AuthenticationErrorItemKey] = unavailable;
+			return AuthenticateResult.Fail(unavailable.Error.Message);
+		}
+	}
+	
+	private async Task<ClaimsIdentity> GetClaimsIdentityAsync(bool passAuthorization = false)
+	{
+		var utilizer = passAuthorization ? await this.CheckAuthenticationAsync().ConfigureAwait(false) : await this.CheckAuthorizationAsync().ConfigureAwait(false);
+		return utilizer.ToClaimsIdentity();
+	}
+	
+	private async Task<Utilizer> CheckAuthorizationAsync()
+	{
+		var token = this.Request.GetTokenFromHeader(out var tokenType);
+		if (string.IsNullOrEmpty(token))
+		{
+			throw ErtisAuthException.AuthorizationHeaderMissing();
+		}
+		
+		if (string.IsNullOrEmpty(tokenType) || !TokenTypeExtensions.TryParseTokenType(tokenType, out var _tokenType))
+		{
+			throw ErtisAuthException.UnsupportedTokenType();
+		}
+		
+		switch (_tokenType)
+		{
+			case SupportedTokenTypes.None:
+				throw ErtisAuthException.UnsupportedTokenType();
+			case SupportedTokenTypes.Basic:
+			{
+				var basicToken = new BasicToken(token);
+				var authorizationResult = await this._basicAuthorizationHandler.CheckAuthorizationAsync(basicToken, this.Context).ConfigureAwait(false);
+				if (authorizationResult.IsAuthorized)
+				{
+					return authorizationResult.Utilizer;
+				}
+				else
+				{
+					throw ErtisAuthException.AccessDenied($"You don't have permission to perform this action. Rbac: {authorizationResult.Rbac} (Error Code: 4031)");	
+				}
+			}
+			case SupportedTokenTypes.Bearer:
+			{
+				var bearerToken = BearerToken.CreateTemp(token);
+				var authorizationResult = await this._bearerAuthorizationHandler.CheckAuthorizationAsync(bearerToken, this.Context).ConfigureAwait(false);
+				if (authorizationResult.IsAuthorized)
+				{
+					return authorizationResult.Utilizer;
+				}
+				else
+				{
+					throw ErtisAuthException.AccessDenied($"You don't have permission to perform this action. Rbac: {authorizationResult.Rbac} (Error Code: 4032)");	
+				}
+			}
+			default:
+				throw ErtisAuthException.UnsupportedTokenType();
+		}
+	}
+	
+	private async Task<Utilizer> CheckAuthenticationAsync()
+	{
+		var token = this.Request.GetTokenFromHeader(out var tokenType);
+		if (string.IsNullOrEmpty(token))
+		{
+			throw ErtisAuthException.AuthorizationHeaderMissing();
+		}
+		
+		if (string.IsNullOrEmpty(tokenType) || !TokenTypeExtensions.TryParseTokenType(tokenType, out var _tokenType))
+		{
+			throw ErtisAuthException.UnsupportedTokenType();
+		}
+		
+		switch (_tokenType)
+		{
+			case SupportedTokenTypes.None:
+				throw ErtisAuthException.UnsupportedTokenType();
+			case SupportedTokenTypes.Basic:
+			{
+				var basicToken = new BasicToken(token);
+				return await this._basicAuthorizationHandler.CheckAuthenticationAsync(basicToken).ConfigureAwait(false);
+			}
+			case SupportedTokenTypes.Bearer:
+			{
+				var bearerToken = BearerToken.CreateTemp(token);
+				return await this._bearerAuthorizationHandler.CheckAuthenticationAsync(bearerToken).ConfigureAwait(false);
+			}
+			default:
+				throw ErtisAuthException.UnsupportedTokenType();
+		}
+	}
+}

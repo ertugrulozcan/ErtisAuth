@@ -1,0 +1,17 @@
+**/bin/
+**/obj/
+**/TestResults/
+**/*.user
+**/.DS_Store
+.git/
+.gitignore
+.idea/
+.vs/
+.vscode/
+.claude/
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Development settings stay out of the image
+**/appsettings.Development.json

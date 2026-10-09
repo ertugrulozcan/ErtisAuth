@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\ErtisAuth.Extensions.Authorization\ErtisAuth.Extensions.Authorization.csproj" />
+		<ProjectReference Include="..\ErtisAuth.Sdk\ErtisAuth.Sdk.csproj" />
+	</ItemGroup>
+
+	<!-- Analyzers do not flow to consumers through package dependencies, so the analyzer is shipped inside this package -->
+	<ItemGroup>
+		<ProjectReference Include="..\ErtisAuth.Analyzers\ErtisAuth.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+		<None Include="..\ErtisAuth.Analyzers\bin\$(Configuration)\netstandard2.0\ErtisAuth.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+	</ItemGroup>
+</Project>

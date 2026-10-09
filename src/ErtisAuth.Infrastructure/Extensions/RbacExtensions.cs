@@ -1,0 +1,147 @@
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Roles;
+
+namespace ErtisAuth.Infrastructure.Extensions;
+
+public static class RbacExtensions
+{
+	#region Methods
+	
+	public static bool HasPermission(this Role role, Rbac rbac)
+	{
+		return !role.IsForbidden(rbac) && (role.Permissions?.Any(x => IsMatch(x, rbac)) ?? false);
+	}
+	
+	public static bool IsForbidden(this Role role, Rbac rbac)
+	{
+		return role.Forbidden?.Any(x => IsMatch(x, rbac)) ?? false;
+	}
+	
+	/// <summary>
+	/// Returns whether any of the given token scopes covers the rbac.
+	/// Scopes use the same format ([subject].[resource].[action].[object], 1 to 4 segments) and the same matching as role permissions.
+	/// </summary>
+	public static bool CoversScope(this IEnumerable<string>? scopes, Rbac rbac)
+	{
+		return scopes?.Any(x => IsMatch(x, rbac)) ?? false;
+	}
+	
+	private static bool IsMatch(string permission, Rbac rbac)
+	{
+		if (Rbac.TryParse(permission, out var roleRbac) && roleRbac != null)
+		{
+			var isSubjectPermitted = roleRbac.Subject.IsAll() || roleRbac.Subject.Equals(rbac.Subject);
+			var isResourcePermitted = roleRbac.Resource.IsAll() || roleRbac.Resource.Equals(rbac.Resource, Rbac.NameSegmentComparison);
+			var isActionPermitted = roleRbac.Action.IsAll() || roleRbac.Action.Equals(rbac.Action, Rbac.NameSegmentComparison);
+			var isObjectPermitted = roleRbac.Object.IsAll() || roleRbac.Object.Equals(rbac.Object);
+			
+			return isSubjectPermitted && isResourcePermitted && isActionPermitted && isObjectPermitted;
+		}
+		
+		return false;
+	}
+	
+	public static bool HasOwnUpdatePermission(this Role _, Rbac rbac, Utilizer utilizer)
+	{
+		if (rbac.Action.Slug != Rbac.GetSegment(Rbac.CrudActions.Update).Slug)
+		{
+			return false;
+		}
+		
+		if (rbac.Resource== "users" && utilizer.Type == Utilizer.UtilizerType.User)
+		{
+			if (rbac.Object == utilizer.Id)
+			{
+				return true;
+			}
+		}
+		
+		if (rbac.Resource== "applications" && utilizer.Type == Utilizer.UtilizerType.Application)
+		{
+			if (rbac.Object == utilizer.Id)
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	/// <summary>
+	/// An application may read its own record (ErtisAuth.Sdk.AspNetCore reads it to authenticate Basic tokens).
+	/// </summary>
+	public static bool HasOwnReadPermission(this Role _, Rbac rbac, Utilizer utilizer)
+	{
+		return rbac.Action.Slug == Rbac.GetSegment(Rbac.CrudActions.Read).Slug &&
+			rbac.Resource == "applications" &&
+			utilizer.Type == Utilizer.UtilizerType.Application &&
+			rbac.Object == utilizer.Id;
+	}
+	
+	public static bool HasOwnUpdatePermission(this Role _, Rbac rbac, IUtilizer utilizer)
+	{
+		if (rbac.Action.Slug != Rbac.GetSegment(Rbac.CrudActions.Update).Slug)
+		{
+			return false;
+		}
+		
+		if (rbac.Resource== "users" && utilizer.UtilizerType == Utilizer.UtilizerType.User)
+		{
+			if (rbac.Object == utilizer.Id)
+			{
+				return true;
+			}
+		}
+		
+		if (rbac.Resource== "applications" && utilizer.UtilizerType == Utilizer.UtilizerType.Application)
+		{
+			if (rbac.Object == utilizer.Id)
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	public static bool HasConflict(IEnumerable<string>? permissions, IEnumerable<string>? forbiddens, out Rbac? conflictedRbac)
+	{
+		var permissionList = new List<Rbac>();
+		if (permissions != null)
+		{
+			foreach (var permission in permissions)
+			{
+				var rbac = Rbac.Parse(permission);
+				permissionList.Add(rbac);
+			}
+		}
+		
+		var forbiddenList = new List<Rbac>();
+		if (forbiddens != null)
+		{
+			foreach (var forbidden in forbiddens)
+			{
+				var rbac = Rbac.Parse(forbidden);
+				forbiddenList.Add(rbac);
+			}
+		}
+		
+		// Is there any conflict?
+		foreach (var permissionRbac in permissionList)
+		{
+			foreach (var forbiddenRbac in forbiddenList)
+			{
+				if (permissionRbac == forbiddenRbac)
+				{
+					conflictedRbac = permissionRbac;
+					return true;
+				}
+			}
+		}
+		
+		conflictedRbac = null;
+		return false;
+	}
+	
+	#endregion
+}

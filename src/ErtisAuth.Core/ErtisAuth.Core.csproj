@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\ErtisAuth.Integrations.OAuth.Core\ErtisAuth.Integrations.OAuth.Core.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Ertis.Core" Version="10.0.6-preview.1" />
+        <PackageReference Include="Ertis.MongoDB" Version="10.0.11-preview.1" />
+        <PackageReference Include="Ertis.Schema" Version="10.1.13-preview.1" />
+        <PackageReference Include="Ertis.TemplateEngine" Version="10.0.5-preview.1" />
+    </ItemGroup>
+</Project>

@@ -1,0 +1,588 @@
+using Ertis.Core.Models;
+using Ertis.Core.Collections;
+using Ertis.Extensions.AspNetCore.Controllers;
+using Ertis.Extensions.AspNetCore.Extensions;
+using Ertis.Schema.Dynamics;
+using ErtisAuth.Abstractions.Services;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Roles;
+using ErtisAuth.Core.Models.Users;
+using ErtisAuth.Extensions.Authorization.Attributes;
+using ErtisAuth.Extensions.AspNetCore.Extensions;
+using ErtisAuth.Extensions.AspNetCore.Services;
+using ErtisAuth.WebAPI.Models.Users;
+using ErtisAuth.Extensions.AspNetCore.Attributes;
+using Microsoft.AspNetCore.Mvc;
+
+namespace ErtisAuth.WebAPI.Controllers;
+
+[ApiController]
+[Tags("Users")]
+[Authorized]
+[RbacResource("users")]
+[MembershipRoute("users")]
+public class UsersController : QueryControllerBase
+{
+	#region Services
+	
+	private readonly IUserService _userService;
+	private readonly IPasswordResetService _passwordResetService;
+	private readonly ITokenService _tokenService;
+	private readonly IOneTimePasswordService _oneTimePasswordService;
+	private readonly IUtilizerService _utilizerService;
+	
+	#endregion
+	
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="userService"></param>
+	/// <param name="passwordResetService"></param>
+	/// <param name="tokenService"></param>
+	/// <param name="oneTimePasswordService"></param>
+	/// <param name="utilizerService"></param>
+	public UsersController(
+		IUserService userService, 
+		IPasswordResetService passwordResetService,
+		ITokenService tokenService, 
+		IOneTimePasswordService oneTimePasswordService,
+		IUtilizerService utilizerService)
+	{
+		this._userService = userService;
+		this._passwordResetService = passwordResetService;
+		this._tokenService = tokenService;
+		this._oneTimePasswordService = oneTimePasswordService;
+		this._utilizerService = utilizerService;
+	}
+	
+	#endregion
+	
+	#region Read Methods
+	
+	/// <summary>Get a user</summary>
+	/// <remarks>Returns the user with the custom fields of its user type; the password hash is never returned.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">User id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpGet("{id}")]
+	[RbacObject("{id}")]
+	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<User>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	public async Task<ActionResult<User>> Get([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+	{
+		var user = await this._userService.GetAsync(id, membershipId, cancellationToken: cancellationToken);
+		if (user != null)
+		{
+			return this.Ok(user);
+		}
+		else
+		{
+			return this.UserNotFound(id);
+		}
+	}
+	
+	/// <summary>List users</summary>
+	/// <remarks>Paginated with the <c>skip</c>, <c>limit</c> and <c>with_count</c> query parameters, sorted with <c>sort</c> (e.g. <c>sort=name desc</c>).</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpGet]
+	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<PaginationCollection<User>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	public async Task<IActionResult> Get([FromRoute] string membershipId, CancellationToken cancellationToken = default)
+	{
+		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
+		return this.Ok(await this._userService.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+	}
+	
+	/// <summary>Query users</summary>
+	/// <remarks>Filters the users with the MongoDB query in the <c>where</c> field of the body and projects them with <c>select</c>; paginated and sorted with the query parameters of the list endpoint. JavaScript operators (<c>$where</c>, <c>$function</c>) and hidden fields are rejected. The optional <c>locale</c> query parameter sets the collation of the sorting.</remarks>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPost("_query")]
+	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<PaginationCollection<User>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	public override async Task<IActionResult> Query(CancellationToken cancellationToken = default)
+	{
+		return await base.Query(cancellationToken: cancellationToken);
+	}
+	
+	[NonAction]
+	protected override async Task<IPaginationCollection<dynamic>> GetDataAsync(string query, int? skip, int? limit, bool? withCount, string? sortField, SortDirection? sortDirection, IDictionary<string, bool> projection, CancellationToken cancellationToken = default)
+	{
+		if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdValue) && membershipIdValue is string membershipId && !string.IsNullOrEmpty(membershipId))
+		{
+			var locale = this.Request.Query.ContainsKey("locale") ? this.Request.Query["locale"].ToString() : null;
+			return await this._userService.QueryAsync(query, membershipId, skip, limit, withCount, sortField, sortDirection, projection, locale, cancellationToken: cancellationToken);
+		}
+		else
+		{
+			return new PaginationCollection<dynamic>
+			{
+				Count = 0,
+				Items = Array.Empty<dynamic>()
+			};
+		}
+	}
+	
+	/// <summary>Search users</summary>
+	/// <remarks>Full text search with the <c>keyword</c> query parameter; paginated and sorted like the list endpoint.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="keyword">Text to search for</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpGet("search")]
+	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType<PaginationCollection<User>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	public async Task<IActionResult> Search([FromRoute] string membershipId, [FromQuery] string keyword, CancellationToken cancellationToken = default)
+	{
+		if (string.IsNullOrEmpty(keyword) || string.IsNullOrEmpty(keyword.Trim()))
+		{
+			return this.SearchKeywordRequired();
+		}
+		
+		this.ExtractPaginationParameters(out var skip, out var limit, out var withCount);
+		this.ExtractSortingParameters(out var orderBy, out var sortDirection);
+		
+		return this.Ok(await this._userService.SearchAsync(keyword, membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken));
+	}
+	
+	#endregion
+	
+	#region Create Methods
+	
+	/// <summary>Create a user</summary>
+	/// <remarks>The body is validated by the schema of its <c>user_type</c>; the plain <c>password</c> is hashed with the membership's algorithm. When the membership requires activation, the activation mail is sent with the link host in the <c>X-Host</c> header.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="model">User, with the fields of its user type</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPost]
+	[RbacAction(Rbac.CrudActions.Create)]
+	[ProducesResponseType<User>(StatusCodes.Status201Created)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status501NotImplemented)]
+	public async Task<IActionResult> Create([FromRoute] string membershipId, [FromBody] DynamicObject model, CancellationToken cancellationToken = default)
+	{
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
+		var user = await this._userService.CreateAsync(model, membershipId, utilizer, host, cancellationToken: cancellationToken);
+		return this.Created($"{this.Request.Scheme}://{this.Request.Host}{this.Request.Path}/{user["_id"]}", user);
+	}
+	
+	#endregion
+	
+	#region Update Methods
+	
+	/// <summary>Update a user</summary>
+	/// <remarks>The body is validated by the schema of the user type. The password can not be changed here (see change password).</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">User id</param>
+	/// <param name="model">User, with the fields of its user type</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPut("{id}")]
+	[RbacObject("{id}")]
+	[RbacAction(Rbac.CrudActions.Update)]
+	[ProducesResponseType<User>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	public async Task<IActionResult> Update([FromRoute] string membershipId, [FromRoute] string id, [FromBody] DynamicObject model, CancellationToken cancellationToken = default)
+	{
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var user = await this._userService.UpdateAsync(model, id, membershipId, utilizer, cancellationToken: cancellationToken);
+		return this.Ok(user);
+	}
+	
+	#endregion
+	
+	#region Delete Methods
+	
+	/// <summary>Delete a user</summary>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">User id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpDelete("{id}")]
+	[RbacObject("{id}")]
+	[RbacAction(Rbac.CrudActions.Delete)]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> Delete([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+	{
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		if (await this._userService.DeleteAsync(id, membershipId, utilizer, cancellationToken: cancellationToken))
+		{
+			return this.NoContent();
+		}
+		else
+		{
+			return this.UserNotFound(id);
+		}
+	}
+	
+	/// <summary>Delete users</summary>
+	/// <remarks>Deletes the users with the ids in the body. Returns 204 when all of them are deleted and 404 when none of them is deleted. **Note:** when only some of them are deleted the response is 200 with an error body (<c>BulkDeletePartial</c>), not a success.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="ids">Ids of the users to delete</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpDelete]
+	[RbacAction(Rbac.CrudActions.Delete)]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> BulkDelete([FromRoute] string membershipId, [FromBody] string[]? ids, CancellationToken cancellationToken = default)
+	{
+		if (ids != null)
+		{
+			var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+			var isDeleted = await this._userService.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken);
+			if (isDeleted != null)
+			{
+				if (isDeleted.Value)
+				{
+					return this.NoContent();
+				}
+				else
+				{
+					return this.BulkDeleteFailed(ids);
+				}
+			}
+			else
+			{
+				return this.BulkDeletePartial();
+			}
+		}
+		else
+		{
+			return this.BadRequest();
+		}
+	}
+	
+	#endregion
+	
+	#region User Activation Methods
+	
+	/// <summary>Activate a user</summary>
+	/// <remarks>Activates the user without an activation token (by an administrator). **Note:** a GET request which changes the user.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">User id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpGet("{id}/activate")]
+	[RbacObject("{id}")]
+	[RbacAction(Rbac.CrudActions.Update)]
+	[ProducesResponseType<User>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> ManualActivateUser([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+	{
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		return this.Ok(await this._userService.ActivateUserByIdAsync(id, membershipId, utilizer, cancellationToken: cancellationToken));
+	}
+	
+	/// <summary>Freeze a user</summary>
+	/// <remarks>Deactivates the user and revokes all of its tokens. **Note:** a GET request which changes the user.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">User id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpGet("{id}/freeze")]
+	[RbacObject("{id}")]
+	[RbacAction(Rbac.CrudActions.Update)]
+	[ProducesResponseType<User>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> ManualFreezeUser([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+	{
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		await this._tokenService.RevokeAllAsync(id, membershipId, cancellationToken: cancellationToken);
+		return this.Ok(await this._userService.FreezeUserByIdAsync(id, membershipId, utilizer, cancellationToken: cancellationToken));
+	}
+	
+	/// <summary>Activate a user with an activation token</summary>
+	/// <remarks>Activates the user of the activation token sent in the activation mail. **Note:** a GET request which changes the user.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="uat">User activation token from the activation mail</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpGet("activation")]
+	[RbacAction(Rbac.CrudActions.Update)]
+	[ProducesResponseType<User>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> ActivateUser([FromRoute] string membershipId, [FromQuery] string uat, CancellationToken cancellationToken = default)
+	{
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		return this.Ok(await this._userService.ActivateUserAsync(uat, membershipId, utilizer, cancellationToken: cancellationToken));
+	}
+	
+	/// <summary>Resend the activation mail</summary>
+	/// <remarks>Sends the activation mail again to the user with the email address in the body; the link host is given in the required <c>X-Host</c> header. Returns the email address the mail was sent to.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="model">Email address of the user</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPost("resend-activation-mail")]
+	[RbacAction(Rbac.CrudActions.Create)]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status501NotImplemented)]
+	public async Task<IActionResult> ResendActivationMail([FromRoute] string membershipId, [FromBody] ResendActivationMailFormModel model, CancellationToken cancellationToken = default)
+	{
+		var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
+		if (string.IsNullOrEmpty(host))
+		{
+			return this.HostRequired();
+		}
+		
+		if (string.IsNullOrEmpty(model.EmailAddress))
+		{
+			return this.EmailAddressRequired();
+		}
+		
+		var user = await this._userService.GetByUsernameOrEmailAddressAsync(model.EmailAddress, membershipId);
+		if (user == null)
+		{
+			return this.UserNotFound(model.EmailAddress);
+		}
+		
+		var emailAddress = await this._userService.SendActivationMailAsync(user.Id, membershipId, host, cancellationToken: cancellationToken);
+		if (!string.IsNullOrEmpty(emailAddress))
+		{
+			return this.Ok(new
+			{
+				emailAddress
+			});
+		}
+		else
+		{
+			return this.Unauthorized("Activation mail could not be sent");
+		}
+	}
+	
+	#endregion
+	
+	#region Change Password
+	
+	/// <summary>Change the password of a user</summary>
+	/// <remarks>Signs the user out on every device; when users change their own password, the session they changed it in stays signed in.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">User id</param>
+	/// <param name="model">New password</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPut("{id}/change-password")]
+	[RbacObject("{id}")]
+	[RbacAction(Rbac.CrudActions.Update)]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> ChangePassword([FromRoute] string membershipId, [FromRoute] string id, [FromBody] ChangePasswordFormModel model, CancellationToken cancellationToken = default)
+	{
+		if (string.IsNullOrEmpty(model.Password))
+		{
+			return this.PasswordRequired();
+		}
+		
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		await this._userService.ChangePasswordAsync(id, membershipId, model.Password, utilizer, cancellationToken: cancellationToken);
+		await this.RevokeTokensAfterPasswordChangeAsync(id, membershipId, utilizer, cancellationToken);
+		return this.Ok();
+	}
+	
+	/// <summary>
+	/// Signs the user out on every device after a password change (e.g. after an account takeover),
+	/// except the session in which the user changed its own password.
+	/// </summary>
+	[NonAction]
+	private async Task RevokeTokensAfterPasswordChangeAsync(string userId, string membershipId, Utilizer utilizer, CancellationToken cancellationToken)
+	{
+		var callersOwnAccessToken = utilizer.Type == Utilizer.UtilizerType.User && utilizer.Id == userId && utilizer.TokenType == SupportedTokenTypes.Bearer
+			? utilizer.Token
+			: null;
+		
+		await this._tokenService.RevokeAllAsync(userId, membershipId, callersOwnAccessToken, cancellationToken: cancellationToken);
+	}
+	
+	#endregion
+	
+	#region Forgot Password
+	
+	/// <summary>Start a password reset</summary>
+	/// <remarks>Generates a reset token and sends it with the reset mail to the user with the email address in the body; the link host is given in the required <c>X-Host</c> header. Returns the lifetime of the token.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="model">Email address of the user</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPost("reset-password", Order = 1)]
+	[RbacAction(Rbac.CrudActions.Update)]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status501NotImplemented)]
+	public async Task<IActionResult> ResetPassword([FromRoute] string membershipId, [FromBody] ResetPasswordFormModel model, CancellationToken cancellationToken = default)
+	{
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var host = this.Request.Headers.TryGetValue("X-Host", out var hostStringValue) ? hostStringValue.ToString() : null;
+		if (string.IsNullOrEmpty(host))
+		{
+			return this.HostRequired();
+		}
+		
+		if (string.IsNullOrEmpty(model.EmailAddress))
+		{
+			return this.EmailAddressRequired();
+		}
+		
+		var resetPasswordToken = await this._passwordResetService.ResetPasswordAsync(model.EmailAddress, membershipId, utilizer, host, cancellationToken: cancellationToken);
+		return this.Ok(new
+		{
+			message = "Reset token generated",
+			expiresIn = resetPasswordToken.ExpiresIn
+		});
+	}
+	
+	/// <summary>Verify a reset token</summary>
+	/// <remarks>Checks the reset token from the reset mail and returns the email address of its user.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="token">Reset token from the reset mail</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpGet("verify-reset-token")]
+	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	public async Task<IActionResult> VerifyResetToken([FromRoute] string membershipId, [FromQuery] string token, CancellationToken cancellationToken = default)
+	{
+		var user = await this._passwordResetService.VerifyResetTokenAsync(token, membershipId, cancellationToken: cancellationToken);
+		return this.Ok(new
+		{
+			email_address = user.EmailAddress
+		});
+	}
+	
+	/// <summary>Set a new password with a reset token</summary>
+	/// <remarks>Sets the new password with the reset token; the token can not be used again and the user is signed out on every device.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="model">Reset token, username or email address and new password</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpPost("set-password", Order = 3)]
+	[RbacAction(Rbac.CrudActions.Update)]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> SetPassword([FromRoute] string membershipId, [FromBody] SetPasswordFormModel model, CancellationToken cancellationToken = default)
+	{
+		if (string.IsNullOrEmpty(model.ResetToken))
+		{
+			return this.ResetTokenRequired();
+		}
+		
+		if (string.IsNullOrEmpty(model.UsernameOrEmailAddress))
+		{
+			return this.EmailAddressRequired();
+		}
+		
+		if (string.IsNullOrEmpty(model.Password))
+		{
+			return this.PasswordRequired();
+		}
+		
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var user = await this._passwordResetService.SetPasswordAsync(model.UsernameOrEmailAddress, model.Password, model.ResetToken, membershipId, utilizer, cancellationToken: cancellationToken);
+		await this.RevokeTokensAfterPasswordChangeAsync(user.Id, membershipId, utilizer, cancellationToken);
+		return this.Ok();
+	}
+	
+	#endregion
+	
+	#region Check Password
+	
+	/// <summary>Check the caller's password</summary>
+	/// <remarks>Checks the password of the caller's own user (e.g. before a sensitive change). Answers 200 when it matches and 401 when it does not.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="password">Password to check</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpGet("check-password")]
+	[RbacAction(Rbac.CrudActions.Read)]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	public async Task<IActionResult> CheckPassword([FromRoute] string membershipId, [FromQuery] string password, CancellationToken cancellationToken = default)
+	{
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		if (membershipId != utilizer.MembershipId)
+		{
+			return this.Unauthorized();
+		}
+		
+		if (await this._userService.CheckPasswordAsync(password, utilizer, cancellationToken: cancellationToken))
+		{
+			return this.Ok();
+		}
+		else
+		{
+			return this.Unauthorized("Invalid password");
+		}
+	}
+	
+	#endregion
+	
+	#region OTP Methods
+	
+	/// <summary>Generate a one time password</summary>
+	/// <remarks>Generates a one time password for the user and deletes the previous ones; the user exchanges it for a reset token with the verify OTP endpoint. The plain code (<c>password</c>) is returned only in this response, and no reset token exists until the code is verified. **Note:** needs the create permission of the <c>otp</c> resource, not of users.</remarks>
+	/// <param name="membershipId">Membership id</param>
+	/// <param name="id">User id</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	[HttpGet("{id}/generate-otp")]
+	[RbacObject("{id}")]
+	[RbacResource("otp")]
+	[RbacAction(Rbac.CrudActions.Create)]
+	[ProducesResponseType<OneTimePassword>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status404NotFound)]
+	[ProducesResponseType<ErrorModel>(StatusCodes.Status409Conflict)]
+	public async Task<IActionResult> GenerateOneTimePassword([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
+	{
+		var utilizer = await this._utilizerService.GetUtilizerAsync(this.User, cancellationToken: cancellationToken);
+		var otp = await this._oneTimePasswordService.GenerateAsync(utilizer, membershipId, id, cancellationToken: cancellationToken);
+		return this.Ok(otp);
+	}
+	
+	#endregion
+}

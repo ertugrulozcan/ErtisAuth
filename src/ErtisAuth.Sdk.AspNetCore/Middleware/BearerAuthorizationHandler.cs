@@ -1,0 +1,142 @@
+using Ertis.Core.Models;
+using ErtisAuth.Core.Exceptions;
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Extensions.Authorization.Extensions;
+using ErtisAuth.Sdk.Extensions;
+using ErtisAuth.Sdk.AspNetCore.Helpers;
+using ErtisAuth.Sdk.AspNetCore.Models;
+using ErtisAuth.Sdk.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+
+namespace ErtisAuth.Sdk.AspNetCore.Middleware;
+
+internal class BearerAuthorizationHandler : IAuthorizationHandler<BearerToken>
+{
+	#region Services
+	
+	private readonly IAuthenticationService _authenticationService;
+	private readonly IRoleService _roleService;
+	private readonly ILogger<BearerAuthorizationHandler> _logger;
+	
+	#endregion
+	
+	#region Constructors
+	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="authenticationService"></param>
+	/// <param name="roleService"></param>
+	/// <param name="logger"></param>
+	public BearerAuthorizationHandler(IAuthenticationService authenticationService, IRoleService roleService, ILogger<BearerAuthorizationHandler> logger)
+	{
+		this._authenticationService = authenticationService;
+		this._roleService = roleService;
+		this._logger = logger;
+	}
+	
+	#endregion
+	
+	#region Methods
+	
+	public async Task<Utilizer> CheckAuthenticationAsync(BearerToken token)
+	{
+		var meResponse = await this._authenticationService.WhoAmIAsync(token).ConfigureAwait(false);
+		if (meResponse is { IsSuccess: true, Data: not null })
+		{
+			Utilizer utilizer = meResponse.Data;
+			utilizer.Token = token.AccessToken;
+			utilizer.TokenType = SupportedTokenTypes.Bearer;
+			return utilizer;
+		}
+		else
+		{
+			this.ThrowIfServiceUnavailable(meResponse);
+			
+			var errorMessage = meResponse.Message;
+			if (errorMessage != null && ResponseHelper.TryParseError(errorMessage, out var error) && error != null)
+			{
+				errorMessage = error.Message;
+			}
+			
+			if (string.IsNullOrEmpty(errorMessage))
+			{
+				if (meResponse.Exception != null)
+				{
+					this._logger.LogError(meResponse.Exception, "An error occured on bearer authorization check");
+				}
+				else
+				{
+					this._logger.LogError("An error occured on bearer authorization check: {Response}", meResponse.Json);
+				}
+			}
+			
+			throw ErtisAuthException.Unauthorized(string.IsNullOrEmpty(errorMessage) ? "An error occured on bearer authorization handler" : errorMessage);
+		}
+	}
+	
+	public async Task<AuthorizationResult> CheckAuthorizationAsync(BearerToken token, HttpContext context)
+	{
+		var meResponse = await this._authenticationService.WhoAmIAsync(token).ConfigureAwait(false);
+		if (meResponse is { IsSuccess: true, Data: not null })
+		{
+			var rbacDefinition = context.GetRbacDefinition(meResponse.Data.Id);
+			if (rbacDefinition == null)
+			{
+				throw ErtisAuthException.Unauthorized("An error occured on bearer authorization check (rbac definition is null)");
+			}
+			
+			var rbac = rbacDefinition.ToString();
+			var isPermittedForAction = await this._roleService.CheckPermissionAsync(rbac, token).ConfigureAwait(false);
+			if (!isPermittedForAction)
+			{
+				throw ErtisAuthException.AccessDenied($"You don't have permission to perform this action. Rbac: {rbac} (Error Code: 4033)");
+			}
+			
+			Utilizer utilizer = meResponse.Data;
+			utilizer.Token = token.AccessToken;
+			utilizer.TokenType = SupportedTokenTypes.Bearer;
+			
+			return new AuthorizationResult(utilizer, rbacDefinition, true);
+		}
+		else
+		{
+			this.ThrowIfServiceUnavailable(meResponse);
+			
+			var errorMessage = meResponse.Message;
+			if (errorMessage != null && ResponseHelper.TryParseError(errorMessage, out var error) && error != null)
+			{
+				errorMessage = error.Message;
+			}
+			
+			if (string.IsNullOrEmpty(errorMessage))
+			{
+				if (meResponse.Exception != null)
+				{
+					this._logger.LogError(meResponse.Exception, "An error occured on bearer authorization check");
+				}
+				else
+				{
+					this._logger.LogError("An error occured on bearer authorization check: {Response}", meResponse.Json);
+				}
+			}
+			
+			throw ErtisAuthException.Unauthorized(string.IsNullOrEmpty(errorMessage) ? "An error occured on bearer authorization handler" : errorMessage);
+		}
+	}
+	
+	/// <summary>
+	/// ErtisAuth could not answer (unreachable, 5xx): 503 AuthenticationServiceUnavailable, not an invalid token (401).
+	/// </summary>
+	private void ThrowIfServiceUnavailable(IResponseResult response)
+	{
+		if (response.IsServiceUnavailable())
+		{
+			this._logger.LogError(response.Exception, "ErtisAuth could not be reached on bearer authorization check ({StatusCode})", response.StatusCode);
+			throw ErtisAuthException.AuthenticationServiceUnavailable();
+		}
+	}
+	
+	#endregion
+}

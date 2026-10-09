@@ -1,0 +1,52 @@
+using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Roles;
+
+// ReSharper disable UnusedMember.Global
+namespace ErtisAuth.Abstractions.Services;
+
+public interface IAccessControlService
+{
+	/// <summary>
+	/// Returns whether the given role has the permission specified in the given rbac expression.
+	/// </summary>
+	/// <param name="role"></param>
+	/// <param name="rbac"></param>
+	/// <returns></returns>
+	bool HasPermission(Role role, Rbac rbac);
+	
+	/// <summary>
+	/// Returns whether the given role has the permission specified in the given rbac expression.
+	/// </summary>
+	/// <param name="role"></param>
+	/// <param name="rbac"></param>
+	/// <returns></returns>
+	bool HasPermission(Role role, string rbac);
+	
+	/// <summary>
+	/// Returns whether the given role has the permission specified in the given rbac expression. Also if the rbac action is 'update' and the rcab object is equal to the utilizer id (ie the utilizer is the user doing the action) accepted to be permitted.
+	/// </summary>
+	/// <param name="role"></param>
+	/// <param name="rbac"></param>
+	/// <param name="utilizer"></param>
+	/// <returns></returns>
+	bool HasPermission(Role role, Rbac rbac, Utilizer utilizer);
+	
+	/// <summary>
+	/// Returns whether the given role has the permission specified in the given rbac expression. Also if the rbac action is 'update' and the rcab object is equal to the utilizer id (ie the utilizer is the user doing the action) accepted to be permitted.
+	/// </summary>
+	/// <param name="role"></param>
+	/// <param name="rbac"></param>
+	/// <param name="utilizer"></param>
+	/// <returns></returns>
+	bool HasPermission(Role role, string rbac, Utilizer utilizer);
+	
+	/// <summary>
+	/// Returns whether the given role or the utilizer's own permissions (UBAC) grant the permission specified in the given rbac expression.
+	/// Unlike HasPermission, the own-update exception (a user updating itself) is not taken into account.
+	/// </summary>
+	/// <param name="role"></param>
+	/// <param name="rbac"></param>
+	/// <param name="utilizer"></param>
+	/// <returns></returns>
+	bool HasGrantedPermission(Role? role, Rbac rbac, Utilizer utilizer);
+}
