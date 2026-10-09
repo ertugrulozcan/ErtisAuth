@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ErtisAuth.Abstractions.Services;
-using ErtisAuth.Core.Constants;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Events.EventArgs;
 using ErtisAuth.Extensions.Quartz.Jobs;
@@ -59,7 +58,7 @@ namespace ErtisAuth.Extensions.Quartz.Services
 				{
 					foreach (var membership in memberships.Items)
 					{
-						await this.ScheduleTokenCleanerJobAsync(scheduler, membership, cancellationToken: cancellationToken);
+						await this.ScheduleJobAsync(scheduler, membership, cancellationToken: cancellationToken);
 					}
 				}
 			}
@@ -69,22 +68,16 @@ namespace ErtisAuth.Extensions.Quartz.Services
 			}
 		}
 
-		private static string GenerateJobName(string job, Membership membership)
+		private static string GenerateJobName(Membership membership)
 		{
-			return $"Quartz:{job}:{membership.Name}";
+			return $"Quartz:{membership.Name}";
 		}
 
-		private async Task ScheduleAllJobsAsync(IScheduler scheduler, Membership membership, CancellationToken cancellationToken = default)
-		{
-			await this.ScheduleTokenCleanerJobAsync(scheduler, membership, cancellationToken);
-			await this.ScheduleOtpCleanerJobAsync(scheduler, membership, cancellationToken);
-		}
-		
-		private async Task ScheduleTokenCleanerJobAsync(IScheduler scheduler, Membership membership, CancellationToken cancellationToken = default)
+		private async Task ScheduleJobAsync(IScheduler scheduler, Membership membership, CancellationToken cancellationToken = default)
 		{
 			try
 			{
-				var jobName = GenerateJobName(nameof(TokenCleanerJob), membership);
+				var jobName = GenerateJobName(membership);
 				var job = JobBuilder.Create<TokenCleanerJob>()
 					.WithIdentity(new JobKey(jobName))
 					.UsingJobData("membership_id", membership.Id)
@@ -108,54 +101,19 @@ namespace ErtisAuth.Extensions.Quartz.Services
 				this.logger.Log(LogLevel.Error, ex, "TokenCleanerJob could not scheduled");
 			}
 		}
-		
-		private async Task ScheduleOtpCleanerJobAsync(IScheduler scheduler, Membership membership, CancellationToken cancellationToken = default)
-		{
-			try
-			{
-				var jobName = GenerateJobName(nameof(OtpCleanerJob), membership);
-				var job = JobBuilder.Create<OtpCleanerJob>()
-					.WithIdentity(new JobKey(jobName))
-					.UsingJobData("membership_id", membership.Id)
-					.Build();
 
-				var trigger = TriggerBuilder.Create()
-					.WithIdentity(jobName + "-trigger")
-					.WithSimpleSchedule(x => x
-						.WithIntervalInSeconds((int)TTLs.RESET_PASSWORD_TOKEN_TTL.TotalSeconds)
-						.RepeatForever())
-					.StartNow()
-					.Build();
-	  
-				await scheduler.ScheduleJob(job, trigger, cancellationToken: cancellationToken);
-			
-				// ReSharper disable once PositionalPropertyUsedProblem
-				this.logger.Log(LogLevel.Information, "Job scheduled ({0})", jobName);
-			}
-			catch (Exception ex)
-			{
-				this.logger.Log(LogLevel.Error, ex, "OtpCleanerJob could not scheduled");
-			}
-		}
-
-		private async Task RescheduleAllJobsAsync(IScheduler scheduler, Membership membership, CancellationToken cancellationToken = default)
+		private async Task RescheduleJobAsync(IScheduler scheduler, Membership membership, CancellationToken cancellationToken = default)
 		{
 			this.logger.Log(LogLevel.Information, "Job re-scheduling...");
-			await this.DeleteAllJobsAsync(scheduler, membership, cancellationToken: cancellationToken);
-			await this.ScheduleAllJobsAsync(scheduler, membership, cancellationToken: cancellationToken);
+			await this.DeleteJobAsync(scheduler, membership, cancellationToken: cancellationToken);
+			await this.ScheduleJobAsync(scheduler, membership, cancellationToken: cancellationToken);
 		}
-		
-		private async Task DeleteAllJobsAsync(IScheduler scheduler, Membership membership, CancellationToken cancellationToken = default)
-		{
-			await this.DeleteJobAsync(scheduler, nameof(TokenCleanerJob), membership, cancellationToken);
-			await this.DeleteJobAsync(scheduler, nameof(OtpCleanerJob), membership, cancellationToken);
-		}
-		
-		private async Task DeleteJobAsync(IScheduler scheduler, string job, Membership membership, CancellationToken cancellationToken = default)
+
+		private async Task DeleteJobAsync(IScheduler scheduler, Membership membership, CancellationToken cancellationToken = default)
 		{
 			try
 			{
-				var jobName = GenerateJobName(job, membership);
+				var jobName = GenerateJobName(membership);
 				await scheduler.DeleteJob(new JobKey(jobName), cancellationToken: cancellationToken);
 			
 				// ReSharper disable once PositionalPropertyUsedProblem
@@ -177,7 +135,7 @@ namespace ErtisAuth.Extensions.Quartz.Services
 		private async Task OnMembershipCreatedAsync(CreateResourceEventArgs<Membership> e)
 		{
 			var scheduler = await this.schedulerFactory.GetScheduler();
-			await this.ScheduleAllJobsAsync(scheduler, e.Resource);
+			await this.ScheduleJobAsync(scheduler, e.Resource);
 		}
 		
 		private void OnMembershipUpdated(object sender, UpdateResourceEventArgs<Membership> e) =>
@@ -186,7 +144,7 @@ namespace ErtisAuth.Extensions.Quartz.Services
 		private async Task OnMembershipUpdatedAsync(UpdateResourceEventArgs<Membership> e)
 		{
 			var scheduler = await this.schedulerFactory.GetScheduler();
-			await this.RescheduleAllJobsAsync(scheduler, e.Updated);
+			await this.RescheduleJobAsync(scheduler, e.Updated);
 		}
 		
 		private void OnMembershipDeleted(object sender, DeleteResourceEventArgs<Membership> e) =>
@@ -195,7 +153,7 @@ namespace ErtisAuth.Extensions.Quartz.Services
 		private async Task OnMembershipDeletedAsync(DeleteResourceEventArgs<Membership> e)
 		{
 			var scheduler = await this.schedulerFactory.GetScheduler();
-			await this.DeleteAllJobsAsync(scheduler, e.Resource);
+			await this.DeleteJobAsync(scheduler, e.Resource);
 		}
 
 		#endregion

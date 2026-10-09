@@ -1,4 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using ErtisAuth.Core.Models.Identity;
@@ -18,11 +17,9 @@ namespace ErtisAuth.Extensions.Authorization.Extensions
 			var membershipIdClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.MembershipIdClaimName);
 			var tokenClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerTokenClaimName);
 			var tokenTypeClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.UtilizerTokenTypeClaimName);
-			var scopeClaim = utilizerIdentity.Claims.FirstOrDefault(x => x.Type == Utilizer.ScopeClaimName);
 
 			TokenTypeExtensions.TryParseTokenType(tokenTypeClaim?.Value, out var tokenType);
-
-			var scopes = scopeClaim?.Value.Split(" ").Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+				
 			return new Utilizer
 			{
 				Id = idClaim?.Value,
@@ -31,25 +28,10 @@ namespace ErtisAuth.Extensions.Authorization.Extensions
 				Role = roleClaim?.Value,
 				MembershipId = membershipIdClaim?.Value,
 				Token = tokenClaim?.Value,
-				TokenType = tokenType,
-				Scopes = scopes is { Length: > 0 } ? scopes : null
+				TokenType = tokenType
 			};
 		}
-		
-		public static Utilizer ConvertToUtilizer(this JwtSecurityToken token)
-		{
-			return new Utilizer
-			{
-				Id = token.Claims.FirstOrDefault(x => x.Type == "sub")?.Value,
-				Type = Utilizer.UtilizerType.User,
-				Username = token.Claims.FirstOrDefault(x => x.Type == "unique_name")?.Value,
-				Role = null,
-				MembershipId = token.Claims.FirstOrDefault(x => x.Type == "prn")?.Value,
-				Token = token.RawData,
-				TokenType = SupportedTokenTypes.Bearer
-			};
-		}
-		
+
 		#endregion
 	}
 }

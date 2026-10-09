@@ -26,7 +26,6 @@ namespace ErtisAuth.Extensions.Quartz.Extensions
 			// Quartz Jobs Inject to DI container
 			services.AddSingleton<IScheduledJobService, ScheduledJobService>();
 			services.AddTransient<TokenCleanerJob>();
-			services.AddTransient<OtpCleanerJob>();
 		}
 
 		#endregion

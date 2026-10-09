@@ -16,7 +16,7 @@ namespace ErtisAuth.Infrastructure.Mapping.Impls
 		public AutoMapperImpl(MappingCollection typeMap) : base(typeMap)
 		{
 			var profile = new AutoMapperProfile(typeMap);
-			var mapperConfiguration = new AutoMapper.MapperConfiguration(cfg => cfg.AddProfile(profile), null);
+			var mapperConfiguration = new AutoMapper.MapperConfiguration(cfg => cfg.AddProfile(profile));
 			this.Mapper = mapperConfiguration.CreateMapper();
 		}
 

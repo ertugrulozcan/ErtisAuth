@@ -17,45 +17,30 @@ public class AppleLoginModel
 
 	#region Methods
 
-	public AppleLoginRequestBase ToLoginRequest(bool isAppleNative)
+	public AppleLoginRequest ToLoginRequest()
 	{
 		var handler = new JwtSecurityTokenHandler();
 		var jwtToken = handler.ReadJwtToken(this.Authorization?.IdToken);
 		var userId = jwtToken.Subject;
 		var expirationClaim = jwtToken.Claims.FirstOrDefault(x => x.Type == "exp");
 		var expiresIn = expirationClaim != null && !string.IsNullOrEmpty(expirationClaim.Value) && long.TryParse(expirationClaim.Value, out var expiresIn_) ? expiresIn_ : 0;
-		
-		var user = new AppleUser
+
+		return new AppleLoginRequest
 		{
-			Id = userId,
-			FirstName = this.User?.Name?.FirstName,
-			LastName = this.User?.Name?.LastName,
-			EmailAddress = this.User?.EmailAddress
-		};
-		
-		var token = new AppleToken
-		{
-			IdToken = this.Authorization?.IdToken,
-			Code = this.Authorization?.Code,
-			ExpiresIn = expiresIn
-		};
-		
-		if (isAppleNative)
-		{
-			return new AppleNativeLoginRequest
+			User = new AppleUser
 			{
-				User = user,
-				Token = token
-			};
-		}
-		else
-		{
-			return new AppleLoginRequest
+				Id = userId,
+				FirstName = this.User?.Name?.FirstName,
+				LastName = this.User?.Name?.LastName,
+				EmailAddress = this.User?.EmailAddress
+			},
+			Token = new AppleToken
 			{
-				User = user,
-				Token = token
-			};
-		}
+				IdToken = this.Authorization?.IdToken,
+				Code = this.Authorization?.Code,
+				ExpiresIn = expiresIn
+			}
+		};
 	}
 
 	#endregion

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Applications;
 using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
@@ -20,55 +19,38 @@ namespace ErtisAuth.Core.Models.Identity
 		public const string MembershipIdClaimName = "membership_id";
 		public const string UtilizerTokenClaimName = "access_token";
 		public const string UtilizerTokenTypeClaimName = "token_type";
-		public const string ScopeClaimName = "scope";
 		
 		#endregion
 		
 		#region Properties
 
 		[JsonProperty("id")]
-		[JsonPropertyName("id")]
 		public string Id { get; set; }
 		
 		[JsonProperty("type")]
-		[JsonPropertyName("type")]
-		[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
-		[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+		[JsonConverter(typeof(StringEnumConverter))]
 		public UtilizerType Type { get; set; }
 		
 		[JsonProperty("username")]
-		[JsonPropertyName("username")]
 		public string Username { get; set; }
 		
 		[JsonProperty("membership_id")]
-		[JsonPropertyName("membership_id")]
 		public string MembershipId { get; set; }
 		
 		[JsonProperty("role")]
-		[JsonPropertyName("role")]
 		public string Role { get; set; }
 		
 		[JsonProperty("permissions")]
-		[JsonPropertyName("permissions")]
 		public IEnumerable<string> Permissions { get; set; }
 		
 		[JsonProperty("forbidden")]
-		[JsonPropertyName("forbidden")]
 		public IEnumerable<string> Forbidden { get; set; }
 		
 		[JsonProperty("token")]
-		[JsonPropertyName("token")]
 		public string Token { get; set; }
 		
-		[JsonProperty("scopes", NullValueHandling = NullValueHandling.Ignore)]
-		[JsonPropertyName("scopes")]
-		[System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-		public string[] Scopes { get; set; }
-		
 		[JsonProperty("tokenType")]
-		[JsonPropertyName("tokenType")]
-		[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
-		[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
+		[JsonConverter(typeof(StringEnumConverter))]
 		public SupportedTokenTypes TokenType { get; set; }
 
 		#endregion

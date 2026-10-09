@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.MongoDB.Queries;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
 
 namespace ErtisAuth.Abstractions.Services
 {
@@ -29,7 +29,6 @@ namespace ErtisAuth.Abstractions.Services
             string orderBy = null,
             SortDirection? sortDirection = null,
             IDictionary<string, bool> selectFields = null, 
-            string language = null, 
             CancellationToken cancellationToken = default);
 
         dynamic Aggregate(string membershipId, string aggregationStagesJson);

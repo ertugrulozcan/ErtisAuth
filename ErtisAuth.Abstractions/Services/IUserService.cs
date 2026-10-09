@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Core.Models.Identity;
-using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Events.EventArgs;
 
@@ -24,11 +23,11 @@ namespace ErtisAuth.Abstractions.Services
         #endregion
         
         #region Methods
-
-        Task<User> GetUserAsync(string membershipId, string id, CancellationToken cancellationToken = default);
         
         Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default);
         
+        Task<User> GetFromCacheAsync(string membershipId, string id, CancellationToken cancellationToken = default);
+
         Task<IPaginationCollection<DynamicObject>> GetAsync(string membershipId, int? skip = null, int? limit = null, bool withCount = false, string orderBy = null, SortDirection? sortDirection = null, CancellationToken cancellationToken = default);
 
         Task<User> GetByUsernameOrEmailAddressAsync(string membershipId, string usernameOrEmailAddress);
@@ -48,7 +47,6 @@ namespace ErtisAuth.Abstractions.Services
             string orderBy = null,
             SortDirection? sortDirection = null,
             IDictionary<string, bool> selectFields = null, 
-            string locale = null, 
             CancellationToken cancellationToken = default);
         
         Task<IPaginationCollection<DynamicObject>> SearchAsync(
@@ -68,8 +66,6 @@ namespace ErtisAuth.Abstractions.Services
         Task<DynamicObject> ChangePasswordAsync(Utilizer utilizer, string membershipId, string userId, string newPassword, CancellationToken cancellationToken = default);
         
         Task<ResetPasswordToken> ResetPasswordAsync(Utilizer utilizer, string membershipId, string emailAddress, string host, CancellationToken cancellationToken = default);
-
-        ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false, ResetPasswordToken.ResetPasswordTokenPurpose purpose = ResetPasswordToken.ResetPasswordTokenPurpose.ResetPassword);
         
         Task<User> VerifyResetTokenAsync(string membershipId, string resetToken, CancellationToken cancellationToken = default);
         

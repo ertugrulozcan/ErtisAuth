@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models.Users
@@ -8,8 +7,6 @@ namespace ErtisAuth.Core.Models.Users
 		#region Properties
 		
 		[JsonProperty("password", NullValueHandling = NullValueHandling.Ignore)]
-		[JsonPropertyName("password")]
-		[System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 		public string Password { get; set; }
 		
 		#endregion

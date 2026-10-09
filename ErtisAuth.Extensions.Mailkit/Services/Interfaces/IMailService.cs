@@ -15,8 +15,6 @@ namespace ErtisAuth.Extensions.Mailkit.Services.Interfaces
             IEnumerable<Recipient> recipients,
             string subject, 
             string htmlBody,
-            string templateId,
-            IDictionary<string, string> arguments,
             CancellationToken cancellationToken = default);
     }
 }

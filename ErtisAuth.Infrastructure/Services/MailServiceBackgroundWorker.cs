@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Users;
@@ -90,31 +90,6 @@ public class MailServiceBackgroundWorker : BackgroundWorker<MailServiceBackgroun
 		{
 			try
 			{
-				IDictionary<string, string> arguments = new Dictionary<string, string>();
-				if (args.Payload != null)
-				{
-					if (args.Variables != null)
-					{
-						foreach (var pair in args.Variables)
-						{
-							if (!string.IsNullOrEmpty(pair.Key))
-							{
-								if (!string.IsNullOrEmpty(pair.Value))
-								{
-									if (!arguments.ContainsKey(pair.Key))
-									{
-										arguments.Add(pair.Key, formatter.Format(pair.Value, args.Payload));
-									}
-								}
-								else
-								{
-									arguments.Add(pair.Key, string.Empty);
-								}
-							}
-						}
-					}
-				}
-				
 				var mailBody = formatter.Format(args.Mailhook.MailTemplate, args.Payload);
 				var mailSubject = formatter.Format(args.Mailhook.MailSubject, args.Payload);
 				await this._mailService.SendMailAsync(
@@ -124,8 +99,6 @@ public class MailServiceBackgroundWorker : BackgroundWorker<MailServiceBackgroun
 					recipients,
 					mailSubject,
 					mailBody, 
-					args.Mailhook.MailTemplate,
-					arguments,
 					cancellationToken: cancellationToken);
 					
 				await this._eventService.FireEventAsync(this, new ErtisAuthEvent(

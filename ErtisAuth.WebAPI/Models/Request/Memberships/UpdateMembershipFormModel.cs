@@ -1,4 +1,3 @@
-using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Extensions.Mailkit.Providers;
 using Newtonsoft.Json;
@@ -21,9 +20,6 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		[JsonProperty("refresh_token_expires_in")]
 		public int RefreshTokenExpiresIn { get; set; }
 		
-		[JsonProperty("reset_password_token_expires_in")]
-		public int? ResetPasswordTokenExpiresIn { get; set; }
-		
 		[JsonProperty("secret_key")]
 		public string SecretKey { get; set; }
 		
@@ -42,9 +38,6 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 		[JsonProperty("code_policy")]
 		public string CodePolicy { get; set; }
 		
-		[JsonProperty("otp_settings")]
-		public OtpSettings OtpSettings { get; set; }
-		
 		#endregion
 		
 		#region Methods
@@ -58,14 +51,12 @@ namespace ErtisAuth.WebAPI.Models.Request.Memberships
 				Slug = this.Slug,
 				ExpiresIn = this.ExpiresIn,
 				RefreshTokenExpiresIn = this.RefreshTokenExpiresIn,
-				ResetPasswordTokenExpiresIn = this.ResetPasswordTokenExpiresIn,
 				SecretKey = this.SecretKey,
 				HashAlgorithm = this.HashAlgorithm,
 				DefaultEncoding = this.DefaultEncoding,
 				DefaultLanguage = this.DefaultLanguage,
 				MailProviders = this.MailProviders,
-				CodePolicy = this.CodePolicy,
-				OtpSettings = this.OtpSettings
+				CodePolicy = this.CodePolicy
 			};
 		}
 

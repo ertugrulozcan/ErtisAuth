@@ -4,8 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Ertis.MongoDB.Queries;
-using Ertis.Schema.Dynamics.Legacy;
-using Ertis.Schema.Types;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Providers;
@@ -35,7 +34,6 @@ namespace ErtisAuth.Infrastructure.Services
 		#region Services
 		
 		private readonly IUserService userService;
-		private readonly IUserTypeService userTypeService;
 		private readonly ITokenService tokenService;
 		private readonly IEventService eventService;
 		private readonly IMemoryCache _memoryCache;
@@ -49,7 +47,6 @@ namespace ErtisAuth.Infrastructure.Services
 		/// </summary>
 		/// <param name="membershipService"></param>
 		/// <param name="userService"></param>
-		/// <param name="userTypeService"></param>
 		/// <param name="tokenService"></param>
 		/// <param name="eventService"></param>
 		/// <param name="providerRepository"></param>
@@ -57,14 +54,12 @@ namespace ErtisAuth.Infrastructure.Services
 		public ProviderService(
 			IMembershipService membershipService,
 			IUserService userService,
-			IUserTypeService userTypeService,
 			ITokenService tokenService,
 			IEventService eventService, 
 			IProviderRepository providerRepository, 
 			IMemoryCache memoryCache) : base(membershipService, providerRepository)
 		{
 			this.userService = userService;
-			this.userTypeService = userTypeService;
 			this.tokenService = tokenService;
 			this.eventService = eventService;
 			this._memoryCache = memoryCache;
@@ -146,7 +141,7 @@ namespace ErtisAuth.Infrastructure.Services
 					errorList.Add("DefaultUserType is a required field");
 				}
 				
-				if (model.Name == KnownProviders.Apple.ToString() || model.Name == KnownProviders.AppleNative.ToString())
+				if (model.Name == KnownProviders.Apple.ToString())
 				{
 					if (string.IsNullOrEmpty(model.TeamId))
 					{
@@ -429,11 +424,9 @@ namespace ErtisAuth.Infrastructure.Services
 							throw ErtisAuthException.UserInactive(user.Id);
 						}
 						
-						var userType = await this.userTypeService.GetByNameOrSlugAsync(membershipId, isNewUser ? provider.DefaultUserType : user.UserType, cancellationToken: cancellationToken);
-						
 						this.EnsureConnectedAccounts(user, request, provider);
 						var dynamicUser = new DynamicObject(user);
-						this.SetAvatar(dynamicUser, request, userType);
+						this.SetAvatar(dynamicUser, request);
 						
 						var upsertedUser = isNewUser ?
 							await this.userService.CreateAsync(utilizer, membershipId, dynamicUser, cancellationToken: cancellationToken) :
@@ -569,14 +562,11 @@ namespace ErtisAuth.Infrastructure.Services
 			user.ConnectedAccounts = connectedAccounts.ToArray();
 		}
 
-		private void SetAvatar(DynamicObject dynamicUser, IProviderLoginRequest request, UserType userType)
+		private void SetAvatar(DynamicObject dynamicUser, IProviderLoginRequest request)
 		{
-			if (userType != null)
+			if (!string.IsNullOrEmpty(request.AvatarUrl))
 			{
-				if (userType.Properties.Any(x => x.Type == FieldType.@object && x.Name == "avatar") && !string.IsNullOrEmpty(request.AvatarUrl))
-				{
-					dynamicUser.SetValue("avatar", new Dictionary<string, object> { { "url", request.AvatarUrl } }, true);	
-				}
+				dynamicUser.SetValue("avatar", new Dictionary<string, object> { { "url", request.AvatarUrl } }, true);	
 			}
 		}
 

@@ -1,11 +1,11 @@
-namespace ErtisAuth.Integrations.OAuth.Core;
-
-public enum KnownProviders
+namespace ErtisAuth.Integrations.OAuth.Core
 {
-    ErtisAuth,
-    Facebook,
-    Google,
-    Microsoft,
-    Apple,
-    AppleNative
+	public enum KnownProviders
+	{
+		ErtisAuth,
+		Facebook,
+		Google,
+		Microsoft,
+		Apple
+	}
 }

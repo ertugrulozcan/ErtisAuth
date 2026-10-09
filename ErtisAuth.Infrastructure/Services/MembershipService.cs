@@ -89,14 +89,6 @@ namespace ErtisAuth.Infrastructure.Services
 				errorList.Add(ErtisAuthException.MembershipAlreadyExists(model.Name).Message);
 			}
 
-			if (model.OtpSettings != null)
-			{
-				if (string.IsNullOrEmpty(model.OtpSettings.Host))
-				{
-					errorList.Add(ErtisAuthException.OtpHostRequired().Message);
-				}
-			}
-
 			errors = errorList;
 			return !errors.Any();
 		}

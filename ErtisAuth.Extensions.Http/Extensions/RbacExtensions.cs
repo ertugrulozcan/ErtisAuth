@@ -30,7 +30,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 						var rbacSubjectSegmentValue = rbacSubjectSegment.Value.Trim();
 						rbacSubjectSegmentValue = SetEnvironmentVariablesToSegment(rbacSubjectSegmentValue, formatter);
 						rbacSubjectSegmentValue = formatter.Format(rbacSubjectSegmentValue, httpContext.Request.RouteValues);
-						rbacSubjectSegment = new RbacSegment(rbacSubjectSegmentValue.Replace(".", "%2E"));
+						rbacSubjectSegment = new RbacSegment(rbacSubjectSegmentValue);
 					}
 				}
 				
@@ -45,7 +45,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 						var rbacResourceSegmentValue = rbacResourceSegment.Value.Trim();
 						rbacResourceSegmentValue = SetEnvironmentVariablesToSegment(rbacResourceSegmentValue, formatter);
 						rbacResourceSegmentValue = formatter.Format(rbacResourceSegmentValue, httpContext.Request.RouteValues);
-						rbacResourceSegment = new RbacSegment(rbacResourceSegmentValue.Replace(".", "%2E"));
+						rbacResourceSegment = new RbacSegment(rbacResourceSegmentValue);
 					}
 				}
 				else
@@ -53,7 +53,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 					var routePath = routeEndpoint.RoutePattern.RawText;
 					if (!string.IsNullOrEmpty(routePath))
 					{
-						rbacResourceSegment = new RbacSegment(routePath.Split('/').Last().Replace(".", "%2E"));	
+						rbacResourceSegment = new RbacSegment(routePath.Split('/').Last());	
 					}
 				}
 
@@ -68,7 +68,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 						var rbacActionSegmentValue = rbacActionSegment.Value.Trim();
 						rbacActionSegmentValue = SetEnvironmentVariablesToSegment(rbacActionSegmentValue, formatter);
 						rbacActionSegmentValue = formatter.Format(rbacActionSegmentValue, httpContext.Request.RouteValues);
-						rbacActionSegment = new RbacSegment(rbacActionSegmentValue.Replace(".", "%2E"));
+						rbacActionSegment = new RbacSegment(rbacActionSegmentValue);
 					}
 				}
 				
@@ -83,7 +83,7 @@ namespace ErtisAuth.Extensions.Http.Extensions
 						var rbacObjectSegmentValue = rbacObjectSegment.Value.Trim();
 						rbacObjectSegmentValue = SetEnvironmentVariablesToSegment(rbacObjectSegmentValue, formatter);
 						rbacObjectSegmentValue = formatter.Format(rbacObjectSegmentValue, httpContext.Request.RouteValues);
-						rbacObjectSegment = new RbacSegment(rbacObjectSegmentValue.Replace(".", "%2E"));
+						rbacObjectSegment = new RbacSegment(rbacObjectSegmentValue);
 					}
 				}
 

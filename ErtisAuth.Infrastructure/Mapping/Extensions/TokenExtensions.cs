@@ -6,7 +6,7 @@ namespace ErtisAuth.Infrastructure.Mapping.Extensions;
 
 public static class TokenExtensions
 {
-    #region Bearer Token Methods
+    #region BearerToken Methods
 
     private static BearerToken ToModel(this BearerTokenDto dto)
     {
@@ -30,7 +30,7 @@ public static class TokenExtensions
 
     #endregion
     
-    #region Active Token Methods
+    #region ActiveToken Methods
 
     public static ActiveToken ToModel(this ActiveTokenDto dto)
     {
@@ -93,7 +93,7 @@ public static class TokenExtensions
 
     #endregion
     
-    #region Token Code Methods
+    #region TokenCode Methods
 
     public static TokenCode ToModel(this TokenCodeDto dto)
     {
@@ -157,56 +157,5 @@ public static class TokenExtensions
         };
     }
     
-    #endregion
-
-    #region Reset Password Token Methods
-
-    public static ResetPasswordToken ToModel(this ResetPasswordTokenDto dto)
-    {
-        return new ResetPasswordToken(dto.Token, TimeSpan.FromSeconds(dto.ExpiresInTimeStamp), dto.CreatedAt);
-    }
-		
-    public static ResetPasswordTokenDto ToDto(this ResetPasswordToken model)
-    {
-        return new ResetPasswordTokenDto
-        {
-            Token = model.Token,
-            ExpiresInTimeStamp = model.ExpiresInTimeStamp,
-            CreatedAt = model.CreatedAt
-        };
-    }
-
-    #endregion
-    
-    #region Onetime Token Methods
-
-    public static OneTimePassword ToModel(this OneTimePasswordDto dto)
-    {
-        return new OneTimePassword
-        {
-            Id = dto.Id,
-            UserId = dto.UserId,
-            EmailAddress = dto.EmailAddress,
-            Username = dto.Username,
-            Password = dto.Password,
-            Token = dto.Token.ToModel(),
-            MembershipId = dto.MembershipId
-        };
-    }
-		
-    public static OneTimePasswordDto ToDto(this OneTimePassword model)
-    {
-        return new OneTimePasswordDto
-        {
-            Id = model.Id,
-            UserId = model.UserId,
-            EmailAddress = model.EmailAddress,
-            Username = model.Username,
-            Password = model.Password,
-            Token = model.Token.ToDto(),
-            MembershipId = model.MembershipId
-        };
-    }
-
     #endregion
 }

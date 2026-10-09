@@ -32,8 +32,6 @@ namespace ErtisAuth.Core.Models.Identity
 		
 		public string EmailAddress { get; }
 		
-		public string Scope { get; init; }
-		
 		public ReadOnlyDictionary<string, object> AdditionalClaims { get; }
 		
 		private Dictionary<string, object> OtherClaims { get; }

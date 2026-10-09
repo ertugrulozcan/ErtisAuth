@@ -2,8 +2,6 @@ using System;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
 
-// ReSharper disable PropertyCanBeMadeInitOnly.Global
-// ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Sdk.Configuration
 {
 	public interface IErtisAuthOptions
@@ -13,8 +11,6 @@ namespace ErtisAuth.Sdk.Configuration
 		string BaseUrl { get; }
 		
 		string MembershipId { get; }
-		
-		int? BasicTokenCacheTTL { get; }
 
 		#endregion
 	}
@@ -22,12 +18,12 @@ namespace ErtisAuth.Sdk.Configuration
 	public class ErtisAuthOptions : IErtisAuthOptions
 	{
 		#region Properties
-		
+
+		// ReSharper disable once UnusedAutoPropertyAccessor.Global
 		public string BaseUrl { get; set; }
 		
+		// ReSharper disable once UnusedAutoPropertyAccessor.Global
 		public string MembershipId { get; set; }
-
-		public int? BasicTokenCacheTTL { get; set; }
 
 		#endregion
 	}
@@ -87,8 +83,6 @@ namespace ErtisAuth.Sdk.Configuration
 				return null;
 			}
 		}
-		
-		public int? BasicTokenCacheTTL { get; set; }
 		
 		#endregion
 

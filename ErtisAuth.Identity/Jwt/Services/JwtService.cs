@@ -31,7 +31,6 @@ namespace ErtisAuth.Identity.Jwt.Services
                 tokenClaims.LastName,
 				tokenClaims.Username,
                 tokenClaims.EmailAddress,
-                tokenClaims.Scope,
                 tokenClaims.AdditionalClaims);
         }
         
@@ -52,7 +51,6 @@ namespace ErtisAuth.Identity.Jwt.Services
                 tokenClaims.LastName,
                 tokenClaims.Username,
 				tokenClaims.EmailAddress,
-                tokenClaims.Scope,
                 tokenClaims.AdditionalClaims);
         }
 
@@ -71,7 +69,6 @@ namespace ErtisAuth.Identity.Jwt.Services
             string lastName = null,
             string username = null,
             string email = null,
-            string scope = null,
             IDictionary<string, object> additionalClaims = null)
         {
             if (string.IsNullOrEmpty(secretKey))
@@ -96,8 +93,8 @@ namespace ErtisAuth.Identity.Jwt.Services
 
             var claims = new List<Claim>
             {
-                new(JwtRegisteredClaimNames.Azp, audience),
-                new(JwtRegisteredClaimNames.Iat, timestamp.ToString()),
+                new Claim(JwtRegisteredClaimNames.Azp, audience),
+                new Claim(JwtRegisteredClaimNames.Iat, timestamp.ToString()),
             };
 
             if (!string.IsNullOrEmpty(subject))
@@ -134,11 +131,6 @@ namespace ErtisAuth.Identity.Jwt.Services
 			{
 				claims.Add(new Claim(JwtRegisteredClaimNames.Email, email));
 			}
-            
-            if (!string.IsNullOrEmpty(scope))
-            {
-                claims.Add(new Claim("scope", scope));
-            }
 
             if (additionalClaims != null)
             {

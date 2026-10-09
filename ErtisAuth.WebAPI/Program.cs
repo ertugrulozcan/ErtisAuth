@@ -18,13 +18,11 @@ using Ertis.Schema.Serialization;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Dao.Repositories;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Extensions.ApplicationInsights;
 using ErtisAuth.Extensions.Authorization.Constants;
 using ErtisAuth.Extensions.Database;
 using ErtisAuth.Extensions.Hosting;
 using ErtisAuth.Extensions.Mailkit.Extensions;
 using ErtisAuth.Extensions.Mailkit.Serialization;
-using ErtisAuth.Extensions.Prometheus.Extensions;
 using ErtisAuth.Extensions.Quartz.Extensions;
 using ErtisAuth.Identity.Jwt.Services;
 using ErtisAuth.Identity.Jwt.Services.Interfaces;
@@ -36,8 +34,8 @@ using ErtisAuth.WebAPI.Adapters;
 using ErtisAuth.WebAPI.Auth;
 using ErtisAuth.WebAPI.Extensions;
 using ErtisAuth.WebAPI.Helpers;
-using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Events;
 using IMongoDatabase = Ertis.MongoDB.Database.IMongoDatabase;
 
 const string CORS_POLICY_KEY = "cors-policy";
@@ -61,10 +59,18 @@ EnvironmentParams.SetEnvironmentParameter("Environment", Environment.GetEnvironm
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("Database"));
 builder.Services.AddSingleton<IDatabaseSettings>(serviceProvider => serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value);
 
+// builder.Services.AddSingleton<IEventSubscriber, MongoEventSubscriber>();
 builder.Services.AddSingleton<IMongoClientProvider>(serviceProvider =>
 {
 	var databaseSettings = serviceProvider.GetRequiredService<IDatabaseSettings>();
-	return new MongoClientProvider(MongoClientSettings.FromConnectionString(databaseSettings.ConnectionString));
+	var eventSubscriber = serviceProvider.GetService<IEventSubscriber>();
+	var mongoClientSettings = MongoClientSettings.FromConnectionString(databaseSettings.ConnectionString);
+	
+	mongoClientSettings.MinConnectionPoolSize = 3;
+	mongoClientSettings.ConnectTimeout = TimeSpan.FromSeconds(10);
+	mongoClientSettings.MaxConnectionLifeTime = TimeSpan.FromMinutes(3);
+	
+	return new MongoClientProvider(mongoClientSettings, eventSubscriber);
 });
 
 builder.Services.Configure<ApiVersionOptions>(builder.Configuration.GetSection("ApiVersion"));
@@ -83,7 +89,6 @@ builder.Services.AddSingleton<IActiveTokensRepository, ActiveTokensRepository>()
 builder.Services.AddSingleton<IRevokedTokensRepository, RevokedTokensRepository>();
 builder.Services.AddSingleton<ITokenCodeRepository, TokenCodeRepository>();
 builder.Services.AddSingleton<ICodePolicyRepository, CodePolicyRepository>();
-builder.Services.AddSingleton<IOneTimePasswordRepository, OneTimePasswordRepository>();
 builder.Services.AddSingleton<IEventRepository, EventRepository>();
 builder.Services.AddSingleton<IRepositoryActionBinder, SysUpserter>();
 
@@ -100,7 +105,6 @@ builder.Services.AddSingleton<IApplicationService, ApplicationService>();
 builder.Services.AddSingleton<IRoleService, RoleService>();
 builder.Services.AddSingleton<ITokenCodeService, TokenCodeService>();
 builder.Services.AddSingleton<ITokenCodePolicyService, TokenCodePolicyService>();
-builder.Services.AddSingleton<IOneTimePasswordService, OneTimePasswordService>();
 builder.Services.AddSingleton<IProviderService, ProviderService>();
 builder.Services.AddSingleton<IWebhookService, WebhookService>();
 builder.Services.AddSingleton<IMailHookService, MailHookService>();
@@ -108,7 +112,6 @@ builder.Services.AddSingleton<IEventService, EventService>();
 builder.Services.AddSingleton<IMigrationService, MigrationService>();
 
 builder.Services.AddSingleton<IRestHandler, RestHandler>();
-builder.Services.AddSingleton<ISystemRestHandler, SystemRestHandler>();
 builder.Services.AddSingleton<IScopeOwnerAccessor, ScopeOwnerAccessor>();
 builder.Services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
 builder.Services.AddProviders();
@@ -160,10 +163,6 @@ else
 	builder.Services.AddSingleton<IGeoLocationService, GeoLocationDisabledService>();
 }
 
-// Prometheus
-builder.Services.AddPrometheus();
-
-builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddCors(options =>
@@ -208,30 +207,6 @@ if (builder.Configuration.GetSection("Documentation").GetValue<bool>("SwaggerEna
 	builder.Services.AddSwaggerGen(c => { c.SwaggerDoc(swaggerVersion, new OpenApiInfo { Title = "ErtisAuth.WebAPI", Version = swaggerVersion }); });	
 }
 
-// Sentry
-var sentryDsn = builder.Configuration.GetSection("Sentry").GetValue<string>("Dsn");
-if (!string.IsNullOrEmpty(sentryDsn))
-{
-	Sentry.SentrySdk.Init(options =>
-	{
-		options.Dsn = sentryDsn;
-		options.Debug = false;
-		options.AutoSessionTracking = true;
-		options.IsGlobalModeEnabled = false;
-		options.TracesSampleRate = 0.1;
-	});
-}
-
-// ApplicationInsights
-builder.Services.AddApplicationInsights(builder.Configuration);
-
-// Logging
-builder.Logging.AddJsonConsole(options =>
-{
-	options.IncludeScopes = false;
-	options.TimestampFormat = "HH:mm:ss";
-});
-
 builder.Services
 	.AddControllers()
 	.AddNewtonsoftJson(options =>
@@ -260,19 +235,14 @@ if (app.Environment.IsDevelopment() && builder.Configuration.GetSection("Documen
 // Database
 app.CheckDatabaseIndexes();
 
-app.UseMailkit();
 app.UseProviders();
 app.UseCors(CORS_POLICY_KEY);
 app.UseHttpsRedirection();
-app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.ConfigureGlobalExceptionHandler();
-
-// Prometheus
-app.UsePrometheus();
-
 app.MapControllers();
+
 ResolveRequiredServices(app.Services);
 
 app.Run();

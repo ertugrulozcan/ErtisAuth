@@ -45,8 +45,8 @@ namespace ErtisAuth.WebAPI.Controllers
 				
 				var tasks = new Task[]
 				{
-					dbStatisticsTask,
-					listCollectionsTask
+					dbStatisticsTask.AsTask(),
+					listCollectionsTask.AsTask()
 				};
 
 				Task.WaitAll(tasks);
@@ -92,12 +92,6 @@ namespace ErtisAuth.WebAPI.Controllers
 		public IActionResult Ping()
 		{
 			return this.Ok("Pong");
-		}
-		
-		[HttpGet("build-id")]
-		public IActionResult BuildId()
-		{
-			return this.Ok("9.0.5.1");
 		}
 
 		#endregion

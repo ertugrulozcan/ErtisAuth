@@ -1,24 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <PackageId>ErtisAuth.Extensions.Authorization</PackageId>
-        <PackageVersion>9.2.1</PackageVersion>
+        <PackageVersion>7.6.6</PackageVersion>
         <Authors>Ertuğrul Özcan</Authors>
         <Description>ErtisAuth.Extensions.Authorization</Description>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <Copyright>Ertuğrul Özcan | Copyright 2026 (c)</Copyright>
-        <PackageReleaseNotes>.Net 9</PackageReleaseNotes>
+        <Copyright>Ertuğrul Özcan | Copyright 2021 (c)</Copyright>
+        <PackageReleaseNotes>.Net 7</PackageReleaseNotes>
         <PackageTags>ErtisAuth.Extensions.Authorization</PackageTags>
         <Title>ErtisAuth.Extensions.Authorization</Title>
         <PackageProjectUrl>https://github.com/ertugrulozcan/ErtisAuth</PackageProjectUrl>
         <RepositoryUrl>https://github.com/ertugrulozcan/ErtisAuth</RepositoryUrl>
-        <AssemblyVersion>9.2.1</AssemblyVersion>
-        <FileVersion>9.2.1</FileVersion>
+        <AssemblyVersion>7.6.6</AssemblyVersion>
+        <FileVersion>7.6.6</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.10" />
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="7.0.13" />
     </ItemGroup>
 
     <ItemGroup>

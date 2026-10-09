@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace ErtisAuth.Core.Models
@@ -8,7 +7,6 @@ namespace ErtisAuth.Core.Models
 		#region Properties
 
 		[JsonProperty("_id")]
-		[JsonPropertyName("_id")]
 		string Id { get; set; }
 
 		#endregion

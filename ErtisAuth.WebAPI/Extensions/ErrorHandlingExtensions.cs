@@ -4,11 +4,9 @@ using System.Net;
 using Ertis.Core.Exceptions;
 using Ertis.Core.Models.Response;
 using Ertis.Schema.Exceptions;
-using ErtisAuth.Core.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
-using Sentry;
 
 namespace ErtisAuth.WebAPI.Extensions
 {
@@ -107,21 +105,6 @@ namespace ErtisAuth.WebAPI.Extensions
 								};
 								
 								break;
-						}
-
-						if (SentrySdk.IsEnabled && contextFeature.Error is ErtisAuthException { Capture: true } ertisAuthException)
-						{
-							var sentryEvent = new SentryEvent(ertisAuthException)
-							{
-								Message = ertisAuthException.Message
-							};
-
-							if (ertisAuthException.Extra != null)
-							{
-								sentryEvent.SetExtras(ertisAuthException.Extra);
-							}
-						
-							SentrySdk.CaptureEvent(sentryEvent);
 						}
 
 						var json = Newtonsoft.Json.JsonConvert.SerializeObject(errorModel);

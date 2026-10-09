@@ -77,13 +77,7 @@ namespace ErtisAuth.WebAPI.Extensions
 					{
 						var dynamicObject = userService.GetAsync(utilizerSampling.MembershipId, utilizerSampling.Id).ConfigureAwait(false).GetAwaiter().GetResult();
 						var user = dynamicObject.Deserialize<User>();
-						Utilizer utilizer = user;
-						utilizer.Token = utilizerSampling.Token;
-						utilizer.TokenType = utilizerSampling.TokenType;
-
-						var scopes = utilizerSampling.Scopes?.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-						utilizer.Scopes = scopes is { Length: > 0 } ? scopes : null;
-						
+						Utilizer utilizer = user; 
 						return utilizer;
 					}
 				}
@@ -158,11 +152,6 @@ namespace ErtisAuth.WebAPI.Extensions
 			return controller.NotFound(ErtisAuthException.ProviderNotFound(providerId));
 		}
 		
-		public static BadRequestObjectResult UnknownPlatform(this ControllerBase controller, string platformName)
-		{
-			return controller.BadRequest(ErtisAuthException.UnknownPlatform(platformName));
-		}
-		
 		public static NotFoundObjectResult EventNotFound(this ControllerBase controller, string eventId)
 		{
 			return controller.NotFound(ErtisAuthException.EventNotFound(eventId));
@@ -176,16 +165,6 @@ namespace ErtisAuth.WebAPI.Extensions
 		public static UnauthorizedObjectResult InvalidToken(this ControllerBase controller)
 		{
 			return controller.Unauthorized(ErtisAuthException.InvalidToken().Error);
-		}
-		
-		public static BadRequestObjectResult UnsupportedTokenType(this ControllerBase controller)
-		{
-			return controller.BadRequest(ErtisAuthException.UnsupportedTokenType().Error);
-		}
-		
-		public static BadRequestObjectResult BearerTokenRequired(this ControllerBase controller)
-		{
-			return controller.BadRequest(ErtisAuthException.BearerTokenRequired().Error);
 		}
 		
 		public static NotFoundObjectResult ActiveTokenNotFound(this ControllerBase controller, string activeTokenId)
@@ -240,12 +219,7 @@ namespace ErtisAuth.WebAPI.Extensions
 		{
 			return controller.Ok(ErtisAuthException.BulkDeletePartial().Error);
 		}
-		
-		public static BadRequestObjectResult CommandRequired(this ControllerBase controller)
-		{
-			return controller.BadRequest(ErtisAuthException.CommandRequired());
-		}
-		
+
 		#endregion
 	}
 }

@@ -34,26 +34,9 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 			services.Configure<ErtisAuthOptions>(configuration.GetSection(options.ConfigurationSectionName));
 			services.AddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);
 			
-			// BasicAuthorizationHandler
-			if (options.BasicAuthorizationHandlerType != null)
-			{
-				services.AddSingleton(typeof(IAuthorizationHandler<BasicToken>), options.BasicAuthorizationHandlerType);
-			}
-			else
-			{
-				services.AddSingleton<IAuthorizationHandler<BasicToken>, BasicAuthorizationHandler>();
-			}
-			
-			// BearerAuthorizationHandler
-			if (options.BearerAuthorizationHandlerType != null)
-			{
-				services.AddSingleton(typeof(IAuthorizationHandler<BearerToken>), options.BearerAuthorizationHandlerType);
-			}
-			else
-			{
-				services.AddSingleton<IAuthorizationHandler<BearerToken>, BearerAuthorizationHandler>();
-			}
-			
+			services.AddSingleton<IAuthorizationHandler<BasicToken>, BasicAuthorizationHandler>();
+			services.AddSingleton<IAuthorizationHandler<BearerToken>, BearerAuthorizationHandler>();
+
 			// RestHandler registration
 			services.AddSingleton(typeof(IRestHandler), options.RestHandlerType);
 
@@ -74,9 +57,6 @@ namespace ErtisAuth.Extensions.AspNetCore.Extensions
 				}));
 			
 			services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
-			
-			// Memory Cache
-			services.AddMemoryCache();
 		}
 		
 		private static IConfigurationRoot BuildConfiguration(string environment = null)

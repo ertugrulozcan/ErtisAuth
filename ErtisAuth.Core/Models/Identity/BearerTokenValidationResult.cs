@@ -1,5 +1,4 @@
 using System;
-using System.Text.Json.Serialization;
 using ErtisAuth.Core.Models.Users;
 using Newtonsoft.Json;
 
@@ -10,19 +9,15 @@ namespace ErtisAuth.Core.Models.Identity
 		#region Properties
 
 		[JsonProperty("verified")]
-		[JsonPropertyName("verified")]
 		public bool IsValidated { get; }
 
-		[Newtonsoft.Json.JsonIgnore]
-		[System.Text.Json.Serialization.JsonIgnore]
+		[JsonIgnore]
 		public bool IsRefreshToken { get; }
 		
 		[JsonProperty("token")]
-		[JsonPropertyName("token")]
 		public string Token { get; }
 		
 		[JsonProperty("token_kind")]
-		[JsonPropertyName("token_kind")]
 		public string TokenKind
 		{
 			get
@@ -36,20 +31,13 @@ namespace ErtisAuth.Core.Models.Identity
 			}
 		}
 		
-		[Newtonsoft.Json.JsonIgnore]
-		[System.Text.Json.Serialization.JsonIgnore]
-		public string[] Scopes { get; init; }
-		
-		[Newtonsoft.Json.JsonIgnore]
-		[System.Text.Json.Serialization.JsonIgnore]
+		[JsonIgnore]
 		public User User { get; }
 
-		[Newtonsoft.Json.JsonIgnore]
-		[System.Text.Json.Serialization.JsonIgnore]
+		[JsonIgnore]
 		public TimeSpan RemainingTime { get; }
 
 		[JsonProperty("remaining_time")]
-		[JsonPropertyName("remaining_time")]
 		public int RemainingTimeUnixEpoch => (int) this.RemainingTime.TotalSeconds;
 
 		#endregion

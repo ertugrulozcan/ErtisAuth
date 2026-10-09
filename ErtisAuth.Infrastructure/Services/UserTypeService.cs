@@ -427,7 +427,7 @@ namespace ErtisAuth.Infrastructure.Services
 	        return await this.GetByNameOrSlugAsync(membershipId, baseUserTypeName, cancellationToken: cancellationToken);
         }
 
-        public async Task<UserType> GetByNameOrSlugAsync(string membershipId, string nameOrSlug, bool forceGetFreshData = false, CancellationToken cancellationToken = default)
+        public async Task<UserType> GetByNameOrSlugAsync(string membershipId, string nameOrSlug, CancellationToken cancellationToken = default)
 		{
 			if (nameOrSlug == OriginUserType.Name || nameOrSlug == OriginUserType.Slug)
 			{
@@ -437,27 +437,20 @@ namespace ErtisAuth.Infrastructure.Services
 					return originUserType_;
 				}
 			}
-
-			if (forceGetFreshData)
-			{
-				return await this.GetAsync(membershipId, x => x.Name == nameOrSlug || x.Slug == nameOrSlug, cancellationToken: cancellationToken);
-			}
-			else
-			{
-				var cacheKey = GetCacheKey(membershipId, nameOrSlug);
-				if (!this._memoryCache.TryGetValue<UserType>(cacheKey, out var userType))
-				{
-					userType = await this.GetAsync(membershipId, x => x.Name == nameOrSlug || x.Slug == nameOrSlug, cancellationToken: cancellationToken);
-					if (userType == null)
-					{
-						return null;
-					}
-
-					this._memoryCache.Set(cacheKey, userType, GetCacheTTL());
-				}
 			
-				return userType;
+			var cacheKey = GetCacheKey(membershipId, nameOrSlug);
+			if (!this._memoryCache.TryGetValue<UserType>(cacheKey, out var userType))
+			{
+				userType = await this.GetAsync(membershipId, x => x.Name == nameOrSlug || x.Slug == nameOrSlug, cancellationToken: cancellationToken);
+				if (userType == null)
+				{
+					return null;
+				}
+
+				this._memoryCache.Set(cacheKey, userType, GetCacheTTL());
 			}
+			
+			return userType;
 		}
 
         public async Task<bool> IsInheritFromAsync(string membershipId, string childUserTypeName, string parentUserTypeName, CancellationToken cancellationToken = default)

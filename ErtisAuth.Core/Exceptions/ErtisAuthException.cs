@@ -6,15 +6,6 @@ namespace ErtisAuth.Core.Exceptions
 {
 	public class ErtisAuthException : ErtisException
 	{
-		#region Properties
-		
-		public bool Capture { get; set; }
-
-		// ReSharper disable once UnusedAutoPropertyAccessor.Global
-		public IReadOnlyDictionary<string, object> Extra { get; set; }
-
-		#endregion
-		
 		#region Constructors
 
 		protected ErtisAuthException(HttpStatusCode statusCode, string message, string errorCode) : base(statusCode, message, errorCode)
@@ -43,11 +34,6 @@ namespace ErtisAuth.Core.Exceptions
 		{
 			return new ErtisAuthException(httpStatusCode, errorMessage, errorCode);
 		}
-		
-		public static ErtisAuthException DuplicateKeyError(string message)
-		{
-			return new ErtisAuthException(HttpStatusCode.Conflict, $"Some fields has unique index. ({message})", "DuplicateKeyError");
-		}
 
 		#endregion
 		
@@ -65,7 +51,7 @@ namespace ErtisAuth.Core.Exceptions
 		
 		public static ErtisAuthException XErtisAliasMissing(string aliasName)
 		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, $"Membership id should be added in headers with '{aliasName}' key", "XErtisAliasMissing");
+			return new ErtisAuthException(HttpStatusCode.BadRequest, $"Membership id should be added in headers with '{aliasName}' key.", "XErtisAliasMissing");
 		}
 		
 		public static ErtisAuthException InvalidToken(string message = null)
@@ -83,26 +69,6 @@ namespace ErtisAuth.Core.Exceptions
 		public static ErtisAuthException UnsupportedTokenType()
 		{
 			return new ErtisAuthException(HttpStatusCode.BadRequest, "Token type not supported. Token type must be one of Bearer or Basic", "TokenTypeNotSupported");
-		}
-		
-		public static ErtisAuthException BearerTokenRequired()
-		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, "Token type must be Bearer for this action", "BearerTokenRequired");
-		}
-		
-		public static ErtisAuthException InvalidScope(string scope)
-		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, $"Invalid scope ({scope})", "InvalidScope");
-		}
-		
-		public static ErtisAuthException ScopeRequired()
-		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, "Scope required", "ScopeRequired");
-		}
-		
-		public static ErtisAuthException UserHasNoPermissionForThisScope(string scope)
-		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, $"User has no permission for this scope ({scope})", "UserHasNoPermissionForThisScope");
 		}
 		
 		public static ErtisAuthException TokenWasRevoked()
@@ -312,13 +278,9 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is required", "UserTypeRequired");
 		}
 		
-		public static ErtisAuthException UserTypeImmutable(IReadOnlyDictionary<string, object> extras = null)
+		public static ErtisAuthException UserTypeImmutable()
 		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is an immutable field. It's cannot be updated.", "UserTypeImmutable")
-			{
-				Capture = true, 
-				Extra = extras
-			};
+			return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is an immutable field. It's cannot be updated.", "UserTypeImmutable");
 		}
 		
 		public static ErtisAuthException UserTypeCanNotBeDelete()
@@ -393,11 +355,6 @@ namespace ErtisAuth.Core.Exceptions
 		public static ErtisAuthException ProviderNotFound(string providerId)
 		{
 			return new ErtisAuthException(HttpStatusCode.NotFound, $"Provider not found in db by given _id: <{providerId}>", "ProviderNotFound");
-		}
-		
-		public static ErtisAuthException UnknownPlatform(string platformName)
-		{
-			return new ErtisAuthException(HttpStatusCode.NotFound, $"Unknown platform ({platformName}). The platform parameter must be one of ios, android or web", "UnknownPlatform");
 		}
 		
 		public static ErtisAuthException ProviderWithSameNameAlreadyExists(string name)
@@ -540,49 +497,6 @@ namespace ErtisAuth.Core.Exceptions
 			return new ErtisAuthException(HttpStatusCode.Unauthorized, message, "MigrationRejected");
 		}
 
-		#endregion
-
-		#region OTP Exceptions
-		
-		public static ErtisAuthException OneTimePasswordNotFound(string id)
-		{
-			return new ErtisAuthException(HttpStatusCode.NotFound, $"OTP not found in db by given _id: <{id}>", "OneTimePasswordNotFound");
-		}
-		
-		public static ErtisAuthException OtpHostRequired()
-		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, "The host is required in one time password configuration", "OtpHostRequired");
-		}
-		
-		public static ErtisAuthException OtpHostMismatch()
-		{
-			return new ErtisAuthException(HttpStatusCode.Unauthorized, "The provided host info and the host info in the membership configuration do not match", "OtpHostMismatch");
-		}
-		
-		public static ErtisAuthException OtpNotConfiguredYet()
-		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, "The one time password has not configured yet", "OtpNotConfiguredYet");
-		}
-		
-		public static ErtisAuthException OtpHostNotConfiguredYet()
-		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, "The one time password host info has not configured yet", "OtpHostNotConfiguredYet");
-		}
-		
-		public static ErtisAuthException OtpExpired()
-		{
-			return new ErtisAuthException(HttpStatusCode.Unauthorized, "One time password was expired", "OtpExpired");
-		}
-		
-		#endregion
-		
-		#region Terminal Exceptions
-		
-		public static ErtisAuthException CommandRequired()
-		{
-			return new ErtisAuthException(HttpStatusCode.BadRequest, "Command required", "CommandRequired");
-		}
-		
 		#endregion
 	}
 }

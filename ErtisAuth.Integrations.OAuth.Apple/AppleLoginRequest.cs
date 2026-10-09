@@ -4,13 +4,13 @@ using Newtonsoft.Json;
 
 namespace ErtisAuth.Integrations.OAuth.Apple;
 
-public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken?, AppleUser?> 
+public class AppleLoginRequest : IProviderLoginRequest<AppleToken?, AppleUser?>
 {
 	#region Properties
-	
-	[JsonIgnore]
-	public abstract KnownProviders Provider { get; }
-	
+
+    [JsonIgnore]
+    public KnownProviders Provider => KnownProviders.Apple;
+    
     [JsonProperty("user")]
     public AppleUser? User { get; set; }
     
@@ -91,24 +91,4 @@ public abstract class AppleLoginRequestBase : IProviderLoginRequest<AppleToken?,
     }
 
     #endregion
-}
-
-public class AppleLoginRequest : AppleLoginRequestBase
-{
-	#region Properties
-	
-	[JsonIgnore]
-	public override KnownProviders Provider => KnownProviders.Apple;
-	
-	#endregion
-}
-
-public class AppleNativeLoginRequest : AppleLoginRequestBase
-{
-	#region Properties
-	
-	[JsonIgnore]
-	public override KnownProviders Provider => KnownProviders.AppleNative;
-	
-	#endregion
 }

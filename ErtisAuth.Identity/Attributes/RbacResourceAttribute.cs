@@ -2,7 +2,7 @@ using System;
 
 namespace ErtisAuth.Identity.Attributes
 {
-	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+	[AttributeUsage(AttributeTargets.Class)]
 	public class RbacResourceAttribute : RbacAttribute
 	{
 		#region Constructors

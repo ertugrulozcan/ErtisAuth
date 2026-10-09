@@ -5,11 +5,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Core.Models.Resources;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
 using Ertis.Schema.Extensions;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Identity;
-using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Events.EventArgs;
 
@@ -87,13 +86,6 @@ namespace ErtisAuth.Tests.Mocks.Services
             this.OnCreated?.Invoke(this, null);
             this.OnUpdated?.Invoke(this, null);
             this.OnDeleted?.Invoke(this, null);
-        }
-
-        public async Task<User> GetUserAsync(string membershipId, string id, CancellationToken cancellationToken = default)
-        {
-            await Task.CompletedTask;
-            var user = this.MockUsers.FirstOrDefault(x => x.MembershipId == membershipId && x.Id == id);
-            return user;
         }
         
         public async Task<DynamicObject> GetAsync(string membershipId, string id, CancellationToken cancellationToken = default)
@@ -251,7 +243,6 @@ namespace ErtisAuth.Tests.Mocks.Services
             string orderBy = null, 
             SortDirection? sortDirection = null, 
             IDictionary<string, bool> selectFields = null, 
-            string locale = null, 
             CancellationToken cancellationToken = default)
         {
             return await this.GetAsync(
@@ -393,11 +384,6 @@ namespace ErtisAuth.Tests.Mocks.Services
             string userId, 
             string host = null, 
             CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-        
-        public ResetPasswordToken GenerateResetPasswordToken(User user, Membership membership, bool asBase64 = false, ResetPasswordToken.ResetPasswordTokenPurpose purpose = ResetPasswordToken.ResetPasswordTokenPurpose.ResetPassword)
         {
             throw new NotImplementedException();
         }

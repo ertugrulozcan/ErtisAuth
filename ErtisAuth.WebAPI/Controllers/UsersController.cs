@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Ertis.Core.Collections;
 using Ertis.Extensions.AspNetCore.Controllers;
 using Ertis.Extensions.AspNetCore.Extensions;
-using Ertis.Schema.Dynamics.Legacy;
+using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Roles;
 using ErtisAuth.Core.Models.Users;
@@ -27,7 +27,6 @@ namespace ErtisAuth.WebAPI.Controllers
 
 		private readonly IUserService _userService;
 		private readonly ITokenService _tokenService;
-		private readonly IOneTimePasswordService _oneTimePasswordService;
 		
 		#endregion
 
@@ -38,12 +37,10 @@ namespace ErtisAuth.WebAPI.Controllers
 		/// </summary>
 		/// <param name="userService"></param>
 		/// <param name="tokenService"></param>
-		/// <param name="oneTimePasswordService"></param>
-		public UsersController(IUserService userService, ITokenService tokenService, IOneTimePasswordService oneTimePasswordService)
+		public UsersController(IUserService userService, ITokenService tokenService)
 		{
 			this._userService = userService;
 			this._tokenService = tokenService;
-			this._oneTimePasswordService = oneTimePasswordService;
 		}
 
 		#endregion
@@ -108,8 +105,7 @@ namespace ErtisAuth.WebAPI.Controllers
 			if (this.Request.RouteValues.TryGetValue("membershipId", out var membershipIdSegment))
 			{
 				var membershipId = membershipIdSegment?.ToString();
-				var locale = this.Request.Query.ContainsKey("locale") ? this.Request.Query["locale"].ToString() : null;
-				return await this._userService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, locale, cancellationToken: cancellationToken);
+				return await this._userService.QueryAsync(membershipId, query, skip, limit, withCount, sortField, sortDirection, selectFields, cancellationToken: cancellationToken);
 			}
 			else
 			{
@@ -360,7 +356,6 @@ namespace ErtisAuth.WebAPI.Controllers
 		{
 			var utilizer = this.GetUtilizer();
 			await this._userService.SetPasswordAsync(utilizer, membershipId, model.ResetToken, model.UsernameOrEmailAddress, model.Password, cancellationToken: cancellationToken);
-			await this._oneTimePasswordService.RevokeResetPasswordTokenAsync(utilizer, membershipId, model.ResetToken, cancellationToken: cancellationToken);
 			return this.Ok();
 		}
 
@@ -391,26 +386,6 @@ namespace ErtisAuth.WebAPI.Controllers
 			{
 				return this.Unauthorized("Invalid password");
 			}
-		}
-
-		#endregion
-		
-		#region OTP Methods
-		
-		[HttpGet("{id}/generate-otp")]
-		[RbacObject("{id}")]
-		[RbacResource("otp")]
-		[RbacAction(Rbac.CrudActions.Create)]
-		[ProducesResponseType(StatusCodes.Status200OK)]
-		[ProducesResponseType(StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(StatusCodes.Status404NotFound)]
-		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-		[ProducesResponseType(StatusCodes.Status403Forbidden)]
-		public async Task<IActionResult> GenerateOneTimePassword([FromRoute] string membershipId, [FromRoute] string id, CancellationToken cancellationToken = default)
-		{
-			var utilizer = this.GetUtilizer();
-			var otp = await this._oneTimePasswordService.GenerateAsync(utilizer, membershipId, id, cancellationToken: cancellationToken);
-			return this.Ok(otp);
 		}
 
 		#endregion
