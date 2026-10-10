@@ -196,6 +196,18 @@ docker run -p 9716:8080 -e Database__ConnectionString=<connection_string> ertisa
 
 The container listens on port `8080` and runs as a non-root user.
 
+For legacy builds:
+
+```shell
+docker run -d 
+  --name ertisauth-mark-3 
+  -p 9716:9716 
+  -e ASPNETCORE_URLS=http://0.0.0.0:9716 
+  -e Database__ConnectionString="mongodb://host.docker.internal:27017" 
+  -e Database__DefaultAuthDatabase="auth" 
+  ertugrulozcan/ertisauth:9.0
+```
+
 ### Setup
 
 A new installation has no membership and no user yet, so there is nothing to sign in with. The setup endpoint creates the first resources, and it is authorized with a setup token that you insert into the database yourself (database access proves that you are the owner). The setup can run only once.
