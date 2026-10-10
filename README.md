@@ -196,15 +196,26 @@ docker run -p 9716:8080 -e Database__ConnectionString=<connection_string> ertisa
 
 The container listens on port `8080` and runs as a non-root user.
 
+You have already local db container?
+
+```shell
+docker run -d \
+  --name ertisauth \
+  -p 9716:8080 \
+  -e Database__ConnectionString="mongodb://host.docker.internal:27017" \
+  -e Database__DefaultAuthDatabase="auth" \
+  ertugrulozcan/ertisauth:latest
+```
+
 For legacy builds:
 
 ```shell
-docker run -d 
-  --name ertisauth-mark-3 
-  -p 9716:9716 
-  -e ASPNETCORE_URLS=http://0.0.0.0:9716 
-  -e Database__ConnectionString="mongodb://host.docker.internal:27017" 
-  -e Database__DefaultAuthDatabase="auth" 
+docker run -d \
+  --name ertisauth-mark-3 \
+  -p 9716:9716 \
+  -e ASPNETCORE_URLS=http://0.0.0.0:9716 \
+  -e Database__ConnectionString="mongodb://host.docker.internal:27017" \
+  -e Database__DefaultAuthDatabase="auth" \
   ertugrulozcan/ertisauth:9.0
 ```
 
