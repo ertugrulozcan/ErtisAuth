@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 // ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedMethodReturnValue.Global
 namespace ErtisAuth.Sdk.AspNetCore.Extensions;
 
 /// <summary>
@@ -56,7 +57,7 @@ public static class ErtisAuthExtensions
 		where TAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 	{
 		// Called through the class name: the client registration of ErtisAuth.Sdk has the same name
-		ErtisAuthClientExtensions.AddErtisAuth(services, sectionName);
+		services.AddErtisAuthServices(sectionName);
 		return services.AddErtisAuthAspNetCore<TAuthenticationHandler>();
 	}
 	
@@ -65,7 +66,7 @@ public static class ErtisAuthExtensions
 		where TAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 	{
 		// Called through the class name: the client registration of ErtisAuth.Sdk has the same name
-		ErtisAuthClientExtensions.AddErtisAuth(services, configuration);
+		services.AddErtisAuthServices(configuration);
 		return services.AddErtisAuthAspNetCore<TAuthenticationHandler>();
 	}
 	
@@ -74,7 +75,7 @@ public static class ErtisAuthExtensions
 		where TAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 	{
 		// Called through the class name: the client registration of ErtisAuth.Sdk has the same name
-		ErtisAuthClientExtensions.AddErtisAuth(services, configure);
+		services.AddErtisAuthServices(configure);
 		return services.AddErtisAuthAspNetCore<TAuthenticationHandler>();
 	}
 	

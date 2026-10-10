@@ -30,7 +30,7 @@ internal sealed class SdkTestServices
 	public SdkTestServices()
 	{
 		var services = new ServiceCollection();
-		services.AddErtisAuth(options =>
+		services.AddErtisAuthServices(options =>
 		{
 			options.BaseUrl = BaseUrl;
 			options.MembershipId = MembershipId;

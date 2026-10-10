@@ -19,7 +19,7 @@ public class ErtisAuthClientExtensionsTests
 	private static IServiceProvider BuildManually(Action<ErtisAuthOptions>? configure = null)
 	{
 		return new ServiceCollection()
-			.AddErtisAuth(options =>
+			.AddErtisAuthServices(options =>
 			{
 				options.BaseUrl = "https://auth.test/api/v1";
 				options.MembershipId = "membership-id";
@@ -30,7 +30,7 @@ public class ErtisAuthClientExtensionsTests
 	
 	private static OptionsValidationException AssertInvalid(Action<ErtisAuthOptions> configure)
 	{
-		return Assert.Throws<OptionsValidationException>(() => new ServiceCollection().AddErtisAuth(configure));
+		return Assert.Throws<OptionsValidationException>(() => new ServiceCollection().AddErtisAuthServices(configure));
 	}
 	
 	private static IConfigurationRoot CreateConfiguration(Dictionary<string, string?> values)
@@ -57,7 +57,7 @@ public class ErtisAuthClientExtensionsTests
 	[Fact]
 	public void AddErtisAuth_WithoutHost_ReadsErtisAuthSectionOfAppSettings()
 	{
-		var options = new ServiceCollection().AddErtisAuth().BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
+		var options = new ServiceCollection().AddErtisAuthServices().BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
 		
 		Assert.Equal("https://auth.from-file.test/api/v1", options.BaseUrl);
 		Assert.Equal("membership-from-default-section", options.MembershipId);
@@ -67,7 +67,7 @@ public class ErtisAuthClientExtensionsTests
 	[Fact]
 	public void AddErtisAuth_WithSectionName_ReadsThatSection()
 	{
-		var options = new ServiceCollection().AddErtisAuth("Custom:Auth").BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
+		var options = new ServiceCollection().AddErtisAuthServices("Custom:Auth").BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
 		
 		Assert.Equal("https://auth.custom.test/api/v1", options.BaseUrl);
 		Assert.Equal("membership-from-custom-section", options.MembershipId);
@@ -88,7 +88,7 @@ public class ErtisAuthClientExtensionsTests
 	[Fact]
 	public void AddErtisAuth_WithMissingSection_FailsAtRegistration()
 	{
-		var exception = Assert.Throws<OptionsValidationException>(() => new ServiceCollection().AddErtisAuth("Missing"));
+		var exception = Assert.Throws<OptionsValidationException>(() => new ServiceCollection().AddErtisAuthServices("Missing"));
 		
 		Assert.Contains(exception.Failures, x => x.Contains("configuration section 'Missing'") && x.Contains("BaseUrl is required"));
 		Assert.Contains(exception.Failures, x => x.Contains("MembershipId is required"));
@@ -103,7 +103,7 @@ public class ErtisAuthClientExtensionsTests
 			["Identity:MembershipId"] = "membership-from-section"
 		});
 		
-		var options = new ServiceCollection().AddErtisAuth(configuration.GetSection("Identity")).BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
+		var options = new ServiceCollection().AddErtisAuthServices(configuration.GetSection("Identity")).BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
 		
 		Assert.Equal("https://auth.from-section.test", options.BaseUrl);
 		Assert.Equal("membership-from-section", options.MembershipId);
@@ -114,7 +114,7 @@ public class ErtisAuthClientExtensionsTests
 	{
 		var configuration = CreateConfiguration(new Dictionary<string, string?> { ["Identity:BaseUrl"] = "not-a-url" });
 		
-		var exception = Assert.Throws<OptionsValidationException>(() => new ServiceCollection().AddErtisAuth(configuration.GetSection("Identity")));
+		var exception = Assert.Throws<OptionsValidationException>(() => new ServiceCollection().AddErtisAuthServices(configuration.GetSection("Identity")));
 		
 		Assert.Contains(exception.Failures, x => x.Contains("configuration section 'Identity'") && x.Contains("absolute http or https url"));
 		Assert.Contains(exception.Failures, x => x.Contains("MembershipId is required"));
@@ -135,7 +135,7 @@ public class ErtisAuthClientExtensionsTests
 			["ErtisAuth:BasicTokenCacheTTL"] = "15"
 		});
 		
-		var options = services.AddErtisAuth().BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
+		var options = services.AddErtisAuthServices().BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
 		
 		Assert.Equal("https://auth.from-host.test", options.BaseUrl);
 		Assert.Equal("membership-from-host", options.MembershipId);
@@ -151,7 +151,7 @@ public class ErtisAuthClientExtensionsTests
 			["Identity:MembershipId"] = "membership-from-host"
 		});
 		
-		var options = services.AddErtisAuth("Identity").BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
+		var options = services.AddErtisAuthServices("Identity").BuildServiceProvider().GetRequiredService<IErtisAuthOptions>();
 		
 		Assert.Equal("membership-from-host", options.MembershipId);
 	}
@@ -162,7 +162,7 @@ public class ErtisAuthClientExtensionsTests
 		var services = CreateHostServices(new Dictionary<string, string?> { ["ErtisAuth:BaseUrl"] = "not-a-url" });
 		
 		// The configuration of the host is only read once the service provider is built
-		var serviceProvider = services.AddErtisAuth().BuildServiceProvider();
+		var serviceProvider = services.AddErtisAuthServices().BuildServiceProvider();
 		
 		// What the host runs on start (ValidateOnStart)
 		var exception = Assert.Throws<OptionsValidationException>(() => serviceProvider.GetRequiredService<IStartupValidator>().Validate());
@@ -173,9 +173,9 @@ public class ErtisAuthClientExtensionsTests
 	[Fact]
 	public void AddErtisAuth_WithHostAndInvalidConfiguration_FailsOnFirstUseWithoutHostStart()
 	{
-		var serviceProvider = CreateHostServices([]).AddErtisAuth().BuildServiceProvider();
+		var serviceProvider = CreateHostServices([]).AddErtisAuthServices().BuildServiceProvider();
 		
-		Assert.Throws<OptionsValidationException>(() => serviceProvider.GetRequiredService<IErtisAuthOptions>());
+		Assert.Throws<OptionsValidationException>(serviceProvider.GetRequiredService<IErtisAuthOptions>);
 	}
 	
 	#endregion
@@ -268,10 +268,10 @@ public class ErtisAuthClientExtensionsTests
 	public void AddErtisAuth_CalledTwice_KeepsFirstRegistration()
 	{
 		var services = new ServiceCollection();
-		services.AddErtisAuth(x => { x.BaseUrl = "https://first.test"; x.MembershipId = "first"; });
+		services.AddErtisAuthServices(x => { x.BaseUrl = "https://first.test"; x.MembershipId = "first"; });
 		var registrationCount = services.Count;
 		
-		services.AddErtisAuth(x => { x.BaseUrl = "https://second.test"; x.MembershipId = "second"; });
+		services.AddErtisAuthServices(x => { x.BaseUrl = "https://second.test"; x.MembershipId = "second"; });
 		
 		Assert.Equal(registrationCount, services.Count);
 		Assert.Equal("first", services.BuildServiceProvider().GetRequiredService<IErtisAuthOptions>().MembershipId);

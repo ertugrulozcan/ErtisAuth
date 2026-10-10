@@ -43,7 +43,7 @@ public class SdkUserTokensTests : IClassFixture<ErtisAuthInstance>
 	private IUserService CreateUserService()
 	{
 		var services = new ServiceCollection();
-		services.AddErtisAuth(options =>
+		services.AddErtisAuthServices(options =>
 		{
 			options.BaseUrl = this._instance.CreateClient().BaseAddress!.ToString().TrimEnd('/');
 			options.MembershipId = this._instance.MembershipId;

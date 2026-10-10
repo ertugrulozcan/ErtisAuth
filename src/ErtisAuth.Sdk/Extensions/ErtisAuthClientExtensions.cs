@@ -36,12 +36,12 @@ public static class ErtisAuthClientExtensions
 	/// </summary>
 	/// <param name="services"></param>
 	/// <param name="sectionName">The configuration section of the options</param>
-	public static IServiceCollection AddErtisAuth(this IServiceCollection services, string sectionName = DefaultSectionName)
+	public static IServiceCollection AddErtisAuthServices(this IServiceCollection services, string sectionName = DefaultSectionName)
 	{
 		var source = $"configuration section '{sectionName}'";
-		if (!services.Any(x => x.ServiceType == typeof(IConfiguration)))
+		if (services.All(x => x.ServiceType != typeof(IConfiguration)))
 		{
-			return services.AddErtisAuth(ReadOptions(sectionName), source);
+			return services.AddErtisAuthServices(ReadOptions(sectionName), source);
 		}
 		
 		if (IsRegistered(services))
@@ -57,7 +57,7 @@ public static class ErtisAuthClientExtensions
 		
 		services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<ErtisAuthOptions>>(new ErtisAuthOptionsValidation(source)));
 		
-		return services.AddErtisAuthServices();
+		return services.Configure();
 	}
 	
 	/// <summary>
@@ -65,12 +65,12 @@ public static class ErtisAuthClientExtensions
 	/// </summary>
 	/// <param name="services"></param>
 	/// <param name="configuration">The configuration section of the options</param>
-	public static IServiceCollection AddErtisAuth(this IServiceCollection services, IConfiguration configuration)
+	public static IServiceCollection AddErtisAuthServices(this IServiceCollection services, IConfiguration configuration)
 	{
 		var options = new ErtisAuthOptions();
 		configuration.Bind(options);
 		var source = configuration is IConfigurationSection section ? $"configuration section '{section.Path}'" : "configuration";
-		return services.AddErtisAuth(options, source);
+		return services.AddErtisAuthServices(options, source);
 	}
 	
 	/// <summary>
@@ -78,14 +78,14 @@ public static class ErtisAuthClientExtensions
 	/// </summary>
 	/// <param name="services"></param>
 	/// <param name="configure"></param>
-	public static IServiceCollection AddErtisAuth(this IServiceCollection services, Action<ErtisAuthOptions> configure)
+	public static IServiceCollection AddErtisAuthServices(this IServiceCollection services, Action<ErtisAuthOptions> configure)
 	{
 		var options = new ErtisAuthOptions();
 		configure(options);
-		return services.AddErtisAuth(options, "manual configuration");
+		return services.AddErtisAuthServices(options, "manual configuration");
 	}
 	
-	private static IServiceCollection AddErtisAuth(this IServiceCollection services, ErtisAuthOptions options, string source)
+	private static IServiceCollection AddErtisAuthServices(this IServiceCollection services, ErtisAuthOptions options, string source)
 	{
 		if (IsRegistered(services))
 		{
@@ -101,7 +101,7 @@ public static class ErtisAuthClientExtensions
 			x.BasicTokenCacheTTL = options.BasicTokenCacheTTL;
 		});
 		
-		return services.AddErtisAuthServices();
+		return services.Configure();
 	}
 	
 	private static bool IsRegistered(IServiceCollection services)
@@ -109,7 +109,7 @@ public static class ErtisAuthClientExtensions
 		return services.Any(x => x.ServiceType == typeof(IErtisAuthOptions));
 	}
 	
-	private static IServiceCollection AddErtisAuthServices(this IServiceCollection services)
+	private static IServiceCollection Configure(this IServiceCollection services)
 	{
 		services.TryAddSingleton<IErtisAuthOptions>(sp => sp.GetRequiredService<IOptions<ErtisAuthOptions>>().Value);
 		
@@ -125,7 +125,7 @@ public static class ErtisAuthClientExtensions
 	
 	/// <summary>
 	/// Reads the options section from appsettings.json, appsettings.{ASPNETCORE_ENVIRONMENT}.json (in the output directory of
-	/// the application) and the environment variables. AddErtisAuth uses it when the application has no host.
+	/// the application) and the environment variables. AddErtisAuthServices uses it when the application has no host.
 	/// </summary>
 	public static ErtisAuthOptions ReadOptions(string sectionName = DefaultSectionName)
 	{
