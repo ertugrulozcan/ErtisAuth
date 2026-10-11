@@ -26,7 +26,7 @@ public class MailHook : MembershipBoundedResource, IHasSlug, IHasSysInfo
                 field = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
             }
             
-            return field;
+            return field!;
         }
         set => field = Slugifier.Slugify(value, Slugifier.Options.Ignore('_'));
     }

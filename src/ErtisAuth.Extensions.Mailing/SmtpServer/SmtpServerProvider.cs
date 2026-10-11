@@ -43,7 +43,7 @@ public class SmtpServerProvider : IMailProvider
 				field = Slugifier.Slugify(this.Name, Slugifier.Options.Ignore('_'));
 			}
 			
-			return field;
+			return field!;
 		}
 	}
 	
