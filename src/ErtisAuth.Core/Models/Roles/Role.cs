@@ -26,6 +26,7 @@ public class Role : MembershipBoundedResource, IHasSlug, IHasSysInfo
 			
 			return field!;
 		}
+		// ReSharper disable once PropertyCanBeMadeInitOnly.Global
 		set => field = Slugifier.Slugify(value, Slugifier.Options.Ignore('_'));
 	}
 	

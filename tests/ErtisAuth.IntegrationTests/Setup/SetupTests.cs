@@ -1,6 +1,5 @@
 using System.Net;
 using ErtisAuth.IntegrationTests.Infrastructure;
-using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace ErtisAuth.IntegrationTests.Setup;

@@ -19,10 +19,12 @@ public sealed class OutageErtisAuthInstance : ErtisAuthInstance
 	
 	#region Constructors
 	
+	/// <summary>
+	/// Constructor
+	/// </summary>
+	/// <param name="mongo"></param>
 	public OutageErtisAuthInstance(MongoDbContainerFixture mongo) : base(mongo)
-	{
-	
-	}
+	{ }
 	
 	#endregion
 	

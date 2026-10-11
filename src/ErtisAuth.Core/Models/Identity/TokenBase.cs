@@ -36,6 +36,7 @@ public abstract class TokenBase
 	
 	[JsonIgnore]
 	[BsonIgnore]
+	// ReSharper disable once UnusedMember.Global
 	public bool IsExpired => DateTime.UtcNow > this.CreatedAt.Add(this.ExpiresIn);
 	
 	#endregion

@@ -94,6 +94,7 @@ public class MailHookBackgroundServiceTests
 		await this.WaitUntilAsync(() => this.SentCount() == 3);
 		await worker.StopAsync(TestContext.Current.CancellationToken);
 		
+		// ReSharper disable once InconsistentlySynchronizedField
 		Assert.Equal(["a", "b", "c"], this._sentMails.Order());
 	}
 	
@@ -121,6 +122,7 @@ public class MailHookBackgroundServiceTests
 		await this.WaitUntilAsync(() => this.SentCount() == 1);
 		await worker.StopAsync(TestContext.Current.CancellationToken);
 		
+		// ReSharper disable once InconsistentlySynchronizedField
 		Assert.Equal("next", Assert.Single(this._sentMails));
 	}
 	

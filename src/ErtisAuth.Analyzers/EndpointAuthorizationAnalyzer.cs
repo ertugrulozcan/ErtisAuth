@@ -124,7 +124,7 @@ public sealed class EndpointAuthorizationAnalyzer : DiagnosticAnalyzer
 			
 			var symbols = new Symbols(
 				authorizationTypes.ToImmutableDictionary(x => x.Key, x => x.Value!),
-				RbacAttributeNames.Select(x => compilation.GetTypeByMetadataName(x)).Where(x => x != null).Cast<INamedTypeSymbol>().ToImmutableArray(),
+				RbacAttributeNames.Select(compilation.GetTypeByMetadataName).Where(x => x != null).Cast<INamedTypeSymbol>().ToImmutableArray(),
 				compilation.GetTypeByMetadataName(RbacResourceAttributeName),
 				compilation.GetTypeByMetadataName(ControllerAttributeName),
 				compilation.GetTypeByMetadataName(NonControllerAttributeName),

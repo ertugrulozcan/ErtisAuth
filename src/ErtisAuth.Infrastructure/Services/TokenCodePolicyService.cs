@@ -161,13 +161,13 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 		{
 			errorList.Add($"Length must be between {TokenCodePolicy.MinLength} and {TokenCodePolicy.MaxLength}");
 		}
-
-		if (!model.ContainsLetters && !model.ContainsDigits)
+		
+		if (model is { ContainsLetters: false, ContainsDigits: false })
 		{
 			errorList.Add("The codes must contain letters, digits or both (contains_letters, contains_digits)");
 		}
-
-		if (model.ExpiresIn <= 0 || model.ExpiresIn > TokenCodePolicy.MaxExpiresIn)
+		
+		if (model.ExpiresIn is <= 0 or > TokenCodePolicy.MaxExpiresIn)
 		{
 			errorList.Add($"Expires in must be between 1 and {TokenCodePolicy.MaxExpiresIn} seconds");
 		}

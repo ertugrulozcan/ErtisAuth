@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using ErtisAuth.IntegrationTests.Infrastructure;
 
 namespace ErtisAuth.IntegrationTests.Resources;

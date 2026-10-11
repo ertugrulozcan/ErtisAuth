@@ -1,4 +1,3 @@
-using Ertis.Core.Collections;
 using Ertis.MongoDB.Client;
 using Ertis.MongoDB.Configuration;
 using Ertis.MongoDB.Models;

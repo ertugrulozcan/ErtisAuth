@@ -2,7 +2,6 @@ using Ertis.Core.Collections;
 using Ertis.Schema.Dynamics;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
-using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Memberships;
 using ErtisAuth.Core.Models.Providers;
@@ -113,6 +112,7 @@ public class ProviderServiceLoginTests
 			NullLogger<ProviderService>.Instance);
 	}
 	
+	// ReSharper disable once UnusedMethodReturnValue.Local
 	private FacebookProvider AddProvider(bool isActive = true, bool trustEmail = false, string slug = ProviderSlug, string id = "5f8a1b2c3d4e5f6a7b8c9d10")
 	{
 		var provider = new FacebookProvider
