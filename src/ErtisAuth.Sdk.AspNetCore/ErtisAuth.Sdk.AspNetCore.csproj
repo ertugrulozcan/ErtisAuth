@@ -4,8 +4,8 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<PackageId>ErtisAuth.Sdk.AspNetCore</PackageId>
-		<PackageVersion>10.0.5</PackageVersion>
-		<Version>10.0.5</Version>
+		<PackageVersion>10.0.6</PackageVersion>
+		<Version>10.0.6</Version>
 		<Authors>Ertuğrul Özcan</Authors>
 		<Description>ErtisAuth SDK AspNetCore Extension</Description>
 		<PackageTags>authentication;authorization;identity;iam;openid-connect;oauth</PackageTags>
