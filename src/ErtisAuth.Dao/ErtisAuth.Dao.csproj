@@ -11,6 +11,6 @@
     </ItemGroup>
     
     <ItemGroup>
-      <PackageReference Include="Ertis.MongoDB" Version="10.1.4" />
+      <PackageReference Include="Ertis.MongoDB" Version="10.1.5" />
     </ItemGroup>
 </Project>

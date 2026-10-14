@@ -4,8 +4,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 		<PackageId>ErtisAuth.Sdk</PackageId>
-		<PackageVersion>10.0.6</PackageVersion>
-		<Version>10.0.6</Version>
+		<PackageVersion>10.0.7</PackageVersion>
+		<Version>10.0.7</Version>
 		<Authors>Ertuğrul Özcan</Authors>
 		<Description>ErtisAuth SDK</Description>
 		<PackageTags>authentication;authorization;identity;iam;openid-connect;oauth</PackageTags>
@@ -21,9 +21,9 @@
     </ItemGroup>
 	
     <ItemGroup>
-		<PackageReference Include="Ertis.Net" Version="10.0.10" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.12" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
+		<PackageReference Include="Ertis.Net" Version="10.0.11" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.13" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.13" />
     </ItemGroup>
 	
 	<PropertyGroup>
