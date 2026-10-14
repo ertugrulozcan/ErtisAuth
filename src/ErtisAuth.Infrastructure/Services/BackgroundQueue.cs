@@ -10,7 +10,7 @@ public class BackgroundQueue<T> : IBackgroundQueue<T>
 	/// <summary>
 	/// Bounds the memory under a burst of events; an item which does not fit is rejected (logged by the caller)
 	/// </summary>
-	public const int Capacity = 10_000;
+	private const int Capacity = 10_000;
 	
 	#endregion
 	
