@@ -22,7 +22,7 @@ public class ErtisAuthException : ErtisException
 	
 	public static ValidationException ValidationError(IEnumerable<string> errors)
 	{
-		return new ValidationException(HttpStatusCode.BadRequest, "Some fields are not validated, invalid or missing. Check response detail.", "ModelValidationError")
+		return new ValidationException(HttpStatusCode.BadRequest, "Some fields are not validated, invalid or missing. Check response detail.", "ValidationError")
 		{
 			Errors = errors
 		};

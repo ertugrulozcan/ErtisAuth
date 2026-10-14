@@ -210,7 +210,7 @@ public class ProviderServiceTests
 		
 		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.CreateService().CreateAsync(provider, MembershipId, Utilizer, CancellationToken));
 		
-		Assert.Equal("ModelValidationError", exception.ErrorCode);
+		Assert.Equal("ValidationError", exception.ErrorCode);
 		Assert.Contains("App client id is required", exception.Errors!);
 		Assert.Empty(this._providers);
 	}

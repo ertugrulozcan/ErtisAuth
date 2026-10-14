@@ -112,7 +112,7 @@ public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
 		using var response = await adminClient.PostAsJsonAsync(mailHooks.Url, body, TestContext.Current.CancellationToken);
 		
 		var result = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.BadRequest);
-		Assert.Equal("ModelValidationError", result!["errorCode"]!.GetValue<string>());
+		Assert.Equal("ValidationError", result!["errorCode"]!.GetValue<string>());
 		Assert.Equal([error], result["data"]!.AsArray().Select(x => x!.GetValue<string>()));
 	}
 	

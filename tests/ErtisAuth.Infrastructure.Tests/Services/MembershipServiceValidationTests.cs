@@ -32,7 +32,7 @@ public class MembershipServiceValidationTests
 	private static async Task<ValidationException> AssertValidationErrorAsync(Func<Task> action, string expectedError)
 	{
 		var exception = await Assert.ThrowsAsync<ValidationException>(action);
-		Assert.Equal("ModelValidationError", exception.ErrorCode);
+		Assert.Equal("ValidationError", exception.ErrorCode);
 		Assert.NotNull(exception.Errors);
 		Assert.Contains(expectedError, exception.Errors);
 		return exception;
