@@ -377,11 +377,6 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			errorList.Add("Membership id is required");
 		}
 		
-		if (string.IsNullOrEmpty(model.MailProvider))
-		{
-			errorList.Add("Mail provider is required");
-		}
-		
 		if (string.IsNullOrEmpty(model.Status))
 		{
 			errorList.Add("Status is required");
@@ -391,35 +386,41 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			errorList.Add("Status should be 'active' or 'passive'");
 		}
 		
-		if (string.IsNullOrEmpty(model.Event))
+		if (model.IsActive)
 		{
-			errorList.Add("Event type is required");
-		}
-		else if (model.EventType == null)
-		{
-			errorList.Add($"Unknown event type. (Supported events: [{string.Join(", ", Enum.GetNames(typeof(ErtisAuthEventType)))}])");
-		}
-		
-		// Required on create as well as on update: without them no mail can be sent
-		// (no recipients at all unless the mail goes to the utilizer)
-		if (string.IsNullOrEmpty(model.MailSubject))
-		{
-			errorList.Add("Mail subject is required");
-		}
-		
-		if (!model.SendToUtilizer && (model.Recipients == null || !model.Recipients.Any()))
-		{
-			errorList.Add("Recipients list is empty");
-		}
-		
-		if (string.IsNullOrEmpty(model.FromName))
-		{
-			errorList.Add("From name is required");
-		}
-		
-		if (string.IsNullOrEmpty(model.FromAddress))
-		{
-			errorList.Add("From address is required");
+			if (string.IsNullOrEmpty(model.Event))
+			{
+				errorList.Add("Event type is required");
+			}
+			else if (model.EventType == null)
+			{
+				errorList.Add($"Unknown event type. (Supported events: [{string.Join(", ", Enum.GetNames(typeof(ErtisAuthEventType)))}])");
+			}
+			
+			if (string.IsNullOrEmpty(model.MailProvider))
+			{
+				errorList.Add("Mail provider is required");
+			}
+			
+			if (string.IsNullOrEmpty(model.MailSubject))
+			{
+				errorList.Add("Mail subject is required");
+			}
+			
+			if (!model.SendToUtilizer && (model.Recipients == null || !model.Recipients.Any()))
+			{
+				errorList.Add("Recipients list is empty");
+			}
+			
+			if (string.IsNullOrEmpty(model.FromName))
+			{
+				errorList.Add("From name is required");
+			}
+			
+			if (string.IsNullOrEmpty(model.FromAddress))
+			{
+				errorList.Add("From address is required");
+			}
 		}
 		
 		return Task.FromResult<IEnumerable<string>>(errorList);
