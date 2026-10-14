@@ -32,12 +32,12 @@ public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
 		new(await this._instance.CreateAdminClientAsync(), $"/memberships/{this._instance.MembershipId}/mailhooks");
 	
 	// Passive: the round trip must not send mails
-	private static object MailHookBody(string name, string subject) => new
+	private static object MailHookBody(string name, string subject, string status = "passive") => new
 	{
 		name,
 		description = "Welcome mail",
 		@event = "UserCreated",
-		status = "passive",
+		status,
 		mailProvider = "smtp",
 		mailSubject = subject,
 		mailTemplate = "<p>Welcome {{document.firstname}}</p>",
@@ -105,7 +105,7 @@ public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
 	public async Task MailHook_CreateWithoutARequiredField_IsRejected(string field, string error)
 	{
 		var mailHooks = await this.CreateResourceClientAsync();
-		var body = JsonSerializer.SerializeToNode(MailHookBody($"Incomplete {Guid.NewGuid():N}", "Welcome"))!.AsObject();
+		var body = JsonSerializer.SerializeToNode(MailHookBody($"Incomplete {Guid.NewGuid():N}", "Welcome", status: "active"))!.AsObject();
 		body.Remove(field);
 		
 		var adminClient = await this._instance.CreateAdminClientAsync();
