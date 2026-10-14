@@ -9,6 +9,10 @@ using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using Microsoft.Extensions.Caching.Memory;
 using ErtisAuth.Core.Models.Identity;
+using ErtisAuth.Core.Models.Mailing;
+using ErtisAuth.Extensions.Mailing.MailChimp;
+using ErtisAuth.Extensions.Mailing.SendGrid;
+using ErtisAuth.Extensions.Mailing.SmtpServer;
 
 namespace ErtisAuth.Infrastructure.Services;
 
@@ -150,6 +154,72 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 			if (model.OtpSettings.Policy is { MaxAttempts: < 1 })
 			{
 				errorList.Add("otp_settings.policy.max_attempts must be greater than zero");
+			}
+		}
+		
+		// MailProviders
+		if (model.MailProviders != null)
+		{
+			foreach (var mailProvider in model.MailProviders)
+			{
+				if (mailProvider.Type == MailProviderType.SmtpServer)
+		        {
+		            if (mailProvider is SmtpServerProvider provider)
+		            {
+		                if (string.IsNullOrWhiteSpace(provider.Host))
+		                {
+							errorList.Add("Host is required");
+		                }
+		                
+		                if (provider.Port is < 1 or > 65535)
+		                {
+							errorList.Add("Port must be between 1 and 65535");
+		                }
+		                
+		                var hasUsername = !string.IsNullOrWhiteSpace(provider.Username);
+		                var hasPassword = !string.IsNullOrEmpty(provider.Password);
+		                if (hasUsername != hasPassword)
+		                {
+							errorList.Add("Username and password must be provided together");
+		                }
+		            }
+		            else
+		            {
+						errorList.Add("The mail provider type value and the instance type are incompatible");
+		            }
+		        }
+		        else if (mailProvider.Type == MailProviderType.SendGrid)
+		        {
+		            if (mailProvider is SendGridProvider provider)
+		            {
+		                if (string.IsNullOrWhiteSpace(provider.ApiKey))
+		                {
+							errorList.Add("Api key is required");
+		                }
+		            }
+		            else
+		            {
+						errorList.Add("The mail provider type value and the instance type are incompatible");
+		            }
+		        }
+		        else if (mailProvider.Type == MailProviderType.MailChimp)
+		        {
+		            if (mailProvider is MailChimpProvider provider)
+		            {
+		                if (string.IsNullOrWhiteSpace(provider.ApiKey))
+		                {
+							errorList.Add("Api key is required");
+		                }
+		            }
+		            else
+		            {
+						errorList.Add("The mail provider type value and the instance type are incompatible");
+		            }
+		        }
+		        else
+		        {
+					errorList.Add($"Unknown mail provider type: '{mailProvider.Type.ToString()}'");
+		        }
 			}
 		}
 		
