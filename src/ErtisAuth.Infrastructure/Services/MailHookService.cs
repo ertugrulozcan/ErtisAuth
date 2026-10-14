@@ -10,7 +10,6 @@ using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Extensions;
 using ErtisAuth.Core.Models.Mailing;
 using ErtisAuth.Dao.Repositories.Interfaces;
-using ErtisAuth.Extensions.Mailing.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
@@ -53,8 +52,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
     #region Services
 	
 	private readonly IEventService _eventService;
-	private readonly IEnumerable<IProviderMailService> _mailServices;
-	private readonly IBackgroundQueue<HookMail> _mailHookQueue;
+	private readonly IMailService _mailService;
 	private readonly IUserRepository _userRepository;
 	private readonly ILogger<MailHookService> _logger;
 	
@@ -67,23 +65,20 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	/// </summary>
 	/// <param name="membershipService"></param>
 	/// <param name="eventService"></param>
-	/// <param name="mailServices"></param>
-	/// <param name="mailHookQueue"></param>
+	/// <param name="mailService"></param>
 	/// <param name="mailHookRepository"></param>
 	/// <param name="userRepository"></param>
 	/// <param name="logger"></param>
 	public MailHookService(
 		IMembershipService membershipService,
 		IEventService eventService,
-		IEnumerable<IProviderMailService> mailServices,
-		IBackgroundQueue<HookMail> mailHookQueue,
+		IMailService mailService,
 		IMailHookRepository mailHookRepository,
 		IUserRepository userRepository,
 		ILogger<MailHookService> logger) : base(membershipService, mailHookRepository)
 	{
 		this._eventService = eventService;
-		this._mailServices = mailServices;
-		this._mailHookQueue = mailHookQueue;
+		this._mailService = mailService;
 		this._userRepository = userRepository;
 		this._logger = logger;
 		
@@ -123,11 +118,12 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			{
 				if (PredefinedAutonomouslyMailHooks.All(x => x != mailHook.Slug))
 				{
-					this.QueueHookMail(
+					await this.QueueHookMailAsync(
 						mailHook,
 						ertisAuthEvent.UtilizerId,
 						ertisAuthEvent.MembershipId,
-						ertisAuthEvent);
+						ertisAuthEvent,
+						cancellationToken: cancellationToken);
 				}
 			}
 		}
@@ -182,16 +178,24 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId);
 	}
 	
-	public void QueueHookMail(MailHook mailHook, string userId, string membershipId, object? payload)
+	public async Task QueueHookMailAsync(MailHook mailHook, string userId, string membershipId, object? payload, CancellationToken cancellationToken = default)
 	{
+		if (!mailHook.IsActive)
+		{
+			return;
+		}
+		
 		try
 		{
-			// The payload is snapshotted now: the mail is sent later, when the caller may have changed its objects
-			var mail = new HookMail(mailHook, userId, membershipId, ToTemplateData(payload));
-			if (!this._mailHookQueue.TryEnqueue(mail))
+			// The mail is rendered now: the payload is a snapshot of the caller's objects, which may change before the mail is sent
+			var mail = await this.RenderMailAsync(mailHook, userId, payload, cancellationToken: cancellationToken);
+			if (mail == null)
 			{
-				this._logger.LogError("The hook mail '{MailHook}' could not be queued: the mail queue is full or closed", mailHook.Name);
+				this._logger.LogWarning("The hook mail '{MailHook}' has no recipients", mailHook.Name);
+				return;
 			}
+			
+			this._mailService.QueueMail(mail, error => this.OnHookMailCompletedAsync(mail, userId, membershipId, error));
 		}
 		catch (Exception ex)
 		{
@@ -200,27 +204,28 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		}
 	}
 	
-	public async Task SendHookMailAsync(HookMail mail, CancellationToken cancellationToken = default)
+	/// <summary>
+	/// Called by the mail service after the sending; the failure itself is logged by the mail service
+	/// </summary>
+	private async Task OnHookMailCompletedAsync(MailMessage mail, string userId, string membershipId, Exception? error)
 	{
-		try
+		var recipients = mail.Recipients;
+		if (error == null)
 		{
-			if (mail.MailHook.IsActive)
-			{
-				var membership = await this._membershipService.GetAsync(mail.MailHook.MembershipId, cancellationToken: cancellationToken);
-				var mailProvider = membership?.MailProviders?.FirstOrDefault(x => x.Slug == mail.MailHook.MailProvider);
-				if (mailProvider != null)
-				{
-					await this.SendMailAsync(mail.MailHook, mailProvider, mail.UserId, mail.MembershipId, mail.Payload, cancellationToken: cancellationToken);
-				}
-			}
+			await this._eventService.FireEventAsync(ErtisAuthEventType.MailhookMailSent, userId, membershipId, new { recipients });
+			
+			this._logger.LogInformation("The hook mail sent");
 		}
-		catch (Exception ex)
+		else
 		{
-			this._logger.LogError(ex, "MailhookService.SendHookMailAsync occured an error");
+			await this._eventService.FireEventAsync(ErtisAuthEventType.MailhookMailFailed, userId, membershipId, new { recipients, error = error.Message });
 		}
 	}
 	
-	private async Task SendMailAsync(MailHook mailhook, IMailProvider mailProvider, string userId, string membershipId, object? payload, CancellationToken cancellationToken = default)
+	/// <summary>
+	/// Returns null when the mail has no recipients
+	/// </summary>
+	private async Task<MailMessage?> RenderMailAsync(MailHook mailhook, string userId, object? payload, CancellationToken cancellationToken = default)
 	{
 		payload = ToTemplateData(payload);
 		var recipients = new List<Recipient>();
@@ -255,60 +260,49 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		}
 		
 		recipients = recipients.DistinctBy(x => x.EmailAddress).ToList();
-		if (recipients.Any())
+		if (!recipients.Any())
 		{
-			try
+			return null;
+		}
+		
+		IDictionary<string, string> arguments = new Dictionary<string, string>();
+		if (payload != null)
+		{
+			// ReSharper disable once MergeIntoPattern
+			if (mailhook.Variables != null)
 			{
-				IDictionary<string, string> arguments = new Dictionary<string, string>();
-				if (payload != null)
+				foreach (var pair in mailhook.Variables)
 				{
-					// ReSharper disable once MergeIntoPattern
-					if (mailhook.Variables != null)
+					if (!string.IsNullOrEmpty(pair.Key))
 					{
-						foreach (var pair in mailhook.Variables)
+						if (!string.IsNullOrEmpty(pair.Value))
 						{
-							if (!string.IsNullOrEmpty(pair.Key))
+							if (!arguments.ContainsKey(pair.Key))
 							{
-								if (!string.IsNullOrEmpty(pair.Value))
-								{
-									if (!arguments.ContainsKey(pair.Key))
-									{
-										arguments.Add(pair.Key, formatter.Format(pair.Value, payload));
-									}
-								}
-								else
-								{
-									arguments.Add(pair.Key, string.Empty);
-								}
+								arguments.Add(pair.Key, formatter.Format(pair.Value, payload));
 							}
+						}
+						else
+						{
+							arguments.Add(pair.Key, string.Empty);
 						}
 					}
 				}
-				
-				var mailBody = FormatHtml(mailhook.MailTemplate ?? string.Empty, payload);
-				var mailSubject = FormatSingleLine(formatter, mailhook.MailSubject ?? string.Empty, payload);
-				await this.SendMailAsync(
-					mailProvider,
-					mailhook.FromName ?? string.Empty,
-					mailhook.FromAddress ?? string.Empty,
-					recipients,
-					mailSubject,
-					mailBody, 
-					mailhook.MailTemplate ?? string.Empty,
-					arguments,
-					cancellationToken: cancellationToken);
-				
-				await this._eventService.FireEventAsync(ErtisAuthEventType.MailhookMailSent, userId, membershipId, new { recipients }, cancellationToken: cancellationToken);
-				
-				this._logger.LogInformation("The hook mail sent");
-			}
-			catch (Exception ex)
-			{
-				await this._eventService.FireEventAsync(ErtisAuthEventType.MailhookMailFailed, userId, membershipId, new { recipients, error = ex.Message }, cancellationToken: cancellationToken);
-				
-				this._logger.LogError(ex, "The hook mail could not be sent!");
 			}
 		}
+		
+		return new MailMessage
+		{
+			MembershipId = mailhook.MembershipId,
+			MailProvider = mailhook.MailProvider ?? string.Empty,
+			FromName = mailhook.FromName ?? string.Empty,
+			FromAddress = mailhook.FromAddress ?? string.Empty,
+			Recipients = recipients,
+			Subject = FormatSingleLine(formatter, mailhook.MailSubject ?? string.Empty, payload),
+			HtmlBody = FormatHtml(mailhook.MailTemplate ?? string.Empty, payload),
+			TemplateId = mailhook.MailTemplate ?? string.Empty,
+			TemplateArguments = arguments
+		};
 	}
 	
 	/// <summary>
@@ -341,65 +335,6 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	private static string FormatSingleLine(Ertis.TemplateEngine.Formatter formatter, string template, object? payload)
 	{
 		return formatter.Format(template, payload).ReplaceLineEndings(" ");
-	}
-	
-	private async Task SendMailAsync(
-		IMailProvider mailProvider,
-		string fromName,
-		string fromAddress,
-		IEnumerable<Recipient> recipients,
-		string subject,
-		string htmlBody,
-		string templateId,
-		IDictionary<string, string> arguments,
-		CancellationToken cancellationToken = default)
-	{
-		// The failures are thrown (not only logged), so the hook mail is reported as failed instead of sent
-		var service = this._mailServices.FirstOrDefault(x => x.GetProviderType() == mailProvider.Type);
-		if (service == null)
-		{
-			throw new InvalidOperationException($"No mail service is registered for the {mailProvider.Type} provider");
-		}
-		
-		switch (mailProvider.DeliveryMode)
-		{
-			case DeliveryMode.Default:
-			case DeliveryMode.Raw:
-				if (service is IRawMailService rawMailService)
-				{
-					await rawMailService.SendMailAsync(
-						mailProvider,
-						fromName,
-						fromAddress,
-						recipients,
-						subject,
-						htmlBody,
-						cancellationToken: cancellationToken);
-				}
-				else
-				{
-					throw new InvalidOperationException($"The {mailProvider.Type} mail service does not support raw mails");
-				}
-			break;
-			case DeliveryMode.Template:
-				if (service is ITemplateMailService templateMailService)
-				{
-					await templateMailService.SendMailWithTemplateAsync(
-						mailProvider,
-						fromName,
-						fromAddress,
-						recipients,
-						subject,
-						templateId,
-						arguments,
-						cancellationToken: cancellationToken);
-				}
-				else
-				{
-					throw new InvalidOperationException($"The {mailProvider.Type} mail service does not support template mails");
-				}
-			break;
-		}
 	}
 	
 	public async Task<MailHook?> GetUserActivationMailHookAsync(string membershipId, CancellationToken cancellationToken = default)

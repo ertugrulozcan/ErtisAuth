@@ -5,18 +5,15 @@ namespace ErtisAuth.Abstractions.Services;
 public interface IMailHookService : IMembershipBoundedCrudService<MailHook>
 {
 	/// <summary>
-	/// Queues the hook mail without waiting; it is sent in the background by the mail hook worker
+	/// Renders the hook mail with the payload and queues it to the mail service (a passive hook is not queued);
+	/// the outcome is reported with the MailhookMailSent or MailhookMailFailed event. The failures are logged, not thrown.
 	/// </summary>
-	void QueueHookMail(
+	Task QueueHookMailAsync(
 		MailHook mailHook,
 		string userId,
 		string membershipId,
-		object? payload);
-	
-	/// <summary>
-	/// Sends a queued hook mail (called by the mail hook worker); the failures are reported with the MailhookMailFailed event and logged, not thrown
-	/// </summary>
-	Task SendHookMailAsync(HookMail mail, CancellationToken cancellationToken = default);
+		object? payload,
+		CancellationToken cancellationToken = default);
 	
 	Task<MailHook?> GetUserActivationMailHookAsync(string membershipId, CancellationToken cancellationToken = default);
 	

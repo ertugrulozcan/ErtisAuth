@@ -108,11 +108,11 @@ public class PasswordResetService : IPasswordResetService
 		}
 		
 		var resetPasswordLink = GenerateResetPasswordLink(resetPasswordToken, membership.Id, host);
-		this._mailHookService.QueueHookMail(resetPasswordMailHook, user.Id, membership.Id, new
+		await this._mailHookService.QueueHookMailAsync(resetPasswordMailHook, user.Id, membership.Id, new
 		{
 			user,
 			resetPasswordLink
-		});
+		}, cancellationToken: cancellationToken);
 	}
 	
 	private static string GenerateResetPasswordLink(ResetPasswordToken resetPasswordToken, string membershipId, string host)

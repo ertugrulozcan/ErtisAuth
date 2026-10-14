@@ -1,7 +1,7 @@
 namespace ErtisAuth.Abstractions.Services;
 
 /// <summary>
-/// An in-memory queue of the work which is done in the background by a queue worker (e.g. hook mails, webhook calls)
+/// An in-memory queue of the work which is done in the background by a queue worker (e.g. mails, webhook calls)
 /// </summary>
 public interface IBackgroundQueue<T>
 {

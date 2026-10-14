@@ -7,16 +7,16 @@ using NSubstitute;
 namespace ErtisAuth.WebAPI.Tests.BackgroundServices;
 
 /// <summary>
-/// The worker sends the queued hook mails with a bounded concurrency, keeps working after a failed mail,
+/// The worker sends the queued mails with a bounded concurrency, keeps working after a failed mail,
 /// and drains the queue on shutdown until the shutdown timeout is over.
 /// </summary>
-public class MailHookBackgroundServiceTests
+public class MailBackgroundServiceTests
 {
 	#region Fields
 	
-	private readonly BackgroundQueue<HookMail> _mailHookQueue = new();
+	private readonly BackgroundQueue<QueuedMail> _mailQueue = new();
 	
-	private readonly IMailHookService _mailHookService = Substitute.For<IMailHookService>();
+	private readonly IMailService _mailService = Substitute.For<IMailService>();
 	
 	private readonly List<string> _sentMails = [];
 	
@@ -24,17 +24,31 @@ public class MailHookBackgroundServiceTests
 	
 	#region Helpers
 	
-	private MailHookBackgroundService CreateWorker()
+	private static QueuedMail CreateQueuedMail(string subject)
 	{
-		return new MailHookBackgroundService(this._mailHookQueue, this._mailHookService, NullLogger<MailHookBackgroundService>.Instance);
+		var mail = new MailMessage
+		{
+			MembershipId = "membership",
+			MailProvider = "smtp",
+			FromName = "ErtisAuth",
+			FromAddress = "no-reply@example.com",
+			Recipients = [],
+			Subject = subject
+		};
+		
+		return new QueuedMail(mail, null);
+	}
+	
+	private MailBackgroundService CreateWorker()
+	{
+		return new MailBackgroundService(this._mailQueue, this._mailService, NullLogger<MailBackgroundService>.Instance);
 	}
 	
 	private void Enqueue(params string[] names)
 	{
 		foreach (var name in names)
 		{
-			var mailHook = new MailHook { Name = name, MembershipId = "membership" };
-			Assert.True(this._mailHookQueue.TryEnqueue(new HookMail(mailHook, "user", "membership", null)));
+			Assert.True(this._mailQueue.TryEnqueue(CreateQueuedMail(name)));
 		}
 	}
 	
@@ -43,20 +57,20 @@ public class MailHookBackgroundServiceTests
 	/// </summary>
 	private void SendTakes(TimeSpan duration)
 	{
-		this._mailHookService
-			.SendHookMailAsync(Arg.Any<HookMail>(), Arg.Any<CancellationToken>())
+		this._mailService
+			.SendQueuedMailAsync(Arg.Any<QueuedMail>(), Arg.Any<CancellationToken>())
 			.Returns(async callInfo =>
 			{
 				await Task.Delay(duration, callInfo.ArgAt<CancellationToken>(1));
-				this.Record(callInfo.ArgAt<HookMail>(0));
+				this.Record(callInfo.ArgAt<QueuedMail>(0));
 			});
 	}
 	
-	private void Record(HookMail mail)
+	private void Record(QueuedMail mail)
 	{
 		lock (this._sentMails)
 		{
-			this._sentMails.Add(mail.MailHook.Name);
+			this._sentMails.Add(mail.Mail.Subject);
 		}
 	}
 	
@@ -101,12 +115,12 @@ public class MailHookBackgroundServiceTests
 	[Fact]
 	public async Task Worker_AfterAFailedMail_SendsTheNextMails()
 	{
-		this._mailHookService
-			.SendHookMailAsync(Arg.Any<HookMail>(), Arg.Any<CancellationToken>())
+		this._mailService
+			.SendQueuedMailAsync(Arg.Any<QueuedMail>(), Arg.Any<CancellationToken>())
 			.Returns(callInfo =>
 			{
-				var mail = callInfo.ArgAt<HookMail>(0);
-				if (mail.MailHook.Name == "failing")
+				var mail = callInfo.ArgAt<QueuedMail>(0);
+				if (mail.Mail.Subject == "failing")
 				{
 					throw new InvalidOperationException("Unexpected");
 				}
@@ -131,15 +145,15 @@ public class MailHookBackgroundServiceTests
 	{
 		var concurrent = 0;
 		var maxConcurrent = 0;
-		this._mailHookService
-			.SendHookMailAsync(Arg.Any<HookMail>(), Arg.Any<CancellationToken>())
+		this._mailService
+			.SendQueuedMailAsync(Arg.Any<QueuedMail>(), Arg.Any<CancellationToken>())
 			.Returns(async callInfo =>
 			{
 				var current = Interlocked.Increment(ref concurrent);
 				InterlockedMax(ref maxConcurrent, current);
 				await Task.Delay(50, callInfo.ArgAt<CancellationToken>(1));
 				Interlocked.Decrement(ref concurrent);
-				this.Record(callInfo.ArgAt<HookMail>(0));
+				this.Record(callInfo.ArgAt<QueuedMail>(0));
 			});
 		
 		var worker = this.CreateWorker();
@@ -163,7 +177,7 @@ public class MailHookBackgroundServiceTests
 		await worker.StopAsync(TestContext.Current.CancellationToken);
 		
 		Assert.Equal(6, this.SentCount());
-		Assert.False(this._mailHookQueue.TryEnqueue(new HookMail(new MailHook { Name = "late", MembershipId = "membership" }, "user", "membership", null)));
+		Assert.False(this._mailQueue.TryEnqueue(CreateQueuedMail("late")));
 	}
 	
 	[Fact]
@@ -173,12 +187,12 @@ public class MailHookBackgroundServiceTests
 		var worker = this.CreateWorker();
 		this.Enqueue("never-ending");
 		await worker.StartAsync(TestContext.Current.CancellationToken);
-		await this.WaitUntilAsync(() => this._mailHookService.ReceivedCalls().Any());
+		await this.WaitUntilAsync(() => this._mailService.ReceivedCalls().Any());
 		
 		using var shutdownTimeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
 		await worker.StopAsync(shutdownTimeout.Token);
 		
-		var stoppingToken = this._mailHookService.ReceivedCalls().Single().GetArguments()[1];
+		var stoppingToken = this._mailService.ReceivedCalls().Single().GetArguments()[1];
 		Assert.True(stoppingToken is CancellationToken { IsCancellationRequested: true });
 		Assert.Equal(0, this.SentCount());
 	}

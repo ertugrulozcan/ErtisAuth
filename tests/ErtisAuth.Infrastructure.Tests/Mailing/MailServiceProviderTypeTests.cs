@@ -9,7 +9,7 @@ using Recipient = ErtisAuth.Core.Models.Mailing.Recipient;
 namespace ErtisAuth.Infrastructure.Tests.Mailing;
 
 /// <summary>
-/// MailHookService sends through the non-generic mail service interfaces; their default implementations cast the provider
+/// MailService sends through the non-generic mail service interfaces; their default implementations cast the provider
 /// to the provider type of the service, and a provider of another type is rejected before anything is sent.
 /// </summary>
 public class MailServiceProviderTypeTests

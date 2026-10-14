@@ -37,9 +37,10 @@ public static class ServiceExtensions
 		services.AddSingleton<IBackgroundQueue<WebhookCall>, BackgroundQueue<WebhookCall>>();
 		services.AddSingleton<IWebhookService, WebhookService>();
 		services.AddHostedService<WebhookBackgroundService>();
-		services.AddSingleton<IBackgroundQueue<HookMail>, BackgroundQueue<HookMail>>();
+		services.AddSingleton<IBackgroundQueue<QueuedMail>, BackgroundQueue<QueuedMail>>();
+		services.AddSingleton<IMailService, MailService>();
+		services.AddHostedService<MailBackgroundService>();
 		services.AddSingleton<IMailHookService, MailHookService>();
-		services.AddHostedService<MailHookBackgroundService>();
 		services.AddSingleton<ISetupService, SetupService>();
 		services.AddSingleton<IUtilizerService, UtilizerService>();
 		services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();

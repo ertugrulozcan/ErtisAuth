@@ -8,7 +8,7 @@ namespace ErtisAuth.WebAPI.Tests.BackgroundServices;
 
 /// <summary>
 /// The webhook worker executes the queued webhook calls, up to eight at once.
-/// The queue worker behaviors shared with the mail worker (failures, draining, shutdown timeout) are covered by MailHookBackgroundServiceTests.
+/// The queue worker behaviors shared with the mail worker (failures, draining, shutdown timeout) are covered by MailBackgroundServiceTests.
 /// </summary>
 public class WebhookBackgroundServiceTests
 {

@@ -895,7 +895,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     {
         var activationToken = await this.GenerateActivationTokenAsync(user);
         var activationLink = this.GenerateActivationLink(activationToken, membershipId, host);
-        this._mailHookService.QueueHookMail(activationMailHook, user.Id, membershipId, new
+        await this._mailHookService.QueueHookMailAsync(activationMailHook, user.Id, membershipId, new
         {
 	        user,
 	        activationLink

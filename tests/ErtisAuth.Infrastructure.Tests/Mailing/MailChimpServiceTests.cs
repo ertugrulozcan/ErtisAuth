@@ -32,7 +32,7 @@ public class MailChimpServiceTests
 	}
 	
 	/// <summary>
-	/// Sends through the non-generic interface, like MailHookService does
+	/// Sends through the non-generic interface, like MailService does
 	/// </summary>
 	private Task SendAsync()
 	{
