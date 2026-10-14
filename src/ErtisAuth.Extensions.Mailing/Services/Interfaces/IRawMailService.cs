@@ -2,7 +2,7 @@ using ErtisAuth.Core.Models.Mailing;
 
 namespace ErtisAuth.Extensions.Mailing.Services.Interfaces;
 
-public interface IRawMailService : IMailService
+public interface IRawMailService : IProviderMailService
 {
 	#region Methods
 	

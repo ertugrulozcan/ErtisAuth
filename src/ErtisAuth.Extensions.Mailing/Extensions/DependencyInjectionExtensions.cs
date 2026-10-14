@@ -10,9 +10,9 @@ public static class DependencyInjectionExtensions
 	
 	public static void AddMailProviders(this IServiceCollection services)
 	{
-		services.AddSingleton<IMailService, MailChimpService>();
-		services.AddSingleton<IMailService, SendGridService>();
-		services.AddSingleton<IMailService, SmtpServerService>();
+		services.AddSingleton<IProviderMailService, MailChimpService>();
+		services.AddSingleton<IProviderMailService, SendGridService>();
+		services.AddSingleton<IProviderMailService, SmtpServerService>();
 	}
 	
 	#endregion

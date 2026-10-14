@@ -127,7 +127,7 @@ public class MailHookServiceTests
 	
 	#region Helpers
 	
-	private MailHookService CreateService(IEnumerable<IMailService>? mailServices = null, IBackgroundQueue<HookMail>? mailHookQueue = null)
+	private MailHookService CreateService(IEnumerable<IProviderMailService>? mailServices = null, IBackgroundQueue<HookMail>? mailHookQueue = null)
 	{
 		return new MailHookService(
 			this._membershipService,
