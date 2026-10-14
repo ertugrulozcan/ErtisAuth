@@ -18,12 +18,12 @@ namespace ErtisAuth.Infrastructure.Services;
 public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHookService
 {
     #region Constants
-
+	
     private const string USER_ACTIVATION_MAIL_HOOK_NAME = "User Activation";
     private const string USER_ACTIVATION_MAIL_HOOK_SLUG = "user-activation";
     private const string RESET_PASSWORD_MAIL_HOOK_NAME = "Reset Password";
     private const string RESET_PASSWORD_MAIL_HOOK_SLUG = "reset-password";
-
+	
     /// <summary>
     /// Event documents may contain ObjectIds (DynamicObjects, e.g. users, carry their own converter).
     /// </summary>
@@ -34,7 +34,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		    new ObjectIdConverter()
 	    }
     };
-
+	
     private static readonly Ertis.TemplateEngine.ParserOptions HtmlParserOptions = new()
     {
 	    OpenBrackets = "{{",
@@ -47,9 +47,9 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	    USER_ACTIVATION_MAIL_HOOK_SLUG,
 	    RESET_PASSWORD_MAIL_HOOK_SLUG
     };
-
+	
     #endregion
-
+	
     #region Services
 	
 	private readonly IEventService _eventService;
@@ -57,9 +57,9 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	private readonly IBackgroundQueue<HookMail> _mailHookQueue;
 	private readonly IUserRepository _userRepository;
 	private readonly ILogger<MailHookService> _logger;
-
+	
     #endregion
-
+	
     #region Constructors
 	
 	/// <summary>

@@ -49,11 +49,11 @@ public class SmtpServerProvider : IMailProvider
 	
 	[JsonPropertyName("host")]
 	[BsonElement("host")]
-	public required string Host { get; set; }
+	public string? Host { get; set; }
 	
 	[JsonPropertyName("port")]
 	[BsonElement("port")]
-	public required int Port { get; set; }
+	public int Port { get; set; }
 	
 	[JsonPropertyName("tls_enabled")]
 	[BsonElement("tls_enabled")]
@@ -61,11 +61,11 @@ public class SmtpServerProvider : IMailProvider
 	
 	[JsonPropertyName("username")]
 	[BsonElement("username")]
-	public required string Username { get; set; }
+	public string? Username { get; set; }
 	
 	[JsonPropertyName("password")]
 	[BsonElement("password")]
-	public required string Password { get; set; }
+	public string? Password { get; set; }
 	
 	#endregion
 }
