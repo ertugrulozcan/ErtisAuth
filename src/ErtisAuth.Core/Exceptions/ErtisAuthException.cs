@@ -46,6 +46,11 @@ public class ErtisAuthException : ErtisException
 		};
 	}
 	
+	public static ErtisAuthException ImmutableField(string message)
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, message, "ImmutableField");
+	}
+	
 	#endregion
 	
 	#region Token Exceptions
@@ -444,6 +449,11 @@ public class ErtisAuthException : ErtisException
 	public static ErtisAuthException ReservedRole(string slug)
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"This role is reserved by the system ({slug})", "ReservedRole");
+	}
+	
+	public static ErtisAuthException RoleInUse(string message)
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, message, "RoleInUse");
 	}
 	
 	public static ErtisAuthException SystemRolesCannotBeDeleted(string slug)

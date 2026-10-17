@@ -1,3 +1,4 @@
+using Ertis.MongoDB.Queries;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
@@ -27,8 +28,10 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	#region Services
 	
 	private readonly IEventService _eventService;
-	private readonly ILogger<RoleService> _logger;
+	private readonly IUserRepository _userRepository;
+	private readonly IApplicationRepository _applicationRepository;
 	private readonly IMemoryCache _memoryCache;
+	private readonly ILogger<RoleService> _logger;
 	
 	#endregion
 	
@@ -41,17 +44,23 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	/// <param name="eventService"></param>
 	/// <param name="memoryCache"></param>
 	/// <param name="roleRepository"></param>
+	/// <param name="userRepository"></param>
+	/// <param name="applicationRepository"></param>
 	/// <param name="logger"></param>
 	public RoleService(
 		IMembershipService membershipService, 
 		IEventService eventService, 
 		IMemoryCache memoryCache,
 		IRoleRepository roleRepository,
+		IUserRepository userRepository,
+		IApplicationRepository applicationRepository,
 		ILogger<RoleService> logger) : base(membershipService, roleRepository)
 	{
 		this._eventService = eventService;
-		this._logger = logger;
+		this._userRepository = userRepository;
+		this._applicationRepository = applicationRepository;
 		this._memoryCache = memoryCache;
+		this._logger = logger;
 		
 		this.OnCreated += this.RoleCreatedEventHandler;
 		this.OnUpdated += this.RoleUpdatedEventHandler;
@@ -310,6 +319,26 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 		return ErtisAuthException.RoleNotFound(id);
 	}
 	
+	private async Task<long> GetUserCountByRoleAsync(Role role, string membershipId, CancellationToken cancellationToken = default)
+	{
+		var query = QueryBuilder.And(
+			QueryBuilder.Equals("role", role.Slug),
+			QueryBuilder.Equals("membership_id", membershipId)
+		);
+		
+		return await this._userRepository.CountAsync(query.ToString(), cancellationToken: cancellationToken);
+	}
+	
+	private async Task<long> GetApplicationCountByRoleAsync(Role role, string membershipId, CancellationToken cancellationToken = default)
+	{
+		var query = QueryBuilder.And(
+			QueryBuilder.Equals("role", role.Slug),
+			QueryBuilder.Equals("membership_id", membershipId)
+		);
+		
+		return await this._applicationRepository.CountAsync(query.ToString(), cancellationToken: cancellationToken);
+	}
+	
 	#endregion
 	
 	#region Read Methods
@@ -353,6 +382,43 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	public override async Task<Role> UpdateAsync(Role model, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
+		var current = await this.GetAsync(model.Id, membershipId, cancellationToken);
+		if (current == null)
+		{
+			throw ErtisAuthException.RoleNotFound(model.Id);
+		}
+		
+		if (string.IsNullOrEmpty(model.Slug.Trim()))
+		{
+			model.Slug = current.Slug;
+		}
+		
+		if (model.Slug != current.Slug)
+		{
+			if (ReservedRoles.IsReserved(model.Slug))
+			{
+				throw ErtisAuthException.ReservedRole(model.Slug);
+			}
+			else if (ReservedRoles.IsReserved(current.Slug))
+			{
+				throw ErtisAuthException.ImmutableField("The slug fields of system roles are immutable");
+			}
+			else
+			{
+				var userCount = await this.GetUserCountByRoleAsync(current, membershipId, cancellationToken: cancellationToken);
+				if (userCount > 0)
+				{
+					throw ErtisAuthException.RoleInUse("This role slug cannot be changed because it is assigned to one or more users");
+				}
+				
+				var applicationCount = await this.GetApplicationCountByRoleAsync(current, membershipId, cancellationToken: cancellationToken);
+				if (applicationCount > 0)
+				{
+					throw ErtisAuthException.RoleInUse("This role slug cannot be changed because it is assigned to one or more applications");
+				}
+			}
+		}
+		
 		var updated = await base.UpdateAsync(model, membershipId, utilizer, cancellationToken);
 		await this.RefreshCacheAsync(membershipId);
 		return updated;
@@ -375,6 +441,8 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 			throw ErtisAuthException.SystemRolesCannotBeDeleted(role.Slug);
 		}
 		
+		await this.EnsureRoleInUseAsync(role, membershipId, cancellationToken: cancellationToken);
+		
 		var isDeleted = await base.DeleteAsync(id, membershipId, utilizer, cancellationToken);
 		if (isDeleted)
 		{
@@ -386,18 +454,48 @@ public class RoleService : MembershipBoundedCrudService<Role>, IRoleService
 	
 	public override async Task<bool?> BulkDeleteAsync(string[] ids, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
+		var deleteIds = new List<string>();
 		foreach (var id in ids)
 		{
 			var role = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
-			if (role != null && ReservedRoles.IsReserved(role.Slug))
+			if (role == null)
+			{
+				continue;
+			}
+			
+			if (ReservedRoles.IsReserved(role.Slug))
 			{
 				throw ErtisAuthException.SystemRolesCannotBeDeleted(role.Slug);
 			}
+			
+			await this.EnsureRoleInUseAsync(role, membershipId, cancellationToken: cancellationToken);
+			
+			deleteIds.Add(id);
+		}
+		
+		if (deleteIds.Count == 0)
+		{
+			return false;
 		}
 		
 		var result = await base.BulkDeleteAsync(ids, membershipId, utilizer, cancellationToken: cancellationToken);
 		await this.RefreshCacheAsync(membershipId);
 		return result;
+	}
+	
+	private async Task EnsureRoleInUseAsync(Role role, string membershipId, CancellationToken cancellationToken = default)
+	{
+		var userCount = await this.GetUserCountByRoleAsync(role, membershipId, cancellationToken: cancellationToken);
+		if (userCount > 0)
+		{
+			throw ErtisAuthException.RoleInUse("This role cannot be deleted because it is assigned to one or more users");
+		}
+		
+		var applicationCount = await this.GetApplicationCountByRoleAsync(role, membershipId, cancellationToken: cancellationToken);
+		if (applicationCount > 0)
+		{
+			throw ErtisAuthException.RoleInUse("This role cannot be deleted because it is assigned to one or more applications");
+		}
 	}
 	
 	#endregion

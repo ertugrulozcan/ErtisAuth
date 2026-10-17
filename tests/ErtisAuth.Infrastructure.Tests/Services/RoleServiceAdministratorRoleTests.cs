@@ -17,14 +17,18 @@ namespace ErtisAuth.Infrastructure.Tests.Services;
 /// </summary>
 public class RoleServiceAdministratorRoleTests
 {
-	#region Fields
+	#region Services
 	
 	private readonly IMembershipService _membershipService = Substitute.For<IMembershipService>();
-	
 	private readonly IRoleRepository _repository = Substitute.For<IRoleRepository>();
+	private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
+	private readonly IApplicationRepository _applicationRepository = Substitute.For<IApplicationRepository>();
+	
+	#endregion
+	
+	#region Fields
 	
 	private readonly List<Role> _roles;
-	
 	private readonly List<Membership> _memberships = [];
 	
 	#endregion
@@ -58,7 +62,14 @@ public class RoleServiceAdministratorRoleTests
 	
 	private RoleService CreateRoleService()
 	{
-		return new RoleService(this._membershipService, Substitute.For<IEventService>(), new MemoryCache(new MemoryCacheOptions()), this._repository, NullLogger<RoleService>.Instance);
+		return new RoleService(
+			this._membershipService, 
+			Substitute.For<IEventService>(), 
+			new MemoryCache(new MemoryCacheOptions()), 
+			this._repository,
+			this._userRepository,
+			this._applicationRepository,
+			NullLogger<RoleService>.Instance);
 	}
 	
 	private Role[] AdministratorRoles(string membershipId)
