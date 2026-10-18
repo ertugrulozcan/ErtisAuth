@@ -29,6 +29,8 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	{
 		this._membershipService = membershipService;
 		this._repository = repository;
+		
+		membershipService.RegisterService(this);
 	}
 	
 	#endregion
@@ -128,6 +130,11 @@ public abstract class MembershipBoundedService<TModel> : IMembershipBoundedServi
 	{
 		limit ??= Constants.PaginationDefaults.MAX_LIMIT;
 		return (IPaginationCollection<T>) await this.GetAsync(membershipId, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+	}
+	
+	public async Task<long> CountAsync(string membershipId, CancellationToken cancellationToken = default)
+	{
+		return await this._repository.CountAsync(x => x.MembershipId == membershipId, cancellationToken: cancellationToken);
 	}
 	
 	#endregion

@@ -57,6 +57,7 @@ public static class ServiceExtensions
 		serviceProvider.GetRequiredService<IProviderService>();
 		serviceProvider.GetRequiredService<IWebhookService>();
 		serviceProvider.GetRequiredService<IMailHookService>();
+		serviceProvider.GetRequiredService<ITokenCodeService>();
 	}
 	
 	#endregion

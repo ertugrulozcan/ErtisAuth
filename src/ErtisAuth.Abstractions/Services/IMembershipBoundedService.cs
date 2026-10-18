@@ -19,6 +19,8 @@ public interface IMembershipBoundedService
 		SortDirection? sortDirection, 
 		CancellationToken cancellationToken = default) 
 		where TModel : class, IHasMembership;
+	
+	Task<long> CountAsync(string membershipId, CancellationToken cancellationToken = default);
 }
 
 public interface IMembershipBoundedService<TModel> : IMembershipBoundedService where TModel : IHasMembership

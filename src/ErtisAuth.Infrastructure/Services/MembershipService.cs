@@ -32,13 +32,9 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	#region Services
 	
+	private readonly List<IMembershipBoundedService> _membershipBoundedServices = new();
+	private readonly IUserRepository _userRepository;
 	private readonly IMemoryCache _memoryCache;
-	
-	#endregion
-	
-	#region Properties
-	
-	private List<IMembershipBoundedService> MembershipBoundedServiceCollection { get; }
 	
 	#endregion
 	
@@ -48,10 +44,15 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	/// Constructor
 	/// </summary>
 	/// <param name="membershipRepository"></param>
+	/// <param name="userRepository"></param>
 	/// <param name="memoryCache"></param>
-	public MembershipService(IMembershipRepository membershipRepository, IMemoryCache memoryCache) : base(membershipRepository)
+	public MembershipService(
+		IMembershipRepository membershipRepository, 
+		IUserRepository userRepository, 
+		IMemoryCache memoryCache) : 
+		base(membershipRepository)
 	{
-		this.MembershipBoundedServiceCollection = new List<IMembershipBoundedService>();
+		this._userRepository = userRepository;
 		this._memoryCache = memoryCache;
 	}
 	
@@ -63,7 +64,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	{
 		if (service is IMembershipBoundedService membershipBoundedResource)
 		{
-			this.MembershipBoundedServiceCollection.Add(membershipBoundedResource);	
+			this._membershipBoundedServices.Add(membershipBoundedResource);
 		}
 	}
 	
@@ -295,22 +296,25 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		return ErtisAuthException.MembershipNotFound(id);
 	}
 	
-	private async Task<IEnumerable<MembershipBoundedResource>> GetMembershipBoundedResourcesAsync(string membershipId, int limit = 10, CancellationToken cancellationToken = default)
+	private async Task<bool> HasAnyResourceAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
-		var tasks = this.MembershipBoundedServiceCollection.Select(service => 
-			service.GetAsync<MembershipBoundedResource>(membershipId, 0, limit, false, null, null, cancellationToken: cancellationToken))
-			.ToArray();
-		
-		await Task.WhenAll(tasks);
-		
-		var cumulativeList = new List<MembershipBoundedResource>();
-		foreach (var task in tasks)
+		var query = QueryBuilder.Equals("membership_id", membershipId);
+		var userCount = await this._userRepository.CountAsync(query.ToString(), cancellationToken: cancellationToken);
+		if (userCount > 0)
 		{
-			var items = (await task).Items;
-			cumulativeList.AddRange(items);
+			return true;
 		}
 		
-		return cumulativeList.Take(limit);
+		foreach (var service in this._membershipBoundedServices)
+		{
+			var count = await service.CountAsync(membershipId, cancellationToken: cancellationToken);
+			if (count > 0)
+			{
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 	#endregion
@@ -448,8 +452,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	public override async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
 	{
-		var membershipBoundedResources = await this.GetMembershipBoundedResourcesAsync(id, cancellationToken: cancellationToken);
-		if (membershipBoundedResources.Any())
+		if (await this.HasAnyResourceAsync(id, cancellationToken: cancellationToken))
 		{
 			throw ErtisAuthException.MembershipCouldNotDeleted($"This membership is already using by some membership related resources, it's could not be deleted ({id})");
 		}

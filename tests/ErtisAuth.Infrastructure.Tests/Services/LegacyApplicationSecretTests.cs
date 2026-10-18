@@ -129,10 +129,11 @@ public class LegacyApplicationSecretTests
 	#region Membership Switch
 	
 	private readonly IMembershipRepository _membershipRepository = Substitute.For<IMembershipRepository>();
+	private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
 	
 	private MembershipService CreateMembershipService()
 	{
-		return new MembershipService(this._membershipRepository, new MemoryCache(new MemoryCacheOptions()));
+		return new MembershipService(this._membershipRepository, this._userRepository, new MemoryCache(new MemoryCacheOptions()));
 	}
 	
 	[Theory]

@@ -21,9 +21,7 @@ public abstract class MembershipBoundedCrudService<TModel> :
 	/// <param name="membershipService"></param>
 	/// <param name="repository"></param>
 	protected MembershipBoundedCrudService(IMembershipService membershipService, IMongoRepository<TModel> repository) : base(membershipService, repository)
-	{
-		membershipService.RegisterService(this);
-	}
+	{ }
 	
 	#endregion
 	

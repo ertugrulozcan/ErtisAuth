@@ -13,7 +13,7 @@ using MongoDB.Bson.Serialization.Attributes;
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 namespace ErtisAuth.Core.Models.Events;
 
-public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
+public class ErtisAuthEvent : MembershipBoundedResource, IErtisAuthEvent
 {
 	#region Fields
 	
@@ -105,10 +105,6 @@ public class ErtisAuthEvent : ResourceBase, IErtisAuthEvent, IHasMembership
 	[JsonPropertyName("event_time")]
 	[BsonElement("event_time")]
 	public DateTime EventTime { get; set; }
-	
-	[JsonPropertyName("membership_id")]
-	[BsonElement("membership_id")]
-	public required string MembershipId { get; set; }
 	
 	#endregion
 	

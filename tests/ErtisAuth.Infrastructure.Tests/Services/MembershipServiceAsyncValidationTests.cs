@@ -18,6 +18,7 @@ public class MembershipServiceAsyncValidationTests
 	#region Fields
 	
 	private readonly IMembershipRepository _repository = Substitute.For<IMembershipRepository>();
+	private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
 	
 	// ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
 	private readonly Membership _existing;
@@ -39,7 +40,7 @@ public class MembershipServiceAsyncValidationTests
 	
 	private MembershipService CreateMembershipService()
 	{
-		return new MembershipService(this._repository, new MemoryCache(new MemoryCacheOptions()));
+		return new MembershipService(this._repository, this._userRepository, new MemoryCache(new MemoryCacheOptions()));
 	}
 	
 	private void AssertNoBlockingSlugLookup()
