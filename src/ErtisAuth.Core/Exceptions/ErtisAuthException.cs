@@ -376,6 +376,11 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"'{slug}' is a reserved slug. It's can not be used as user type slug.", "ReservedUserTypeSlug");
 	}
 	
+	public static ErtisAuthException UserTypeInUse(string message)
+	{
+		return new ErtisAuthException(HttpStatusCode.Conflict, message, "UserTypeInUse");
+	}
+	
 	public static ErtisAuthException UniqueFieldHasDuplicates(string fieldPath, string duplicateKey)
 	{
 		return new ErtisAuthException(HttpStatusCode.Conflict, $"The '{fieldPath}' field can not be unique, some users already share the same value. ({duplicateKey})", "UniqueFieldHasDuplicates");
@@ -402,9 +407,16 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.BadRequest, "User type is an immutable field. It's cannot be updated.", "UserTypeImmutable");
 	}
 	
-	public static ErtisAuthException UserTypeCanNotBeDelete()
+	public static ErtisAuthException UserTypeCanNotBeDelete(string[] messages)
 	{
-		return new ErtisAuthException(HttpStatusCode.BadRequest, "This user type currently using by another users, it's cannot be deleted.", "UserTypeCanNotBeDelete");
+		if (messages.Length > 0)
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, messages[0], "UserTypeCanNotBeDelete");
+		}
+		else
+		{
+			return new ErtisAuthException(HttpStatusCode.Conflict, "This user type currently using by another users, it's cannot be deleted.", "UserTypeCanNotBeDelete");
+		}
 	}
 	
 	public static ErtisAuthException HostRequired()

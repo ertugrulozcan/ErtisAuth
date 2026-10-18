@@ -45,14 +45,24 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 	private async Task<ResourceClient> AdminResourceClientAsync(string resource) =>
 		new(await this._instance.CreateAdminClientAsync(), $"{this.MembershipUrl}/{resource}");
 	
-	private static JsonObject UserTypeBody(string name, string baseType = "user", JsonObject? properties = null, bool isAbstract = false, bool isSealed = false) => new()
+	private static JsonObject UserTypeBody(string name, string baseType = "user", JsonObject? properties = null, bool isAbstract = false, bool isSealed = false, string? slug = null)
 	{
-		["name"] = name,
-		["baseType"] = baseType,
-		["isAbstract"] = isAbstract,
-		["isSealed"] = isSealed,
-		["properties"] = properties ?? new JsonObject()
-	};
+		var body = new JsonObject
+		{
+			["name"] = name,
+			["baseType"] = baseType,
+			["isAbstract"] = isAbstract,
+			["isSealed"] = isSealed,
+			["properties"] = properties ?? new JsonObject()
+		};
+		
+		if (slug != null)
+		{
+			body["slug"] = slug;
+		}
+		
+		return body;
+	}
 	
 	private async Task<JsonObject> CreateUserTypeAsync(string name, string baseType = "user", JsonObject? properties = null, bool isAbstract = false, bool isSealed = false)
 	{
@@ -79,9 +89,9 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 		return await adminClient.PostAsJsonAsync($"{this.MembershipUrl}/users", body, CancellationToken);
 	}
 	
-	private static async Task AssertErrorAsync(HttpResponseMessage response, string errorCode)
+	private static async Task AssertErrorAsync(HttpResponseMessage response, string errorCode, HttpStatusCode expectedStatusCode)
 	{
-		var error = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.BadRequest);
+		var error = await ResourceClient.AssertStatusAsync(response, expectedStatusCode);
 		Assert.Equal(errorCode, error!["errorCode"]!.GetValue<string>());
 	}
 	
@@ -132,10 +142,11 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 	}
 	
 	/// <summary>
-	/// Derived types refer to their base type by its slug: a base type can not be deleted, and keeps its slug when renamed.
+	/// Derived types refer to their base type by its slug: a base type can not be deleted, and its slug can not change.
+	/// It can still be renamed when its slug is sent unchanged.
 	/// </summary>
 	[Fact]
-	public async Task BaseTypeOfAnotherType_CanNotBeDeletedAndKeepsItsSlug()
+	public async Task BaseTypeOfAnotherType_CanNotBeDeletedAndItsSlugCanNotChange()
 	{
 		var parent = await this.CreateUserTypeAsync(UniqueName("Member"));
 		var parentId = parent["_id"]!.GetValue<string>();
@@ -145,9 +156,16 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 		var userTypes = await this.AdminResourceClientAsync("user-types");
 		var adminClient = await this._instance.CreateAdminClientAsync();
 		using var deleteResponse = await adminClient.DeleteAsync($"{userTypes.Url}/{parentId}", CancellationToken);
-		await AssertErrorAsync(deleteResponse, "UserTypeCanNotBeDelete");
+		await AssertErrorAsync(deleteResponse, "UserTypeCanNotBeDelete", HttpStatusCode.Conflict);
 		
-		var renamed = await userTypes.UpdateAsync(parentId, UserTypeBody(UniqueName("Renamed Member")));
+		// A slug which is not sent is derived from the name, so the slug changes as well
+		using var renameResponse = await adminClient.PutAsJsonAsync($"{userTypes.Url}/{parentId}", UserTypeBody(UniqueName("Renamed Member")), CancellationToken);
+		var renameError = await ResourceClient.AssertStatusAsync(renameResponse, HttpStatusCode.Conflict);
+		Assert.Equal("UserTypeInUse", renameError!["errorCode"]!.GetValue<string>());
+		
+		var renamedName = UniqueName("Renamed Member");
+		var renamed = await userTypes.UpdateAsync(parentId, UserTypeBody(renamedName, slug: parentSlug));
+		Assert.Equal(renamedName, renamed["name"]!.GetValue<string>());
 		Assert.Equal(parentSlug, renamed["slug"]!.GetValue<string>());
 		Assert.Equal(parentSlug, (await userTypes.GetAsync(child["_id"]!.GetValue<string>()))["baseType"]!.GetValue<string>());
 	}
@@ -173,10 +191,10 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 		var userTypes = await this.AdminResourceClientAsync("user-types");
 		var adminClient = await this._instance.CreateAdminClientAsync();
 		using var deleteResponse = await adminClient.DeleteAsync($"{userTypes.Url}/{parentId}", CancellationToken);
-		await AssertErrorAsync(deleteResponse, "UserTypeCanNotBeDelete");
+		await AssertErrorAsync(deleteResponse, "UserTypeCanNotBeDelete", HttpStatusCode.Conflict);
 		
 		// After the rename, the child is updated with its base type as it is read (like a client does)
-		await userTypes.UpdateAsync(parentId, UserTypeBody(UniqueName("Renamed Partner")));
+		await userTypes.UpdateAsync(parentId, UserTypeBody(UniqueName("Renamed Partner"), slug: createdParentSlug));
 		var childId = child["_id"]!.GetValue<string>();
 		var storedBaseType = (await userTypes.GetAsync(childId))["baseType"]!.GetValue<string>();
 		var updatedChild = await userTypes.UpdateAsync(childId, UserTypeBody(childName, baseType: storedBaseType, properties: new JsonObject
@@ -194,7 +212,7 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 		var abstractSlug = abstractType["slug"]!.GetValue<string>();
 		
 		using var abstractUser = await this.CreateUserAsync(abstractSlug);
-		await AssertErrorAsync(abstractUser, "InheritedTypeIsAbstract");
+		await AssertErrorAsync(abstractUser, "InheritedTypeIsAbstract", HttpStatusCode.BadRequest);
 		
 		var concrete = await this.CreateUserTypeAsync(UniqueName("Employee"), baseType: abstractSlug);
 		using var concreteUser = await this.CreateUserAsync(concrete["slug"]!.GetValue<string>());
@@ -209,7 +227,7 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 		var userTypes = await this.AdminResourceClientAsync("user-types");
 		var adminClient = await this._instance.CreateAdminClientAsync();
 		using var derived = await adminClient.PostAsJsonAsync(userTypes.Url, UserTypeBody(UniqueName("Vip Guest"), baseType: sealedType["slug"]!.GetValue<string>()), CancellationToken);
-		await AssertErrorAsync(derived, "InheritedTypeIsSealed");
+		await AssertErrorAsync(derived, "InheritedTypeIsSealed", HttpStatusCode.BadRequest);
 		
 		using var sealedUser = await this.CreateUserAsync(sealedType["slug"]!.GetValue<string>());
 		await ResourceClient.AssertStatusAsync(sealedUser, HttpStatusCode.Created);
@@ -223,7 +241,7 @@ public class UserTypeRulesTests : IClassFixture<ErtisAuthInstance>
 		
 		using var response = await adminClient.PostAsJsonAsync(userTypes.Url, UserTypeBody(UniqueName("Impossible"), isAbstract: true, isSealed: true), CancellationToken);
 		
-		await AssertErrorAsync(response, "UserTypeCannotBeBothAbstractAndSealed");
+		await AssertErrorAsync(response, "UserTypeCannotBeBothAbstractAndSealed", HttpStatusCode.BadRequest);
 	}
 	
 	#endregion

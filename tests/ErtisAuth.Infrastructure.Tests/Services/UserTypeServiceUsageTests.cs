@@ -1,4 +1,3 @@
-using Ertis.Core.Exceptions;
 using Ertis.Schema.Types;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
@@ -26,20 +25,19 @@ public class UserTypeServiceUsageTests
 	
 	#endregion
 	
-	#region Fields
+	#region Services
 	
 	private readonly IMembershipService _membershipService = Substitute.For<IMembershipService>();
-	
 	private readonly IUserTypeRepository _repository = Substitute.For<IUserTypeRepository>();
-	
 	private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
 	
+	#endregion
+	
+	#region Fields
+	
 	private readonly List<UserType> _userTypes;
-	
 	private readonly Membership _membership;
-	
 	private readonly Utilizer _utilizer;
-	
 	private long _userCount;
 	
 	#endregion
@@ -153,34 +151,73 @@ public class UserTypeServiceUsageTests
 	#region Slug
 	
 	[Fact]
-	public async Task UpdateAsync_RenamingUserTypeInUse_KeepsSlug()
+	public async Task UpdateAsync_RenamingUserTypeInUseWithItsSlug_ChangesNameAndKeepsSlug()
 	{
 		this._userCount = 3;
 		
-		await this.UpdateAsync(this.NewUserType("Client"));
+		await this.UpdateAsync(this.NewUserType("Client", slug: "customer"));
 		
 		Assert.Equal("Client", this.StoredUserType.Name);
 		Assert.Equal("customer", this.StoredUserType.Slug);
 	}
 	
 	[Fact]
-	public async Task UpdateAsync_ChangingOnlySlugOfUserTypeInUse_IsReportedAsIdentical()
+	public async Task UpdateAsync_RenamingUserTypeInUseWithoutSlug_IsRejected()
 	{
 		this._userCount = 3;
 		
-		// The slug is kept, so nothing is left to change
-		var exception = await Assert.ThrowsAsync<ValidationException>(() => this.UpdateAsync(this.NewUserType("Customer", slug: "buyer")));
+		// A slug which is not sent is derived from the name, so the slug changes as well
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.UpdateAsync(this.NewUserType("Client")));
 		
-		Assert.Equal("IdenticalDocumentError", exception.ErrorCode);
+		Assert.Equal("UserTypeInUse", exception.ErrorCode);
+		Assert.Equal("Customer", this.StoredUserType.Name);
 		Assert.Equal("customer", this.StoredUserType.Slug);
 	}
 	
 	[Fact]
-	public async Task UpdateAsync_RenamingUserTypeInheritedByAnother_KeepsSlug()
+	public async Task UpdateAsync_ChangingSlugOfUserTypeInUse_IsRejected()
+	{
+		this._userCount = 3;
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.UpdateAsync(this.NewUserType("Customer", slug: "buyer")));
+		
+		Assert.Equal("UserTypeInUse", exception.ErrorCode);
+		Assert.Contains("assigned to 3 user(s)", exception.Message);
+		Assert.Equal("customer", this.StoredUserType.Slug);
+	}
+	
+	[Fact]
+	public async Task UpdateAsync_ChangingSlugOfUserTypeInheritedByAnother_IsRejected()
 	{
 		this.SetupInheritedUserType();
 		
-		await this.UpdateAsync(this.NewUserType("Client"));
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.UpdateAsync(this.NewUserType("Client")));
+		
+		Assert.Equal("UserTypeInUse", exception.ErrorCode);
+		Assert.Contains("base type of other user types (vip-customer)", exception.Message);
+		Assert.Equal("Customer", this.StoredUserType.Name);
+		Assert.Equal("customer", this.StoredUserType.Slug);
+	}
+	
+	[Fact]
+	public async Task UpdateAsync_ChangingSlugOfUserTypeWithUsersAndInheritedByAnother_IsRejectedForUsers()
+	{
+		this._userCount = 3;
+		this.SetupInheritedUserType();
+		
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.UpdateAsync(this.NewUserType("Customer", slug: "buyer")));
+		
+		Assert.Equal("UserTypeInUse", exception.ErrorCode);
+		Assert.Contains("assigned to 3 user(s)", exception.Message);
+		Assert.Equal("customer", this.StoredUserType.Slug);
+	}
+	
+	[Fact]
+	public async Task UpdateAsync_RenamingUserTypeInheritedByAnotherWithItsSlug_ChangesNameAndKeepsSlug()
+	{
+		this.SetupInheritedUserType();
+		
+		await this.UpdateAsync(this.NewUserType("Client", slug: "customer"));
 		
 		Assert.Equal("Client", this.StoredUserType.Name);
 		Assert.Equal("customer", this.StoredUserType.Slug);
