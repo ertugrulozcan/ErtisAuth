@@ -157,7 +157,7 @@ public class TokenCodePolicyService : MembershipBoundedCrudService<TokenCodePoli
 			errorList.Add("Membership id is required");
 		}
 		
-		if (model.Length < TokenCodePolicy.MinLength || model.Length > TokenCodePolicy.MaxLength)
+		if (model.Length is < TokenCodePolicy.MinLength or > TokenCodePolicy.MaxLength)
 		{
 			errorList.Add($"Length must be between {TokenCodePolicy.MinLength} and {TokenCodePolicy.MaxLength}");
 		}
