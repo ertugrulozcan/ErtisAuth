@@ -45,11 +45,15 @@ public class User : MembershipBoundedResource, IUtilizer, IHasSysInfo
 	public string? UserType { get; set; }
 	
 	[JsonPropertyName("source_provider")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("source_provider")]
+	[BsonIgnoreIfNull]
 	public string? SourceProvider { get; set; }
 	
 	[JsonPropertyName("connected_accounts")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[BsonElement("connected_accounts")]
+	[BsonIgnoreIfNull]
 	public ProviderAccountInfo[]? ConnectedAccounts { get; set; }
 	
 	[JsonPropertyName("is_active")]

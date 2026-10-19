@@ -144,7 +144,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
     #region UserType Methods
     
-    private async Task<UserType> GetUserTypeAsync(DynamicObject model, DynamicObject? current, string membershipId, bool fallbackWithOriginUserType = false, CancellationToken cancellationToken = default)
+    private async Task<UserType> GetUserTypeAsync(DynamicObject model, DynamicObject? current, string membershipId, CancellationToken cancellationToken = default)
     {
         if (model.TryGetValue<string>("user_type", out var userTypeSlug, out _) && !string.IsNullOrEmpty(userTypeSlug))
         {
@@ -166,11 +166,6 @@ public class UserService : DynamicObjectCrudService, IUserService
 			
 	        return userType;
         }
-        else if (fallbackWithOriginUserType)
-		{
-			var fallbackUserType = await this._userTypeService.GetBySlugAsync(UserType.ORIGIN_USER_TYPE_SLUG, membershipId, true, cancellationToken: cancellationToken);
-			return fallbackUserType ?? throw ErtisAuthException.UserTypeRequired();
-		}
         else
         {
 	        throw ErtisAuthException.UserTypeRequired();
@@ -800,7 +795,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 	        this.EnsurePassword(model, out password);
         }
         
-        var userType = await this.GetUserTypeAsync(model, null, membershipId, sourceProvider == ProviderType.ErtisAuth, cancellationToken: cancellationToken);
+        var userType = await this.GetUserTypeAsync(model, null, membershipId, cancellationToken: cancellationToken);
         NormalizeUserType(model, userType, isCreate: true);
         this.EnsureManagedProperties(model, membershipId);
         
