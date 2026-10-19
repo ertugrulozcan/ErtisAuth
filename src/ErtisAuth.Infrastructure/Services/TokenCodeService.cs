@@ -149,9 +149,13 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 	public async Task<TokenCode> GetByUserCodeAsync(string userCode, string membershipId, CancellationToken cancellationToken = default)
 	{
 		var tokenCode = await this.FindByUserCodeAsync(userCode, membershipId, cancellationToken: cancellationToken);
-		if (tokenCode == null || tokenCode.IsExpired)
+		if (tokenCode == null)
 		{
 			throw ErtisAuthException.TokenCodeNotFound();
+		}
+		else if (tokenCode.IsExpired)
+		{
+			throw ErtisAuthException.TokenCodeExpired();
 		}
 		
 		return tokenCode;
@@ -229,7 +233,7 @@ public class TokenCodeService : MembershipBoundedService<TokenCode>, ITokenCodeS
 		var tokenCode = await this._repository.FindOneAsync(x => x.DeviceCodeHash == deviceCodeHash && x.MembershipId == membershipId, cancellationToken: cancellationToken);
 		if (tokenCode == null)
 		{
-			throw ErtisAuthException.InvalidToken();
+			throw ErtisAuthException.TokenCodeNotFound();
 		}
 		
 		if (tokenCode.IsExpired)

@@ -314,7 +314,7 @@ public class TokenCodeServiceTests
 		
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => service.GetByUserCodeAsync(tokenCode.UserCode, MembershipId, TestContext.Current.CancellationToken));
 		
-		Assert.Equal("TokenCodeNotFound", exception.ErrorCode);
+		Assert.Equal("TokenCodeExpired", exception.ErrorCode);
 	}
 	
 	#endregion
@@ -444,7 +444,7 @@ public class TokenCodeServiceTests
 		
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.UserCode));
 		
-		Assert.Equal("InvalidToken", exception.ErrorCode);
+		Assert.Equal("TokenCodeNotFound", exception.ErrorCode);
 		Assert.Single(this._tokenCodes);
 	}
 	
@@ -474,7 +474,7 @@ public class TokenCodeServiceTests
 		Assert.Empty(this._tokenCodes);
 		
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(service, tokenCode.DeviceCode));
-		Assert.Equal("InvalidToken", exception.ErrorCode);
+		Assert.Equal("TokenCodeNotFound", exception.ErrorCode);
 	}
 	
 	[Fact]
@@ -582,7 +582,7 @@ public class TokenCodeServiceTests
 	{
 		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => this.GenerateTokenAsync(this.CreateService(), "unknown-device-code"));
 		
-		Assert.Equal("InvalidToken", exception.ErrorCode);
+		Assert.Equal("TokenCodeNotFound", exception.ErrorCode);
 	}
 	
 	#endregion

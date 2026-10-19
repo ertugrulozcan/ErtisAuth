@@ -157,8 +157,8 @@ public class DeviceLoginTests : IClassFixture<ErtisAuthInstance>
 		
 		// Only once
 		using var secondPoll = await this.PollAsync(deviceCode);
-		Assert.Equal(HttpStatusCode.Unauthorized, secondPoll.StatusCode);
-		Assert.Equal("InvalidToken", await ReadErrorCodeAsync(secondPoll));
+		Assert.Equal(HttpStatusCode.NotFound, secondPoll.StatusCode);
+		Assert.Equal("TokenCodeNotFound", await ReadErrorCodeAsync(secondPoll));
 	}
 	
 	[Fact]
@@ -174,8 +174,8 @@ public class DeviceLoginTests : IClassFixture<ErtisAuthInstance>
 		
 		using var response = await this.PollAsync(userCode);
 		
-		Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-		Assert.Equal("InvalidToken", await ReadErrorCodeAsync(response));
+		Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+		Assert.Equal("TokenCodeNotFound", await ReadErrorCodeAsync(response));
 	}
 	
 	[Fact]
@@ -283,7 +283,7 @@ public class DeviceLoginTests : IClassFixture<ErtisAuthInstance>
 		using var response = await applicationClient.PostAsync($"{this.CodesUrl}/{userCode}/approve", null, TestContext.Current.CancellationToken);
 		
 		Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-		Assert.Equal("TokenTypeNotSupported", await ReadErrorCodeAsync(response));
+		Assert.Equal("BearerTokenRequired", await ReadErrorCodeAsync(response));
 	}
 	
 	#endregion

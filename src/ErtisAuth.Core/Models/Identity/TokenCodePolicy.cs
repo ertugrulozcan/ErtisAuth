@@ -45,7 +45,9 @@ public class TokenCodePolicy : MembershipBoundedResource, IHasSlug, IHasSysInfo
     }
     
     [JsonPropertyName("description")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [BsonElement("description")]
+	[BsonIgnoreIfNull]
     public string? Description { get; set; }
     
     [JsonPropertyName("length")]

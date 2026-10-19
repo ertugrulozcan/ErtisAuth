@@ -143,7 +143,7 @@ public class TokenCodesController : ControllerBase
 		var token = this.GetToken();
 		if (token.TokenType != SupportedTokenTypes.Bearer)
 		{
-			throw ErtisAuthException.UnsupportedTokenType();
+			throw ErtisAuthException.BearerTokenRequired();
 		}
 	}
 	
