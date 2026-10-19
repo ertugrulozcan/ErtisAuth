@@ -91,7 +91,7 @@ public class OneTimePasswordServiceTests
 		};
 		
 		this._membershipService.GetAsync(MembershipId, Arg.Any<CancellationToken>()).Returns(this._membership);
-		this._userService.GetUserAsync(UserId, MembershipId, Arg.Any<CancellationToken>()).Returns(new User
+		var user = new User
 		{
 			Id = UserId,
 			Username = Username,
@@ -99,7 +99,11 @@ public class OneTimePasswordServiceTests
 			Role = "user",
 			IsActive = true,
 			MembershipId = MembershipId
-		});
+		};
+
+		this._userService.GetUserAsync(UserId, MembershipId, Arg.Any<CancellationToken>()).Returns(user);
+		this._userService.GetByUsernameOrEmailAddressAsync(Username, MembershipId).Returns(user);
+		this._userService.GetByUsernameOrEmailAddressAsync(Email, MembershipId).Returns(user);
 		
 		this._passwordResetService
 			.GenerateResetPasswordTokenAsync(Arg.Any<User>(), Arg.Any<Membership>(), Arg.Any<bool>(), Arg.Any<ResetPasswordToken.ResetPasswordTokenPurpose>(), Arg.Any<CancellationToken>())
@@ -132,6 +136,25 @@ public class OneTimePasswordServiceTests
 	private static string WrongCode(string code)
 	{
 		return code == "999999" ? "888888" : "999999";
+	}
+
+	/// <summary>
+	/// Another user of the membership, resolved by the given username.
+	/// </summary>
+	private User SetupOtherUser(string username)
+	{
+		var user = new User
+		{
+			Id = "5f8a1b2c3d4e5f6a7b8c9d02",
+			Username = username,
+			EmailAddress = "jane.doe@example.com",
+			Role = "user",
+			IsActive = true,
+			MembershipId = MembershipId
+		};
+
+		this._userService.GetByUsernameOrEmailAddressAsync(username, MembershipId).Returns(user);
+		return user;
 	}
 	
 	#endregion
@@ -377,21 +400,57 @@ public class OneTimePasswordServiceTests
 		var service = this.CreateService();
 		var otp = await this.GenerateAsync(service);
 		var stored = Assert.Single(this._otps);
+		var jane = this.SetupOtherUser("jane.doe");
 		this._otps.Add(new OneTimePassword
 		{
 			Id = ObjectId.GenerateNewId().ToString(),
 			MembershipId = MembershipId,
-			UserId = "5f8a1b2c3d4e5f6a7b8c9d02",
-			Username = "jane.doe",
-			EmailAddress = "jane.doe@example.com",
+			UserId = jane.Id,
+			Username = jane.Username,
+			EmailAddress = jane.EmailAddress,
 			PasswordHash = stored.PasswordHash,
 			ExpiresIn = stored.ExpiresIn,
 			CreatedAt = stored.CreatedAt,
 			ExpireTime = stored.ExpireTime
 		});
-		
+
 		Assert.Null(await this.VerifyAsync(service, otp.Password!, "jane.doe"));
+		Assert.Equal(1, this._otps.Single(x => x.UserId == jane.Id).FailedAttempts);
 	}
-	
+
+	/// <summary>
+	/// The one-time password is found by its user, not by the login names copied into it (outdated after a rename).
+	/// </summary>
+	[Fact]
+	public async Task VerifyOtpAsync_AfterTheUserIsRenamed_AcceptsTheCurrentLoginName()
+	{
+		var service = this.CreateService();
+		var otp = await this.GenerateAsync(service);
+		var user = await this._userService.GetUserAsync(UserId, MembershipId, TestContext.Current.CancellationToken);
+		this._userService.GetByUsernameOrEmailAddressAsync(Username, MembershipId).Returns((User?) null);
+		this._userService.GetByUsernameOrEmailAddressAsync("john.renamed", MembershipId).Returns(user);
+
+		Assert.Null(await this.VerifyAsync(service, otp.Password!, Username));
+		Assert.NotNull(await this.VerifyAsync(service, otp.Password!, "john.renamed"));
+	}
+
+	/// <summary>
+	/// Another user who took the former username of the owner does not reach (and use up the attempts of) the owner's one-time password.
+	/// </summary>
+	[Fact]
+	public async Task VerifyOtpAsync_WithTheFormerUsernameOfTheOwner_DoesNotTouchTheOwnersOneTimePassword()
+	{
+		var service = this.CreateService();
+		var otp = await this.GenerateAsync(service);
+		this.SetupOtherUser(Username);
+
+		Assert.Null(await this.VerifyAsync(service, WrongCode(otp.Password!), Username));
+		Assert.Null(await this.VerifyAsync(service, otp.Password!, Username));
+
+		var stored = Assert.Single(this._otps);
+		Assert.Equal(0, stored.FailedAttempts);
+		Assert.Equal(UserId, stored.UserId);
+	}
+
 	#endregion
 }

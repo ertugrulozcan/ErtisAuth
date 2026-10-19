@@ -192,7 +192,51 @@ public class OtpAttemptTests : IClassFixture<ErtisAuthInstance>
 		using var signIn = await this._instance.RequestTokenAsync(username, "New-P@ssw0rd!");
 		Assert.Equal(HttpStatusCode.Created, signIn.StatusCode);
 	}
-	
+
+	/// <summary>
+	/// The one-time password is found by its user: the current login names are accepted (in any case), the former ones are not.
+	/// </summary>
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task VerifyOtp_AfterTheUserIsRenamed_AcceptsOnlyTheCurrentLoginName(bool byEmailAddress)
+	{
+		await this.EnableOtpAsync();
+		var adminClient = await this._instance.CreateAdminClientAsync();
+		var users = new ResourceClient(adminClient, $"/memberships/{this._instance.MembershipId}/users");
+		var username = $"otp{Guid.NewGuid():N}";
+		var user = await users.CreateAsync(new
+		{
+			username,
+			firstname = "Otp",
+			lastname = "User",
+			email_address = $"{username}@example.com",
+			password = "Old-P@ssw0rd!",
+			role = "admin",
+			user_type = "user"
+		});
+		var userId = user["_id"]!.GetValue<string>();
+		var otp = await adminClient.GetFromJsonAsync<JsonObject>($"/memberships/{this._instance.MembershipId}/users/{userId}/generate-otp", TestContext.Current.CancellationToken);
+		var code = otp!["password"]!.GetValue<string>();
+
+		var renamed = $"renamed{Guid.NewGuid():N}";
+		await users.UpdateAsync(userId, new { username = renamed, email_address = $"{renamed}@example.com" });
+		var formerLoginName = byEmailAddress ? $"{username}@example.com" : username;
+		var currentLoginName = byEmailAddress ? $"{renamed}@example.com" : renamed;
+
+		using (var response = await this.VerifyOtpAsync(code, formerLoginName))
+		{
+			Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+		}
+
+		using (var response = await this.VerifyOtpAsync(code, $" {currentLoginName.ToUpperInvariant()} "))
+		{
+			var body = await ErtisAuthInstance.ReadJsonAsync(response);
+			Assert.True(response.IsSuccessStatusCode, body.ToString());
+			Assert.False(string.IsNullOrEmpty(body.GetProperty("reset_token").GetString()));
+		}
+	}
+
 	#endregion
 	
 	#region Permission

@@ -218,7 +218,15 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 			throw ErtisAuthException.OtpHostMismatch();
 		}
 		
-		var otp = await this._repository.FindOneAsync(x => x.MembershipId == membershipId && (x.Username == username || x.EmailAddress == username), cancellationToken: cancellationToken);
+		// The user is resolved by its current login names (the ones copied into the one-time password may be outdated),
+		// and an unknown user is answered like a wrong code
+		var owner = await this._userService.GetByUsernameOrEmailAddressAsync(username, membershipId);
+		if (owner == null)
+		{
+			return null;
+		}
+
+		var otp = await this._repository.FindOneAsync(x => x.MembershipId == membershipId && x.UserId == owner.Id, cancellationToken: cancellationToken);
 		if (otp == null)
 		{
 			return null;

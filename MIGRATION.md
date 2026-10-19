@@ -380,6 +380,7 @@ Consider a rate limit at the ingress (for example Istio/Envoy) on the anonymous 
 - A code works **once**: a second verify answers `401 InvalidCredentials`.
 - `generate-otp` always issues a new code and invalidates the previous one (before, it returned the active code again).
 - Codes are case-insensitive. Letter-and-digit codes no longer contain `0`, `O`, `1` or `I`.
+- `verify-otp` looks the user up by their current username or email address (case-insensitive). A code generated before a rename is verified with the new name; the `username` and `email_address` of the `generate-otp` response are the ones at generation time.
 - Membership OTP policies have `max_attempts` (default 5).
 - Rotating the membership secret invalidates active OTPs.
 
