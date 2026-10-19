@@ -186,15 +186,16 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
     }
     
-    private async Task EnsureUserTypeAsync(UserType userType, DynamicObject model, string? userId, string? currentUserTypeSlug, string membershipId)
+    private async Task EnsureUserTypeAsync(UserType userType, DynamicObject model, DynamicObject? current, string? userId, string membershipId)
     {
         // Check IsAbstract
         if (userType.IsAbstract)
         {
             throw ErtisAuthException.InheritedTypeIsAbstract(userType.Name);
         }
-		
+
         // User type can not be changed
+        var currentUserTypeSlug = current?.GetValue<string>("user_type");
         if (!string.IsNullOrEmpty(currentUserTypeSlug) && currentUserTypeSlug != userType.Slug)
         {
             var details = new Dictionary<string, object?>
@@ -211,7 +212,9 @@ public class UserService : DynamicObjectCrudService, IUserService
 		
         // User model validation
         var validationContext = new FieldValidationContext(model);
-        if (!userType.ValidateContent(model, validationContext) || !await this.CheckUniquePropertiesAsync(userType, model, userId, membershipId, validationContext))
+        if (!userType.ValidateContent(model, validationContext) ||
+            !await this.CheckUniquePropertiesAsync(userType, model, userId, membershipId, validationContext) ||
+            !await this.CheckLoginNamesAsync(userType, model, current, userId, membershipId, validationContext))
         {
             throw new CumulativeValidationException(validationContext.Errors);
         }
@@ -268,7 +271,53 @@ public class UserService : DynamicObjectCrudService, IUserService
         
         return isValid;
     }
-    
+
+	/// <summary>
+	/// The fields accepted as the login name, each paired with the other one.
+	/// </summary>
+	private static readonly (string Path, string OtherPath)[] LoginNamePaths = [("username", "email_address"), ("email_address", "username")];
+
+	/// <summary>
+	/// The login accepts a username or an email address, so the username of a user can not be the email address of another user
+	/// and vice versa (a user's own username may be its own email address). Checked only when the value is set or changed,
+	/// so that the users which are already in conflict can still be updated. There is no index for it (it spans two fields).
+	/// </summary>
+	private async Task<bool> CheckLoginNamesAsync(UserType userType, DynamicObject model, DynamicObject? current, string? userId, string membershipId, IValidationContext validationContext)
+	{
+		var isValid = true;
+		foreach (var (path, otherPath) in LoginNamePaths)
+		{
+			if (!model.TryGetValue<string>(path, out var value, out _) || string.IsNullOrEmpty(value))
+			{
+				continue;
+			}
+
+			if (current != null && current.TryGetValue<string>(path, out var currentValue, out _) && currentValue == value)
+			{
+				continue;
+			}
+
+			var found = await this.FindOneAsync(
+				QueryBuilder.Equals("membership_id", membershipId),
+				QueryBuilder.Equals(otherPath, value)
+			);
+
+			if (found == null || !string.IsNullOrEmpty(userId) && found.TryGetValue<string>("_id", out var foundId, out _) && userId == foundId)
+			{
+				continue;
+			}
+
+			var fieldInfo = userType.GetUniqueProperties().FirstOrDefault(x => x.GetSelfPath(userType) == path);
+			if (fieldInfo != null)
+			{
+				isValid = false;
+				validationContext.Errors.Add(new FieldValidationException($"The '{path}' field can not be the {otherPath} of another user.", fieldInfo));
+			}
+		}
+
+		return isValid;
+	}
+
     private async Task<IReadOnlyList<UniqueFieldIndex>> GetMembershipUniqueIndexesAsync(string membershipId)
     {
         var userTypes = await this._userTypeService.GetAsync(membershipId, null, null, false, null, null);
@@ -747,7 +796,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         this.EnsureId(model);
         this.EnsureSys(model, utilizer, current);
         
-        await this.EnsureUserTypeAsync(userType, model, id, current?.GetValue<string>("user_type"), membershipId);
+        await this.EnsureUserTypeAsync(userType, model, current, id, membershipId);
         await this.EmbedReferencesAsync(userType, model, cancellationToken: cancellationToken);
         await this.EnsureRoleAsync(model, membershipId, cancellationToken: cancellationToken);
 		

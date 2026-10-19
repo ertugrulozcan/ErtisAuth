@@ -142,6 +142,22 @@ db.users.aggregate([
 
 Repeat with `username`. For custom unique fields, add `user_type: { $in: [<declaring type and its descendants>] }` to `$match`.
 
+A username can no longer be the email address of another user of the membership (or the other way round), because both are accepted as the login name. There is no index for it. Users already in conflict keep working and can still be updated, but they can't take a conflicting value again once they change it. The check is case-sensitive: `email_address` is stored in lower case. To find the existing conflicts:
+
+```js
+db.users.aggregate([
+	{ $match: { username: { $type: "string", $gt: "" } } },
+	{ $lookup: {
+		from: "users",
+		let: { m: "$membership_id", u: "$username", id: "$_id" },
+		pipeline: [{ $match: { $expr: { $and: [{ $eq: ["$membership_id", "$$m"] }, { $eq: ["$email_address", "$$u"] }, { $ne: ["$_id", "$$id"] }] } } }, { $project: { _id: 1 } }],
+		as: "conflicts"
+	} },
+	{ $match: { "conflicts.0": { $exists: true } } },
+	{ $project: { membership_id: 1, username: 1, conflicts: 1 } }
+], { allowDiskUse: true })
+```
+
 #### Device code policies
 
 Policies are validated on create and update: `length` must be 5-12, `expires_in` 1-1800 seconds, and at least one of `contains_letters`/`contains_digits` must be set. Existing policies that break these rules keep working but cannot be saved until fixed:
@@ -387,6 +403,7 @@ All routes are under `/memberships/{membershipId}/`.
 - Making a field unique while duplicates exist answers `409 UniqueFieldHasDuplicates`, and the user type is not saved.
 - Custom unique fields are unique among the declaring type and its descendants (before: among all users of the membership).
 - Concurrent duplicate writes answer a 400 unique validation error.
+- A username that is the email address of another user, or an email address that is the username of another user, is rejected with a 400 `ValidationException` (`The 'username' field can not be the email_address of another user.`). A user's own username may be its own email address.
 - A multiple reference field without `contentType` keeps the given ids (it was saved as `[]`). Ids lost this way cannot be recovered from the database.
 
 ### REST resources
