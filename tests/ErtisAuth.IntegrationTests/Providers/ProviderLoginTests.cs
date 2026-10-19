@@ -222,7 +222,24 @@ public class ProviderLoginTests : IClassFixture<OAuthErtisAuthInstance>
 		Assert.Equal(local["_id"]!.GetValue<string>(), user["_id"]!.GetValue<string>());
 		Assert.Equal([sub], ConnectedAccountsOf(user, "Google"));
 	}
-	
+
+	/// <summary>
+	/// Email addresses are stored lower cased, the provider may give another case.
+	/// </summary>
+	[Fact]
+	public async Task Google_VerifiedEmailOfAnExistingAccountInAnotherCase_IsLinked()
+	{
+		var email = $"google-{Guid.NewGuid():N}@example.com";
+		var local = await this.CreateLocalUserAsync(email);
+		var sub = Guid.NewGuid().ToString("N");
+		var idToken = this.Providers.Google.Issue(GoogleClientId, sub, email.ToUpperInvariant(), emailVerified: true);
+
+		var (user, _) = await this.AssertLoginAsync(await this.LoginAsync("google", GoogleLogin(idToken)));
+
+		Assert.Equal(local["_id"]!.GetValue<string>(), user["_id"]!.GetValue<string>());
+		Assert.Equal([sub], ConnectedAccountsOf(user, "Google"));
+	}
+
 	[Fact]
 	public async Task Google_UnverifiedEmailOfAnExistingAccount_IsNotLinked()
 	{

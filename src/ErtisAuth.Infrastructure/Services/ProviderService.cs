@@ -13,6 +13,7 @@ using ErtisAuth.Core.Models.Identity;
 using ErtisAuth.Core.Models.Users;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
+using ErtisAuth.Infrastructure.Helpers;
 using ErtisAuth.Integrations.OAuth.Core;
 using ErtisAuth.Integrations.OAuth;
 using Microsoft.Extensions.Caching.Memory;
@@ -497,7 +498,7 @@ public class ProviderService : MembershipBoundedCrudService<Provider>, IProvider
 		
 		var query2 = QueryBuilder.Where(
 			QueryBuilder.Equals("membership_id", membershipId), 
-			QueryBuilder.Equals("email_address", request.EmailAddress)).ToString();
+			QueryBuilder.Equals("email_address", LoginNameHelper.Normalize(request.EmailAddress))).ToString();
 		
 		var queryUsers2Result = await this._userService.QueryAsync(query2, membershipId, 0, 1, cancellationToken: cancellationToken);
 		if (queryUsers2Result.Items.Any())

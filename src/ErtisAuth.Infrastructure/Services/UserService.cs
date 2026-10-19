@@ -362,13 +362,20 @@ public class UserService : DynamicObjectCrudService, IUserService
         model.SetValue("membership_id", membershipId, true);
     }
     
-    private void EnsureEmailAddress(DynamicObject model)
-    {
-        if (model.TryGetValue<string>("email_address", out var emailAddress) && !string.IsNullOrEmpty(emailAddress))
-        {
-	        model.SetValue("email_address", emailAddress.ToLowerInvariant());
-        }
-    }
+	/// <summary>
+	/// Normalizes the given login names (see <see cref="LoginNameHelper"/>). On update only the given values are normalized,
+	/// the stored ones are left as they are.
+	/// </summary>
+	private static void EnsureLoginNames(DynamicObject model)
+	{
+		foreach (var (path, _) in LoginNamePaths)
+		{
+			if (model.TryGetValue<string>(path, out var value, out _) && !string.IsNullOrEmpty(value))
+			{
+				model.SetValue(path, LoginNameHelper.Normalize(value));
+			}
+		}
+	}
     
     #endregion
 	
@@ -735,14 +742,16 @@ public class UserService : DynamicObjectCrudService, IUserService
     
     public async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string username, string email, string membershipId, CancellationToken cancellationToken = default)
     {
+	    username = LoginNameHelper.Normalize(username);
+	    email = LoginNameHelper.Normalize(email);
         var dynamicObject = await this.FindOneAsync(
 	        QueryBuilder.And(
-		        QueryBuilder.Equals("membership_id", membershipId), 
+		        QueryBuilder.Equals("membership_id", membershipId),
 		        QueryBuilder.Or(
 			        QueryBuilder.Equals("username", username),
-			        QueryBuilder.Equals("email_address", email.ToLowerInvariant()),
+			        QueryBuilder.Equals("email_address", email),
 			        QueryBuilder.Equals("username", email),
-			        QueryBuilder.Equals("email_address", username.ToLowerInvariant())
+			        QueryBuilder.Equals("email_address", username)
 			    )
 		    )
 	    );
@@ -766,12 +775,13 @@ public class UserService : DynamicObjectCrudService, IUserService
     
     public async Task<User?> GetByUsernameOrEmailAddressAsync(string usernameOrEmailAddress, string membershipId)
     {
+	    usernameOrEmailAddress = LoginNameHelper.Normalize(usernameOrEmailAddress);
         var dynamicObject = await this.FindOneAsync(
 	        QueryBuilder.And(
-		        QueryBuilder.Equals("membership_id", membershipId), 
+		        QueryBuilder.Equals("membership_id", membershipId),
 		        QueryBuilder.Or(
 			        QueryBuilder.Equals("username", usernameOrEmailAddress),
-			        QueryBuilder.Equals("email_address", usernameOrEmailAddress.ToLowerInvariant())
+			        QueryBuilder.Equals("email_address", usernameOrEmailAddress)
 		        )
 	        )
         );
@@ -832,7 +842,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     {
         var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
         
-        this.EnsureEmailAddress(model);
+        EnsureLoginNames(model);
 		this.EnsureServerManagedProperties(model, utilizer);
         var activationMailHook = await this.EnsureUserActivationAsync(membership, cancellationToken: cancellationToken);
         model.SetValue("is_active", membership.UserActivation != Status.Active, true);
@@ -1088,7 +1098,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     public async Task<DynamicObject?> UpdateAsync(DynamicObject model, string userId, string membershipId, Utilizer utilizer, bool fireEvent = true, CancellationToken cancellationToken = default)
     {
         await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        this.EnsureEmailAddress(model);
+        EnsureLoginNames(model);
         var current = await this.EnsureUserAsync(userId, membershipId);
 		this.EnsureServerManagedProperties(model, utilizer);
         var userType = await this.GetUserTypeAsync(model, current, membershipId, cancellationToken: cancellationToken);

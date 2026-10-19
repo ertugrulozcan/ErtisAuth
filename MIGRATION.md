@@ -103,6 +103,41 @@ db.users.find({ $or: [{ role: { $exists: false } }, { role: null }, { role: "" }
 db.applications.find({ $or: [{ role: { $exists: false } }, { role: null }, { role: "" }] }, { name: 1, membership_id: 1 })
 ```
 
+#### Users: lower case usernames and email addresses
+
+`username` and `email_address` are now stored trimmed and in lower case (Unicode NFC), and the sign-in, password reset, activation mail and provider sign-in look them up the same way. A user whose stored username or email address has an upper case letter or surrounding white space **can't sign in** until this migration runs.
+
+First find the values that become equal once normalized. The update below fails on them (unique index), so resolve them by hand:
+
+```js
+["username", "email_address"].forEach(f => printjson(db.users.aggregate([
+	{ $match: { [f]: { $type: "string", $gt: "" } } },
+	{ $group: { _id: { m: "$membership_id", v: { $toLower: { $trim: { input: "$" + f } } } }, n: { $sum: 1 }, ids: { $push: "$_id" } } },
+	{ $match: { n: { $gt: 1 } } }
+], { allowDiskUse: true }).toArray()))
+```
+
+Then normalize:
+
+```js
+const needsNormalization = /[A-Z]|^\s|\s$/
+db.users.updateMany(
+	{ $or: [{ username: needsNormalization }, { email_address: needsNormalization }] },
+	[{ $set: {
+		username: { $cond: [{ $eq: [{ $type: "$username" }, "string"] }, { $toLower: { $trim: { input: "$username" } } }, "$username"] },
+		email_address: { $cond: [{ $eq: [{ $type: "$email_address" }, "string"] }, { $toLower: { $trim: { input: "$email_address" } } }, "$email_address"] }
+	} }]
+)
+```
+
+`$toLower` only lower cases ASCII letters. This lists the values with non-ASCII characters; fix the ones with an upper case letter (e.g. `İrem`) by hand:
+
+```js
+db.users.find({ $or: [{ username: /[^\x00-\x7f]/ }, { email_address: /[^\x00-\x7f]/ }] }, { username: 1, email_address: 1, membership_id: 1 })
+```
+
+Afterwards, run the username / email address conflict check in [1.2](#duplicate-emails-usernames-and-unique-fields).
+
 #### Active tokens: legacy geo location
 
 `client_info.geo_location` was removed. Session documents that still contain it cannot be read, so refresh and "log out from all devices" answer 500 for sessions created before the deploy:
@@ -142,7 +177,7 @@ db.users.aggregate([
 
 Repeat with `username`. For custom unique fields, add `user_type: { $in: [<declaring type and its descendants>] }` to `$match`.
 
-A username can no longer be the email address of another user of the membership (or the other way round), because both are accepted as the login name. There is no index for it. Users already in conflict keep working and can still be updated, but they can't take a conflicting value again once they change it. The check is case-sensitive: `email_address` is stored in lower case. To find the existing conflicts:
+A username can no longer be the email address of another user of the membership (or the other way round), because both are accepted as the login name. There is no index for it. Users already in conflict keep working and can still be updated, but they can't take a conflicting value again once they change it. Run this after the [normalization migration](#users-lower-case-usernames-and-email-addresses) to find the existing conflicts:
 
 ```js
 db.users.aggregate([
@@ -403,6 +438,7 @@ All routes are under `/memberships/{membershipId}/`.
 - Making a field unique while duplicates exist answers `409 UniqueFieldHasDuplicates`, and the user type is not saved.
 - Custom unique fields are unique among the declaring type and its descendants (before: among all users of the membership).
 - Concurrent duplicate writes answer a 400 unique validation error.
+- `username` and `email_address` are stored trimmed and in lower case, and the sign-in ignores their case. Filters on them (`_query`) must use the lower case value.
 - A username that is the email address of another user, or an email address that is the username of another user, is rejected with a 400 `ValidationException` (`The 'username' field can not be the email_address of another user.`). A user's own username may be its own email address.
 - A multiple reference field without `contentType` keeps the given ids (it was saved as `[]`). Ids lost this way cannot be recovered from the database.
 
