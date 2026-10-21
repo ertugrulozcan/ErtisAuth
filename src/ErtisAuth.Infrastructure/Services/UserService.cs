@@ -38,7 +38,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     private readonly IAccessControlService _accessControlService;
     private readonly IEventService _eventService;
     private readonly IJwtService _jwtService;
-    private readonly IMailHookService _mailHookService;
+    private readonly IMailhookService _mailhookService;
     private readonly ILogger<UserService> _logger;
 	
     #endregion
@@ -54,7 +54,7 @@ public class UserService : DynamicObjectCrudService, IUserService
     /// <param name="accessControlService"></param>
     /// <param name="eventService"></param>
     /// <param name="jwtService"></param>
-    /// <param name="mailHookService"></param>
+    /// <param name="mailhookService"></param>
     /// <param name="repository"></param>
     /// <param name="logger"></param>
     public UserService(
@@ -64,7 +64,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         IAccessControlService accessControlService,
         IEventService eventService,
         IJwtService jwtService,
-        IMailHookService mailHookService,
+        IMailhookService mailhookService,
         IUserRepository repository,
         ILogger<UserService> logger) : base(repository)
     {
@@ -74,7 +74,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         this._accessControlService = accessControlService;
         this._eventService = eventService;
         this._jwtService = jwtService;
-        this._mailHookService = mailHookService;
+        this._mailhookService = mailhookService;
         this._logger = logger;
     }
 	
@@ -253,7 +253,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         
         EnsureLoginNames(model);
 		this.EnsureServerManagedProperties(model, utilizer);
-        var activationMailHook = await this.GetActivationMailHookAsync(membership, cancellationToken: cancellationToken);
+        var activationMailhook = await this.GetActivationMailhookAsync(membership, cancellationToken: cancellationToken);
         model.SetValue("is_active", membership.UserActivation != Status.Active, true);
 		
         string? password = null;
@@ -289,9 +289,9 @@ public class UserService : DynamicObjectCrudService, IUserService
 		await this.FireOnCreatedEvent(created, membershipId, utilizer);
 		
 		// SendActivationMail
-		if (activationMailHook != null)
+		if (activationMailhook != null)
 		{
-			await this.TrySendActivationMailAsync(created, activationMailHook, membership, host);
+			await this.TrySendActivationMailAsync(created, activationMailhook, membership, host);
 		}
         
         return created;
@@ -1072,34 +1072,34 @@ public class UserService : DynamicObjectCrudService, IUserService
 	        throw ErtisAuthException.UserAlreadyActive();
         }
         
-        var activationMailHook = await this.GetActivationMailHookAsync(membership, cancellationToken: cancellationToken);
-        if (activationMailHook == null)
+        var activationMailhook = await this.GetActivationMailhookAsync(membership, cancellationToken: cancellationToken);
+        if (activationMailhook == null)
         {
-	        throw ErtisAuthException.ActivationMailHookWasNotDefined();
+	        throw ErtisAuthException.ActivationMailhookWasNotDefined();
         }
         
-        return await this.TrySendActivationMailAsync(user, activationMailHook, membership, host);
+        return await this.TrySendActivationMailAsync(user, activationMailhook, membership, host);
     }
 	
-    private async Task TrySendActivationMailAsync(DynamicObject userDynamicObject, MailHook activationMailHook, Membership membership, string? host)
+    private async Task TrySendActivationMailAsync(DynamicObject userDynamicObject, Mailhook activationMailhook, Membership membership, string? host)
     {
-        await this.TrySendActivationMailAsync(userDynamicObject.Deserialize<User>()!, activationMailHook, membership, host);
+        await this.TrySendActivationMailAsync(userDynamicObject.Deserialize<User>()!, activationMailhook, membership, host);
     }
     
-    private async Task<string?> TrySendActivationMailAsync(User user, MailHook? activationMailHook, Membership membership, string? host)
+    private async Task<string?> TrySendActivationMailAsync(User user, Mailhook? activationMailhook, Membership membership, string? host)
     {
         try
         {
 	        if (membership.UserActivation == Status.Active)
 	        {
-		        if (activationMailHook != null && !string.IsNullOrEmpty(host))
+		        if (activationMailhook != null && !string.IsNullOrEmpty(host))
 		        {
-			        await this.SendActivationMailAsync(user, activationMailHook, membership.Id, host);
+			        await this.SendActivationMailAsync(user, activationMailhook, membership.Id, host);
 			        return user.EmailAddress;
 		        }
 		        else
 		        {
-			        this._logger.LogError("Activation mail could not be sent (ActivationMailHook: {Id}, Host: {Host})", activationMailHook?.Id, host);
+			        this._logger.LogError("Activation mail could not be sent (ActivationMailhook: {Id}, Host: {Host})", activationMailhook?.Id, host);
 		        }
 	        }
         }
@@ -1111,36 +1111,36 @@ public class UserService : DynamicObjectCrudService, IUserService
         return null;
     }
 	
-    private async Task SendActivationMailAsync(User user, MailHook activationMailHook, string membershipId, string host)
+    private async Task SendActivationMailAsync(User user, Mailhook activationMailhook, string membershipId, string host)
     {
         var activationToken = await this.GenerateActivationTokenAsync(user);
         var activationLink = this.GenerateActivationLink(activationToken, membershipId, host);
-        await this._mailHookService.QueueHookMailAsync(activationMailHook, user.Id, membershipId, new
+        await this._mailhookService.QueueHookMailAsync(activationMailhook, user.Id, membershipId, new
         {
 	        user,
 	        activationLink
         });
     }
     
-    private async Task<MailHook?> GetActivationMailHookAsync(Membership membership, CancellationToken cancellationToken = default)
+    private async Task<Mailhook?> GetActivationMailhookAsync(Membership membership, CancellationToken cancellationToken = default)
     {
         if (membership.UserActivation == Status.Active)
         {
-			var activationMailHook = await this._mailHookService.GetUserActivationMailHookAsync(membership.Id, cancellationToken: cancellationToken);
-			if (activationMailHook == null)
+			var activationMailhook = await this._mailhookService.GetUserActivationMailhookAsync(membership.Id, cancellationToken: cancellationToken);
+			if (activationMailhook == null)
 			{
-				throw ErtisAuthException.ActivationMailHookWasNotDefined();
+				throw ErtisAuthException.ActivationMailhookWasNotDefined();
 			}
-			else if (!activationMailHook.IsActive)
+			else if (!activationMailhook.IsActive)
 			{
-				throw ErtisAuthException.ActivationMailHookDisabled();
+				throw ErtisAuthException.ActivationMailhookDisabled();
 			}
-			else if (string.IsNullOrEmpty(activationMailHook.MailProvider) || membership.MailProviders == null || membership.MailProviders.All(x => x.Slug != activationMailHook.MailProvider))
+			else if (string.IsNullOrEmpty(activationMailhook.MailProvider) || membership.MailProviders == null || membership.MailProviders.All(x => x.Slug != activationMailhook.MailProvider))
 			{
-				throw ErtisAuthException.ActivationMailHookProviderNotConfigured();
+				throw ErtisAuthException.ActivationMailhookProviderNotConfigured();
 			}
 			
-			return activationMailHook;
+			return activationMailhook;
         }
 		
         return null;

@@ -14,7 +14,7 @@ namespace ErtisAuth.Infrastructure.Tests.Services;
 
 /// <summary>
 /// The mail service sends with the membership's mail provider: the direct sending throws the failures, the queued sending
-/// reports them to the completion callback. Both raise the mail events. The delivery modes are covered by MailHookServiceTests.
+/// reports them to the completion callback. Both raise the mail events. The delivery modes are covered by MailhookServiceTests.
 /// </summary>
 public class MailServiceTests
 {

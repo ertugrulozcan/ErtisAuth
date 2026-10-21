@@ -78,8 +78,8 @@ public class SysInfoTests : IClassFixture<ErtisAuthInstance>
 			name => WebhookBody(name, 1),
 			name => WebhookBody(name, 2)),
 		["mailhooks"] = ("mailhooks",
-			name => MailHookBody(name, "Welcome"),
-			name => MailHookBody(name, "Changed")),
+			name => MailhookBody(name, "Welcome"),
+			name => MailhookBody(name, "Changed")),
 		["code-policies"] = ("code-policies",
 			name => PolicyBody(name, 6),
 			name => PolicyBody(name, 8)),
@@ -103,7 +103,7 @@ public class SysInfoTests : IClassFixture<ErtisAuthInstance>
 		["try_count"] = tryCount
 	};
 	
-	private static JsonObject MailHookBody(string name, string subject) => new()
+	private static JsonObject MailhookBody(string name, string subject) => new()
 	{
 		["name"] = name,
 		["event"] = "UserCreated",

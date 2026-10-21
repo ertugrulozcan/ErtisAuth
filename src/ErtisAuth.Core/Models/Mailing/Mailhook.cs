@@ -7,7 +7,7 @@ using MongoDB.Bson.Serialization.Attributes;
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ErtisAuth.Core.Models.Mailing;
 
-public class MailHook : MembershipBoundedResource, IHasSlug, IHasSysInfo
+public class Mailhook : MembershipBoundedResource, IHasSlug, IHasSysInfo
 {
     #region Properties
     
@@ -103,7 +103,7 @@ public class MailHook : MembershipBoundedResource, IHasSlug, IHasSysInfo
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [BsonElement("variables")]
     [BsonIgnoreIfNull]
-    public MailHookVariable[]? Variables { get; set; }
+    public MailhookVariable[]? Variables { get; set; }
     
     [JsonPropertyName("sys")]
     [BsonElement("sys")]
@@ -112,7 +112,7 @@ public class MailHook : MembershipBoundedResource, IHasSlug, IHasSysInfo
     #endregion
 }
 
-public class MailHookVariable
+public class MailhookVariable
 {
     #region Properties
     

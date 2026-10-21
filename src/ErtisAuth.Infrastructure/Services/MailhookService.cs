@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Infrastructure.Services;
 
-public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHookService
+public class MailhookService : MembershipBoundedCrudService<Mailhook>, IMailhookService
 {
     #region Constants
 	
@@ -41,7 +41,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	    ValueEncoder = WebUtility.HtmlEncode
     };
     
-    private static readonly string[] PredefinedAutonomouslyMailHooks =
+    private static readonly string[] PredefinedAutonomouslyMailhooks =
     {
 	    USER_ACTIVATION_MAIL_HOOK_SLUG,
 	    RESET_PASSWORD_MAIL_HOOK_SLUG
@@ -54,7 +54,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	private readonly IEventService _eventService;
 	private readonly IMailService _mailService;
 	private readonly IUserRepository _userRepository;
-	private readonly ILogger<MailHookService> _logger;
+	private readonly ILogger<MailhookService> _logger;
 	
     #endregion
 	
@@ -66,16 +66,16 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	/// <param name="membershipService"></param>
 	/// <param name="eventService"></param>
 	/// <param name="mailService"></param>
-	/// <param name="mailHookRepository"></param>
+	/// <param name="mailhookRepository"></param>
 	/// <param name="userRepository"></param>
 	/// <param name="logger"></param>
-	public MailHookService(
+	public MailhookService(
 		IMembershipService membershipService,
 		IEventService eventService,
 		IMailService mailService,
-		IMailHookRepository mailHookRepository,
+		IMailhookRepository mailhookRepository,
 		IUserRepository userRepository,
-		ILogger<MailHookService> logger) : base(membershipService, mailHookRepository)
+		ILogger<MailhookService> logger) : base(membershipService, mailhookRepository)
 	{
 		this._eventService = eventService;
 		this._mailService = mailService;
@@ -109,17 +109,17 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		{
 			var membershipId = ertisAuthEvent.MembershipId;
 			var eventType = ertisAuthEvent.EventType.ToString();
-			var mailHooks = await this._repository.FindAsync(
+			var mailhooks = await this._repository.FindAsync(
 				x => x.MembershipId == membershipId && x.Status == "active" && x.Event == eventType,
 				sorting: null,
 				cancellationToken: cancellationToken);
 			
-			foreach (var mailHook in mailHooks.Items)
+			foreach (var mailhook in mailhooks.Items)
 			{
-				if (PredefinedAutonomouslyMailHooks.All(x => x != mailHook.Slug))
+				if (PredefinedAutonomouslyMailhooks.All(x => x != mailhook.Slug))
 				{
 					await this.QueueHookMailAsync(
-						mailHook,
+						mailhook,
 						ertisAuthEvent.UtilizerId,
 						ertisAuthEvent.MembershipId,
 						ertisAuthEvent,
@@ -133,7 +133,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		}
 	}
 	
-	private async void MailhookCreatedEventHandler(object? sender, CreateResourceEventArgs<MailHook> eventArgs)
+	private async void MailhookCreatedEventHandler(object? sender, CreateResourceEventArgs<Mailhook> eventArgs)
 	{
 		try
 		{
@@ -145,7 +145,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		}
 	}
 	
-	private async void MailhookUpdatedEventHandler(object? sender, UpdateResourceEventArgs<MailHook> eventArgs)
+	private async void MailhookUpdatedEventHandler(object? sender, UpdateResourceEventArgs<Mailhook> eventArgs)
 	{
 		try
 		{
@@ -157,7 +157,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		}
 	}
 	
-	private async void MailhookDeletedEventHandler(object? sender, DeleteResourceEventArgs<MailHook> eventArgs)
+	private async void MailhookDeletedEventHandler(object? sender, DeleteResourceEventArgs<Mailhook> eventArgs)
 	{
 		try
 		{
@@ -173,14 +173,14 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	
 	#region Methods
 	
-	private async Task<MailHook?> GetBySlugAsync(string slug, string membershipId)
+	private async Task<Mailhook?> GetBySlugAsync(string slug, string membershipId)
 	{
 		return await this._repository.FindOneAsync(x => x.Slug == slug && x.MembershipId == membershipId);
 	}
 	
-	public async Task QueueHookMailAsync(MailHook mailHook, string userId, string membershipId, object? payload, CancellationToken cancellationToken = default)
+	public async Task QueueHookMailAsync(Mailhook mailhook, string userId, string membershipId, object? payload, CancellationToken cancellationToken = default)
 	{
-		if (!mailHook.IsActive)
+		if (!mailhook.IsActive)
 		{
 			return;
 		}
@@ -188,10 +188,10 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		try
 		{
 			// The mail is rendered now: the payload is a snapshot of the caller's objects, which may change before the mail is sent
-			var mail = await this.RenderMailAsync(mailHook, userId, payload, cancellationToken: cancellationToken);
+			var mail = await this.RenderMailAsync(mailhook, userId, payload, cancellationToken: cancellationToken);
 			if (mail == null)
 			{
-				this._logger.LogWarning("The hook mail '{MailHook}' has no recipients", mailHook.Name);
+				this._logger.LogWarning("The hook mail '{Mailhook}' has no recipients", mailhook.Name);
 				return;
 			}
 			
@@ -200,7 +200,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		catch (Exception ex)
 		{
 			// Queuing is best effort like the sending: the flow which queues the mail (e.g. a password reset) does not fail
-			this._logger.LogError(ex, "The hook mail '{MailHook}' could not be queued", mailHook.Name);
+			this._logger.LogError(ex, "The hook mail '{Mailhook}' could not be queued", mailhook.Name);
 		}
 	}
 	
@@ -225,7 +225,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	/// <summary>
 	/// Returns null when the mail has no recipients
 	/// </summary>
-	private async Task<MailMessage?> RenderMailAsync(MailHook mailhook, string userId, object? payload, CancellationToken cancellationToken = default)
+	private async Task<MailMessage?> RenderMailAsync(Mailhook mailhook, string userId, object? payload, CancellationToken cancellationToken = default)
 	{
 		payload = ToTemplateData(payload);
 		var recipients = new List<Recipient>();
@@ -337,7 +337,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		return formatter.Format(template, payload).ReplaceLineEndings(" ");
 	}
 	
-	public async Task<MailHook?> GetUserActivationMailHookAsync(string membershipId, CancellationToken cancellationToken = default)
+	public async Task<Mailhook?> GetUserActivationMailhookAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
 		return await this.GetAsync(x =>
 				x.Slug == USER_ACTIVATION_MAIL_HOOK_SLUG &&
@@ -348,7 +348,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			cancellationToken: cancellationToken);
 	}
 	
-	public async Task<MailHook?> GetResetPasswordMailHookAsync(string membershipId, CancellationToken cancellationToken = default)
+	public async Task<Mailhook?> GetResetPasswordMailhookAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
 		return await this.GetAsync(x =>
 				x.Slug == RESET_PASSWORD_MAIL_HOOK_SLUG &&
@@ -359,7 +359,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 			cancellationToken: cancellationToken);
 	}
 	
-	protected override Task<IEnumerable<string>> ValidateModelAsync(MailHook model, CancellationToken cancellationToken = default)
+	protected override Task<IEnumerable<string>> ValidateModelAsync(Mailhook model, CancellationToken cancellationToken = default)
 	{
 		var errorList = new List<string>();
 		if (string.IsNullOrEmpty(model.Name))
@@ -426,7 +426,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		return Task.FromResult<IEnumerable<string>>(errorList);
 	}
 	
-	protected override void Overwrite(MailHook destination, MailHook source)
+	protected override void Overwrite(Mailhook destination, Mailhook source)
 	{
 		destination.Id = source.Id;
 		destination.MembershipId = source.MembershipId;
@@ -488,7 +488,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		}
 	}
 	
-	protected override async Task<bool> IsAlreadyExistAsync(MailHook model, string membershipId, MailHook? exclude = null, CancellationToken cancellationToken = default)
+	protected override async Task<bool> IsAlreadyExistAsync(Mailhook model, string membershipId, Mailhook? exclude = null, CancellationToken cancellationToken = default)
 	{
 		if (exclude == null)
 		{
@@ -508,14 +508,14 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 		}
 	}
 	
-	protected override ErtisAuthException GetAlreadyExistError(MailHook model)
+	protected override ErtisAuthException GetAlreadyExistError(Mailhook model)
 	{
-		return ErtisAuthException.MailHookAlreadyExists(model.Slug);
+		return ErtisAuthException.MailhookAlreadyExists(model.Slug);
 	}
 	
 	protected override ErtisAuthException GetNotFoundError(string id)
 	{
-		return ErtisAuthException.MailHookNotFound(id);
+		return ErtisAuthException.MailhookNotFound(id);
 	}
 	
 	#endregion

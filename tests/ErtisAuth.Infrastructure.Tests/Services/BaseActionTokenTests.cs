@@ -179,7 +179,7 @@ public abstract class BaseActionTokenTests
 			this.CreateUserService(),
 			this._membershipService,
 			this._jwtService,
-			Substitute.For<IMailHookService>(),
+			Substitute.For<IMailhookService>(),
 			Substitute.For<IEventService>());
 	}
 	
@@ -192,7 +192,7 @@ public abstract class BaseActionTokenTests
 			this._accessControlService,
 			Substitute.For<IEventService>(),
 			this._jwtService,
-			Substitute.For<IMailHookService>(),
+			Substitute.For<IMailhookService>(),
 			this._repository,
 			NullLogger<UserService>.Instance);
 	}

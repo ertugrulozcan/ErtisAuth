@@ -40,7 +40,7 @@ public static class ServiceExtensions
 		services.AddSingleton<IBackgroundQueue<QueuedMail>, BackgroundQueue<QueuedMail>>();
 		services.AddSingleton<IMailService, MailService>();
 		services.AddHostedService<MailBackgroundService>();
-		services.AddSingleton<IMailHookService, MailHookService>();
+		services.AddSingleton<IMailhookService, MailhookService>();
 		services.AddSingleton<ISetupService, SetupService>();
 		services.AddSingleton<IUtilizerService, UtilizerService>();
 		services.AddSingleton<IAuthorizationHandler, ErtisAuthAuthorizationHandler>();
@@ -56,7 +56,7 @@ public static class ServiceExtensions
 		serviceProvider.GetRequiredService<IRoleService>();
 		serviceProvider.GetRequiredService<IProviderService>();
 		serviceProvider.GetRequiredService<IWebhookService>();
-		serviceProvider.GetRequiredService<IMailHookService>();
+		serviceProvider.GetRequiredService<IMailhookService>();
 		serviceProvider.GetRequiredService<ITokenCodeService>();
 	}
 	

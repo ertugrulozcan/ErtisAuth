@@ -209,9 +209,9 @@ public static class ControllerExtensions
 	
 	#region Mailhook Methods
 	
-	public static NotFoundObjectResult MailHookNotFound(this ControllerBase controller, string mailHookId)
+	public static NotFoundObjectResult MailhookNotFound(this ControllerBase controller, string mailhookId)
 	{
-		return controller.NotFound(ErtisAuthException.MailHookNotFound(mailHookId).Error);
+		return controller.NotFound(ErtisAuthException.MailhookNotFound(mailhookId).Error);
 	}
 	
 	#endregion

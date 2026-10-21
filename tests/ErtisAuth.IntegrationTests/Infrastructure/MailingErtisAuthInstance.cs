@@ -48,8 +48,8 @@ public class MailingErtisAuthInstance : ErtisAuthInstance
 	{
 		// Mail hooks first: a membership with user activation requires the activation mail hook
 		var adminClient = await this.CreateAdminClientAsync();
-		await CreateMailHookAsync(adminClient, $"/memberships/{this.MembershipId}/mailhooks", "User Activation", "UserCreated", "Activate your account", "<a href=\"{{activationLink}}\">Activate</a>");
-		await CreateMailHookAsync(adminClient, $"/memberships/{this.MembershipId}/mailhooks", "Reset Password", "UserPasswordReset", "Reset your password", "<a href=\"{{resetPasswordLink}}\">Reset</a>");
+		await CreateMailhookAsync(adminClient, $"/memberships/{this.MembershipId}/mailhooks", "User Activation", "UserCreated", "Activate your account", "<a href=\"{{activationLink}}\">Activate</a>");
+		await CreateMailhookAsync(adminClient, $"/memberships/{this.MembershipId}/mailhooks", "Reset Password", "UserPasswordReset", "Reset your password", "<a href=\"{{resetPasswordLink}}\">Reset</a>");
 		
 		await this.UpdateMembershipAsync(membership =>
 		{
@@ -70,7 +70,7 @@ public class MailingErtisAuthInstance : ErtisAuthInstance
 		});
 	}
 	
-	private static async Task CreateMailHookAsync(HttpClient adminClient, string url, string name, string eventType, string subject, string template)
+	private static async Task CreateMailhookAsync(HttpClient adminClient, string url, string name, string eventType, string subject, string template)
 	{
 		using var response = await adminClient.PostAsJsonAsync(url, new
 		{

@@ -143,7 +143,7 @@ public class UserServiceUserTypeTests
 			new AccessControlService(),
 			Substitute.For<IEventService>(),
 			Substitute.For<IJwtService>(),
-			Substitute.For<IMailHookService>(),
+			Substitute.For<IMailhookService>(),
 			this._repository,
 			NullLogger<UserService>.Instance);
 	}

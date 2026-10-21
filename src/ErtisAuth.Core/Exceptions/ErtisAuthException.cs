@@ -568,36 +568,36 @@ public class ErtisAuthException : ErtisException
 	
 	#endregion
 	
-	#region MailHook Exceptions
+	#region Mailhook Exceptions
 	
-	public static ErtisAuthException MailHookNotFound(string id)
+	public static ErtisAuthException MailhookNotFound(string id)
 	{
-		return new ErtisAuthException(HttpStatusCode.NotFound, $"Mail hook not found in db by given _id: <{id}>", "MailHookNotFound");
+		return new ErtisAuthException(HttpStatusCode.NotFound, $"Mail hook not found in db by given _id: <{id}>", "MailhookNotFound");
 	}
 	
-	public static ErtisAuthException MailHookAlreadyExists(string slug)
+	public static ErtisAuthException MailhookAlreadyExists(string slug)
 	{
-		return new ErtisAuthException(HttpStatusCode.Conflict, $"The mailhook is already exists with same slug ({slug})", "MailHookAlreadyExists");
+		return new ErtisAuthException(HttpStatusCode.Conflict, $"The mailhook is already exists with same slug ({slug})", "MailhookAlreadyExists");
 	}
 	
-	public static ErtisAuthException ActivationMailHookWasNotDefined()
+	public static ErtisAuthException ActivationMailhookWasNotDefined()
 	{
-		return new ErtisAuthException(HttpStatusCode.NotImplemented, "The activation mail hook was not defined or not configured correctly or passive", "ActivationMailHookWasNotDefined");
+		return new ErtisAuthException(HttpStatusCode.NotImplemented, "The activation mail hook was not defined or not configured correctly or passive", "ActivationMailhookWasNotDefined");
 	}
 	
-	public static ErtisAuthException ActivationMailHookDisabled()
+	public static ErtisAuthException ActivationMailhookDisabled()
 	{
-		return new ErtisAuthException(HttpStatusCode.NotImplemented, "The activation mail hook is disabled", "ActivationMailHookDisabled");
+		return new ErtisAuthException(HttpStatusCode.NotImplemented, "The activation mail hook is disabled", "ActivationMailhookDisabled");
 	}
 	
-	public static ErtisAuthException ActivationMailHookProviderNotConfigured()
+	public static ErtisAuthException ActivationMailhookProviderNotConfigured()
 	{
-		return new ErtisAuthException(HttpStatusCode.NotImplemented, "The mail provider is not configured for the activation mail hook", "ActivationMailHookProviderNotConfigured");
+		return new ErtisAuthException(HttpStatusCode.NotImplemented, "The mail provider is not configured for the activation mail hook", "ActivationMailhookProviderNotConfigured");
 	}
 	
-	public static ErtisAuthException ResetPasswordMailHookWasNotDefined()
+	public static ErtisAuthException ResetPasswordMailhookWasNotDefined()
 	{
-		return new ErtisAuthException(HttpStatusCode.NotImplemented, "The reset password mail hook was not defined or not configured correctly or passive", "ResetPasswordMailHookWasNotDefined");
+		return new ErtisAuthException(HttpStatusCode.NotImplemented, "The reset password mail hook was not defined or not configured correctly or passive", "ResetPasswordMailhookWasNotDefined");
 	}
 	
 	public static ErtisAuthException NotDefinedAnyMailProvider()

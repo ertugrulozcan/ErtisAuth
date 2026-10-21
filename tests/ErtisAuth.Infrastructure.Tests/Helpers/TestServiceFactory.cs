@@ -21,7 +21,7 @@ internal static class TestServiceFactory
 			Substitute.For<IAccessControlService>(),
 			eventService ?? Substitute.For<IEventService>(),
 			Substitute.For<IJwtService>(),
-			Substitute.For<IMailHookService>(),
+			Substitute.For<IMailhookService>(),
 			repository ?? Substitute.For<IUserRepository>(),
 			NullLogger<UserService>.Instance);
 	}

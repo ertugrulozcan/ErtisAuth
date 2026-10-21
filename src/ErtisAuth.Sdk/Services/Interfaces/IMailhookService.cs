@@ -5,4 +5,4 @@ using Microsoft.Extensions.DependencyInjection;
 namespace ErtisAuth.Sdk.Services.Interfaces;
 
 [ServiceLifetime(ServiceLifetime.Singleton)]
-public interface IMailHookService : IMembershipBoundedService<MailHook>;
+public interface IMailhookService : IMembershipBoundedService<Mailhook>;

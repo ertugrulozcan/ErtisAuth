@@ -130,11 +130,11 @@ public class LegacyApplicationSecretTests
 	
 	private readonly IMembershipRepository _membershipRepository = Substitute.For<IMembershipRepository>();
 	private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
-	private readonly IMailHookRepository _mailHookRepository = Substitute.For<IMailHookRepository>();
+	private readonly IMailhookRepository _mailhookRepository = Substitute.For<IMailhookRepository>();
 	
 	private MembershipService CreateMembershipService()
 	{
-		return new MembershipService(this._membershipRepository, this._userRepository, this._mailHookRepository, new MemoryCache(new MemoryCacheOptions()));
+		return new MembershipService(this._membershipRepository, this._userRepository, this._mailhookRepository, new MemoryCache(new MemoryCacheOptions()));
 	}
 	
 	[Theory]

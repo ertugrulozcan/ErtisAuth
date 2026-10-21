@@ -44,7 +44,7 @@ public static class DatabaseExtensions
 		services.AddSingleton<IApplicationRepository, ApplicationRepository>();
 		services.AddSingleton<IRoleRepository, RoleRepository>();
 		services.AddSingleton<IWebhookRepository, WebhookRepository>();
-		services.AddSingleton<IMailHookRepository, MailHookRepository>();
+		services.AddSingleton<IMailhookRepository, MailhookRepository>();
 		services.AddSingleton<IProviderRepository, ProviderRepository>();
 		services.AddSingleton<IActiveTokensRepository, ActiveTokensRepository>();
 		services.AddSingleton<IRevokedTokensRepository, RevokedTokensRepository>();

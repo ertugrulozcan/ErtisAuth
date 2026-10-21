@@ -7,7 +7,7 @@ namespace ErtisAuth.IntegrationTests.Mailing;
 /// Custom mail hooks (not the predefined activation / reset password hooks) fired by real events and delivered to a
 /// <see cref="FakeSmtpServer"/>: the event's document is available to the subject and body templates.
 /// </summary>
-public class MailHookDeliveryTests : IClassFixture<MailingErtisAuthInstance>
+public class MailhookDeliveryTests : IClassFixture<MailingErtisAuthInstance>
 {
 	#region Fields
 	
@@ -29,7 +29,7 @@ public class MailHookDeliveryTests : IClassFixture<MailingErtisAuthInstance>
 	/// Constructor
 	/// </summary>
 	/// <param name="instance"></param>
-	public MailHookDeliveryTests(MailingErtisAuthInstance instance)
+	public MailhookDeliveryTests(MailingErtisAuthInstance instance)
 	{
 		this._instance = instance;
 	}
@@ -41,10 +41,10 @@ public class MailHookDeliveryTests : IClassFixture<MailingErtisAuthInstance>
 	private async Task<ResourceClient> AdminResourceClientAsync(string resource) =>
 		new(await this._instance.CreateAdminClientAsync(), $"{this.MembershipUrl}/{resource}");
 	
-	private async Task CreateMailHookAsync(string recipient, string eventType = "UserCreated", string status = "active")
+	private async Task CreateMailhookAsync(string recipient, string eventType = "UserCreated", string status = "active")
 	{
-		var mailHooks = await this.AdminResourceClientAsync("mailhooks");
-		await mailHooks.CreateAsync(new
+		var mailhooks = await this.AdminResourceClientAsync("mailhooks");
+		await mailhooks.CreateAsync(new
 		{
 			name = $"Hook {Guid.NewGuid():N}",
 			@event = eventType,
@@ -85,10 +85,10 @@ public class MailHookDeliveryTests : IClassFixture<MailingErtisAuthInstance>
 	/// Regression guard: the placeholders on the event document were sent unresolved ("{{document.firstname}}").
 	/// </summary>
 	[Fact]
-	public async Task CustomMailHook_ResolvesTheEventDocumentAndEncodesItsValues()
+	public async Task CustomMailhook_ResolvesTheEventDocumentAndEncodesItsValues()
 	{
 		var recipient = $"ops-{Guid.NewGuid():N}@example.com";
-		await this.CreateMailHookAsync(recipient);
+		await this.CreateMailhookAsync(recipient);
 		
 		var emailAddress = await this.CreateUserAsync("<b>Doe</b>");
 		
@@ -98,14 +98,14 @@ public class MailHookDeliveryTests : IClassFixture<MailingErtisAuthInstance>
 	}
 	
 	[Fact]
-	public async Task PassiveOrOtherEventMailHooks_AreNotSent()
+	public async Task PassiveOrOtherEventMailhooks_AreNotSent()
 	{
 		var passiveRecipient = $"passive-{Guid.NewGuid():N}@example.com";
 		var otherEventRecipient = $"deleted-{Guid.NewGuid():N}@example.com";
 		var activeRecipient = $"active-{Guid.NewGuid():N}@example.com";
-		await this.CreateMailHookAsync(passiveRecipient, status: "passive");
-		await this.CreateMailHookAsync(otherEventRecipient, eventType: "UserDeleted");
-		await this.CreateMailHookAsync(activeRecipient);
+		await this.CreateMailhookAsync(passiveRecipient, status: "passive");
+		await this.CreateMailhookAsync(otherEventRecipient, eventType: "UserDeleted");
+		await this.CreateMailhookAsync(activeRecipient);
 		
 		await this.CreateUserAsync("Doe");
 		

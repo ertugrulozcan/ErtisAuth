@@ -34,7 +34,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	#region Services
 	
 	private readonly List<IMembershipBoundedService> _membershipBoundedServices = new();
-	private readonly IMailHookRepository _mailHookRepository;
+	private readonly IMailhookRepository _mailhookRepository;
 	private readonly IUserRepository _userRepository;
 	private readonly IMemoryCache _memoryCache;
 	
@@ -47,16 +47,16 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	/// </summary>
 	/// <param name="membershipRepository"></param>
 	/// <param name="userRepository"></param>
-	/// <param name="mailHookRepository"></param>
+	/// <param name="mailhookRepository"></param>
 	/// <param name="memoryCache"></param>
 	public MembershipService(
 		IMembershipRepository membershipRepository, 
 		IUserRepository userRepository,
-		IMailHookRepository mailHookRepository,
+		IMailhookRepository mailhookRepository,
 		IMemoryCache memoryCache) : 
 		base(membershipRepository)
 	{
-		this._mailHookRepository = mailHookRepository;
+		this._mailhookRepository = mailhookRepository;
 		this._userRepository = userRepository;
 		this._memoryCache = memoryCache;
 	}
@@ -225,26 +225,26 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		// User Activation
 		if (model.UserActivation == Status.Active)
 		{
-			var mailhooks = await this._mailHookRepository.FindAsync(x =>
-					x.Slug == MailHookService.USER_ACTIVATION_MAIL_HOOK_SLUG &&
+			var mailhooks = await this._mailhookRepository.FindAsync(x =>
+					x.Slug == MailhookService.USER_ACTIVATION_MAIL_HOOK_SLUG &&
 					x.MembershipId == model.Id &&
 					x.Event == ErtisAuthEventType.UserCreated.ToString() &&
 					x.Status == "active",
 				sorting: null,
 				cancellationToken: cancellationToken);
 			
-			var activationMailHook = mailhooks.Items.FirstOrDefault(x => x.MembershipId == model.Id);
-			if (activationMailHook == null)
+			var activationMailhook = mailhooks.Items.FirstOrDefault(x => x.MembershipId == model.Id);
+			if (activationMailhook == null)
 			{
-				errors.Add(ErtisAuthException.ActivationMailHookWasNotDefined().Message);
+				errors.Add(ErtisAuthException.ActivationMailhookWasNotDefined().Message);
 			}
-			else if (!activationMailHook.IsActive)
+			else if (!activationMailhook.IsActive)
 			{
-				errors.Add(ErtisAuthException.ActivationMailHookDisabled().Message);
+				errors.Add(ErtisAuthException.ActivationMailhookDisabled().Message);
 			}
-			else if (string.IsNullOrEmpty(activationMailHook.MailProvider) || model.MailProviders == null || model.MailProviders.All(x => x.Slug != activationMailHook.MailProvider))
+			else if (string.IsNullOrEmpty(activationMailhook.MailProvider) || model.MailProviders == null || model.MailProviders.All(x => x.Slug != activationMailhook.MailProvider))
 			{
-				errors.Add(ErtisAuthException.ActivationMailHookProviderNotConfigured().Message);
+				errors.Add(ErtisAuthException.ActivationMailhookProviderNotConfigured().Message);
 			}
 		}
 		

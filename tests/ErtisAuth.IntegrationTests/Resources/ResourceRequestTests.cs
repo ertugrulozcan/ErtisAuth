@@ -64,10 +64,10 @@ public class ResourceRequestTests : IClassFixture<ErtisAuthInstance>
 	}
 	
 	[Fact]
-	public async Task MailHook_CreateAndUpdate_WithoutIdAndMembership()
+	public async Task Mailhook_CreateAndUpdate_WithoutIdAndMembership()
 	{
 		var adminClient = await this._instance.CreateAdminClientAsync();
-		var mailHook = new
+		var mailhook = new
 		{
 			name = "Welcome Mail",
 			@event = "UserCreated",
@@ -80,11 +80,11 @@ public class ResourceRequestTests : IClassFixture<ErtisAuthInstance>
 			sendToUtilizer = true
 		};
 		
-		using var createResponse = await adminClient.PostAsJsonAsync($"{this.MembershipUrl}/mailhooks", mailHook, TestContext.Current.CancellationToken);
+		using var createResponse = await adminClient.PostAsJsonAsync($"{this.MembershipUrl}/mailhooks", mailhook, TestContext.Current.CancellationToken);
 		var created = await AssertSuccessAsync(createResponse);
 		
 		var id = created["_id"]!.GetValue<string>();
-		using var updateResponse = await adminClient.PutAsJsonAsync($"{this.MembershipUrl}/mailhooks/{id}", mailHook, TestContext.Current.CancellationToken);
+		using var updateResponse = await adminClient.PutAsJsonAsync($"{this.MembershipUrl}/mailhooks/{id}", mailhook, TestContext.Current.CancellationToken);
 		var updateBody = await ErtisAuthInstance.ReadJsonAsync(updateResponse);
 		
 		// Identical update: the route id identified the mail hook

@@ -24,7 +24,7 @@ public class PasswordResetService : IPasswordResetService
 	private readonly IUserService _userService;
 	private readonly IMembershipService _membershipService;
 	private readonly IJwtService _jwtService;
-	private readonly IMailHookService _mailHookService;
+	private readonly IMailhookService _mailhookService;
 	private readonly IEventService _eventService;
 	
 	#endregion
@@ -37,19 +37,19 @@ public class PasswordResetService : IPasswordResetService
 	/// <param name="userService"></param>
 	/// <param name="membershipService"></param>
 	/// <param name="jwtService"></param>
-	/// <param name="mailHookService"></param>
+	/// <param name="mailhookService"></param>
 	/// <param name="eventService"></param>
 	public PasswordResetService(
 		IUserService userService,
 		IMembershipService membershipService,
 		IJwtService jwtService,
-		IMailHookService mailHookService,
+		IMailhookService mailhookService,
 		IEventService eventService)
 	{
 		this._userService = userService;
 		this._membershipService = membershipService;
 		this._jwtService = jwtService;
-		this._mailHookService = mailHookService;
+		this._mailhookService = mailhookService;
 		this._eventService = eventService;
 	}
 	
@@ -101,14 +101,14 @@ public class PasswordResetService : IPasswordResetService
 			throw ErtisAuthException.NotDefinedAnyMailProvider();
 		}
 		
-		var resetPasswordMailHook = await this._mailHookService.GetResetPasswordMailHookAsync(membership.Id, cancellationToken: cancellationToken);
-		if (resetPasswordMailHook == null)
+		var resetPasswordMailhook = await this._mailhookService.GetResetPasswordMailhookAsync(membership.Id, cancellationToken: cancellationToken);
+		if (resetPasswordMailhook == null)
 		{
-			throw ErtisAuthException.ResetPasswordMailHookWasNotDefined();
+			throw ErtisAuthException.ResetPasswordMailhookWasNotDefined();
 		}
 		
 		var resetPasswordLink = GenerateResetPasswordLink(resetPasswordToken, membership.Id, host);
-		await this._mailHookService.QueueHookMailAsync(resetPasswordMailHook, user.Id, membership.Id, new
+		await this._mailhookService.QueueHookMailAsync(resetPasswordMailhook, user.Id, membership.Id, new
 		{
 			user,
 			resetPasswordLink

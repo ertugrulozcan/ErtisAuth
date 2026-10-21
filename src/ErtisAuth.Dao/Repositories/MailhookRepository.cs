@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ErtisAuth.Dao.Repositories;
 
-public class MailHookRepository : RepositoryBase<MailHook>, IMailHookRepository
+public class MailhookRepository : RepositoryBase<Mailhook>, IMailhookRepository
 {
     #region Properties
     
@@ -28,10 +28,10 @@ public class MailHookRepository : RepositoryBase<MailHook>, IMailHookRepository
     /// <param name="clientProvider"></param>
     /// <param name="settings"></param>
     /// <param name="logger"></param>
-    public MailHookRepository(
+    public MailhookRepository(
         IMongoClientProvider clientProvider, 
         IDatabaseSettings settings,
-        ILogger<MailHookRepository> logger) : 
+        ILogger<MailhookRepository> logger) : 
         base(clientProvider, settings, logger, "mailhooks")
     {
 		

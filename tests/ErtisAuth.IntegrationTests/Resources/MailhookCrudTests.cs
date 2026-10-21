@@ -5,7 +5,7 @@ using ErtisAuth.IntegrationTests.Infrastructure;
 
 namespace ErtisAuth.IntegrationTests.Resources;
 
-public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
+public class MailhookCrudTests : IClassFixture<ErtisAuthInstance>
 {
 	#region Fields
 	
@@ -19,7 +19,7 @@ public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
 	/// Constructor
 	/// </summary>
 	/// <param name="instance"></param>
-	public MailHookCrudTests(ErtisAuthInstance instance)
+	public MailhookCrudTests(ErtisAuthInstance instance)
 	{
 		this._instance = instance;
 	}
@@ -32,7 +32,7 @@ public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
 		new(await this._instance.CreateAdminClientAsync(), $"/memberships/{this._instance.MembershipId}/mailhooks");
 	
 	// Passive: the round trip must not send mails
-	private static object MailHookBody(string name, string subject, string status = "passive") => new
+	private static object MailhookBody(string name, string subject, string status = "passive") => new
 	{
 		name,
 		description = "Welcome mail",
@@ -53,45 +53,45 @@ public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
 	#region Tests
 	
 	[Fact]
-	public async Task MailHook_CrudRoundTrip()
+	public async Task Mailhook_CrudRoundTrip()
 	{
-		var mailHooks = await this.CreateResourceClientAsync();
+		var mailhooks = await this.CreateResourceClientAsync();
 		var name = $"Welcome {Guid.NewGuid():N}";
 		
-		var created = await mailHooks.CreateAsync(MailHookBody(name, "Welcome"));
+		var created = await mailhooks.CreateAsync(MailhookBody(name, "Welcome"));
 		var id = created["_id"]!.GetValue<string>();
 		var slug = created["slug"]!.GetValue<string>();
 		Assert.Equal(this._instance.MembershipId, created["membership_id"]!.GetValue<string>());
 		
-		var fetched = await mailHooks.GetAsync(id);
+		var fetched = await mailhooks.GetAsync(id);
 		Assert.Equal(name, fetched["name"]!.GetValue<string>());
 		Assert.Equal("<p>Welcome {{document.firstname}}</p>", fetched["mailTemplate"]!.GetValue<string>());
 		Assert.Equal("support@example.com", fetched["recipients"]![0]!["emailAddress"]!.GetValue<string>());
 		Assert.Equal("ErtisAuth", fetched["variables"]![0]!["value"]!.GetValue<string>());
 		
-		Assert.Contains(id, ResourceClient.IdsOf(await mailHooks.ListAsync()));
-		Assert.Equal([id], ResourceClient.IdsOf(await mailHooks.QueryAsync(new { where = new { slug } })));
+		Assert.Contains(id, ResourceClient.IdsOf(await mailhooks.ListAsync()));
+		Assert.Equal([id], ResourceClient.IdsOf(await mailhooks.QueryAsync(new { where = new { slug } })));
 		
-		var updated = await mailHooks.UpdateAsync(id, MailHookBody(name, "Welcome aboard"));
+		var updated = await mailhooks.UpdateAsync(id, MailhookBody(name, "Welcome aboard"));
 		Assert.Equal(id, updated["_id"]!.GetValue<string>());
-		Assert.Equal("Welcome aboard", (await mailHooks.GetAsync(id))["mailSubject"]!.GetValue<string>());
+		Assert.Equal("Welcome aboard", (await mailhooks.GetAsync(id))["mailSubject"]!.GetValue<string>());
 		
-		await mailHooks.DeleteAsync(id);
-		await mailHooks.AssertNotFoundAsync(id, "MailHookNotFound");
+		await mailhooks.DeleteAsync(id);
+		await mailhooks.AssertNotFoundAsync(id, "MailhookNotFound");
 	}
 	
 	[Fact]
-	public async Task MailHook_BulkDelete_DeletesAll()
+	public async Task Mailhook_BulkDelete_DeletesAll()
 	{
-		var mailHooks = await this.CreateResourceClientAsync();
-		var first = (await mailHooks.CreateAsync(MailHookBody($"First {Guid.NewGuid():N}", "First")))["_id"]!.GetValue<string>();
-		var second = (await mailHooks.CreateAsync(MailHookBody($"Second {Guid.NewGuid():N}", "Second")))["_id"]!.GetValue<string>();
+		var mailhooks = await this.CreateResourceClientAsync();
+		var first = (await mailhooks.CreateAsync(MailhookBody($"First {Guid.NewGuid():N}", "First")))["_id"]!.GetValue<string>();
+		var second = (await mailhooks.CreateAsync(MailhookBody($"Second {Guid.NewGuid():N}", "Second")))["_id"]!.GetValue<string>();
 		
-		using var response = await mailHooks.BulkDeleteAsync(first, second);
+		using var response = await mailhooks.BulkDeleteAsync(first, second);
 		await ResourceClient.AssertStatusAsync(response, HttpStatusCode.NoContent);
 		
-		await mailHooks.AssertNotFoundAsync(first, "MailHookNotFound");
-		await mailHooks.AssertNotFoundAsync(second, "MailHookNotFound");
+		await mailhooks.AssertNotFoundAsync(first, "MailhookNotFound");
+		await mailhooks.AssertNotFoundAsync(second, "MailhookNotFound");
 	}
 	
 	/// <summary>
@@ -102,14 +102,14 @@ public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
 	[InlineData("fromName", "From name is required")]
 	[InlineData("fromAddress", "From address is required")]
 	[InlineData("recipients", "Recipients list is empty")]
-	public async Task MailHook_CreateWithoutARequiredField_IsRejected(string field, string error)
+	public async Task Mailhook_CreateWithoutARequiredField_IsRejected(string field, string error)
 	{
-		var mailHooks = await this.CreateResourceClientAsync();
-		var body = JsonSerializer.SerializeToNode(MailHookBody($"Incomplete {Guid.NewGuid():N}", "Welcome", status: "active"))!.AsObject();
+		var mailhooks = await this.CreateResourceClientAsync();
+		var body = JsonSerializer.SerializeToNode(MailhookBody($"Incomplete {Guid.NewGuid():N}", "Welcome", status: "active"))!.AsObject();
 		body.Remove(field);
 		
 		var adminClient = await this._instance.CreateAdminClientAsync();
-		using var response = await adminClient.PostAsJsonAsync(mailHooks.Url, body, TestContext.Current.CancellationToken);
+		using var response = await adminClient.PostAsJsonAsync(mailhooks.Url, body, TestContext.Current.CancellationToken);
 		
 		var result = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.BadRequest);
 		Assert.Equal("ValidationError", result!["errorCode"]!.GetValue<string>());
@@ -120,14 +120,14 @@ public class MailHookCrudTests : IClassFixture<ErtisAuthInstance>
 	/// A mail sent to the utilizer (e.g. activation, reset password) needs no other recipient.
 	/// </summary>
 	[Fact]
-	public async Task MailHook_SentToTheUtilizer_NeedsNoRecipients()
+	public async Task Mailhook_SentToTheUtilizer_NeedsNoRecipients()
 	{
-		var mailHooks = await this.CreateResourceClientAsync();
-		var body = JsonSerializer.SerializeToNode(MailHookBody($"To utilizer {Guid.NewGuid():N}", "Welcome"))!.AsObject();
+		var mailhooks = await this.CreateResourceClientAsync();
+		var body = JsonSerializer.SerializeToNode(MailhookBody($"To utilizer {Guid.NewGuid():N}", "Welcome"))!.AsObject();
 		body.Remove("recipients");
 		body["sendToUtilizer"] = true;
 		
-		var created = await mailHooks.CreateAsync(body);
+		var created = await mailhooks.CreateAsync(body);
 		
 		Assert.True(created["sendToUtilizer"]!.GetValue<bool>());
 	}

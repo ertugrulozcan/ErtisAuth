@@ -3,12 +3,12 @@ using ErtisAuth.Core.Models.Mailing;
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedAutoPropertyAccessor.Global
-namespace ErtisAuth.WebAPI.Models.MailHooks;
+namespace ErtisAuth.WebAPI.Models.Mailhooks;
 
 /// <summary>
 /// The update request of a mail hook; the id and the membership come from the route.
 /// </summary>
-public class UpdateMailHookFormModel
+public class UpdateMailhookFormModel
 {
 	#region Properties
 	
@@ -49,13 +49,13 @@ public class UpdateMailHookFormModel
 	public string? MailProvider { get; set; }
 	
 	[JsonPropertyName("variables")]
-	public MailHookVariable[]? Variables { get; set; }
+	public MailhookVariable[]? Variables { get; set; }
 	
 	#endregion
 	
-	internal MailHook ToMailHook(string id, string membershipId)
+	internal Mailhook ToMailhook(string id, string membershipId)
 	{
-		var mailHook = new MailHook
+		var mailhook = new Mailhook
 		{
 			Id = id,
 			Name = this.Name ?? string.Empty,
@@ -76,9 +76,9 @@ public class UpdateMailHookFormModel
 		// Otherwise derived from the name
 		if (!string.IsNullOrEmpty(this.Slug))
 		{
-			mailHook.Slug = this.Slug;
+			mailhook.Slug = this.Slug;
 		}
 		
-		return mailHook;
+		return mailhook;
 	}
 }
