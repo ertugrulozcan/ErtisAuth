@@ -18,10 +18,10 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 {
     #region Constants
 	
-    private const string USER_ACTIVATION_MAIL_HOOK_NAME = "User Activation";
-    private const string USER_ACTIVATION_MAIL_HOOK_SLUG = "user-activation";
-    private const string RESET_PASSWORD_MAIL_HOOK_NAME = "Reset Password";
-    private const string RESET_PASSWORD_MAIL_HOOK_SLUG = "reset-password";
+	internal const string USER_ACTIVATION_MAIL_HOOK_SLUG = "user-activation";
+	
+	// ReSharper disable once MemberCanBePrivate.Global
+	internal const string RESET_PASSWORD_MAIL_HOOK_SLUG = "reset-password";
 	
     /// <summary>
     /// Event documents may contain ObjectIds (DynamicObjects, e.g. users, carry their own converter).
@@ -340,7 +340,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	public async Task<MailHook?> GetUserActivationMailHookAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
 		return await this.GetAsync(x =>
-				x.Name == USER_ACTIVATION_MAIL_HOOK_NAME &&
+				x.Slug == USER_ACTIVATION_MAIL_HOOK_SLUG &&
 				x.MembershipId == membershipId &&
 				x.Event == ErtisAuthEventType.UserCreated.ToString() &&
 				x.Status == "active", 
@@ -351,7 +351,7 @@ public class MailHookService : MembershipBoundedCrudService<MailHook>, IMailHook
 	public async Task<MailHook?> GetResetPasswordMailHookAsync(string membershipId, CancellationToken cancellationToken = default)
 	{
 		return await this.GetAsync(x =>
-				x.Name == RESET_PASSWORD_MAIL_HOOK_NAME &&
+				x.Slug == RESET_PASSWORD_MAIL_HOOK_SLUG &&
 				x.MembershipId == membershipId &&
 				x.Event == ErtisAuthEventType.UserPasswordReset.ToString() &&
 				x.Status == "active", 

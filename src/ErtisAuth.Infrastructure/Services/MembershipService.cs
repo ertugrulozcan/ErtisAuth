@@ -5,6 +5,7 @@ using ErtisAuth.Core.Models;
 using ErtisAuth.Core.Models.Memberships;
 using Ertis.MongoDB.Queries;
 using ErtisAuth.Core.Constants;
+using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Dao.Repositories.Interfaces;
 using ErtisAuth.Infrastructure.Constants;
 using Microsoft.Extensions.Caching.Memory;
@@ -33,6 +34,7 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	#region Services
 	
 	private readonly List<IMembershipBoundedService> _membershipBoundedServices = new();
+	private readonly IMailHookRepository _mailHookRepository;
 	private readonly IUserRepository _userRepository;
 	private readonly IMemoryCache _memoryCache;
 	
@@ -45,13 +47,16 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	/// </summary>
 	/// <param name="membershipRepository"></param>
 	/// <param name="userRepository"></param>
+	/// <param name="mailHookRepository"></param>
 	/// <param name="memoryCache"></param>
 	public MembershipService(
 		IMembershipRepository membershipRepository, 
-		IUserRepository userRepository, 
+		IUserRepository userRepository,
+		IMailHookRepository mailHookRepository,
 		IMemoryCache memoryCache) : 
 		base(membershipRepository)
 	{
+		this._mailHookRepository = mailHookRepository;
 		this._userRepository = userRepository;
 		this._memoryCache = memoryCache;
 	}
@@ -70,78 +75,71 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 	
 	protected override async Task<IEnumerable<string>> ValidateModelAsync(Membership model, CancellationToken cancellationToken = default)
 	{
-		var membershipWithSameSlug = await this.GetBySlugAsync(model.Slug, cancellationToken: cancellationToken);
-		return ValidateModel(model, membershipWithSameSlug, out var errors) ? [] : errors;
-	}
-	
-	/// <param name="model"></param>
-	/// <param name="membershipWithSameSlug">The membership having the slug of the model, read by the caller</param>
-	/// <param name="errors"></param>
-	private static bool ValidateModel(Membership model, Membership? membershipWithSameSlug, out IEnumerable<string> errors)
-	{
-		var errorList = new List<string>();
+		var current = await this.GetBySlugAsync(model.Slug, cancellationToken: cancellationToken);
+		
+		var errors = new List<string>();
 		
 		// Name
 		if (string.IsNullOrEmpty(model.Name))
 		{
-			errorList.Add("Name is required");
+			errors.Add("Name is required");
 		}
 		
 		// Slug
 		if (!model.Slug.IsValidSlug(out var error))
 		{
-			errorList.Add(error!);
+			errors.Add(error!);
 		}
 		
 		// Is already exist?
-		if (membershipWithSameSlug != null && membershipWithSameSlug.Id != model.Id)
+		if (current != null && current.Id != model.Id)
 		{
-			errorList.Add(ErtisAuthException.MembershipAlreadyExists(model.Slug).Message);
+			errors.Add(ErtisAuthException.MembershipAlreadyExists(model.Slug).Message);
 		}
 		
 		// ExpiresIn
 		if (model.ExpiresIn <= 0)
 		{
-			errorList.Add("Expires-in is required");
+			errors.Add("Expires-in is required");
 		}
 		
 		// RefreshTokenExpiresIn
 		if (model.RefreshTokenExpiresIn <= 0)
 		{
-			errorList.Add("Refresh token expires-in is required");
+			errors.Add("Refresh token expires-in is required");
 		}
 		
 		// Secret Key
 		if (string.IsNullOrEmpty(model.SecretKey))
 		{
-			errorList.Add("Secret key is required");
+			errors.Add("Secret key is required");
 		}
 		else if (model.IsValidEncoding() && model.GetEncoding().GetByteCount(model.SecretKey) < MIN_SECRET_KEY_BYTE_COUNT)
 		{
 			// Measured in the encoding of the membership, the key is converted to bytes by it
-			errorList.Add($"Secret key must be at least {MIN_SECRET_KEY_BYTE_COUNT} bytes ({MIN_SECRET_KEY_BYTE_COUNT * 8} bits) in the encoding of the membership");
+			errors.Add($"Secret key must be at least {MIN_SECRET_KEY_BYTE_COUNT} bytes ({MIN_SECRET_KEY_BYTE_COUNT * 8} bits) in the encoding of the membership");
 		}
 		
 		// Hash Algorithm
 		if (string.IsNullOrEmpty(model.HashAlgorithm))
 		{
-			errorList.Add(ErtisAuthException.HashAlgorithmRequired().Message);
+			errors.Add(ErtisAuthException.HashAlgorithmRequired().Message);
 		}
 		else if (!model.TryGetHashAlgorithm(out _))
 		{
-			errorList.Add(ErtisAuthException.UnsupportedHashAlgorithm(model.HashAlgorithm).Message);
+			errors.Add(ErtisAuthException.UnsupportedHashAlgorithm(model.HashAlgorithm).Message);
 		}
 		
 		// Encoding
 		if (!model.IsValidEncoding())
 		{
-			errorList.Add(ErtisAuthException.UnsupportedEncoding(model.DefaultEncoding!).Message);
+			errors.Add(ErtisAuthException.UnsupportedEncoding(model.DefaultEncoding!).Message);
 		}
 		
 		// Default Language
 		if (!string.IsNullOrEmpty(model.DefaultLanguage) && TextSearchLanguage.All.All(x => x.ISO6391Code != model.DefaultLanguage))
 		{
-			errorList.Add(ErtisAuthException.UnsupportedLanguage(model.DefaultLanguage).Message);
+			errors.Add(ErtisAuthException.UnsupportedLanguage(model.DefaultLanguage).Message);
 		}
 		
 		// OtpSettings
@@ -149,12 +147,12 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		{
 			if (string.IsNullOrEmpty(model.OtpSettings.Host))
 			{
-				errorList.Add(ErtisAuthException.OtpHostRequired().Message);
+				errors.Add(ErtisAuthException.OtpHostRequired().Message);
 			}
 			
 			if (model.OtpSettings.Policy is { MaxAttempts: < 1 })
 			{
-				errorList.Add("otp_settings.policy.max_attempts must be greater than zero");
+				errors.Add("otp_settings.policy.max_attempts must be greater than zero");
 			}
 		}
 		
@@ -169,24 +167,24 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		            {
 		                if (string.IsNullOrWhiteSpace(provider.Host))
 		                {
-							errorList.Add("Host is required");
+							errors.Add("Host is required");
 		                }
 		                
 		                if (provider.Port is < 1 or > 65535)
 		                {
-							errorList.Add("Port must be between 1 and 65535");
+							errors.Add("Port must be between 1 and 65535");
 		                }
 		                
 		                var hasUsername = !string.IsNullOrWhiteSpace(provider.Username);
 		                var hasPassword = !string.IsNullOrEmpty(provider.Password);
 		                if (hasUsername != hasPassword)
 		                {
-							errorList.Add("Username and password must be provided together");
+							errors.Add("Username and password must be provided together");
 		                }
 		            }
 		            else
 		            {
-						errorList.Add("The mail provider type value and the instance type are incompatible");
+						errors.Add("The mail provider type value and the instance type are incompatible");
 		            }
 		        }
 		        else if (mailProvider.Type == MailProviderType.SendGrid)
@@ -195,12 +193,12 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		            {
 		                if (string.IsNullOrWhiteSpace(provider.ApiKey))
 		                {
-							errorList.Add("Api key is required");
+							errors.Add("Api key is required");
 		                }
 		            }
 		            else
 		            {
-						errorList.Add("The mail provider type value and the instance type are incompatible");
+						errors.Add("The mail provider type value and the instance type are incompatible");
 		            }
 		        }
 		        else if (mailProvider.Type == MailProviderType.MailChimp)
@@ -209,23 +207,48 @@ public class MembershipService : GenericCrudService<Membership>, IMembershipServ
 		            {
 		                if (string.IsNullOrWhiteSpace(provider.ApiKey))
 		                {
-							errorList.Add("Api key is required");
+							errors.Add("Api key is required");
 		                }
 		            }
 		            else
 		            {
-						errorList.Add("The mail provider type value and the instance type are incompatible");
+						errors.Add("The mail provider type value and the instance type are incompatible");
 		            }
 		        }
 		        else
 		        {
-					errorList.Add($"Unknown mail provider type: '{mailProvider.Type.ToString()}'");
+					errors.Add($"Unknown mail provider type: '{mailProvider.Type.ToString()}'");
 		        }
 			}
 		}
 		
-		errors = errorList;
-		return !errors.Any();
+		// User Activation
+		if (model.UserActivation == Status.Active)
+		{
+			var mailhooks = await this._mailHookRepository.FindAsync(x =>
+					x.Slug == MailHookService.USER_ACTIVATION_MAIL_HOOK_SLUG &&
+					x.MembershipId == model.Id &&
+					x.Event == ErtisAuthEventType.UserCreated.ToString() &&
+					x.Status == "active",
+				sorting: null,
+				cancellationToken: cancellationToken);
+			
+			var activationMailHook = mailhooks.Items.FirstOrDefault(x => x.MembershipId == model.Id);
+			if (activationMailHook == null)
+			{
+				errors.Add(ErtisAuthException.ActivationMailHookWasNotDefined().Message);
+			}
+			else if (!activationMailHook.IsActive)
+			{
+				errors.Add(ErtisAuthException.ActivationMailHookDisabled().Message);
+			}
+			else if (string.IsNullOrEmpty(activationMailHook.MailProvider) || model.MailProviders == null || model.MailProviders.All(x => x.Slug != activationMailHook.MailProvider))
+			{
+				errors.Add(ErtisAuthException.ActivationMailHookProviderNotConfigured().Message);
+			}
+		}
+		
+		return errors;
 	}
 	
 	protected override void Overwrite(Membership destination, Membership source)

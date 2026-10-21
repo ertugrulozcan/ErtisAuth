@@ -19,6 +19,7 @@ public class MembershipServiceValidationTests
 	
 	private readonly IMembershipRepository _repository = Substitute.For<IMembershipRepository>();
 	private readonly IUserRepository _userRepository = Substitute.For<IUserRepository>();
+	private readonly IMailHookRepository _mailHookRepository = Substitute.For<IMailHookRepository>();
 	
 	#endregion
 	
@@ -26,7 +27,7 @@ public class MembershipServiceValidationTests
 	
 	private MembershipService CreateMembershipService()
 	{
-		return new MembershipService(this._repository, this._userRepository, new MemoryCache(new MemoryCacheOptions()));
+		return new MembershipService(this._repository, this._userRepository, this._mailHookRepository, new MemoryCache(new MemoryCacheOptions()));
 	}
 	
 	// ReSharper disable once UnusedMethodReturnValue.Local
