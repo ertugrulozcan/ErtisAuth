@@ -224,9 +224,8 @@ public class TokenServiceRevokeTests
 		var token = await this.GenerateTokenAsync(tokenService);
 		await tokenService.RevokeTokenAsync(token.AccessToken, cancellationToken: TestContext.Current.CancellationToken);
 		
-		var isRevoked = await tokenService.RevokeTokenAsync(token.RefreshToken!, cancellationToken: TestContext.Current.CancellationToken);
-		
-		Assert.False(isRevoked);
+		var exception = await Assert.ThrowsAsync<ErtisAuthException>(() => tokenService.RevokeTokenAsync(token.RefreshToken!, cancellationToken: TestContext.Current.CancellationToken));
+		Assert.Equal("TokenWasRevoked", exception.ErrorCode);
 	}
 	
 	[Fact]

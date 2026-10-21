@@ -610,41 +610,40 @@ public class TokenService : ITokenService
 	
 	public async Task<bool> RevokeTokenAsync(string token, bool logoutFromAllDevices = false, bool fireEvent = true, CancellationToken cancellationToken = default)
 	{
-		User? user;
-		
 		try
 		{
 			var validationResult = await this.VerifyBearerTokenAsync(token, false, cancellationToken: cancellationToken);
-			user = validationResult.User;
+			var user = validationResult.User;
 			if (!validationResult.IsValidated)
 			{
 				throw ErtisAuthException.InvalidToken();
 			}
-		}
-		catch (ErtisAuthException ex)
-		{
-			if (ex.ErrorCode == ErtisAuthException.TokenWasRevoked().ErrorCode)
+			
+			if (user == null)
 			{
-				this._logger.LogWarning("This token was revoked already");
+				return false;
 			}
 			
+			var activeTokens = await this._activeTokenService.GetActiveTokensByUser(user.Id, user.MembershipId, cancellationToken: cancellationToken);
+			
+			// The token may be either side of an access/refresh token pair; both are revoked together
+			var filteredActiveTokens = (logoutFromAllDevices ? activeTokens : activeTokens.Where(x => x.AccessToken == token || x.RefreshToken == token)).ToArray();
+			if (filteredActiveTokens.Length > 0)
+			{
+				await this.RevokeActiveTokensAsync(filteredActiveTokens, user, cancellationToken: cancellationToken);
+			}
+			
+			return true;
+		}
+		catch (ErtisAuthException)
+		{
+			throw;
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "Revoke token error");
 			return false;
 		}
-		
-		if (user == null)
-		{
-			return false;
-		}
-		
-		var activeTokens = await this._activeTokenService.GetActiveTokensByUser(user.Id, user.MembershipId, cancellationToken: cancellationToken);
-		// The token may be either side of an access/refresh token pair; both are revoked together
-		var filteredActiveTokens = (logoutFromAllDevices ? activeTokens : activeTokens.Where(x => x.AccessToken == token || x.RefreshToken == token)).ToArray();
-		if (filteredActiveTokens.Length > 0)
-		{
-			await this.RevokeActiveTokensAsync(filteredActiveTokens, user, cancellationToken: cancellationToken);
-		}
-		
-		return true;
 	}
 	
 	public async Task RevokeAllAsync(string userId, string membershipId, string? exceptAccessToken = null, bool fireEvent = true, CancellationToken cancellationToken = default)
