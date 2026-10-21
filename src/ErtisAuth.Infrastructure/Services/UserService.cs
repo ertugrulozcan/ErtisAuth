@@ -987,10 +987,10 @@ public class UserService : DynamicObjectCrudService, IUserService
 	        throw ErtisAuthException.MembershipNotFound(user.MembershipId);
         }
         
-        var tokenClaims = new TokenClaims(user.Id, user, membership, TTLs.ACTIVATION_TOKEN_TTL);
+        var tokenClaims = new TokenClaims(user.Id, user, membership, Defaults.ACTIVATION_TOKEN_TTL);
         tokenClaims.AddClaim(ActionTokens.TokenTypeClaim, ActionTokens.ActivationTokenType);
         var token = this._jwtService.GenerateToken(tokenClaims, encoding: membership.GetEncoding());
-        var activationToken = new ActivationToken(token, TTLs.ACTIVATION_TOKEN_TTL);
+        var activationToken = new ActivationToken(token, Defaults.ACTIVATION_TOKEN_TTL);
 		
         return activationToken;
     }

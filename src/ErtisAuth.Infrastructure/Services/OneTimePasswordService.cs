@@ -158,7 +158,7 @@ public class OneTimePasswordService : MembershipBoundedCrudService<OneTimePasswo
 		
 		// No reset token yet: it is generated when the code is verified, so only the one who knows the code gets it
 		// (not the caller generating the code, nor a reader of the database)
-		var expiresIn = policy.ExpiresIn is > 0 ? policy.ExpiresIn.Value : (int) TTLs.RESET_PASSWORD_TOKEN_TTL.TotalSeconds;
+		var expiresIn = policy.ExpiresIn is > 0 ? policy.ExpiresIn.Value : (int) Defaults.OTP_TTL.TotalSeconds;
 		var now = DateTime.UtcNow;
 		var model = new OneTimePassword
 		{

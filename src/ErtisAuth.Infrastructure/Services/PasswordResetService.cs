@@ -137,7 +137,7 @@ public class PasswordResetService : IPasswordResetService
 			throw ErtisAuthException.UserInactive(user.Id);
 		}
 		
-		var resetPasswordTokenTTL = TTLs.RESET_PASSWORD_TOKEN_TTL;
+		var resetPasswordTokenTTL = Defaults.RESET_PASSWORD_TOKEN_TTL;
 		if (purpose == ResetPasswordToken.ResetPasswordTokenPurpose.OneTimePassword)
 		{
 			if (membership.OtpSettings?.Policy?.ExpiresIn != null && membership.OtpSettings.Policy is { ExpiresIn: > 0 })

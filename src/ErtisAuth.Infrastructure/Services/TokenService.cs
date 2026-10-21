@@ -310,7 +310,7 @@ public class TokenService : ITokenService
 		var tokenId = Guid.NewGuid().ToString();
 		TimeSpan? expiresIn = scopes is { Length: > 0 }
 			? membership.ScopedTokenExpiresIn == 0
-				? TTLs.SCOPED_TOKEN_TTL
+				? Defaults.SCOPED_TOKEN_TTL
 				: TimeSpan.FromSeconds(membership.ScopedTokenExpiresIn)
 			: null;
 		

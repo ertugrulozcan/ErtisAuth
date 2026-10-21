@@ -8,6 +8,18 @@ public static class Defaults
 {
 	#region Constants
 	
+	public static readonly TimeSpan TOKEN_TTL = TimeSpan.FromHours(12);
+	
+	public static readonly TimeSpan REFRESH_TOKEN_TTL = TimeSpan.FromHours(1);
+	
+	public static readonly TimeSpan RESET_PASSWORD_TOKEN_TTL = TimeSpan.FromHours(2);
+	
+	public static readonly TimeSpan ACTIVATION_TOKEN_TTL = TimeSpan.FromHours(72);
+	
+	public static readonly TimeSpan SCOPED_TOKEN_TTL = TimeSpan.FromHours(12);
+	
+	public static readonly TimeSpan OTP_TTL = TimeSpan.FromHours(2);
+	
 	/// <summary>
 	/// Suggested algorithm for new memberships. It is never applied implicitly; memberships must declare their own hash algorithm.
 	/// </summary>

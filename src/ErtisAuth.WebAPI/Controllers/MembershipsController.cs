@@ -220,18 +220,23 @@ public class MembershipsController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public IActionResult GetAllSettings()
 	{
-		return this.Ok(new
+		return this.Ok(new MembershipDefaults
 		{
-			encodings = System.Text.Encoding.GetEncodings().Select(x => new
+			Encodings = System.Text.Encoding.GetEncodings().Select(x => new DefaultEncodingInfo
 			{
-				displayName = x.DisplayName,
-				name = x.Name.ToUpperInvariant()
+				DisplayName = x.DisplayName,
+				Name = x.Name.ToUpperInvariant()
 			}).ToArray(),
-			defaultEncoding = Core.Constants.Defaults.GetDefaultEncodingName(),
-			hashAlgorithms = Enum.GetNames<HashAlgorithms>().Select(x => x.Replace('_', '-')).ToArray(),
-			defaultHashAlgorithm = Core.Constants.Defaults.GetDefaultHashAlgorithm(),
-			dbLocales = TextSearchLanguage.All.ToArray(),
-			defaultDbLocale = Core.Constants.Defaults.GetDefaultLocale()
+			DefaultEncoding = Core.Constants.Defaults.GetDefaultEncodingName(),
+			HashAlgorithms = Enum.GetNames<HashAlgorithms>().Select(x => x.Replace('_', '-')).ToArray(),
+			DefaultHashAlgorithm = Core.Constants.Defaults.GetDefaultHashAlgorithm(),
+			DbLocales = TextSearchLanguage.All.ToArray(),
+			DefaultDbLocale = Core.Constants.Defaults.GetDefaultLocale(),
+			DefaultExpiresIn = (int) Core.Constants.Defaults.TOKEN_TTL.TotalSeconds,
+			DefaultRefreshTokenExpiresIn = (int) Core.Constants.Defaults.REFRESH_TOKEN_TTL.TotalSeconds,
+			DefaultResetPasswordTokenExpiresIn = (int) Core.Constants.Defaults.RESET_PASSWORD_TOKEN_TTL.TotalSeconds,
+			DefaultScopedTokenExpiresIn = (int) Core.Constants.Defaults.SCOPED_TOKEN_TTL.TotalSeconds,
+			DefaultOtpExpiresIn = (int) Core.Constants.Defaults.OTP_TTL.TotalSeconds
 		});
 	}
 	
@@ -244,12 +249,11 @@ public class MembershipsController : QueryControllerBase
 	[ProducesResponseType<ErrorModel>(StatusCodes.Status403Forbidden)]
 	public IActionResult GetEncodingList()
 	{
-		var encodings = System.Text.Encoding.GetEncodings();
-		return this.Ok(encodings.Select(x => new
+		return this.Ok(System.Text.Encoding.GetEncodings().Select(x => new DefaultEncodingInfo
 		{
-			displayName = x.DisplayName,
-			name = x.Name.ToUpperInvariant()
-		}).ToArray());
+			DisplayName = x.DisplayName,
+			Name = x.Name.ToUpperInvariant()
+		}));
 	}
 	
 	/// <summary>Get the default encoding</summary>
