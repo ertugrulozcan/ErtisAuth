@@ -844,7 +844,7 @@ public class UserService : DynamicObjectCrudService, IUserService
         
         EnsureLoginNames(model);
 		this.EnsureServerManagedProperties(model, utilizer);
-        var activationMailHook = await this.EnsureUserActivationAsync(membership, cancellationToken: cancellationToken);
+        var activationMailHook = await this.GetActivationMailHookAsync(membership, cancellationToken: cancellationToken);
         model.SetValue("is_active", membership.UserActivation != Status.Active, true);
 		
         string? password = null;
@@ -906,7 +906,7 @@ public class UserService : DynamicObjectCrudService, IUserService
 	        throw ErtisAuthException.UserAlreadyActive();
         }
         
-        var activationMailHook = await this.EnsureUserActivationAsync(membership, cancellationToken: cancellationToken);
+        var activationMailHook = await this.GetActivationMailHookAsync(membership, cancellationToken: cancellationToken);
         if (activationMailHook == null)
         {
 	        throw ErtisAuthException.ActivationMailHookWasNotDefined();
@@ -956,24 +956,25 @@ public class UserService : DynamicObjectCrudService, IUserService
         });
     }
     
-    private async Task<MailHook?> EnsureUserActivationAsync(Membership membership, CancellationToken cancellationToken = default)
+    private async Task<MailHook?> GetActivationMailHookAsync(Membership membership, CancellationToken cancellationToken = default)
     {
         if (membership.UserActivation == Status.Active)
         {
-	        if (membership.MailProviders == null || !membership.MailProviders.Any())
-	        {
-		        throw ErtisAuthException.NotDefinedAnyMailProvider();
-	        }
-	        else
-	        {
-		        var activationMailHook = await this._mailHookService.GetUserActivationMailHookAsync(membership.Id, cancellationToken: cancellationToken);
-		        if (activationMailHook == null)
-		        {
-			        throw ErtisAuthException.ActivationMailHookWasNotDefined();
-		        }
-				
-		        return activationMailHook;
-	        }
+			var activationMailHook = await this._mailHookService.GetUserActivationMailHookAsync(membership.Id, cancellationToken: cancellationToken);
+			if (activationMailHook == null)
+			{
+				throw ErtisAuthException.ActivationMailHookWasNotDefined();
+			}
+			else if (!activationMailHook.IsActive)
+			{
+				throw ErtisAuthException.ActivationMailHookDisabled();
+			}
+			else if (string.IsNullOrEmpty(activationMailHook.MailProvider) || membership.MailProviders == null || membership.MailProviders.All(x => x.Slug != activationMailHook.MailProvider))
+			{
+				throw ErtisAuthException.ActivationMailHookProviderNotConfigured();
+			}
+			
+			return activationMailHook;
         }
 		
         return null;
