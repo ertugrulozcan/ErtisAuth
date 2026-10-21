@@ -110,18 +110,391 @@ public class UserService : DynamicObjectCrudService, IUserService
 	
     #endregion
 	
-    #region Id Methods
-	
-    private void EnsureId(DynamicObject model)
+	#region Read Methods
+    
+    public async Task<DynamicObject?> GetAsync(string id, string membershipId, CancellationToken cancellationToken = default)
     {
-        if (model.TryGetValue<string>("_id", out var id, out _) && string.IsNullOrEmpty(id))
+        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+        var user = await this.GetByIdAsync(id, membershipId);
+		
+		user?.RemoveProperty("password_hash");
+		return user;
+    }
+    
+    public async Task<User?> GetUserAsync(string id, string membershipId, CancellationToken cancellationToken = default)
+    {
+        var dynamicObject = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
+        return dynamicObject?.Deserialize<User>();
+    }
+    
+    public async Task<IPaginationCollection<DynamicObject>> GetAsync(
+        string membershipId,
+        int? skip = null, 
+        int? limit = null, 
+        bool withCount = false, 
+        string? orderBy = null,
+        SortDirection? sortDirection = null, 
+        CancellationToken cancellationToken = default)
+    {
+        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+        QueryHelper.EnsureSortable(orderBy, HiddenFields);
+        var queries = new[]
         {
-	        model.RemoveProperty("_id");
+            QueryBuilder.Equals("membership_id", membershipId)
+        };
+		
+		var results = await base.GetAsync(queries, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		return results.HidePasswordHash();
+	}
+    
+    public async Task<IPaginationCollection<DynamicObject>> QueryAsync(
+		string query, 
+		string membershipId,
+        int? skip = null, 
+        int? limit = null, 
+        bool? withCount = null,
+        string? orderBy = null, 
+        SortDirection? sortDirection = null, 
+        IDictionary<string, bool>? projection = null, 
+        string? locale = null, 
+        CancellationToken cancellationToken = default)
+    {
+		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+        query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId, HiddenFields);
+        QueryHelper.EnsureSortable(orderBy, HiddenFields);
+		var results = await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, projection, language: locale, cancellationToken: cancellationToken);
+		return results.HidePasswordHash();
+    }
+    
+    public async Task<IPaginationCollection<DynamicObject>> SearchAsync(
+		string keyword,
+		string membershipId,
+        int? skip = null,
+        int? limit = null,
+        bool? withCount = null,
+        string? orderBy = null,
+        SortDirection? sortDirection = null, 
+        CancellationToken cancellationToken = default)
+    {
+		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+        var query = QueryHelper.FullTextSearchQuery(membershipId, keyword);
+        QueryHelper.EnsureSortable(orderBy, HiddenFields);
+		var results = await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
+		return results.HidePasswordHash();
+    }
+    
+    public async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string id, string membershipId, CancellationToken cancellationToken = default)
+    {
+        return await this.GetUserWithPasswordAsync(id, await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken));
+    }
+    
+    private async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string id, Membership membership)
+    {
+        var dynamicObject = await base.FindOneAsync(QueryBuilder.Equals("membership_id", membership.Id), QueryBuilder.Equals("_id", QueryBuilder.ObjectId(id)));
+        return dynamicObject?.Deserialize<UserWithPasswordHash>();
+    }
+    
+    public async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string username, string email, string membershipId, CancellationToken cancellationToken = default)
+    {
+	    username = LoginNameHelper.Normalize(username);
+	    email = LoginNameHelper.Normalize(email);
+        var dynamicObject = await this.FindOneAsync(
+	        QueryBuilder.And(
+		        QueryBuilder.Equals("membership_id", membershipId),
+		        QueryBuilder.Or(
+			        QueryBuilder.Equals("username", username),
+			        QueryBuilder.Equals("email_address", email),
+			        QueryBuilder.Equals("username", email),
+			        QueryBuilder.Equals("email_address", username)
+			    )
+		    )
+	    );
+        
+        return dynamicObject?.Deserialize<UserWithPasswordHash>();
+    }
+    
+    private async Task<DynamicObject?> GetByIdAsync(string userId, string membershipId)
+    {
+        return await base.FindOneAsync(
+	        QueryBuilder.Equals("membership_id", membershipId),
+	        QueryBuilder.Equals("_id", QueryBuilder.ObjectId(userId))
+        );
+    }
+    
+    private async Task<DynamicObject> EnsureUserAsync(string userId, string membershipId)
+    {
+        var current = await this.GetByIdAsync(userId, membershipId);
+        return current ?? throw ErtisAuthException.UserNotFound(userId, "_id");
+    }
+    
+    public async Task<User?> GetByUsernameOrEmailAddressAsync(string usernameOrEmailAddress, string membershipId)
+    {
+	    usernameOrEmailAddress = LoginNameHelper.Normalize(usernameOrEmailAddress);
+        var dynamicObject = await this.FindOneAsync(
+	        QueryBuilder.And(
+		        QueryBuilder.Equals("membership_id", membershipId),
+		        QueryBuilder.Or(
+			        QueryBuilder.Equals("username", usernameOrEmailAddress),
+			        QueryBuilder.Equals("email_address", usernameOrEmailAddress)
+		        )
+	        )
+        );
+        
+        return dynamicObject?.Deserialize<User>();
+    }
+    
+    #endregion
+	
+	#region Create Methods
+    
+    public async Task<DynamicObject> CreateAsync(DynamicObject model, string membershipId, Utilizer utilizer, string? host = null, CancellationToken cancellationToken = default)
+    {
+        var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+        
+        EnsureLoginNames(model);
+		this.EnsureServerManagedProperties(model, utilizer);
+        var activationMailHook = await this.GetActivationMailHookAsync(membership, cancellationToken: cancellationToken);
+        model.SetValue("is_active", membership.UserActivation != Status.Active, true);
+		
+        string? password = null;
+        var sourceProvider = this.GetSourceProvider(model);
+        if (sourceProvider == ProviderType.ErtisAuth)
+        {
+	        this.EnsurePassword(model, out password);
         }
+        
+        var userType = await this.GetUserTypeAsync(model, null, membershipId, cancellationToken: cancellationToken);
+        NormalizeUserType(model, userType, isCreate: true);
+        this.EnsureManagedProperties(model, membershipId);
+        
+		await this.ValidateAsync(userType, model, null, null, membershipId, utilizer, cancellationToken: cancellationToken);
+        
+        if (sourceProvider == ProviderType.ErtisAuth && !string.IsNullOrEmpty(password))
+        {
+	        this.SetPasswordHash(model, membership, password);
+        }
+        
+        DynamicObject created;
+        try
+        {
+	        created = await base.CreateAsync(model, cancellationToken: cancellationToken);
+        }
+        catch (DuplicateKeyException ex) when (TryGetUniqueConstraintError(ex, userType, out var error))
+        {
+	        throw error;
+        }
+        
+		created.HidePasswordHash();
+		
+		await this.FireOnCreatedEvent(created, membershipId, utilizer);
+		
+		// SendActivationMail
+		if (activationMailHook != null)
+		{
+			await this.TrySendActivationMailAsync(created, activationMailHook, membership, host);
+		}
+        
+        return created;
     }
 	
     #endregion
     
+	#region Update Methods
+	
+    public async Task<DynamicObject?> UpdateAsync(DynamicObject model, string userId, string membershipId, Utilizer utilizer, bool fireEvent = true, CancellationToken cancellationToken = default)
+    {
+        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+        EnsureLoginNames(model);
+        var current = await this.EnsureUserAsync(userId, membershipId);
+		this.EnsureServerManagedProperties(model, utilizer);
+        var userType = await this.GetUserTypeAsync(model, current, membershipId, cancellationToken: cancellationToken);
+        NormalizeUserType(model, userType);
+        this.EnsureManagedProperties(model, membershipId);
+        model = this.SyncModel(current, model);
+		await this.CheckPrivilegedPropertiesAsync(model, current, userId, utilizer, cancellationToken: cancellationToken);
+        this.EnsurePasswordHash(model, current);
+        
+		await this.ValidateAsync(userType, model, current, userId, membershipId, utilizer, cancellationToken: cancellationToken);
+        
+        DynamicObject? updated;
+        try
+        {
+	        updated = await base.UpdateAsync(model, userId, cancellationToken: cancellationToken);
+        }
+        catch (DuplicateKeyException ex) when (TryGetUniqueConstraintError(ex, userType, out var error))
+        {
+	        throw error;
+        }
+        
+		if (updated == null)
+		{
+			return null;
+		}
+		
+		current.HidePasswordHash();
+		updated.HidePasswordHash();
+		
+        if (fireEvent)
+        {
+	        await this.FireOnUpdatedEvent(current, updated, membershipId, utilizer);
+        }
+        
+        return updated;
+    }
+    
+    // ReSharper disable once MemberCanBeMadeStatic.Local
+    private DynamicObject SyncModel(DynamicObject current, DynamicObject model)
+    {
+        model = current.Merge(model);
+        model.RemoveProperty("_id");
+		
+        return model;
+    }
+	
+	/// <summary>
+	/// Properties that only the auth api itself (system utilizer, e.g. provider logins) may write.
+	/// Values sent by callers are ignored: on update the current values are kept, on create the defaults are used.
+	/// </summary>
+	private static readonly string[] ServerManagedProperties = ["source_provider", "connected_accounts"];
+	
+	/// <summary>
+	/// Properties whose change requires a real users.update permission on the target user (granted by role or UBAC).
+	/// The own-update exception (a user updating its own profile) does not cover them.
+	/// </summary>
+	private static readonly string[] PrivilegedProperties = ["role", "permissions", "forbidden", "is_active", "user_type"];
+	
+	/// <summary>
+	/// Fields never returned, which therefore can not be filtered or sorted on either (see QueryHelper).
+	/// </summary>
+	private static readonly IReadOnlyCollection<string> HiddenFields = ["password_hash"];
+	
+	private void EnsureServerManagedProperties(DynamicObject model, Utilizer utilizer)
+	{
+		if (utilizer.Type == Utilizer.UtilizerType.System)
+		{
+			return;
+		}
+		
+		foreach (var property in ServerManagedProperties)
+		{
+			model.RemoveProperty(property);
+		}
+	}
+	
+	private async Task CheckPrivilegedPropertiesAsync(DynamicObject model, DynamicObject current, string userId, Utilizer utilizer, CancellationToken cancellationToken = default)
+	{
+		if (utilizer.Type == Utilizer.UtilizerType.System)
+		{
+			return;
+		}
+		
+		var changedProperties = PrivilegedProperties.Where(x => !IsUnchanged(current, model, x)).ToArray();
+		if (changedProperties.Length == 0)
+		{
+			return;
+		}
+		
+		var utilizerRole = string.IsNullOrEmpty(utilizer.Role) ? null : await this._roleService.GetBySlugAsync(utilizer.Role, utilizer.MembershipId, cancellationToken: cancellationToken);
+		var rbac = new Rbac(new RbacSegment(utilizer.Id), new RbacSegment("users"), Rbac.CrudActionSegments.Update, new RbacSegment(userId));
+		if (!this._accessControlService.HasGrantedPermission(utilizerRole, rbac, utilizer))
+		{
+			throw ErtisAuthException.AccessDenied($"You are not authorized to change the following fields: {string.Join(", ", changedProperties)}");
+		}
+	}
+	
+	private static bool IsUnchanged(DynamicObject current, DynamicObject model, string property)
+	{
+		switch (property)
+		{
+			case "permissions":
+			case "forbidden":
+				return GetStringSet(current, property).SetEquals(GetStringSet(model, property));
+			case "is_active":
+				return GetBoolean(current, property) == GetBoolean(model, property);
+			default:
+				return GetString(current, property) == GetString(model, property);
+		}
+	}
+	
+	private static HashSet<string> GetStringSet(DynamicObject model, string property)
+	{
+		return model.TryGetValue(property, out string[]? values, out _) && values != null ? values.ToHashSet() : [];
+	}
+	
+	private static bool? GetBoolean(DynamicObject model, string property)
+	{
+		return model.TryGetValue<bool>(property, out var value, out _) ? value : null;
+	}
+	
+	private static string? GetString(DynamicObject model, string property)
+	{
+		return model.TryGetValue<string>(property, out var value, out _) ? value : null;
+	}
+		
+    #endregion
+    
+    #region Delete Methods
+	
+    public async Task<bool> DeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
+    {
+        var current = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
+        if (current == null)
+        {
+            throw ErtisAuthException.UserNotFound(id, "_id");
+        }
+        
+        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+        
+        var isDeleted = await base.DeleteAsync(id, cancellationToken: cancellationToken);
+        if (isDeleted)
+        {
+            await this.FireOnDeletedEvent(current, membershipId, utilizer);
+        }
+        
+        return isDeleted;
+    }
+	
+    public async Task<bool?> BulkDeleteAsync(string[] ids, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
+    {
+        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+		
+        var isAllDeleted = true;
+        var isAllFailed = true;
+        foreach (var id in ids)
+        {
+	        var isDeleted = await base.DeleteAsync(id, cancellationToken: cancellationToken);
+	        isAllDeleted &= isDeleted;
+	        isAllFailed &= !isDeleted;
+        }
+        
+        if (isAllDeleted)
+        {
+	        return true;
+        }
+        else if (isAllFailed)
+        {
+	        return false;
+        }
+        else
+        {
+	        return null;
+        }
+    }
+	
+    #endregion
+	
+	#region Id Methods
+	
+	private void EnsureId(DynamicObject model)
+	{
+		if (model.TryGetValue<string>("_id", out var id, out _) && string.IsNullOrEmpty(id))
+		{
+			model.RemoveProperty("_id");
+		}
+	}
+	
+	#endregion
+	
     #region Membership Methods
     
     private async Task<Membership> CheckMembershipAsync(string membershipId, CancellationToken cancellationToken = default)
@@ -141,6 +514,51 @@ public class UserService : DynamicObjectCrudService, IUserService
     }
 	
     #endregion
+	
+	#region Validation Methods
+	
+	private async Task ValidateAsync(
+		UserType userType,
+		DynamicObject model,
+		DynamicObject? current,
+		string? id,
+		string membershipId,
+		Utilizer utilizer,
+		CancellationToken cancellationToken = default)
+	{
+		this.EnsureMembershipId(model, membershipId);
+		this.EnsureId(model);
+		this.EnsureSys(model, utilizer, current);
+		
+		await this.EnsureUserTypeAsync(userType, model, current, id, membershipId);
+		await this.EmbedReferencesAsync(userType, model, cancellationToken: cancellationToken);
+		await this.EnsureRoleAsync(model, membershipId, cancellationToken: cancellationToken);
+		
+		this.EnsureAndValidateUbacs(model);
+	}
+	
+	private void EnsureAndValidateUbacs(DynamicObject model)
+	{
+		model.TryGetValue("permissions", out string[]? permissions, out _);
+		model.TryGetValue("forbidden", out string[]? forbiddens, out _);
+		
+		if (permissions != null && forbiddens != null && UbacExtensions.HasConflict(permissions, forbiddens, out var conflict) && conflict != null)
+		{
+			throw ErtisAuthException.UbacsConflicted($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{conflict}')");
+		}
+		
+		if (permissions != null)
+		{
+			model.SetValue("permissions", permissions.Distinct().Order().ToArray());
+		}
+		
+		if (forbiddens != null)
+		{
+			model.SetValue("forbidden", forbiddens.Distinct().Order().ToArray());
+		}
+	}
+	
+	#endregion
 	
     #region UserType Methods
     
@@ -592,10 +1010,6 @@ public class UserService : DynamicObjectCrudService, IUserService
 		return PasswordHasher.VerifyPassword(password, passwordHash, membership.GetHashAlgorithm(), membership.GetEncoding());
 	}
 	
-    #endregion
-	
-	#region Change Password
-	
 	public async Task<DynamicObject> ChangePasswordAsync(string userId, string membershipId, string newPassword, Utilizer utilizer, CancellationToken cancellationToken = default)
 	{
 		if (string.IsNullOrEmpty(newPassword))
@@ -640,257 +1054,9 @@ public class UserService : DynamicObjectCrudService, IUserService
 		return updatedUser!;
 	}
 	
-	#endregion
-	
-    #region Provider Methods
-	
-    private ProviderType GetSourceProvider(DynamicObject model)
-    {
-        if (model.TryGetValue<string>("source_provider", out var sourceProviderName, out _) && Enum.TryParse<ProviderType>(sourceProviderName, out var sourceProvider))
-        {
-	        return sourceProvider;
-        }
-        
-        return ProviderType.ErtisAuth;
-    }
-	
-    #endregion
-    
-    #region Read Methods
-    
-    public async Task<DynamicObject?> GetAsync(string id, string membershipId, CancellationToken cancellationToken = default)
-    {
-        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        var user = await this.GetByIdAsync(id, membershipId);
-		
-		user?.RemoveProperty("password_hash");
-		return user;
-    }
-    
-    public async Task<User?> GetUserAsync(string id, string membershipId, CancellationToken cancellationToken = default)
-    {
-        var dynamicObject = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
-        return dynamicObject?.Deserialize<User>();
-    }
-    
-    public async Task<IPaginationCollection<DynamicObject>> GetAsync(
-        string membershipId,
-        int? skip = null, 
-        int? limit = null, 
-        bool withCount = false, 
-        string? orderBy = null,
-        SortDirection? sortDirection = null, 
-        CancellationToken cancellationToken = default)
-    {
-        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        QueryHelper.EnsureSortable(orderBy, HiddenFields);
-        var queries = new[]
-        {
-            QueryBuilder.Equals("membership_id", membershipId)
-        };
-		
-		var results = await base.GetAsync(queries, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
-		return results.HidePasswordHash();
-	}
-    
-    public async Task<IPaginationCollection<DynamicObject>> QueryAsync(
-		string query, 
-		string membershipId,
-        int? skip = null, 
-        int? limit = null, 
-        bool? withCount = null,
-        string? orderBy = null, 
-        SortDirection? sortDirection = null, 
-        IDictionary<string, bool>? projection = null, 
-        string? locale = null, 
-        CancellationToken cancellationToken = default)
-    {
-		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        query = QueryHelper.InjectMembershipIdToQuery<dynamic>(query, membershipId, HiddenFields);
-        QueryHelper.EnsureSortable(orderBy, HiddenFields);
-		var results = await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, projection, language: locale, cancellationToken: cancellationToken);
-		return results.HidePasswordHash();
-    }
-    
-    public async Task<IPaginationCollection<DynamicObject>> SearchAsync(
-		string keyword,
-		string membershipId,
-        int? skip = null,
-        int? limit = null,
-        bool? withCount = null,
-        string? orderBy = null,
-        SortDirection? sortDirection = null, 
-        CancellationToken cancellationToken = default)
-    {
-		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        var query = QueryHelper.FullTextSearchQuery(membershipId, keyword);
-        QueryHelper.EnsureSortable(orderBy, HiddenFields);
-		var results = await base.QueryAsync(query, skip, limit, withCount, orderBy, sortDirection, cancellationToken: cancellationToken);
-		return results.HidePasswordHash();
-    }
-    
-    public async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string id, string membershipId, CancellationToken cancellationToken = default)
-    {
-        return await this.GetUserWithPasswordAsync(id, await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken));
-    }
-    
-    private async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string id, Membership membership)
-    {
-        var dynamicObject = await base.FindOneAsync(QueryBuilder.Equals("membership_id", membership.Id), QueryBuilder.Equals("_id", QueryBuilder.ObjectId(id)));
-        return dynamicObject?.Deserialize<UserWithPasswordHash>();
-    }
-    
-    public async Task<UserWithPasswordHash?> GetUserWithPasswordAsync(string username, string email, string membershipId, CancellationToken cancellationToken = default)
-    {
-	    username = LoginNameHelper.Normalize(username);
-	    email = LoginNameHelper.Normalize(email);
-        var dynamicObject = await this.FindOneAsync(
-	        QueryBuilder.And(
-		        QueryBuilder.Equals("membership_id", membershipId),
-		        QueryBuilder.Or(
-			        QueryBuilder.Equals("username", username),
-			        QueryBuilder.Equals("email_address", email),
-			        QueryBuilder.Equals("username", email),
-			        QueryBuilder.Equals("email_address", username)
-			    )
-		    )
-	    );
-        
-        return dynamicObject?.Deserialize<UserWithPasswordHash>();
-    }
-    
-    private async Task<DynamicObject?> GetByIdAsync(string userId, string membershipId)
-    {
-        return await base.FindOneAsync(
-	        QueryBuilder.Equals("membership_id", membershipId),
-	        QueryBuilder.Equals("_id", QueryBuilder.ObjectId(userId))
-        );
-    }
-    
-    private async Task<DynamicObject> EnsureUserAsync(string userId, string membershipId)
-    {
-        var current = await this.GetByIdAsync(userId, membershipId);
-        return current ?? throw ErtisAuthException.UserNotFound(userId, "_id");
-    }
-    
-    public async Task<User?> GetByUsernameOrEmailAddressAsync(string usernameOrEmailAddress, string membershipId)
-    {
-	    usernameOrEmailAddress = LoginNameHelper.Normalize(usernameOrEmailAddress);
-        var dynamicObject = await this.FindOneAsync(
-	        QueryBuilder.And(
-		        QueryBuilder.Equals("membership_id", membershipId),
-		        QueryBuilder.Or(
-			        QueryBuilder.Equals("username", usernameOrEmailAddress),
-			        QueryBuilder.Equals("email_address", usernameOrEmailAddress)
-		        )
-	        )
-        );
-        
-        return dynamicObject?.Deserialize<User>();
-    }
-    
     #endregion
 	
-    #region Validation Methods
-	
-    private async Task ValidateAsync(
-        UserType userType,
-        DynamicObject model, 
-        DynamicObject? current,
-		string? id,
-		string membershipId,
-		Utilizer utilizer, 
-        CancellationToken cancellationToken = default)
-    {
-        this.EnsureMembershipId(model, membershipId);
-        this.EnsureId(model);
-        this.EnsureSys(model, utilizer, current);
-        
-        await this.EnsureUserTypeAsync(userType, model, current, id, membershipId);
-        await this.EmbedReferencesAsync(userType, model, cancellationToken: cancellationToken);
-        await this.EnsureRoleAsync(model, membershipId, cancellationToken: cancellationToken);
-		
-		this.EnsureAndValidateUbacs(model);
-	}
-	
-	private void EnsureAndValidateUbacs(DynamicObject model)
-	{
-		model.TryGetValue("permissions", out string[]? permissions, out _);
-		model.TryGetValue("forbidden", out string[]? forbiddens, out _);
-		
-		if (permissions != null && forbiddens != null && UbacExtensions.HasConflict(permissions, forbiddens, out var conflict) && conflict != null)
-		{
-			throw ErtisAuthException.UbacsConflicted($"Permitted and forbidden sets are conflicted. The same permission is there in the both set. ('{conflict}')");
-		}
-		
-		if (permissions != null)
-		{
-			model.SetValue("permissions", permissions.Distinct().Order().ToArray());
-		}
-		
-		if (forbiddens != null)
-		{
-			model.SetValue("forbidden", forbiddens.Distinct().Order().ToArray());
-		}
-	}
-	
-    #endregion
-    
-    #region Create Methods
-    
-    public async Task<DynamicObject> CreateAsync(DynamicObject model, string membershipId, Utilizer utilizer, string? host = null, CancellationToken cancellationToken = default)
-    {
-        var membership = await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        
-        EnsureLoginNames(model);
-		this.EnsureServerManagedProperties(model, utilizer);
-        var activationMailHook = await this.GetActivationMailHookAsync(membership, cancellationToken: cancellationToken);
-        model.SetValue("is_active", membership.UserActivation != Status.Active, true);
-		
-        string? password = null;
-        var sourceProvider = this.GetSourceProvider(model);
-        if (sourceProvider == ProviderType.ErtisAuth)
-        {
-	        this.EnsurePassword(model, out password);
-        }
-        
-        var userType = await this.GetUserTypeAsync(model, null, membershipId, cancellationToken: cancellationToken);
-        NormalizeUserType(model, userType, isCreate: true);
-        this.EnsureManagedProperties(model, membershipId);
-        
-		await this.ValidateAsync(userType, model, null, null, membershipId, utilizer, cancellationToken: cancellationToken);
-        
-        if (sourceProvider == ProviderType.ErtisAuth && !string.IsNullOrEmpty(password))
-        {
-	        this.SetPasswordHash(model, membership, password);
-        }
-        
-        DynamicObject created;
-        try
-        {
-	        created = await base.CreateAsync(model, cancellationToken: cancellationToken);
-        }
-        catch (DuplicateKeyException ex) when (TryGetUniqueConstraintError(ex, userType, out var error))
-        {
-	        throw error;
-        }
-        
-		created.HidePasswordHash();
-		
-		await this.FireOnCreatedEvent(created, membershipId, utilizer);
-		
-		// SendActivationMail
-		if (activationMailHook != null)
-		{
-			await this.TrySendActivationMailAsync(created, activationMailHook, membership, host);
-		}
-        
-        return created;
-    }
-	
-    #endregion
-	
-    #region User Activation Methods
+	#region User Activation Methods
 	
     public async Task<string?> SendActivationMailAsync(string userId, string membershipId, string? host = null, CancellationToken cancellationToken = default)
     {
@@ -1093,187 +1259,17 @@ public class UserService : DynamicObjectCrudService, IUserService
     }
 	
     #endregion
-    
-    #region Update Methods
 	
-    public async Task<DynamicObject?> UpdateAsync(DynamicObject model, string userId, string membershipId, Utilizer utilizer, bool fireEvent = true, CancellationToken cancellationToken = default)
+    #region Provider Methods
+	
+    private ProviderType GetSourceProvider(DynamicObject model)
     {
-        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        EnsureLoginNames(model);
-        var current = await this.EnsureUserAsync(userId, membershipId);
-		this.EnsureServerManagedProperties(model, utilizer);
-        var userType = await this.GetUserTypeAsync(model, current, membershipId, cancellationToken: cancellationToken);
-        NormalizeUserType(model, userType);
-        this.EnsureManagedProperties(model, membershipId);
-        model = this.SyncModel(current, model);
-		await this.CheckPrivilegedPropertiesAsync(model, current, userId, utilizer, cancellationToken: cancellationToken);
-        this.EnsurePasswordHash(model, current);
-        
-		await this.ValidateAsync(userType, model, current, userId, membershipId, utilizer, cancellationToken: cancellationToken);
-        
-        DynamicObject? updated;
-        try
+        if (model.TryGetValue<string>("source_provider", out var sourceProviderName, out _) && Enum.TryParse<ProviderType>(sourceProviderName, out var sourceProvider))
         {
-	        updated = await base.UpdateAsync(model, userId, cancellationToken: cancellationToken);
-        }
-        catch (DuplicateKeyException ex) when (TryGetUniqueConstraintError(ex, userType, out var error))
-        {
-	        throw error;
+	        return sourceProvider;
         }
         
-		if (updated == null)
-		{
-			return null;
-		}
-		
-		current.HidePasswordHash();
-		updated.HidePasswordHash();
-		
-        if (fireEvent)
-        {
-	        await this.FireOnUpdatedEvent(current, updated, membershipId, utilizer);
-        }
-        
-        return updated;
-    }
-    
-    // ReSharper disable once MemberCanBeMadeStatic.Local
-    private DynamicObject SyncModel(DynamicObject current, DynamicObject model)
-    {
-        model = current.Merge(model);
-        model.RemoveProperty("_id");
-		
-        return model;
-    }
-	
-	/// <summary>
-	/// Properties that only the auth api itself (system utilizer, e.g. provider logins) may write.
-	/// Values sent by callers are ignored: on update the current values are kept, on create the defaults are used.
-	/// </summary>
-	private static readonly string[] ServerManagedProperties = ["source_provider", "connected_accounts"];
-	
-	/// <summary>
-	/// Properties whose change requires a real users.update permission on the target user (granted by role or UBAC).
-	/// The own-update exception (a user updating its own profile) does not cover them.
-	/// </summary>
-	private static readonly string[] PrivilegedProperties = ["role", "permissions", "forbidden", "is_active", "user_type"];
-	
-	/// <summary>
-	/// Fields never returned, which therefore can not be filtered or sorted on either (see QueryHelper).
-	/// </summary>
-	private static readonly IReadOnlyCollection<string> HiddenFields = ["password_hash"];
-	
-	private void EnsureServerManagedProperties(DynamicObject model, Utilizer utilizer)
-	{
-		if (utilizer.Type == Utilizer.UtilizerType.System)
-		{
-			return;
-		}
-		
-		foreach (var property in ServerManagedProperties)
-		{
-			model.RemoveProperty(property);
-		}
-	}
-	
-	private async Task CheckPrivilegedPropertiesAsync(DynamicObject model, DynamicObject current, string userId, Utilizer utilizer, CancellationToken cancellationToken = default)
-	{
-		if (utilizer.Type == Utilizer.UtilizerType.System)
-		{
-			return;
-		}
-		
-		var changedProperties = PrivilegedProperties.Where(x => !IsUnchanged(current, model, x)).ToArray();
-		if (changedProperties.Length == 0)
-		{
-			return;
-		}
-		
-		var utilizerRole = string.IsNullOrEmpty(utilizer.Role) ? null : await this._roleService.GetBySlugAsync(utilizer.Role, utilizer.MembershipId, cancellationToken: cancellationToken);
-		var rbac = new Rbac(new RbacSegment(utilizer.Id), new RbacSegment("users"), Rbac.CrudActionSegments.Update, new RbacSegment(userId));
-		if (!this._accessControlService.HasGrantedPermission(utilizerRole, rbac, utilizer))
-		{
-			throw ErtisAuthException.AccessDenied($"You are not authorized to change the following fields: {string.Join(", ", changedProperties)}");
-		}
-	}
-	
-	private static bool IsUnchanged(DynamicObject current, DynamicObject model, string property)
-	{
-		switch (property)
-		{
-			case "permissions":
-			case "forbidden":
-				return GetStringSet(current, property).SetEquals(GetStringSet(model, property));
-			case "is_active":
-				return GetBoolean(current, property) == GetBoolean(model, property);
-			default:
-				return GetString(current, property) == GetString(model, property);
-		}
-	}
-	
-	private static HashSet<string> GetStringSet(DynamicObject model, string property)
-	{
-		return model.TryGetValue(property, out string[]? values, out _) && values != null ? values.ToHashSet() : [];
-	}
-	
-	private static bool? GetBoolean(DynamicObject model, string property)
-	{
-		return model.TryGetValue<bool>(property, out var value, out _) ? value : null;
-	}
-	
-	private static string? GetString(DynamicObject model, string property)
-	{
-		return model.TryGetValue<string>(property, out var value, out _) ? value : null;
-	}
-		
-    #endregion
-    
-    #region Delete Methods
-	
-    public async Task<bool> DeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
-    {
-        var current = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
-        if (current == null)
-        {
-            throw ErtisAuthException.UserNotFound(id, "_id");
-        }
-        
-        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-        
-        var isDeleted = await base.DeleteAsync(id, cancellationToken: cancellationToken);
-        if (isDeleted)
-        {
-            await this.FireOnDeletedEvent(current, membershipId, utilizer);
-        }
-        
-        return isDeleted;
-    }
-	
-    public async Task<bool?> BulkDeleteAsync(string[] ids, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
-    {
-        await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
-		
-        var isAllDeleted = true;
-        var isAllFailed = true;
-        foreach (var id in ids)
-        {
-	        var isDeleted = await base.DeleteAsync(id, cancellationToken: cancellationToken);
-	        isAllDeleted &= isDeleted;
-	        isAllFailed &= !isDeleted;
-        }
-        
-        if (isAllDeleted)
-        {
-	        return true;
-        }
-        else if (isAllFailed)
-        {
-	        return false;
-        }
-        else
-        {
-	        return null;
-        }
+        return ProviderType.ErtisAuth;
     }
 	
     #endregion
