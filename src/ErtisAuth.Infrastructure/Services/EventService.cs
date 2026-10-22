@@ -103,4 +103,20 @@ public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventServ
 	}
 	
 	#endregion
+	
+	#region Clean Methods
+	
+	/// <summary>
+	/// If the setup process fails, it deletes all events for the purpose of a rollback.
+	/// </summary>
+	/// <param name="membershipId"></param>
+	/// <param name="utilizer"></param>
+	/// <param name="cancellationToken"></param>
+	public async Task ClearAsync(string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
+	{
+		var events = await this.GetAsync(membershipId, cancellationToken: cancellationToken);
+		await this._repository.BulkDeleteAsync(events.Items, cancellationToken: cancellationToken);
+	}
+	
+	#endregion
 }

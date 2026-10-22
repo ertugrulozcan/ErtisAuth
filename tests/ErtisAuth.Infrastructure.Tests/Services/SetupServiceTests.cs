@@ -44,6 +44,8 @@ public class SetupServiceTests
 	
 	private readonly IApplicationService _applicationService = Substitute.For<IApplicationService>();
 	
+	private readonly IEventService _eventService = Substitute.For<IEventService>();
+	
 	private readonly List<SetupToken> _setupTokens;
 	
 	private readonly List<Membership> _memberships = [];
@@ -98,7 +100,7 @@ public class SetupServiceTests
 				return userType;
 			});
 		
-		this._userTypeService.DeleteAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<CancellationToken>()).Returns(callInfo => this.Delete("user type", callInfo.ArgAt<string>(0)));
+		this._userTypeService.DeleteAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<CancellationToken>()).Returns(callInfo => this.Delete("user-type", callInfo.ArgAt<string>(0)));
 		
 		this._userService
 			.CreateAsync(Arg.Any<DynamicObject>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
@@ -122,7 +124,15 @@ public class SetupServiceTests
 	
 	private SetupService CreateService()
 	{
-		return new SetupService(this._setupTokenRepository, this._membershipService, this._roleService, this._userService, this._userTypeService, this._applicationService, NullLogger<SetupService>.Instance);
+		return new SetupService(
+			this._setupTokenRepository, 
+			this._membershipService, 
+			this._roleService, 
+			this._userService, 
+			this._userTypeService, 
+			this._applicationService, 
+			this._eventService, 
+			NullLogger<SetupService>.Instance);
 	}
 	
 	private bool Delete(string resource, string id)
@@ -250,7 +260,7 @@ public class SetupServiceTests
 		
 		Assert.Equal("SetupInProgress", exception.ErrorCode);
 		membershipCreation.SetException(new InvalidOperationException("stop the first setup"));
-		await Assert.ThrowsAsync<InvalidOperationException>(() => first);
+		await Assert.ThrowsAsync<SetupException>(() => first);
 	}
 	
 	#endregion
@@ -267,9 +277,9 @@ public class SetupServiceTests
 			.ThrowsAsync(new InvalidOperationException("user validation failed"));
 		
 		var service = this.CreateService();
-		await Assert.ThrowsAsync<InvalidOperationException>(() => this.SetupAsync(service));
+		await Assert.ThrowsAsync<SetupException>(() => this.SetupAsync(service));
 		
-		Assert.Equal(["user type", "role", "membership"], this._deleted);
+		Assert.Equal(["membership"], this._deleted);
 		Assert.Empty(this._memberships);
 		Assert.False(await service.IsSetUpAsync(TestContext.Current.CancellationToken));
 		Assert.Single(this._setupTokens);
@@ -284,9 +294,9 @@ public class SetupServiceTests
 			.CreateWithSecretAsync(Arg.Any<Application>(), Arg.Any<string>(), Arg.Any<Utilizer>(), Arg.Any<CancellationToken>())
 			.ThrowsAsync(new InvalidOperationException("application validation failed"));
 		
-		await Assert.ThrowsAsync<InvalidOperationException>(() => this.SetupAsync(this.CreateService(), application: new Application { Name = "Server", Role = "admin", MembershipId = string.Empty }));
+		await Assert.ThrowsAsync<SetupException>(() => this.SetupAsync(this.CreateService(), application: new Application { Name = "Server", Role = "admin", MembershipId = string.Empty }));
 		
-		Assert.Equal(["user", "user type", "role", "membership"], this._deleted);
+		Assert.Equal(["membership"], this._deleted);
 	}
 	
 	#endregion

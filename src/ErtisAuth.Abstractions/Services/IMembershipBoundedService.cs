@@ -4,6 +4,7 @@ using ErtisAuth.Core.Models;
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedParameter.Global
 // ReSharper disable UnusedMemberInSuper.Global
+// ReSharper disable UnusedMethodReturnValue.Global
 namespace ErtisAuth.Abstractions.Services;
 
 public interface IMembershipBoundedService

@@ -264,5 +264,24 @@ public abstract class MembershipBoundedCrudService<TModel> :
 		}
 	}
 	
+	public virtual async Task<bool> ForceDeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
+	{
+		var current = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
+		if (current != null)
+		{
+			var isDeleted = await this._repository.DeleteAsync(id, cancellationToken: cancellationToken);
+			if (isDeleted)
+			{
+				this.OnDeleted?.Invoke(this, new DeleteResourceEventArgs<TModel>(utilizer, current, membershipId));
+			}
+			
+			return isDeleted;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
 	#endregion
 }

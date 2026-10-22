@@ -1,6 +1,7 @@
 using ErtisAuth.Core.Models.Events;
 using ErtisAuth.Core.Models.Identity;
 
+// ReSharper disable UnusedParameter.Global
 // ReSharper disable EventNeverSubscribedTo.Global
 namespace ErtisAuth.Abstractions.Services;
 
@@ -21,6 +22,15 @@ public interface IEventService : IMembershipBoundedService<ErtisAuthEvent>
 		object? document = null,
 		object? prior = null,
 		CancellationToken cancellationToken = default);
+	
+	/// <summary>
+	/// If the setup process fails, it deletes all events for the purpose of a rollback.
+	/// </summary>
+	/// <param name="membershipId"></param>
+	/// <param name="utilizer"></param>
+	/// <param name="cancellationToken"></param>
+	/// <returns></returns>
+	Task ClearAsync(string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default);
 	
 	event EventHandler<ErtisAuthEvent>? OnEventFired;
 }

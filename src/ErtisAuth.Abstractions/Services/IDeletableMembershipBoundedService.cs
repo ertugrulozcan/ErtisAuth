@@ -9,4 +9,6 @@ public interface IDeletableMembershipBoundedService
     Task<bool> DeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default);
     
     Task<bool?> BulkDeleteAsync(string[] ids, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default);
+    
+    Task<bool> ForceDeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default);
 }

@@ -3,6 +3,7 @@ using System.Text.Json;
 using Ertis.Core.Exceptions;
 using Ertis.Core.Models;
 using Ertis.Schema.Exceptions;
+using ErtisAuth.Core.Exceptions;
 using ErtisAuth.Core.Extensions;
 using Microsoft.AspNetCore.Diagnostics;
 
@@ -92,6 +93,17 @@ public static class ErrorHandlingExtensions
 									ErrorCode = "SchemaValidationException",
 									StatusCode = 400
 								}
+							};
+							break;
+						case SetupException setupException:
+							context.Response.StatusCode = 400;
+							errorModel = new
+							{
+								resource = setupException.Resource,
+								message = setupException.Message,
+								errorCode = "SetupError",
+								statusCode = 400,
+								errors = setupException.Errors
 							};
 							break;
 						default:

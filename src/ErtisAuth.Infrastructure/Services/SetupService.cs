@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Ertis.Schema.Dynamics;
 using Ertis.Schema.Types;
 using ErtisAuth.Abstractions.Services;
 using ErtisAuth.Core.Exceptions;
@@ -36,6 +37,7 @@ public class SetupService : ISetupService
 	private readonly IUserService _userService;
 	private readonly IUserTypeService _userTypeService;
 	private readonly IApplicationService _applicationService;
+	private readonly IEventService _eventService;
 	private readonly ILogger<SetupService> _logger;
 	
 	#endregion
@@ -60,6 +62,7 @@ public class SetupService : ISetupService
 	/// <param name="userService"></param>
 	/// <param name="userTypeService"></param>
 	/// <param name="applicationService"></param>
+	/// <param name="eventService"></param>
 	/// <param name="logger"></param>
 	public SetupService(
 		ISetupTokenRepository setupTokenRepository,
@@ -68,6 +71,7 @@ public class SetupService : ISetupService
 		IUserService userService,
 		IUserTypeService userTypeService,
 		IApplicationService applicationService,
+		IEventService eventService,
 		ILogger<SetupService> logger)
 	{
 		this._setupTokenRepository = setupTokenRepository;
@@ -76,6 +80,7 @@ public class SetupService : ISetupService
 		this._userService = userService;
 		this._userTypeService = userTypeService;
 		this._applicationService = applicationService;
+		this._eventService = eventService;
 		this._logger = logger;
 	}
 	
@@ -129,7 +134,7 @@ public class SetupService : ISetupService
 		
 		if (storedTokens.Length == 0)
 		{
-			throw ErtisAuthException.SetupRejected($"No setup token found. Insert one into the '{SetupTokenRepository.CollectionNameValue}' collection, e.g. db.{SetupTokenRepository.CollectionNameValue}.insertOne({{ token: \"<at least {SetupToken.MinimumLength} characters>\" }})");
+			throw ErtisAuthException.SetupRejected($"The setup token not found. Insert one into the '{SetupTokenRepository.CollectionNameValue}' collection, e.g. db.{SetupTokenRepository.CollectionNameValue}.insertOne({{ token: \"<at least {SetupToken.MinimumLength} characters>\" }})");
 		}
 		
 		// A weak token would be guessable while the setup is pending
@@ -155,12 +160,51 @@ public class SetupService : ISetupService
 		Membership? membership = null;
 		Role? role = null;
 		UserType? userType = null;
-		string? userId = null;
+		DynamicObject? user = null;
+		ApplicationWithSecret? application = null;
 		
 		try
 		{
 			// 1. Membership (created by the system; the membership id of the utilizer is not known yet)
-			membership = await this._membershipService.CreateAsync(new Membership
+			membership = await this.CreateMembershipAsync(membershipModel, cancellationToken: cancellationToken);
+			
+			// Utilizer
+			var utilizer = Utilizer.GetSystemUtilizer(membership.Id);
+			
+			// 2. Admin Role
+			role = await this.CreateRoleAsync(membership, cancellationToken: cancellationToken);
+			
+			// 3. User Type
+			userType = await this.CreateUserTypeAsync(membership, userModel, utilizer, cancellationToken: cancellationToken);
+			
+			// 4. Admin User
+			user = await this.CreateUserAsync(membership, userModel, userType, role, utilizer, cancellationToken: cancellationToken);
+			
+			// 5. Application
+			application = await this.CreateApplicationAsync(membership, applicationModel, role, utilizer, cancellationToken: cancellationToken);
+			
+			return new SetupResult
+			{
+				Membership = membership,
+				User = user,
+				Role = role,
+				Application = application
+			};
+		}
+		catch (Exception ex)
+		{
+			this._logger.LogError(ex, "The setup process failed: {Message}", ex.Message);
+			
+			await this.RollbackAsync(membership, role, userType, user, application);
+			throw;
+		}
+	}
+	
+	private async Task<Membership> CreateMembershipAsync(Membership membershipModel, CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			return await this._membershipService.CreateAsync(new Membership
 			{
 				Name = membershipModel.Name,
 				Slug = membershipModel.Slug,
@@ -170,14 +214,30 @@ public class SetupService : ISetupService
 				RefreshTokenExpiresIn = membershipModel.RefreshTokenExpiresIn,
 				SecretKey = string.IsNullOrEmpty(membershipModel.SecretKey) ? GenerateRandomSecretKey(32) : membershipModel.SecretKey
 			}, Utilizer.GetSystemUtilizer(string.Empty), cancellationToken: cancellationToken);
-			
-			var utilizer = Utilizer.GetSystemUtilizer(membership.Id);
-			
-			// 2. Administrator role
-			role = await this._roleService.EnsureAdministratorRoleAsync(membership, cancellationToken: cancellationToken);
-			
-			// 3. User type
-			userType = await this._userTypeService.CreateAsync(new UserType
+		}
+		catch (Exception ex)
+		{
+			throw new SetupException(ex, "membership");
+		}
+	}
+	
+	private async Task<Role> CreateRoleAsync(Membership membership, CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			return await this._roleService.EnsureAdministratorRoleAsync(membership, cancellationToken: cancellationToken);
+		}
+		catch (Exception ex)
+		{
+			throw new SetupException(ex, "role");
+		}
+	}
+	
+	private async Task<UserType> CreateUserTypeAsync(Membership membership, UserWithPassword userModel, Utilizer utilizer, CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			return await this._userTypeService.CreateAsync(new UserType
 			{
 				Name = string.IsNullOrEmpty(userModel.UserType) ? "User" : userModel.UserType,
 				Properties = Array.Empty<IFieldInfo>(),
@@ -186,9 +246,18 @@ public class SetupService : ISetupService
 				BaseUserType = UserType.ORIGIN_USER_TYPE_SLUG,
 				MembershipId = membership.Id
 			}, membership.Id, utilizer, cancellationToken: cancellationToken);
-			
-			// 4. Administrator user
-			var user = await this._userService.CreateAsync(new UserWithPassword
+		}
+		catch (Exception ex)
+		{
+			throw new SetupException(ex, "user-type");
+		}
+	}
+	
+	private async Task<DynamicObject> CreateUserAsync(Membership membership, UserWithPassword userModel, UserType userType, Role role, Utilizer utilizer, CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			return await this._userService.CreateAsync(new UserWithPassword
 			{
 				Username = userModel.Username,
 				FirstName = userModel.FirstName,
@@ -200,64 +269,84 @@ public class SetupService : ISetupService
 				Password = userModel.Password,
 				IsActive = true
 			}, membership.Id, utilizer, cancellationToken: cancellationToken);
-			
-			userId = user.TryGetValue<string>("_id", out var id, out _) ? id : null;
-			
-			// 5. Application
-			ApplicationWithSecret? application = null;
-			if (applicationModel != null)
+		}
+		catch (Exception ex)
+		{
+			throw new SetupException(ex, "user");
+		}
+	}
+	
+	private async Task<ApplicationWithSecret?> CreateApplicationAsync(Membership membership, Application? applicationModel, Role role, Utilizer utilizer, CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			if (applicationModel == null)
 			{
-				application = await this._applicationService.CreateWithSecretAsync(new Application
-				{
-					Name = applicationModel.Name,
-					Slug = applicationModel.Slug,
-					Role = applicationModel.Role,
-					MembershipId = membership.Id
-				}, membership.Id, utilizer, cancellationToken: cancellationToken);
+				return null;
 			}
 			
-			return new SetupResult
+			return await this._applicationService.CreateWithSecretAsync(new Application
 			{
-				Membership = membership,
-				User = user,
-				Role = role,
-				Application = application
-			};
+				Name = applicationModel.Name,
+				Slug = applicationModel.Slug,
+				Role = role.Slug,
+				MembershipId = membership.Id
+			}, membership.Id, utilizer, cancellationToken: cancellationToken);
 		}
-		catch
+		catch (Exception ex)
 		{
-			await this.RollbackAsync(membership, role, userType, userId);
-			throw;
+			throw new SetupException(ex, "application");
 		}
 	}
 	
 	/// <summary>
 	/// In reverse order of creation: a membership can't be deleted while it has resources.
 	/// </summary>
-	private async Task RollbackAsync(Membership? membership, Role? role, UserType? userType, string? userId)
+	private async Task RollbackAsync(
+		Membership? membership, 
+		Role? role, 
+		UserType? userType, 
+		DynamicObject? user,
+		ApplicationWithSecret? application)
 	{
 		if (membership == null)
 		{
 			return;
 		}
 		
+		this._logger.LogWarning("Setup rollback: All resources are being rolling back...");
+		
 		var utilizer = Utilizer.GetSystemUtilizer(membership.Id);
 		var steps = new List<(string Resource, Func<Task> Delete)>();
-		if (userId != null)
+		
+		// Delete user
+		if (user != null && user.TryGetValue<string>("_id", out var id, out _) && !string.IsNullOrEmpty(id))
 		{
-			steps.Add(("user", () => this._userService.DeleteAsync(userId, membership.Id, utilizer)));
+			steps.Add(("user", () => this._userService.ForceDeleteAsync(id, membership.Id, utilizer)));
 		}
 		
+		// Delete user type
 		if (userType != null)
 		{
-			steps.Add(("user type", () => this._userTypeService.DeleteAsync(userType.Id, membership.Id, utilizer)));
+			steps.Add(("user-type", () => this._userTypeService.ForceDeleteAsync(userType.Id, membership.Id, utilizer)));
 		}
 		
+		// Delete role
 		if (role != null)
 		{
-			steps.Add(("role", () => this._roleService.DeleteAsync(role.Id, membership.Id, utilizer)));
+			steps.Add(("role", () => this._roleService.ForceDeleteAsync(role.Id, membership.Id, utilizer)));
 		}
 		
+		// Delete application
+		if (application != null)
+		{
+			steps.Add(("application", () => this._applicationService.ForceDeleteAsync(application.Id, membership.Id, utilizer)));
+		}
+		
+		// Delete events
+		steps.Add(("event", () => this._eventService.ClearAsync(membership.Id, utilizer)));
+		
+		// Delete membership
 		steps.Add(("membership", () => this._membershipService.DeleteAsync(membership.Id)));
 		
 		foreach (var (resource, delete) in steps)
@@ -265,12 +354,22 @@ public class SetupService : ISetupService
 			try
 			{
 				await delete();
+				this._logger.LogInformation("Setup rollback: The {Resource}s deleted", resource);
 			}
 			catch (Exception ex)
 			{
-				this._logger.LogError(ex, "Setup rollback: the {Resource} of membership {MembershipId} could not be deleted", resource, membership.Id);
+				if (resource == "membership")
+				{
+					this._logger.LogError(ex, "Setup rollback: The membership '{MembershipId}' could not be deleted", membership.Id);
+				}
+				else
+				{
+					this._logger.LogError(ex, "Setup rollback: The {Resource} of membership '{MembershipId}' could not be deleted", resource, membership.Id);
+				}
 			}
 		}
+		
+		this._logger.LogInformation("Rollback completed");
 	}
 	
 	private static string GenerateRandomSecretKey(int outputSize)

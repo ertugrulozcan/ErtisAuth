@@ -69,7 +69,7 @@ public class HealthCheckController : ControllerBase
 			return this.StatusCode(500, new
 			{
 				Status = "Unhealthy",
-				Message = "Health check failed"
+				ex.Message
 			});
 		}
 	}

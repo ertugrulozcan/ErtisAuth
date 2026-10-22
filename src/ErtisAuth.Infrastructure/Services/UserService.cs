@@ -478,6 +478,25 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
     }
 	
+	public async Task<bool> ForceDeleteAsync(string id, string membershipId, Utilizer utilizer, CancellationToken cancellationToken = default)
+	{
+		var current = await this.GetAsync(id, membershipId, cancellationToken: cancellationToken);
+		if (current == null)
+		{
+			throw ErtisAuthException.UserNotFound(id, "_id");
+		}
+		
+		await this.CheckMembershipAsync(membershipId, cancellationToken: cancellationToken);
+		
+		var isDeleted = await base.DeleteAsync(id, cancellationToken: cancellationToken);
+		if (isDeleted)
+		{
+			await this.FireOnDeletedEvent(current, membershipId, utilizer);
+		}
+		
+		return isDeleted;
+	}
+	
     #endregion
 	
 	#region Id Methods
