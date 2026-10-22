@@ -595,6 +595,11 @@ public class ErtisAuthException : ErtisException
 		return new ErtisAuthException(HttpStatusCode.NotImplemented, "The mail provider is not configured for the activation mail hook", "ActivationMailhookProviderNotConfigured");
 	}
 	
+	public static ErtisAuthException HostRequiredForActivation()
+	{
+		return new ErtisAuthException(HttpStatusCode.BadRequest, "Host required for the activation", "HostRequiredForActivation");
+	}
+	
 	public static ErtisAuthException ResetPasswordMailhookWasNotDefined()
 	{
 		return new ErtisAuthException(HttpStatusCode.NotImplemented, "The reset password mail hook was not defined or not configured correctly or passive", "ResetPasswordMailhookWasNotDefined");

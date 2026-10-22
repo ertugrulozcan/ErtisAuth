@@ -253,7 +253,6 @@ public class UserService : DynamicObjectCrudService, IUserService
         
         EnsureLoginNames(model);
 		this.EnsureServerManagedProperties(model, utilizer);
-        var activationMailhook = await this.GetActivationMailhookAsync(membership, cancellationToken: cancellationToken);
         model.SetValue("is_active", membership.UserActivation != Status.Active, true);
 		
         string? password = null;
@@ -286,13 +285,11 @@ public class UserService : DynamicObjectCrudService, IUserService
         
 		created.HidePasswordHash();
 		
-		await this.FireOnCreatedEvent(created, membershipId, utilizer);
-		
 		// SendActivationMail
-		if (activationMailhook != null)
-		{
-			await this.TrySendActivationMailAsync(created, activationMailhook, membership, host);
-		}
+		await this.TrySendActivationMailAsync(created, membership, host, cancellationToken: cancellationToken);
+		
+		// Fire event
+		await this.FireOnCreatedEvent(created, membershipId, utilizer);
         
         return created;
     }
@@ -1073,42 +1070,72 @@ public class UserService : DynamicObjectCrudService, IUserService
         }
         
         var activationMailhook = await this.GetActivationMailhookAsync(membership, cancellationToken: cancellationToken);
-        if (activationMailhook == null)
+        if (activationMailhook is not { IsActive: true })
         {
 	        throw ErtisAuthException.ActivationMailhookWasNotDefined();
         }
-        
-        return await this.TrySendActivationMailAsync(user, activationMailhook, membership, host);
+		
+		if (await this.TrySendActivationMailAsync(user, activationMailhook, membership, host))
+		{
+			return user.EmailAddress;
+		}
+		
+		return null;
     }
 	
-    private async Task TrySendActivationMailAsync(DynamicObject userDynamicObject, Mailhook activationMailhook, Membership membership, string? host)
+    private async Task TrySendActivationMailAsync(DynamicObject createdUser, Membership membership, string? host, CancellationToken cancellationToken = default)
     {
-        await this.TrySendActivationMailAsync(userDynamicObject.Deserialize<User>()!, activationMailhook, membership, host);
+		var activationMailhook = await this.GetActivationMailhookAsync(membership, cancellationToken: cancellationToken);
+		if (activationMailhook is { IsActive: true })
+		{
+			Exception? exception = null;
+			bool isSuccess;
+			
+			try
+			{
+				isSuccess = await this.TrySendActivationMailAsync(createdUser.Deserialize<User>()!, activationMailhook, membership, host);
+			}
+			catch (Exception ex)
+			{
+				this._logger.LogError(ex, "Activation mail could not be sent: '{Message}'", ex.Message);
+				exception = ex;
+				isSuccess = false;
+			}
+			
+			if (!isSuccess)
+			{
+				// Rollback (Delete just created user)
+				var id = createdUser.GetValue<string>("_id");
+				if (!string.IsNullOrEmpty(id))
+				{
+					await this.DeleteAsync(id, cancellationToken: cancellationToken);
+				}
+			}
+			
+			if (exception != null)
+			{
+				throw exception;
+			}
+		}
     }
     
-    private async Task<string?> TrySendActivationMailAsync(User user, Mailhook? activationMailhook, Membership membership, string? host)
+    private async Task<bool> TrySendActivationMailAsync(User user, Mailhook activationMailhook, Membership membership, string? host)
     {
-        try
-        {
-	        if (membership.UserActivation == Status.Active)
-	        {
-		        if (activationMailhook != null && !string.IsNullOrEmpty(host))
-		        {
-			        await this.SendActivationMailAsync(user, activationMailhook, membership.Id, host);
-			        return user.EmailAddress;
-		        }
-		        else
-		        {
-			        this._logger.LogError("Activation mail could not be sent (ActivationMailhook: {Id}, Host: {Host})", activationMailhook?.Id, host);
-		        }
-	        }
-        }
-        catch (Exception ex)
-        {
-	        this._logger.LogError(ex, "Activation mail could not be sent");
-        }
+		if (membership.UserActivation != Status.Active)
+		{
+			return false;
+		}
 		
-        return null;
+		if (!string.IsNullOrEmpty(host))
+		{
+			await this.SendActivationMailAsync(user, activationMailhook, membership.Id, host);
+			return true;
+		}
+		else
+		{
+			this._logger.LogError("Activation mail could not be sent: 'Host required'");
+			throw ErtisAuthException.HostRequiredForActivation();
+		}
     }
 	
     private async Task SendActivationMailAsync(User user, Mailhook activationMailhook, string membershipId, string host)

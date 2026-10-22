@@ -50,7 +50,7 @@ public partial class UserActivationTests : IClassFixture<ActivationErtisAuthInst
 	
 	#region Helpers
 	
-	private async Task<(JsonObject User, string Username, string EmailAddress)> CreateUserAsync(string? host = MailingErtisAuthInstance.Host)
+	private async Task<(HttpResponseMessage Response, string Username, string EmailAddress)> CreateUserAsync(string? host = MailingErtisAuthInstance.Host)
 	{
 		var username = $"user{Guid.NewGuid():N}";
 		var emailAddress = $"{username}@example.com";
@@ -72,9 +72,7 @@ public partial class UserActivationTests : IClassFixture<ActivationErtisAuthInst
 			request.Headers.Add("X-Host", host);
 		}
 		
-		using var response = await adminClient.SendAsync(request, CancellationToken);
-		var created = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.Created);
-		return (created!.AsObject(), username, emailAddress);
+		return (await adminClient.SendAsync(request, CancellationToken), username, emailAddress);
 	}
 	
 	/// <summary>
@@ -106,7 +104,9 @@ public partial class UserActivationTests : IClassFixture<ActivationErtisAuthInst
 	[Fact]
 	public async Task CreatedUser_IsInactiveUntilActivatedWithTheLinkFromTheMail()
 	{
-		var (user, username, emailAddress) = await this.CreateUserAsync();
+		var (response, username, emailAddress) = await this.CreateUserAsync();
+		var created = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.Created);
+		var user = created!.AsObject();
 		Assert.False(user["is_active"]!.GetValue<bool>());
 		
 		using var inactiveLogin = await this._instance.RequestTokenAsync(username, Password);
@@ -144,7 +144,7 @@ public partial class UserActivationTests : IClassFixture<ActivationErtisAuthInst
 	public async Task ResendActivationMail_SendsAnotherLink()
 	{
 		// Without X-Host no link can be built, so no mail is sent on create
-		var (_, _, emailAddress) = await this.CreateUserAsync(host: null);
+		var (_, _, emailAddress) = await this.CreateUserAsync();
 		
 		var adminClient = await this._instance.CreateAdminClientAsync();
 		using var request = new HttpRequestMessage(HttpMethod.Post, $"{this.UsersUrl}/resend-activation-mail");
@@ -161,6 +161,13 @@ public partial class UserActivationTests : IClassFixture<ActivationErtisAuthInst
 	}
 	
 	[Fact]
+	public async Task ResendActivationMail_SendsAnotherLink_WithoutHost()
+	{
+		var (response, _, _) = await this.CreateUserAsync(host: null);
+		await ResourceClient.AssertStatusAsync(response, HttpStatusCode.BadRequest);
+	}
+	
+	[Fact]
 	public async Task Activation_WithInvalidCode_ReturnsUnauthorized()
 	{
 		using var response = await this.ActivateAsync(Convert.ToBase64String("not-a-code"u8.ToArray()));
@@ -174,7 +181,9 @@ public partial class UserActivationTests : IClassFixture<ActivationErtisAuthInst
 	[Fact]
 	public async Task FreezeAndActivateById()
 	{
-		var (user, username, _) = await this.CreateUserAsync(host: null);
+		var (response, username, emailAddress) = await this.CreateUserAsync();
+		var created = await ResourceClient.AssertStatusAsync(response, HttpStatusCode.Created);
+		var user = created!.AsObject();
 		var id = user["_id"]!.GetValue<string>();
 		var adminClient = await this._instance.CreateAdminClientAsync();
 		
@@ -202,6 +211,13 @@ public partial class UserActivationTests : IClassFixture<ActivationErtisAuthInst
 		var freezeAgain = await ResourceClient.AssertStatusAsync(freezeAgainResponse, freezeAgainResponse.StatusCode);
 		Assert.False(freezeAgainResponse.IsSuccessStatusCode);
 		Assert.Equal("UserAlreadyInactive", freezeAgain!["errorCode"]!.GetValue<string>());
+	}
+	
+	[Fact]
+	public async Task FreezeAndActivateById_WithoutHost()
+	{
+		var (response, _, _) = await this.CreateUserAsync(host: null);
+		await ResourceClient.AssertStatusAsync(response, HttpStatusCode.BadRequest);
 	}
 	
 	#endregion
