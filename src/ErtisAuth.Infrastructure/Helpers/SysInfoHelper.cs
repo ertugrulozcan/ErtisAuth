@@ -62,7 +62,7 @@ public static class SysInfoHelper
 		}
 	}
 	
-	private static string GetUtilizerName(Utilizer utilizer)
+	private static string? GetUtilizerName(Utilizer utilizer)
 	{
 		var _utilizer = utilizer.Type == Utilizer.UtilizerType.System ? Utilizer.GetSystemUtilizer(string.Empty) : utilizer;
 		return _utilizer.Username;

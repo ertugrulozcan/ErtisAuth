@@ -67,7 +67,7 @@ public class EventService : MembershipBoundedService<ErtisAuthEvent>, IEventServ
 		var ertisAuthEvent = new ErtisAuthEvent
 		{
 			EventType = type,
-			UtilizerId = utilizer.Id,
+			UtilizerId = utilizer.Id!,
 			Document = document,
 			Prior = prior,
 			EventTime = DateTime.UtcNow,

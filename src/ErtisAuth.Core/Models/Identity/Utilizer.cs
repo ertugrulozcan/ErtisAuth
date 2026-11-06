@@ -12,9 +12,9 @@ public struct Utilizer
 {
 	#region Properties
 	
-	[JsonPropertyName("id")]
-	[BsonElement("id")]
-	public required string Id { get; set; }
+	[JsonPropertyName("_id")]
+	[BsonElement("_id")]
+	public string? Id { get; set; }
 	
 	[JsonPropertyName("type")]
 	[BsonElement("type")]
@@ -24,11 +24,11 @@ public struct Utilizer
 	
 	[JsonPropertyName("username")]
 	[BsonElement("username")]
-	public required string Username { get; set; }
+	public string? Username { get; set; }
 	
 	[JsonPropertyName("membership_id")]
 	[BsonElement("membership_id")]
-	public required string MembershipId { get; set; }
+	public string? MembershipId { get; set; }
 	
 	[JsonPropertyName("role")]
 	[BsonElement("role")]

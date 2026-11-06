@@ -391,6 +391,16 @@ public class UserService : DynamicObjectCrudService, IUserService
 			return;
 		}
 		
+		if (string.IsNullOrEmpty(utilizer.Id))
+		{
+			throw ErtisAuthException.AccessDenied("Utilizer id is null or empty");
+		}
+		
+		if (string.IsNullOrEmpty(utilizer.MembershipId))
+		{
+			throw ErtisAuthException.AccessDenied("Utilizer membership id is null or empty");
+		}
+		
 		var utilizerRole = string.IsNullOrEmpty(utilizer.Role) ? null : await this._roleService.GetBySlugAsync(utilizer.Role, utilizer.MembershipId, cancellationToken: cancellationToken);
 		var rbac = new Rbac(new RbacSegment(utilizer.Id), new RbacSegment("users"), Rbac.CrudActionSegments.Update, new RbacSegment(userId));
 		if (!this._accessControlService.HasGrantedPermission(utilizerRole, rbac, utilizer))
@@ -989,6 +999,16 @@ public class UserService : DynamicObjectCrudService, IUserService
 		if (string.IsNullOrEmpty(password))
 		{
 			return false;
+		}
+		
+		if (string.IsNullOrEmpty(utilizer.Id))
+		{
+			throw ErtisAuthException.AccessDenied("Utilizer id is null or empty");
+		}
+		
+		if (string.IsNullOrEmpty(utilizer.MembershipId))
+		{
+			throw ErtisAuthException.AccessDenied("Utilizer membership id is null or empty");
 		}
 		
 		var membership = await this._membershipService.GetAsync(utilizer.MembershipId, cancellationToken: cancellationToken);

@@ -49,6 +49,16 @@ public class UtilizerService : IUtilizerService
 			{
 				case Utilizer.UtilizerType.User:
 				{
+					if (string.IsNullOrEmpty(claimUtilizer.Id))
+					{
+						throw ErtisAuthException.AccessDenied("Utilizer id is null or empty");
+					}
+					
+					if (string.IsNullOrEmpty(claimUtilizer.MembershipId))
+					{
+						throw ErtisAuthException.AccessDenied("Utilizer membership id is null or empty");
+					}
+					
 					var user = await this._userService.GetUserAsync(claimUtilizer.Id, claimUtilizer.MembershipId, cancellationToken: cancellationToken);
 					if (user == null)
 					{
@@ -66,6 +76,16 @@ public class UtilizerService : IUtilizerService
 				}
 				case Utilizer.UtilizerType.Application:
 				{
+					if (string.IsNullOrEmpty(claimUtilizer.Id))
+					{
+						throw ErtisAuthException.AccessDenied("Utilizer id is null or empty");
+					}
+					
+					if (string.IsNullOrEmpty(claimUtilizer.MembershipId))
+					{
+						throw ErtisAuthException.AccessDenied("Utilizer membership id is null or empty");
+					}
+					
 					var application = await this._applicationService.GetAsync(claimUtilizer.Id, claimUtilizer.MembershipId, cancellationToken: cancellationToken);
 					if (application == null)
 					{

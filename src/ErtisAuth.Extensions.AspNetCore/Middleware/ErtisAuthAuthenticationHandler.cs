@@ -209,6 +209,16 @@ public class ErtisAuthAuthenticationHandler : AuthenticationHandler<Authenticati
 			throw ErtisAuthException.AccessDenied($"The {utilizerKind} has no role");
 		}
 		
+		if (string.IsNullOrEmpty(utilizer.Id))
+		{
+			throw ErtisAuthException.AccessDenied("Utilizer id is null or empty");
+		}
+		
+		if (string.IsNullOrEmpty(utilizer.MembershipId))
+		{
+			throw ErtisAuthException.AccessDenied("Utilizer membership id is null or empty");
+		}
+		
 		var role = await this.roleService.GetBySlugAsync(utilizer.Role, utilizer.MembershipId);
 		if (role == null)
 		{
