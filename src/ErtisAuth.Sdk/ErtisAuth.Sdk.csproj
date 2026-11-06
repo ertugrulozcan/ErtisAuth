@@ -4,8 +4,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 		<PackageId>ErtisAuth.Sdk</PackageId>
-		<PackageVersion>10.0.8</PackageVersion>
-		<Version>10.0.8</Version>
+		<PackageVersion>10.0.9</PackageVersion>
+		<Version>10.0.9</Version>
 		<Authors>Ertuğrul Özcan</Authors>
 		<Description>ErtisAuth SDK</Description>
 		<PackageTags>authentication;authorization;identity;iam;openid-connect;oauth</PackageTags>
