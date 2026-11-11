@@ -9,7 +9,7 @@
     
     <ItemGroup>
         <PackageReference Include="Ertis.Extensions.AspNetCore" Version="10.1.0" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
         <PackageReference Include="Scalar.AspNetCore" Version="2.20.0" />
     </ItemGroup>
     
