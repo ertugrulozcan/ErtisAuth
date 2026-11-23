@@ -1,6 +1,6 @@
 # Migrating to ErtisAuth on .NET 10
 
-This guide covers the upgrade from the previous ErtisAuth release (.NET 9, `master` branch) to the .NET 10 release. It is written for three groups:
+This guide covers the upgrade from the previous ErtisAuth release (.NET 9, `net9` branch) to the .NET 10 release. It is written for three groups:
 
 - **Operators / DevOps:** database migration, deployment and configuration ([sections 1-3](#1-before-you-deploy-database)).
 - **Client application developers:** API behavior and contract changes ([section 4](#4-api-changes-for-client-applications)).
@@ -319,7 +319,7 @@ Consider a rate limit at the ingress (for example Istio/Envoy) on the anonymous 
 
 ## 3. After you deploy
 
-- **Check the startup log** for `could not be created on users collection` and other index errors. Index creation on `users` failed on every startup of the previous version, so missing indexes are created now. Text indexes are also built on `roles`, `applications` and `memberships`; large collections take time.
+- **Check the startup log** for `could not be created on users collection` and other index errors. Index creation on `users` failed on every startup of the previous version, so missing indexes are created now. Text indexes are also built on `roles`, `applications` and `memberships`, and a `refresh_token` index on `active_tokens`; large collections take time.
 - **Webhooks resume.** Before this release no webhook was sent on .NET 10 builds, and custom mail hooks sent unresolved `{{document.x}}` placeholders. Make sure webhook receivers are ready for traffic.
 - **Backfill `sys`.** Roles, applications, memberships, user types, webhooks, mail hooks, providers and code policies created or updated by pre-release .NET 10 builds may have `sys: null`. For documents without `sys.created_at`, set `created_at` from the `_id` ObjectId timestamp and `created_by` to `"system"`.
 - **Rotate application secrets** and turn off the legacy switch ([Application secrets](#application-secrets)).
@@ -401,6 +401,7 @@ All routes are under `/memberships/{membershipId}/`.
 - `device_code` is returned only on creation, and the token is handed out once. Device apps must store it on the first success.
 - New errors: `400 TokenCodeSlowDown` (polling too fast), `401 TokenCodeDenied`, `401 UserInactive`, `401 TokenCodeExpired`, `409 TokenCodeAlreadyAuthorized`.
 - Case, dashes and spaces in the user code are ignored.
+- Letter-and-digit codes no longer contain `0`, `O`, `1` or `I`.
 - If a backend creates codes on behalf of a device, forward the device's `X-IpAddress` and `X-UserAgent`.
 - A code approved with a scoped token gives the device a token with the same scopes (lifetime `scoped_token_expires_in`; refresh keeps the scopes).
 - A code policy in use by the membership cannot be deleted (`409 TokenCodePolicyInUse`) and keeps its slug when renamed.
@@ -438,6 +439,7 @@ All routes are under `/memberships/{membershipId}/`.
 - A user type that is the base type of another one cannot be deleted (`400 UserTypeCanNotBeDelete`) and keeps its slug when renamed.
 - Making a field unique while duplicates exist answers `409 UniqueFieldHasDuplicates`, and the user type is not saved.
 - Custom unique fields are unique among the declaring type and its descendants (before: among all users of the membership).
+- Creating or updating a user type with a unique field builds its index, which takes time on large `users` collections.
 - Concurrent duplicate writes answer a 400 unique validation error.
 - `username` and `email_address` are stored trimmed and in lower case, and the sign-in ignores their case. Filters on them (`_query`) must use the lower case value.
 - A username that is the email address of another user, or an email address that is the username of another user, is rejected with a 400 `ValidationException` (`The 'username' field can not be the email_address of another user.`). A user's own username may be its own email address.
@@ -483,6 +485,7 @@ All routes are under `/memberships/{membershipId}/`.
 - When ErtisAuth is unreachable or answers 5xx, the client application answers **503** `AuthenticationServiceUnavailable` (was 401/403).
 - **Rbac placeholders** in the `RbacSubject`, `RbacResource`, `RbacAction` and `RbacObject` attributes now support `{route::x}`, `{query::x}`, `{header::X}` and `{env::X}`. Unprefixed `{x}` is a route value, as before.
   - A missing or empty `{env::X}` now answers **403**. Before, it was silently removed: `{env::organization}:advertisers` became `:advertisers`. Make sure every environment variable used in rbac attributes is defined in each deployment.
+  - An unprefixed placeholder that matches no route parameter of the action is reported by analyzer `ERTISAUTH601` (warning).
   - An unknown prefix answers 403 and is reported by analyzer `ERTISAUTH602`.
   - `RbacSubject` with a query or header source answers 403 and is reported by `ERTISAUTH603`.
   - The analyzers ship in the package.
