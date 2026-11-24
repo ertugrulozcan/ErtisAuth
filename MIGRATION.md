@@ -1,5 +1,7 @@
 # Migrating to ErtisAuth on .NET 10
 
+**English** | [Türkçe](MIGRATION.tr.md)
+
 This guide covers the upgrade from the previous ErtisAuth release (.NET 9, `net9` branch) to the .NET 10 release. It is written for three groups:
 
 - **Operators / DevOps:** database migration, deployment and configuration ([sections 1-3](#1-before-you-deploy-database)).

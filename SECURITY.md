@@ -1,5 +1,7 @@
 # Security Policy
 
+**English** | [Türkçe](SECURITY.tr.md)
+
 ## Supported versions
 
 Security fixes are made for the latest release only. If you run an older version, upgrade first; [MIGRATION.md](MIGRATION.md) describes the upgrade to the .NET 10 release.
